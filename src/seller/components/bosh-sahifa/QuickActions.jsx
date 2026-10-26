@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Box, FileText, UserRound, Tag, Megaphone, Wallet, ChevronRight, CirclePlus } from 'lucide-react'
 import Modal from '../shell/Modal'
 import { addCampaign, addCustomer, addDiscount, addManualOrder, addProduct, requestPayout, useAsync } from '../../api'
@@ -29,14 +30,19 @@ const FORMS = {
     ['amount', 'Summa (so‘m)', 'number', true], ['note', 'Izoh', 'text']] },
 }
 
+const ROUTES = { product: 'mahsulotlar', order: 'buyurtmalar', customer: 'mijozlar', discount: 'chegirmalar', campaign: 'reklama' }
+
 export default function QuickActions({ open, setOpen, products }) {
-  if (!open) return null
+  const navigate = useNavigate()
+  const pick = (k) => { if (ROUTES[k]) { setOpen(null); navigate(`/sotuvchi/${ROUTES[k]}?new=1`) } else setOpen(k) }
+  useEffect(() => { if (ROUTES[open]) pick(open) }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!open || ROUTES[open]) return null
   if (open === 'menu') {
     return (
       <Modal open onClose={() => setOpen(null)} title="Tezkor amal" subtitle={<><span className="hidden md:inline">Eng kerakli amallarni tez va oson bajaring.</span><span className="md:hidden">Eng kerakli amallarni tez bajaring.</span></>} width="max-w-[680px]">
         <div className="hidden grid-cols-3 gap-3 md:grid">
           {ACTIONS.map((a) => (
-            <button key={a.key} type="button" onClick={() => setOpen(a.key)} className="group rounded-[14px] border border-[#E2ECEE] bg-white p-3.5 text-left transition hover:border-[#99D5CE] hover:bg-[#F0FDFA]">
+            <button key={a.key} type="button" onClick={() => pick(a.key)} className="group rounded-[14px] border border-[#E2ECEE] bg-white p-3.5 text-left transition hover:border-[#99D5CE] hover:bg-[#F0FDFA]">
               <span className="mx-auto mb-3 grid size-[52px] place-items-center rounded-xl bg-[#E3F4F2] text-[#0F766E]"><a.icon className="size-7" strokeWidth={1.8} /></span>
               <span className="flex items-center justify-between text-[14px] font-bold text-[#10283F]">{a.title}<ChevronRight className="size-4 shrink-0" /></span>
               <span className="mt-1 block text-[12.5px] leading-snug text-[#5C6E80]">{a.text}</span>
@@ -47,7 +53,7 @@ export default function QuickActions({ open, setOpen, products }) {
           {ACTIONS.filter((a) => a.mobile).map((a) => {
             const Icon = a.mIcon || a.icon
             return (
-              <button key={a.key} type="button" onClick={() => setOpen(a.key)} className="flex items-center gap-4 rounded-[14px] bg-[#F0FDFA] px-4 py-3.5 text-left">
+              <button key={a.key} type="button" onClick={() => pick(a.key)} className="flex items-center gap-4 rounded-[14px] bg-[#F0FDFA] px-4 py-3.5 text-left">
                 <span className={`grid size-[46px] shrink-0 place-items-center rounded-full ${a.mIcon ? 'bg-[#CCFBF1]' : 'bg-[#CCFBF1]'} text-[#0F766E]`}>
                   {a.mIcon ? <span className="grid size-7 place-items-center rounded-full bg-[#0F766E] text-white"><Icon className="size-7" fill="#0F766E" color="white" strokeWidth={2} /></span> : <Icon className="size-6" strokeWidth={1.9} />}
                 </span>
