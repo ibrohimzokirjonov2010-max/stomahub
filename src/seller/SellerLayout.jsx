@@ -9,6 +9,7 @@ import Modal from './components/shell/Modal'
 import QuickActions from './components/bosh-sahifa/QuickActions'
 import OrderDrawer from './components/bosh-sahifa/OrderDrawer'
 import { useSellerData } from './api'
+import { Toaster } from './components/ui'
 
 function useShopName() {
   const session = useSession()
@@ -103,17 +104,30 @@ export default function SellerLayout() {
 
       <QuickActions open={quick} setOpen={setQuick} products={data.products} />
       <OrderDrawer orderId={orderId} onClose={() => setOrderId(null)} />
+      <Toaster />
     </div>
   )
 }
 
+const SEARCH = {
+  mahsulotlar: 'Mahsulot, SKU yoki kategoriya bo‘yicha qidirish...',
+  buyurtmalar: 'Buyurtma raqami, mijoz yoki telefon bo‘yicha qidirish...',
+  mijozlar: 'Mijoz nomi, telefon yoki STIR bo‘yicha qidirish...',
+  sharhlar: 'Sharh, mahsulot yoki xaridor bo‘yicha qidirish...',
+  chegirmalar: 'Chegirma nomi yoki promokod bo‘yicha qidirish...',
+  reklama: 'Kampaniya nomi bo‘yicha qidirish...',
+}
 function SearchBox() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const section = pathname.split('/')[2] || ''
+  const target = SEARCH[section] ? section : 'buyurtmalar'
   const [q, setQ] = useState('')
+  useEffect(() => setQ(''), [section])
   return (
-    <form className="relative w-full max-w-[480px]" onSubmit={(e) => { e.preventDefault(); if (q.trim()) navigate(`/sotuvchi/buyurtmalar?q=${encodeURIComponent(q.trim())}`) }}>
+    <form className="relative w-full max-w-[480px]" onSubmit={(e) => { e.preventDefault(); navigate(`/sotuvchi/${target}${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`) }}>
       <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-[#6B7A88]" />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Mahsulot, buyurtma yoki mijozni qidirish..."
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={SEARCH[section] || 'Mahsulot, buyurtma yoki mijozni qidirish...'}
         className="h-[38px] w-full rounded-[10px] border border-[#DCE5E7] bg-white pl-10 pr-3 text-[13.5px] outline-none placeholder:text-[#6B7A88] focus:border-[#0F766E]" />
     </form>
   )

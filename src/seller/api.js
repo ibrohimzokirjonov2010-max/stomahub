@@ -23,7 +23,7 @@ function fail(error) {
 }
 
 // ---- tiny shared store so every widget reloads after a change ----------------
-let state = { loading: true, error: '', products: [], orders: [], reviews: [], payouts: [], customers: [], loadedFor: null }
+let state = { loading: true, error: '', products: [], orders: [], reviews: [], payouts: [], customers: [], discounts: [], campaigns: [], adTopups: [], adStats: [], settings: null, staff: [], branches: [], activity: [], loadedFor: null }
 const listeners = new Set()
 const commit = (patch) => { state = { ...state, ...patch }; listeners.forEach((l) => l()) }
 const subscribe = (l) => { listeners.add(l); return () => listeners.delete(l) }
@@ -32,23 +32,37 @@ export async function reloadSeller() {
   const me = uid()
   if (!supabase || !me) { commit({ loading: false, error: 'Avval kiring' }); return }
   commit({ loading: state.loadedFor !== me, error: '' })
-  const [p, o, r, w, c] = await Promise.all([
-    supabase.from('seller_products').select('*').eq('seller_id', me).order('created_at', { ascending: false }),
+  const q = (t, order = 'created_at') => supabase.from(t).select('*').eq('seller_id', me).order(order, { ascending: false })
+  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac] = await Promise.all([
+    q('seller_products'),
     supabase.from('seller_orders').select('*, seller_order_items(*)').eq('seller_id', me).order('created_at', { ascending: false }),
-    supabase.from('seller_reviews').select('*').eq('seller_id', me).order('created_at', { ascending: false }).limit(20),
-    supabase.from('seller_payouts').select('*').eq('seller_id', me).order('created_at', { ascending: false }),
-    supabase.from('seller_customers').select('*').eq('seller_id', me),
+    q('seller_reviews'), q('seller_payouts'), q('seller_customers'), q('seller_discounts'), q('seller_campaigns'),
+    q('seller_ad_topups'), q('seller_ad_stats', 'day'),
+    supabase.from('seller_settings').select('*').eq('seller_id', me).maybeSingle(),
+    q('seller_staff'), q('seller_branches'),
+    supabase.from('seller_activity').select('*').eq('seller_id', me).order('created_at', { ascending: false }).limit(200),
   ])
+  // 0004 jadvallari hali yo'q bo'lsa ham asosiy ma'lumotlar ishlayversin
   const error = fail(p.error || o.error || r.error || w.error || c.error)
+  const extraErr = [d, k, at, as, st, sf, br, ac].find((x) => x.error)
   commit({
     loading: false,
     error: error || '',
+    needs0004: !!extraErr,
     loadedFor: me,
     products: p.data || [],
     orders: (o.data || []).map((x) => ({ ...x, items: x.seller_order_items || [] })),
     reviews: r.data || [],
     payouts: w.data || [],
     customers: c.data || [],
+    discounts: d.data || [],
+    campaigns: k.data || [],
+    adTopups: at.data || [],
+    adStats: as.data || [],
+    settings: st.data || null,
+    staff: sf.data || [],
+    branches: br.data || [],
+    activity: ac.data || [],
   })
 }
 
@@ -61,13 +75,15 @@ export function useSellerData() {
 
 // ---- derived numbers -------------------------------------------------------------
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-const payoutOf = (o) => Number(o.payout ?? Math.round(Number(o.subtotal || 0) * (1 - COMMISSION_RATE)))
+export const netOf = (o) => Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0))
+export const commissionOf = (o) => Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
+export const payoutOf = (o) => Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
 
-export function computeStats({ orders, products, payouts, customers }, now = new Date()) {
+export function computeStats({ orders, products, payouts, customers, adTopups = [] }, now = new Date()) {
   const live = orders.filter((o) => o.status !== 'bekor_qilindi')
   const delivered = orders.filter((o) => o.status === 'yetkazildi')
   const earned = delivered.reduce((s, o) => s + payoutOf(o), 0)
-  const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0)
+  const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0) + adTopups.reduce((s, t) => s + Number(t.amount || 0), 0)
   const phones = new Set()
   orders.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
   customers.forEach((c) => { const k = (c.phone || c.name || '').trim(); if (k) phones.add(k) })
@@ -75,6 +91,8 @@ export function computeStats({ orders, products, payouts, customers }, now = new
     today: orders.filter((o) => sameDay(new Date(o.created_at), now)).length,
     fresh: orders.filter((o) => o.status === 'yangi').length,
     balance: Math.max(0, earned - withdrawn),
+    earned,
+    withdrawnPayouts: payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
     pending: orders.filter((o) => OPEN_STATUSES.includes(o.status)).reduce((s, o) => s + payoutOf(o), 0),
     activeProducts: products.filter((p) => p.status === 'active').length,
     customers: phones.size,
@@ -154,4 +172,43 @@ export function useAsync() {
     return res
   }, [])
   return { busy, error, setError, go }
+}
+
+// ---- generic helpers used by sections 02..10 ------------------------------------------
+export { uid }
+export const insertRow = (table, row) => run(supabase.from(table).insert({ seller_id: uid(), ...row }).select().single())
+export const updateRow = (table, id, patch) => run(supabase.from(table).update(patch).eq('id', id).eq('seller_id', uid()).select().single())
+export const deleteRow = (table, id) => run(supabase.from(table).delete().eq('id', id).eq('seller_id', uid()))
+export const upsertSettings = (patch) => run(supabase.from('seller_settings').upsert({ seller_id: uid(), ...patch, updated_at: new Date().toISOString() }).select().single())
+export const createOrder = (payload) => run(supabase.rpc('seller_create_manual_order', { payload }))
+export async function logActivity(action, details = '') {
+  if (!supabase || !uid()) return
+  await supabase.from('seller_activity').insert({ seller_id: uid(), action, details })
+}
+
+export async function uploadMedia(file, folder = 'misc') {
+  if (!supabase || !uid()) return { ok: false, error: 'Avval kiring' }
+  if (file.size > 10 * 1024 * 1024) return { ok: false, error: 'Fayl 10 MB dan katta' }
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+  const path = `${uid()}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage.from('seller-media').upload(path, file, { contentType: file.type, upsert: false })
+  if (error) return { ok: false, error: fail(error) }
+  const { data } = supabase.storage.from('seller-media').getPublicUrl(path)
+  return { ok: true, url: data.publicUrl, name: file.name, size: file.size, type: file.type }
+}
+
+export const PRODUCT_STATUS = {
+  active: { label: 'Faol', tone: 'on' },
+  review: { label: 'Tekshiruvda', tone: 'mid' },
+  rejected: { label: 'Rad etilgan', tone: 'off' },
+  inactive: { label: 'Faolsiz', tone: 'off' },
+  archived: { label: 'Arxiv', tone: 'off' },
+  draft: { label: 'Qoralama', tone: 'off' },
+}
+
+export function csvDownload(filename, rows) {
+  const esc = (v) => { const t = String(v ?? ''); return /[",;\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t }
+  const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(';')).join('\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000)
 }
