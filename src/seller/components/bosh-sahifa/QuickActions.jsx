@@ -30,7 +30,7 @@ const FORMS = {
     ['amount', 'Summa (so‘m)', 'number', true], ['note', 'Izoh', 'text']] },
 }
 
-const ROUTES = { product: 'mahsulotlar', order: 'buyurtmalar', customer: 'mijozlar', discount: 'chegirmalar', campaign: 'reklama' }
+const ROUTES = { product: 'mahsulotlar', order: 'buyurtmalar', customer: 'mijozlar', discount: 'chegirmalar', campaign: 'reklama', payout: 'hamyon' }
 
 export default function QuickActions({ open, setOpen, products }) {
   const navigate = useNavigate()
