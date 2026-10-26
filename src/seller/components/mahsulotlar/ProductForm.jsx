@@ -71,7 +71,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     <div className="flex flex-col gap-3 md:flex-row md:items-stretch">
       <div className="hidden flex-1 items-start gap-3 rounded-xl bg-[#F0FDFA] px-4 py-3 md:flex">
         <Info className="mt-0.5 size-5 shrink-0 text-[#0F766E]" />
-        <div><div className="text-[13.5px] font-semibold text-[#10283F]">Komissiya 12%</div><div className="text-[12px] text-[#5C6E80]">Sotilgan har bir mahsulot uchun Stoqm Hub komissiya sifatida 12% ni oladi. To‘lov faqat naqd.</div></div>
+        <div><div className="text-[13.5px] font-semibold text-[#10283F]">Komissiya 12%</div><div className="text-[12px] text-[#5C6E80]">Sotilgan har bir mahsulot uchun StomaHub komissiya sifatida 12% ni oladi. To‘lov faqat naqd.</div></div>
       </div>
       <div className="grid grid-cols-2 gap-3 md:flex">
         <Btn variant="outline" icon={mobile ? X : undefined} onClick={onClose} className="h-12 md:w-[120px]">Bekor qilish</Btn>

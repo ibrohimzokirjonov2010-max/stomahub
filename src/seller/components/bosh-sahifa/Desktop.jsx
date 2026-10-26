@@ -186,7 +186,7 @@ export function InfoCards() {
       <div className="space-y-3 px-3 pb-4">
         <div className="flex gap-3 rounded-xl border border-[#EEF3F4] p-3">
           <span className="grid size-[52px] shrink-0 place-items-center rounded-xl bg-[#E3F4F2] text-[#0F766E]"><Coins className="size-7" strokeWidth={1.7} /></span>
-          <div className="text-[12px] leading-relaxed text-[#3D4E5F]"><div className="text-[13px] font-semibold text-[#0F766E]">Komissiya</div>Naqd / joyida to‘lov bilan amalga oshirilgan har bir buyurtma uchun Stoqm Hub komissiyasi 12% ni tashkil qiladi.</div>
+          <div className="text-[12px] leading-relaxed text-[#3D4E5F]"><div className="text-[13px] font-semibold text-[#0F766E]">Komissiya</div>Naqd / joyida to‘lov bilan amalga oshirilgan har bir buyurtma uchun StomaHub komissiyasi 12% ni tashkil qiladi.</div>
         </div>
         <div className="flex gap-3 rounded-xl border border-[#EEF3F4] p-3">
           <span className="grid size-[52px] shrink-0 place-items-center rounded-xl bg-[#E3F4F2] text-[#0F766E]"><Store className="size-7" strokeWidth={1.7} /></span>
