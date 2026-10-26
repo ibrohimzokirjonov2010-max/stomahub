@@ -66,7 +66,16 @@ export async function register(id, info) {
       title: info.title,
     })
     if (!res.ok) return res
-    next = { ...info, price: res.paid, synced: true, order: res.payment?.id || info.order, personId: res.person?.id }
+    const code = res.person?.code || ''
+    next = {
+      ...info,
+      price: res.paid,
+      synced: true,
+      order: res.payment?.id || info.order,
+      personId: res.person?.id,
+      code,
+      checkin: code ? `STH:${code}|${res.payment?.id || ''}` : '',
+    }
   }
   write({ ...state, registered: { ...state.registered, [id]: next } })
   return { ok: true, info: next }

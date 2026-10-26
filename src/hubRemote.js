@@ -68,6 +68,7 @@ function seminarFromRow(row, tickets) {
     placeImg: row.place_img,
     template: row.template,
     checked: row.checked || 0,
+    updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : 0,
     cancelReason: row.cancel_reason || '',
     form: row.form,
     speakers: row.speakers || [],

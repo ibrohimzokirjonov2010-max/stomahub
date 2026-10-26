@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { FACES, num, som } from '../data'
 import { useOrg } from '../Shell'
-import { FEE, downloadText, refundPayment, useHub } from '../../hubStore'
+import { downloadText, moneyOf, newestSeminar, refundPayment, useHub } from '../../hubStore'
 import { Modal } from '../ui'
 
 const TEAL = 'var(--color-org-teal)'
@@ -525,7 +525,8 @@ function Row({ icon: Icon, label, children }) {
 
 function MobilePay({ notify }) {
   const hub = useHub()
-  const sem = hub.seminars.find((s) => s.status !== 'qoralama') || hub.seminars[0]
+  const totals = moneyOf(hub)
+  const sem = newestSeminar(hub.seminars.filter((s) => s.status !== 'qoralama')) || newestSeminar(hub.seminars)
   const [tab, setTab] = useState('all')
   const [filter, setFilter] = useState(false)
   const [open, setOpen] = useState(null)
@@ -535,9 +536,6 @@ function MobilePay({ notify }) {
   }))
   const rows = source.filter((r) => tab === 'all' || (tab === 'paid' ? r.state === 'paid' : tab === 'wait' ? r.state === 'wait' : r.state === 'refund'))
   const counts = { all: source.length, paid: source.filter((r) => r.state === 'paid').length, wait: source.filter((r) => r.state === 'wait').length, refund: source.filter((r) => r.state === 'refund').length }
-  const paidSum = source.filter((r) => r.state === 'paid').reduce((n, r) => n + (Number(r.sum) || 0), 0)
-  const feeSum = Math.round(paidSum * FEE)
-  const netSum = Math.max(0, paidSum - feeSum)
 
   return (
     <div className="text-[#1c2340] md:hidden">
@@ -581,9 +579,9 @@ function MobilePay({ notify }) {
 
           <div className="mt-2 grid grid-cols-3 rounded-2xl bg-white px-1 py-1.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             {[
-              [Banknote, 'Jami tushum', num(paidSum)],
-              [CreditCard, 'Komissiya (12%)', num(feeSum)],
-              [Wallet, 'Sizga', num(netSum)],
+              [Banknote, 'Jami tushum', num(totals.gross)],
+              [CreditCard, 'Komissiya (12%)', num(totals.fee)],
+              [Wallet, 'Sizga', num(totals.net)],
             ].map(([Icon, label, value]) => (
               <div key={label} className="px-1 text-center">
                 <span className="mx-auto grid size-7 place-items-center rounded-full bg-[#e7f6f4]" style={{ color: TEAL }}><Icon className="size-3.5" /></span>

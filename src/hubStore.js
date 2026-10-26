@@ -60,6 +60,12 @@ const EMPTY = {
   error: '',
 }
 
+export function newestSeminar(list) {
+  const rows = list || []
+  if (!rows.length) return null
+  return rows.reduce((best, s) => ((Number(s.updatedAt) || 0) > (Number(best.updatedAt) || 0) ? s : best))
+}
+
 let state = { ...EMPTY }
 let epoch = 0
 let refreshTimer = null
@@ -226,6 +232,7 @@ export function saveSeminar(form, { publish, id } = {}) {
     form: { ...form, tickets, speakers: form.speakers || [], promos: form.promos || [] },
     held: existing?.held || false,
     checked: existing?.checked || 0,
+    updatedAt: Date.now(),
   }
   const promos = [...state.promos]
   ;(form.promos || []).filter((p) => p.on !== false && p.code).forEach((p) => {
@@ -304,6 +311,7 @@ export function duplicateSeminar(id) {
     revenue: 0,
     checked: 0,
     held: false,
+    updatedAt: Date.now(),
     form: src.form ? { ...src.form, name: `${src.title} (nusxa)` } : undefined,
     tickets: (src.tickets || []).map((t) => ({ ...t, id: `${t.id}-c`, sold: 0, left: t.seats || t.total })),
   }
@@ -370,13 +378,41 @@ export function checkIn(id) {
   return { ...person, arrived: true }
 }
 
+function matchPerson(pool, text) {
+  const q = String(text || '').trim().toLowerCase()
+  if (q.length < 2) return null
+  const byCode = pool.find((p) => p.code && q.includes(String(p.code).toLowerCase()))
+  if (byCode) return byCode
+  const pay = state.payments.find((p) => (p.id && q.includes(String(p.id).toLowerCase())) || (p.code && q.includes(String(p.code).toLowerCase())))
+  if (pay) {
+    const person = pool.find((p) => p.id === pay.participantId || (p.code && p.code === pay.code) || (p.seminarId === pay.seminarId && p.phone === pay.phone && p.name === pay.who))
+    if (person) return person
+  }
+  if (q.length >= 3) return pool.find((p) => `${p.name} ${p.phone} ${p.email} ${p.code || ''}`.toLowerCase().includes(q)) || null
+  return null
+}
+
+export function checkInPayload(seminarId, raw) {
+  const text = String(raw || '').trim()
+  if (text.length < 2) return { ok: false, error: 'Ism yoki kod kiriting' }
+  const mine = state.participants.filter((p) => !seminarId || p.seminarId === seminarId)
+  const hit = matchPerson(mine, text)
+  if (hit) {
+    if (hit.arrived) return { ok: true, person: hit, already: true }
+    return { ok: true, person: checkIn(hit.id) }
+  }
+  if (seminarId) {
+    const other = matchPerson(state.participants.filter((p) => p.seminarId !== seminarId), text)
+    if (other && ((other.code && text.toLowerCase().includes(String(other.code).toLowerCase())) || state.payments.some((p) => p.participantId === other.id && text.toLowerCase().includes(String(p.id).toLowerCase())))) {
+      return { ok: false, error: 'Bu chipta boshqa seminar uchun' }
+    }
+  }
+  return { ok: false, error: 'Ishtirokchi topilmadi' }
+}
+
 export function checkInQuery(seminarId, query) {
-  const q = String(query || '').trim().toLowerCase()
-  const pool = state.participants.filter((p) => !seminarId || p.seminarId === seminarId)
-  const hit = pool.find((p) => !p.arrived && q && (`${p.name} ${p.phone} ${p.code} ${p.email}`.toLowerCase().includes(q)))
-    || pool.find((p) => !p.arrived)
-  if (!hit) return null
-  return checkIn(hit.id)
+  const res = checkInPayload(seminarId, query)
+  return res.ok ? res.person : null
 }
 
 export function quotePromo(code, seminarId, amount) {
@@ -420,6 +456,8 @@ export async function registerSale(input) {
   if (!res.ok) return res
   const person = res.person
   const payment = res.payment
+    ? { ...res.payment, code: res.payment.code || person?.code || '', participantId: res.payment.participantId ?? person?.id }
+    : null
   patch((s) => ({
     ...s,
     participants: person ? [person, ...s.participants.filter((item) => item.id !== person.id)] : s.participants,
@@ -529,6 +567,8 @@ export function addMessage(text) {
 export function walletOf(s = state) {
   let hold = 0
   let ready = 0
+  let gross = 0
+  let feeTotal = 0
   const paymentRows = []
   for (const p of s.payments) {
     if (p.state === 'wait') continue
@@ -536,6 +576,10 @@ export function walletOf(s = state) {
     const sum = Number(p.sum) || 0
     const fee = p.state === 'ok' ? Math.round(sum * FEE) : 0
     const net = p.state === 'ok' ? sum - fee : 0
+    if (p.state === 'ok') {
+      gross += sum
+      feeTotal += fee
+    }
     let bucket = 'refund'
     if (p.state === 'ok' && (sem?.held || sem?.status === 'yakunlangan')) {
       bucket = 'paid'
@@ -558,7 +602,21 @@ export function walletOf(s = state) {
     hold,
     available: Math.max(0, ready),
     transferred,
-    rows: [...outs, ...paymentRows].slice(0, 40),
+    gross,
+    fee: feeTotal,
+    net: Math.max(0, gross - feeTotal),
+    rows: [...outs, ...paymentRows].slice(0, 80),
+  }
+}
+
+export function moneyOf(s = state) {
+  const w = walletOf(s)
+  return {
+    gross: w.gross,
+    fee: w.fee,
+    net: w.net,
+    seminars: s.seminars.length,
+    participants: s.participants.length,
   }
 }
 

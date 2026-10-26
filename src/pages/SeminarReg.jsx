@@ -7,6 +7,9 @@ import { buildSeminarPage } from '../seminarsData'
 import { addMessage, publicRecord, quotePromo, useHub } from '../hubStore'
 import { register } from '../components/mobile/seminarStore'
 import { som } from '../marketData'
+import { cardBrand, cvvRequired, validateCard } from '../cardCheck'
+import { useCountdown } from '../payBits'
+import LiveQr from '../components/LiveQr'
 
 const PAY = {
   click: 'https://my.click.uz/services/pay',
@@ -29,6 +32,7 @@ export default function SeminarReg() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', spec: '', clinic: '', city: '' })
   const [error, setError] = useState('')
   const [paidAt, setPaidAt] = useState('')
+  const [pass, setPass] = useState(null)
   const [help, setHelp] = useState(false)
   const [sent, setSent] = useState(false)
   const [helpText, setHelpText] = useState('')
@@ -70,10 +74,6 @@ export default function SeminarReg() {
   }
 
   const pick = (id) => {
-    if (method === id && sheet && PAY[id]) {
-      accept(id)
-      return
-    }
     setMethod(id)
     setSheet(true)
   }
@@ -85,7 +85,7 @@ export default function SeminarReg() {
     setPromoMsg(`Chegirma qo‘llandi: ${som(q.discount)}`)
   }
 
-  const accept = async (payId) => {
+  const accept = async (payId, opts = {}) => {
     let res
     try {
       res = await register(id, {
@@ -108,8 +108,8 @@ export default function SeminarReg() {
       return
     }
     if (!res?.ok) { setError(res?.error || 'To‘lov amalga oshmadi'); return }
-    const link = PAY[payId]
-    if (link) window.open(link, '_blank', 'noopener,noreferrer')
+    setPass(res.info || null)
+    if (!opts.demo && PAY[payId]) window.open(PAY[payId], '_blank', 'noopener,noreferrer')
     const now = new Date()
     const months = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
     const hh = String(now.getHours()).padStart(2, '0')
@@ -223,12 +223,12 @@ export default function SeminarReg() {
                   amount={amount}
                   order={view.order}
                   onClose={() => setSheet(false)}
-                  onOther={() => setSheet(false)}
-                  onPay={() => accept(method)}
+                  onBack={() => { setSheet(false); setStep(1) }}
+                  onPay={() => accept(method, { demo: true })}
                 />
               )}
               {sheet && method === 'uzcard' && (
-                <Uzcard amount={amount} onClose={() => setSheet(false)} onPay={() => accept('uzcard')} />
+                <Uzcard amount={amount} onClose={() => setSheet(false)} onBack={() => { setSheet(false); setStep(1) }} onPay={() => accept('uzcard', { demo: true })} />
               )}
             </section>
           )}
@@ -259,8 +259,8 @@ export default function SeminarReg() {
                     </div>
                   </div>
                   <div className="grid place-items-center text-center">
-                    <Qr seed={`${view.order}-${method}`} />
-                    <b className="mt-1 text-[13px] text-sea">#{view.order}</b>
+                    <LiveQr text={pass?.checkin || `STH:${view.order}`} className="size-32" />
+                    <b className="mt-1 text-[13px] text-sea">#{pass?.order || view.order}</b>
                     <span className="text-[10px] text-muted">Seminar kirish chiptasi</span>
                   </div>
                 </div>
@@ -302,7 +302,7 @@ export default function SeminarReg() {
           ) : (
             <div className="mt-3 rounded-xl border border-line p-3 text-[12.5px]">
               <b className="mb-2 block">Buyurtma ma’lumotlari</b>
-              <Row k="Buyurtma raqami" v={`#${view.order}`} />
+              <Row k="Buyurtma raqami" v={`#${pass?.order || view.order}`} />
               <Row k="To‘lov usuli" v={method === 'payme' ? 'Payme' : method === 'uzcard' ? 'Uzcard / Humo' : 'Click'} />
               <Row k="To‘lov sanasi" v={paidAt} />
               <Row k="Seminar narxi" v={som(amount)} />
@@ -430,25 +430,25 @@ function Mark({ id }) {
   return <span className="grid size-9 place-items-center rounded-lg bg-[#f4f7fb] text-ink-2"><CreditCard className="size-4" /></span>
 }
 
-function PaySheet({ method, amount, order, onClose, onOther, onPay }) {
+function PaySheet({ method, amount, order, onClose, onBack, onPay }) {
   const link = PAY[method]
   const brand = method === 'payme' ? 'Payme' : 'Click'
-  const clock = new Date().toTimeString().slice(0, 5)
+  const { left, text } = useCountdown(300)
   return (
     <div className="relative mx-auto mt-4 max-w-[560px] rounded-2xl border border-line bg-white px-4 py-5 text-center shadow-card">
       <button type="button" onClick={onClose} className="absolute right-3 top-3 grid size-8 place-items-center rounded-lg text-muted" aria-label="Yopish"><X className="size-4" /></button>
-      <button type="button" onClick={onPay} className="mx-auto grid place-items-center">
+      <div className="mx-auto grid place-items-center">
         <Mark id={method} />
         <b className="mt-1 text-[18px]">{brand}</b>
-      </button>
+      </div>
       <p className="mt-3 text-[12px] text-muted">To‘lov summasi</p>
       <b className="block text-[26px]">{som(amount)}</b>
       <p className="text-[12px] text-muted">Buyurtma raqami: #{order}</p>
-      <button type="button" onClick={onPay} className="mx-auto mt-3 grid size-40 place-items-center rounded-xl border border-line" aria-label={`${brand} to‘lov havolasi`}>
-        <Qr seed={`${order}-${link}`} />
-      </button>
+      <div className="mx-auto mt-3 grid size-40 place-items-center rounded-xl border border-line" aria-hidden>
+        <LiveQr text={`${brand}:${order}:${amount}`} className="size-32" />
+      </div>
       <p className="mx-auto mt-3 max-w-[380px] text-[12.5px] text-ink-2">Telefoningiz kamerasi yoki {brand} ilovasi bilan QR kodni skanerlang — to‘lov summasi avtomatik to‘ldiriladi.</p>
-      <button type="button" onClick={onPay} className="mt-1 text-[12px] font-semibold text-sea">{link}</button>
+      <a href={link} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[12px] font-semibold text-sea">{link}</a>
       <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-muted">
         {['Skanerlang', 'Ilovada tasdiqlang', 'Tayyor'].map((t, i) => (
           <div key={t}>
@@ -458,61 +458,65 @@ function PaySheet({ method, amount, order, onClose, onOther, onPay }) {
           </div>
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-2 text-[12.5px] text-muted"><span className="size-2 rounded-full bg-[#f0b429]" /> To‘lov kutilmoqda...</span>
-        <span className="text-[12px] text-muted">{clock}</span>
-        <button type="button" onClick={onOther} className="h-9 rounded-xl border border-line px-3 text-[12px] font-semibold">Boshqa to‘lov usuli</button>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-2 text-[12.5px] text-muted">
+          <span className={`size-2 rounded-full ${left ? 'bg-[#f0b429]' : 'bg-[#e11d48]'}`} />
+          {left ? 'To‘lov kutilmoqda...' : 'Vaqt tugadi'}
+        </span>
+        <span className="font-mono text-[15px] font-bold tabular-nums text-ink" aria-live="polite">{text}</span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+        <button type="button" onClick={onBack} className="h-10 rounded-xl border border-line px-3 text-[12.5px] font-semibold">Orqaga</button>
+        <button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-3 text-[12.5px] font-semibold">Bekor qilish</button>
+        <button type="button" onClick={onPay} className="h-10 rounded-xl bg-[#149e86] px-3 text-[12.5px] font-semibold text-white">To‘lovni tekshirish <span className="font-medium opacity-80">(demo)</span></button>
       </div>
     </div>
   )
 }
 
-function Uzcard({ amount, onClose, onPay }) {
+function Uzcard({ amount, onClose, onBack, onPay }) {
+  const [num, setNum] = useState('')
+  const [exp, setExp] = useState('')
+  const [cvv, setCvv] = useState('')
+  const [errs, setErrs] = useState({})
+  const digits = num.replace(/\D/g, '')
+  const brand = cardBrand(digits)
+  const needCvv = cvvRequired(digits)
+  const submit = () => {
+    const next = validateCard({ num, exp, cvv })
+    setErrs(next)
+    if (Object.keys(next).length) return
+    onPay()
+  }
   return (
     <div className="relative mx-auto mt-4 max-w-[560px] rounded-2xl border border-line bg-white px-4 py-5 shadow-card">
       <button type="button" onClick={onClose} className="absolute right-3 top-3" aria-label="Yopish"><X className="size-4 text-muted" /></button>
       <b className="block text-center text-[16px]">Uzcard / Humo</b>
       <p className="mt-1 text-center text-[13px] text-muted">To‘lov summasi {som(amount)}</p>
       <div className="mt-3 space-y-2">
-        <input placeholder="Karta raqami" className="h-11 w-full rounded-xl border border-line px-3 text-[13px] outline-none" />
+        <label className="block text-[12px] font-semibold">
+          Karta raqami
+          <input inputMode="numeric" autoComplete="cc-number" value={digits.replace(/(\d{4})(?=\d)/g, '$1 ')} onChange={(e) => { setNum(e.target.value.replace(/\D/g, '').slice(0, 16)); setErrs((x) => ({ ...x, num: '' })) }} placeholder="8600 0000 0000 0000" className={`mt-1 h-11 w-full rounded-xl border px-3 text-[13px] font-normal outline-none ${errs.num ? 'border-[#e11d48]' : 'border-line'}`} />
+          {errs.num && <span className="mt-1 block font-medium text-[#e11d48]">{errs.num}</span>}
+        </label>
         <div className="grid grid-cols-2 gap-2">
-          <input placeholder="MM/YY" className="h-11 rounded-xl border border-line px-3 text-[13px] outline-none" />
-          <input placeholder="CVV" className="h-11 rounded-xl border border-line px-3 text-[13px] outline-none" />
+          <label className="block text-[12px] font-semibold">
+            Amal qilish muddati
+            <input inputMode="numeric" autoComplete="cc-exp" value={exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setExp(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d); setErrs((x) => ({ ...x, exp: '' })) }} placeholder="MM/YY" className={`mt-1 h-11 w-full rounded-xl border px-3 text-[13px] font-normal outline-none ${errs.exp ? 'border-[#e11d48]' : 'border-line'}`} />
+            {errs.exp && <span className="mt-1 block font-medium text-[#e11d48]">{errs.exp}</span>}
+          </label>
+          <label className="block text-[12px] font-semibold">
+            CVV {needCvv ? '' : <span className="font-normal text-muted">(ixtiyoriy)</span>}
+            <input inputMode="numeric" autoComplete="cc-csc" value={cvv} onChange={(e) => { setCvv(e.target.value.replace(/\D/g, '').slice(0, 3)); setErrs((x) => ({ ...x, cvv: '' })) }} placeholder={needCvv ? 'CVV' : 'Uzcard/Humo'} className={`mt-1 h-11 w-full rounded-xl border px-3 text-[13px] font-normal outline-none ${errs.cvv ? 'border-[#e11d48]' : 'border-line'}`} />
+            {errs.cvv ? <span className="mt-1 block font-medium text-[#e11d48]">{errs.cvv}</span> : <span className="mt-1 block font-normal text-muted">{brand === 'visa' || brand === 'mc' ? 'Visa va Mastercard uchun CVV kerak' : 'Uzcard va Humo uchun CVV shart emas'}</span>}
+          </label>
         </div>
       </div>
-      <button type="button" onClick={onPay} className="mt-3 h-11 w-full rounded-xl bg-[#149e86] text-[13px] font-semibold text-white">To‘lovni tasdiqlash</button>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={onBack || onClose} className="h-11 flex-1 rounded-xl border border-line text-[13px] font-semibold">Orqaga</button>
+        <button type="button" onClick={submit} className="h-11 flex-[1.4] rounded-xl bg-[#149e86] text-[13px] font-semibold text-white">To‘lovni tasdiqlash</button>
+      </div>
     </div>
-  )
-}
-
-function Qr({ seed }) {
-  const n = 21
-  let h = 2166136261
-  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619)
-  const cells = []
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      const finder = (x < 7 && y < 7) || (x > n - 8 && y < 7) || (x < 7 && y > n - 8)
-      let on = false
-      if (finder) {
-        const lx = x > n - 8 ? x - (n - 7) : x
-        const ly = y > n - 8 ? y - (n - 7) : y
-        on = lx === 0 || ly === 0 || lx === 6 || ly === 6 || (lx > 1 && lx < 5 && ly > 1 && ly < 5)
-      } else {
-        h = Math.imul(h ^ (x + y * 31), 16777619)
-        on = (h & 3) !== 0
-      }
-      if (on) cells.push(`${x}-${y}`)
-    }
-  }
-  return (
-    <svg viewBox={`0 0 ${n} ${n}`} className="size-32">
-      <rect width={n} height={n} fill="#fff" />
-      {cells.map((c) => {
-        const [x, y] = c.split('-')
-        return <rect key={c} x={x} y={y} width="1" height="1" fill="#0b1f3a" />
-      })}
-    </svg>
   )
 }
 

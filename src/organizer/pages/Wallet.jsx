@@ -24,6 +24,17 @@ function compact(n) {
   return Math.round(n).toLocaleString('ru-RU')
 }
 
+function DateBits({ value }) {
+  const raw = String(value || '')
+  const [date, time] = raw.split(', ')
+  return (
+    <span className="block leading-tight">
+      <span className="block break-words">{date}</span>
+      {time ? <span className="block text-[11px] text-[#8aa0a4]">{time}</span> : null}
+    </span>
+  )
+}
+
 function mobileRows(wallet) {
   const rows = []
   for (const r of wallet.rows) {
@@ -143,11 +154,11 @@ function DesktopWallet() {
             </div>
             <p className="mt-1 text-[12.5px] text-[#5e787e]">Platforma komissiyasi har bir to‘lov summasidan 12% ni tashkil qiladi.</p>
             <div className="mt-3 grid grid-cols-[minmax(0,1fr)_22px_minmax(0,1fr)_22px_minmax(0,1fr)] items-center">
-              <Calc n="10 000 000 so‘m" l="To‘lov summasi" />
+              <Calc n={som(wallet.gross)} l="To‘lov summasi" />
               <span className="text-center text-[20px] font-medium leading-none text-[#b7c6ca]">−</span>
-              <Calc n="1 200 000 so‘m" l="Platforma komissiyasi (12%)" />
+              <Calc n={som(wallet.fee)} l="Platforma komissiyasi (12%)" />
               <span className="text-center text-[20px] font-medium leading-none text-[#b7c6ca]">=</span>
-              <Calc n="8 800 000 so‘m" l="Sizga o‘tkaziladigan summa" hi />
+              <Calc n={som(wallet.net)} l="Sizga o‘tkaziladigan summa" hi />
             </div>
           </section>
 
@@ -176,12 +187,12 @@ function DesktopWallet() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-collapse text-left">
               <colgroup>
-                <col className="w-[78px]" />
-                <col className="w-[158px]" />
-                <col className="w-[108px]" />
-                <col className="w-[104px]" />
-                <col className="w-[108px]" />
+                <col className="w-[132px]" />
                 <col />
+                <col className="w-[104px]" />
+                <col className="w-[112px]" />
+                <col className="w-[104px]" />
+                <col className="w-[128px]" />
               </colgroup>
               <thead>
                 <tr className="border-y border-[#eef3f2] text-[11.5px] text-[#8aa0a4]">
@@ -196,9 +207,9 @@ function DesktopWallet() {
                   const Icon = st.icon
                   return (
                     <tr key={t.id} className="border-b border-[#f3f7f6] last:border-0">
-                      <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{t.date}</td>
-                      <td className="px-2 py-2.5 align-middle text-[12px] font-medium leading-snug">
-                        {t.seminarId ? <Link to={`/tashkilotchi/seminarlar/${t.seminarId}`} className="line-clamp-2 text-[#143044] hover:text-[var(--color-org-teal)]">{t.seminar}</Link> : <span className="line-clamp-2">{t.seminar}</span>}
+                      <td className="overflow-hidden px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]"><DateBits value={t.date} /></td>
+                      <td className="overflow-hidden px-2 py-2.5 align-middle text-[12px] font-medium leading-snug">
+                        {t.seminarId ? <Link to={`/tashkilotchi/seminarlar/${t.seminarId}`} className="line-clamp-2 break-words text-[#143044] hover:text-[var(--color-org-teal)]">{t.seminar}</Link> : <span className="line-clamp-2 break-words">{t.seminar}</span>}
                       </td>
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px]">{som(t.sum)}</td>
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{som(t.fee)}</td>
@@ -328,7 +339,7 @@ function Balance({ icon: Icon, title, value, text, info }) {
 function Calc({ n, l, hi }) {
   return (
     <div className={`rounded-xl bg-white px-2 py-3 text-center shadow-[0_1px_2px_rgb(16_40_40/0.04)] ${hi ? 'ring-1 ring-[#c9ebe4]' : ''}`}>
-      <p className={`text-[15px] font-bold leading-tight tracking-tight ${hi ? 'text-[#14a394]' : 'text-[#143044]'}`}>{n}</p>
+      <p className={`break-words text-[14px] font-bold leading-tight tracking-tight ${hi ? 'text-[#14a394]' : 'text-[#143044]'}`}>{n}</p>
       <p className="mt-1 text-[11px] leading-snug text-[#7e9398]">{l}</p>
     </div>
   )
@@ -416,11 +427,11 @@ function MobileWallet() {
           <Info className="size-4 shrink-0 text-[#8aa4a8]" />
         </div>
         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_14px_minmax(0,1fr)_14px_minmax(0,1fr)] items-start">
-          <Flow icon={UserRound} label="Jami tushum" value="10 000 000" />
+          <Flow icon={UserRound} label="Jami tushum" value={compact(wallet.gross)} />
           <span className="pt-3 text-center text-[14px] text-[#9bb0b6]">→</span>
-          <Flow icon={Coins} label="Komissiya (12%)" value="1 200 000" />
+          <Flow icon={Coins} label="Komissiya (12%)" value={compact(wallet.fee)} />
           <span className="pt-3 text-center text-[14px] text-[#9bb0b6]">→</span>
-          <Flow icon={WalletIcon} label="Sizga" value="8 800 000" />
+          <Flow icon={WalletIcon} label="Sizga" value={compact(wallet.net)} />
         </div>
         <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-snug text-[#6e868c]">
           <Info className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
@@ -475,13 +486,13 @@ function MobileWallet() {
         {rows.map((t, i) => (
           <div key={`${t.date}${t.time}${t.kind}${t.sub}`} className={`${MROW} items-center border-b border-[#f4f7f6] px-1.5 py-2 last:border-0`}>
             <span className="text-[11px] text-[#8aa0a4]">{i + 1}</span>
-            <span className="leading-tight">
-              <span className="block whitespace-nowrap text-[10px] font-medium tracking-tight">{t.date}</span>
-              <span className="block text-[10px] text-[#9aa8ad]">{t.time}</span>
+            <span className="min-w-0 leading-tight">
+              <span className="block break-words text-[10px] font-medium leading-tight">{t.date}</span>
+              {t.time ? <span className="block text-[10px] text-[#9aa8ad]">{t.time}</span> : null}
             </span>
             <span className="min-w-0 leading-tight">
-              <span className="block whitespace-nowrap text-[10.5px] font-semibold tracking-tight">{t.title}</span>
-              <span className="block whitespace-nowrap text-[10px] tracking-tight text-[#8aa0a4]">{t.sub}</span>
+              <span className="block break-words text-[10.5px] font-semibold leading-tight">{t.title}</span>
+              <span className="block break-words text-[10px] leading-tight text-[#8aa0a4]">{t.sub}</span>
             </span>
             <span className="leading-tight">
               <span className="block whitespace-nowrap text-[10.5px] font-semibold tracking-tight">{t.amount < 0 ? `− ${moneyInput(String(Math.abs(t.amount)))}` : moneyInput(String(t.amount))}</span>
@@ -500,7 +511,7 @@ function MobileWallet() {
   )
 }
 
-const MROW = 'grid grid-cols-[12px_54px_minmax(0,1fr)_64px_78px] gap-x-0.5'
+const MROW = 'grid grid-cols-[14px_minmax(0,84px)_minmax(0,1fr)_minmax(0,58px)_minmax(0,74px)] gap-x-1'
 
 function MiniStat({ icon: Icon, label, value, help }) {
   return (
@@ -525,7 +536,7 @@ function Flow({ icon: Icon, label, value }) {
         <Icon className="size-4" strokeWidth={1.8} />
       </span>
       <p className="mt-1.5 text-[10px] leading-tight text-[#6e868c]">{label}</p>
-      <p className="mt-0.5 text-[13px] font-bold leading-tight tracking-tight">{value}</p>
+      <p className="mt-0.5 break-words text-[12px] font-bold leading-tight tracking-tight">{value}</p>
       <p className="text-[10px] text-[#8aa0a4]">so‘m</p>
     </div>
   )

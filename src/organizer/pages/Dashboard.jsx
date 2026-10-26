@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { MONTHS, SEAT, som } from '../data'
 import { useOrg } from '../Shell'
-import { useHub, walletOf } from '../../hubStore'
+import { moneyOf, useHub, walletOf } from '../../hubStore'
 import { Badge, Btn, MiniSelect, Modal, cx } from '../ui'
 
 const TICKET_COLORS = ['#0a8a82', '#5ed0c6', '#b7ebe4', '#7ec8c0', '#e5f7f4']
@@ -245,7 +245,8 @@ function Desktop() {
     if (!s) return rows
     return rows.filter((x) => `${x.title} ${x.city}`.toLowerCase().includes(s))
   }, [query, hub.seminars])
-  const revenue = hub.payments.filter((p) => p.state === 'ok').reduce((n, p) => n + p.sum, 0)
+  const totals = moneyOf(hub)
+  const revenue = totals.gross
   const feed = hub.activity || []
   const tickets = ticketSplit(hub.participants)
   const seminarBars = hub.seminars.slice(0, 12).map((seminar) => (
@@ -284,7 +285,7 @@ function Desktop() {
       </div>
 
       <section className="grid grid-cols-2 gap-3 min-[1180px]:grid-cols-4">
-        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(hub.seminars.length)} delta={`+${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length}`} hint="rejalashtirilgan" />
+        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(totals.seminars)} delta={`+${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length}`} hint="rejalashtirilgan" />
         <DashKpi icon={Users} label="Jami ishtirokchilar" value={String(hub.participants.length)} delta="" hint="ro‘yxatdagilar" />
         <DashKpi icon={Wallet} label="Umumiy tushum" value={som(revenue)} delta="" hint="muvaffaqiyatli to‘lovlar" />
         <DashKpi icon={Award} label="Berilgan sertifikatlar" value={String(hub.certs.filter((c) => c.state === 'done').length)} delta="" hint="berilgan" />
@@ -399,20 +400,22 @@ function Mobile() {
   const { query } = useOrg()
   const hub = useHub()
   const next = hub.seminars.find((s) => s.status === 'rejalashtirilgan' || s.status === 'jarayonda') || hub.seminars[0]
+  const wallet = walletOf(hub)
+  const arrived = hub.participants.filter((p) => p.arrived).length
+  const pct = next?.seats ? Math.min(100, Math.round(((next.sold || 0) / next.seats) * 100)) : 0
   const [info, setInfo] = useState(false)
   const q = query.trim().toLowerCase()
-  const people = hub.participants.map((person) => ({
-    name: person.name,
-    phone: person.phone,
-    ticket: person.ticket,
-    time: person.registered || '',
-    ok: !!person.arrived,
-    avatar: person.avatar || '/images/avatar.jpg',
-  }))
-  const rows = q ? people.filter((r) => `${r.name} ${r.phone} ${r.ticket}`.toLowerCase().includes(q)) : people
-  const checkedIn = hub.participants.filter((person) => person.arrived).length
-  const held = walletOf(hub).hold
-  const soldPct = next?.seats ? Math.round(((next.sold || 0) / next.seats) * 100) : 0
+  const rows = hub.participants
+    .filter((p) => !q || `${p.name} ${p.phone} ${p.ticket}`.toLowerCase().includes(q))
+    .slice(0, 8)
+    .map((p) => ({
+      name: p.name,
+      phone: p.phone,
+      ticket: p.ticket,
+      time: String(p.registered || '').split(', ')[1] || p.registered,
+      ok: !!p.arrived,
+      avatar: p.avatar || '/images/avatar.jpg',
+    }))
   const hello = hub.settings?.name || 'Tashkilotchi'
 
   return (
@@ -450,9 +453,9 @@ function Mobile() {
           </div>
           <div className="mt-2 flex items-center gap-2">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#e6f3f1]">
-              <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: `${soldPct}%` }} />
+              <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: `${pct}%` }} />
             </div>
-            <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">{soldPct}%</span>
+            <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">{pct}%</span>
           </div>
         </div>
       </Link> : (
@@ -469,7 +472,7 @@ function Mobile() {
             <Users className="size-[18px]" strokeWidth={1.8} />
           </span>
           <p className="mt-2 text-[12px] text-[#6e868c]">Bugungi check-in</p>
-          <p className="mt-0.5 text-[18px] font-bold leading-none tracking-tight text-[#143044]">{checkedIn} kishi</p>
+          <p className="mt-0.5 text-[18px] font-bold leading-none tracking-tight text-[#143044]">{arrived} kishi</p>
           <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Jami: {hub.participants.length} ishtirokchi</p>
         </article>
         <article className="relative rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
@@ -487,7 +490,7 @@ function Mobile() {
               Ushlab turilgan summa to‘lov tasdiqlangach hamyonga o‘tadi.
             </p>
           )}
-          <p className="mt-0.5 text-[16px] font-bold leading-tight tracking-tight text-[#143044]">{som(held)}</p>
+          <p className="mt-0.5 text-[16px] font-bold leading-tight tracking-tight text-[#143044]">{som(wallet.hold)}</p>
           <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Ushlab turilgan summa</p>
         </article>
       </div>
@@ -523,7 +526,7 @@ function Mobile() {
       </div>
       <ul className="mt-2 divide-y divide-[#eef3f2] overflow-hidden rounded-2xl border border-[#e7f2f0] bg-white">
         {rows.map((r) => (
-          <li key={r.phone} className="flex items-center gap-2 px-2.5 py-2">
+          <li key={`${r.name}-${r.phone}`} className="flex items-center gap-2 px-2.5 py-2">
             <img src={r.avatar} alt="" className="size-9 shrink-0 rounded-full object-cover" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13.5px] font-semibold leading-tight text-[#143044]">{r.name}</p>
