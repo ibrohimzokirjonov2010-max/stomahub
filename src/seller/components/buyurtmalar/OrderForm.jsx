@@ -48,10 +48,12 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
     return out
   }, [data.products])
   const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0)
-  const activeDiscounts = data.discounts.filter((d) => d.active !== false && !d.is_draft && (!d.ends_on || d.ends_on >= today()) && (!d.starts_on || d.starts_on <= today()))
+  const activeDiscounts = data.discounts.filter((d) => d.active !== false && !d.is_draft && (!d.ends_on || d.ends_on >= today()) && (!d.starts_on || d.starts_on <= today()) && (!d.usage_limit || data.orders.filter((o) => o.discount_id === d.id && o.status !== 'bekor').length < d.usage_limit))
   const disc = activeDiscounts.find((d) => d.id === discountId)
   const discAmt = !disc || subtotal < Number(disc.min_order || 0) ? 0 : Math.min(subtotal, disc.kind === 'summa' ? Number(disc.value || 0) : disc.kind === 'foiz' || disc.kind === 'promokod' || !disc.kind ? Math.round(subtotal * Number(disc.value ?? disc.percent ?? 0) / 100) : 0)
-  const net = subtotal - discAmt
+  const pd = !disc && cust?.personal_discount ? Number(cust.personal_discount) : 0
+  const pdAmt = pd ? Math.round(subtotal * pd / 100) : 0
+  const net = subtotal - discAmt - pdAmt
   const fe = method === 'olib_ketish' ? 0 : Math.max(0, Number(fee) || 0)
   const commission = Math.round(net * COMMISSION_RATE)
   const add = (s) => { setItems((l) => (l.some((x) => x.key === s.key) ? l.map((x) => (x.key === s.key ? { ...x, qty: Math.min(x.stock, x.qty + 1) } : x)) : [...l, { ...s, qty: 1 }])); setPicker(false); setPq('') }
@@ -80,6 +82,7 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
       <div className="mb-2 flex items-center gap-2 font-bold"><Calculator className="size-5 text-[#0F766E]" />Buyurtma summasi</div>
       <Row k="Mahsulotlar jami" v={som(subtotal)} />
       {discAmt > 0 && <Row k="Chegirma" v={`−${som(discAmt)}`} />}
+      {pdAmt > 0 && <Row k={`Shaxsiy chegirma (${pd}%)`} v={`−${som(pdAmt)}`} />}
       <Row k="Yetkazib berish" v={som(fe)} />
       <div className="my-2 flex items-center justify-between rounded-lg bg-[#CCFBF1] px-3 py-2.5 font-bold"><span>Jami summa</span><span>{som(net + fe)}</span></div>
       <Row k={`Stoqm Hub komissiyasi (${COMMISSION_RATE * 100}%)`} v={som(commission)} />
