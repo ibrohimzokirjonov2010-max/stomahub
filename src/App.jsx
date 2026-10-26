@@ -13,6 +13,7 @@ import Seminar from './pages/Seminar'
 import SeminarReg from './pages/SeminarReg'
 import Shell from './organizer/Shell'
 import OrganizerGate from './organizer/OrganizerGate'
+import { sellerRoutes } from './seller/routes'
 import Dashboard from './organizer/pages/Dashboard'
 import Seminars from './organizer/pages/Seminars'
 import Participants from './organizer/pages/Participants'
@@ -133,6 +134,7 @@ export default function App() {
           />
           <Route path="/ortiqcha" element={<Responsive mobile={<MobileSurplus />}><ShopLayout active="surplus" search="icon" placeholder="Ortiqcha materiallar ichidan qidiring..."><Surplus /></ShopLayout></Responsive>} />
           <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
+          {sellerRoutes}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<Dashboard />} />
             <Route path="seminarlar" element={<Seminars />} />

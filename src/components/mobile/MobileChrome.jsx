@@ -10,6 +10,7 @@ const NONE = [
   /^\/xizmatlar$/,
   /^\/davolash-rejalari(\/.*)?$/,
   /^\/tashkilotchi(\/.*)?$/,
+  /^\/sotuvchi(\/.*)?$/,
 ]
 
 const BAR = [
