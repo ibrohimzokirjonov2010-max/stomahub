@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { bindBlob, touchBlob } from './recordSync'
 
 export const ANCHOR = '2026-10-20'
 export const FOCUS = '2026-10-22'
@@ -68,6 +69,14 @@ export const seedVisits = [
 
 let visits = seedVisits
 const listeners = new Set()
+bindBlob('visits', {
+  get: () => visits,
+  empty: () => [],
+  set: (next) => {
+    visits = Array.isArray(next) ? next : visits
+    listeners.forEach((fn) => fn())
+  },
+})
 
 export function useVisits() {
   return useSyncExternalStore((fn) => {
@@ -79,6 +88,7 @@ export function useVisits() {
 export function setVisits(next) {
   visits = typeof next === 'function' ? next(visits) : next
   listeners.forEach((fn) => fn())
+  touchBlob('visits')
 }
 
 export function todayIso() {

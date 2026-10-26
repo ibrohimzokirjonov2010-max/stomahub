@@ -139,10 +139,12 @@ function RegView({ id, seminar }) {
     setPaying(true)
   }
 
-  const confirmPaid = useCallback(() => {
+  const confirmPaid = useCallback(async () => {
     const count = Object.values(store.registered).filter((r) => r.order).length
     const at = new Date()
-    const res = register(s.id, {
+    let res
+    try {
+      res = await register(s.id, {
       order: `SEM-${2041 + count}`,
       plan: `${ticket === 'vip' ? 'VIP' : 'Standart'} · ${format === 'online' ? 'Onlayn' : 'Oflayn'}`,
       ticket, ticketName: ticket === 'vip' ? 'VIP' : 'Standart', format, cert, method,
@@ -154,6 +156,11 @@ function RegView({ id, seminar }) {
       title: s.title,
       at: at.toISOString(),
     })
+    } catch (error) {
+      setPaying(false)
+      setPromoErr(error?.message || 'To‘lov amalga oshmadi')
+      return
+    }
     if (!res?.ok) { setPaying(false); setPromoErr(res?.error || 'To‘lov amalga oshmadi'); return }
     setPaying(false)
     setStep(3)

@@ -4,7 +4,7 @@ import {
   Search, SlidersHorizontal, Image as ImageIcon, Video, Plus, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal,
   Lightbulb, HelpCircle, Newspaper, PenLine, X, Check, Link2, EyeOff, Flag, Trash2, BadgeCheck,
 } from 'lucide-react'
-import { ME } from '../../communityData'
+import { useProfile } from '../../profileStore'
 import { FEED_TABS, useFeed, feed, countComments } from '../../communityFeed'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -111,7 +111,18 @@ export async function sharePost(p, onToast) {
   onToast('Havola nusxalandi')
 }
 
+function viewerOf(profile) {
+  if (!profile?.accountLive) return { name: 'Mehmon', role: 'Stomatolog', place: 'Toshkent', avatar: '/images/avatar.jpg' }
+  return {
+    name: profile.name || 'Shifokor',
+    role: profile.role || 'Stomatolog',
+    place: profile.city || 'Toshkent',
+    avatar: profile.avatar || '/images/avatar.jpg',
+  }
+}
+
 export default function MobileCommunity() {
+  const me = viewerOf(useProfile())
   const navigate = useNavigate()
   const { posts, liked, saved, hidden } = useFeed()
   const [q, setQ] = useState('')
@@ -162,7 +173,7 @@ export default function MobileCommunity() {
         </div>
 
         <div className="mt-3 flex items-center gap-1.5 rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-          <img src={ME.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover" />
+          <img src={me.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover" />
           <button type="button" onClick={() => setSheet('compose')} className="ml-0.5 h-11 min-w-0 flex-1 truncate rounded-xl bg-[#f2f6f9] px-3 text-left text-[12.5px] text-muted">Nima haqida o‘ylayapsiz?</button>
           <button type="button" onClick={() => setSheet('compose-img')} aria-label="Rasm qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><ImageIcon className="size-[21px]" strokeWidth={1.7} /></button>
           <button type="button" onClick={() => say('Video yuklash tez orada qo‘shiladi')} aria-label="Video qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><Video className="size-[21px]" strokeWidth={1.7} /></button>
@@ -274,6 +285,7 @@ export default function MobileCommunity() {
 }
 
 function Composer({ withImages, onClose, onPublish }) {
+  const me = viewerOf(useProfile())
   const [kind, setKind] = useState('case')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -284,11 +296,11 @@ function Composer({ withImages, onClose, onPublish }) {
   const publish = () => onPublish({
     id: `p${Date.now()}`,
     kind,
-    author: ME.name,
-    role: ME.role,
-    place: `${ME.place}, O‘zbekiston`,
+    author: me.name,
+    role: me.role,
+    place: `${me.place}, O‘zbekiston`,
     time: 'Hozir',
-    avatar: ME.avatar,
+    avatar: me.avatar,
     mine: true,
     title: title.trim(),
     body: body.trim(),

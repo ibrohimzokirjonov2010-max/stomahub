@@ -8,6 +8,8 @@ import ShopLayout from '../components/market/ShopLayout'
 import { ToothIcon } from '../components/icons'
 import { addBemor } from '../bemorData'
 import { useOmbor, patchOmbor } from '../omborData'
+import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from '../recordSync'
+import { useClinicPayments } from '../tolovData'
 import {
   TODAY, CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, STAFF, REVENUE, MONTHS_CAP, WD, WD_LONG,
   seedVisits, seedPatients, shiftIso, weekday, label, avatarOf,
@@ -30,8 +32,10 @@ export default function Klinika() {
   const location = useLocation()
   const stock = useOmbor()
   const [settings, setSettings] = useState(loadSettings)
-  const [visits, setVisits] = useState(() => seedVisits())
-  const [patients, setPatients] = useState(seedPatients)
+  const [visits, setVisits] = useState([])
+  const [patients, setPatients] = useState([])
+  const clinicPayments = useClinicPayments()
+  const [boardReady, setBoardReady] = useState(false)
   const [date, setDate] = useState(TODAY)
   const [view, setView] = useState('day')
   const [menu, setMenu] = useState(null)
@@ -41,6 +45,35 @@ export default function Klinika() {
   useEffect(() => {
     if (location.state?.settings) setSettingsOpen(true)
   }, [location.state])
+  useEffect(() => {
+    let stop = false
+    const unsub = onAccount((id) => {
+      if (!id) {
+        setBoardReady(false)
+        return
+      }
+      loadBlob('clinic_board').then((payload) => {
+        if (stop) return
+        if (payload) {
+          if (payload.settings) setSettings(payload.settings)
+          setVisits(Array.isArray(payload.visits) ? payload.visits : [])
+          setPatients(Array.isArray(payload.patients) ? payload.patients : [])
+        } else if (isDemoUser()) {
+          setVisits(seedVisits())
+          setPatients(seedPatients)
+        } else {
+          setVisits([])
+          setPatients([])
+        }
+        setBoardReady(true)
+      })
+    })
+    return () => { stop = true; unsub() }
+  }, [])
+  useEffect(() => {
+    if (!boardReady || !currentUid()) return
+    saveBlob('clinic_board', { settings, visits, patients })
+  }, [boardReady, settings, visits, patients])
   const [staffOpen, setStaffOpen] = useState(false)
   const [order, setOrder] = useState(null)
   const [toast, setToast] = useState('')
@@ -55,6 +88,8 @@ export default function Klinika() {
 
   const todayCount = visits.filter((x) => x.date === TODAY).length
   const load = Math.round((todayCount / TOTAL_SLOTS) * 100)
+  const clinicIncome = clinicPayments.filter((row) => row.status !== 'Qaytarilgan').reduce((sum, row) => sum + (Number(row.amount) || 0), 0)
+  const demoClinic = isDemoUser()
   const dayVisits = visits.filter((x) => x.date === date)
 
   const setStatus = (id, status) => {
@@ -132,16 +167,14 @@ export default function Klinika() {
               </div>
             </div>
           </Stat>
-          <Stat icon={UserRound} title="Yangi bemorlar">
+          <Stat icon={UserRound} title="Bemorlar">
             <div className="flex items-end justify-between gap-3">
-              <div><b className="text-[24px] leading-none">{3 + newCount}</b><p className="mt-1 text-[11px] font-medium text-sea">+{12 + newCount} <span className="text-muted">bu hafta</span></p></div>
-              <Bars values={[3, 5, 4, 7, 5, 8, 6, 9, 7, 10]} />
+              <div><b className="text-[24px] leading-none">{patients.length}</b><p className="mt-1 text-[11px] text-muted">{patients.length ? `shu hisobdagi bemorlar${newCount ? ` · +${newCount} yangi` : ''}` : 'Hali bemor yo‘q'}</p></div>
             </div>
           </Stat>
-          <Stat icon={CircleDollarSign} title="Oylik daromad" tone="#fff1df" ink="#c2410c">
+          <Stat icon={CircleDollarSign} title="Tushum" tone="#fff1df" ink="#c2410c">
             <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0"><b className="whitespace-nowrap text-[19px] leading-none">{som(REVENUE.month.total)}</b><p className="mt-1 truncate text-[10.5px] font-medium text-sea">+12% <span className="text-muted">o‘tgan oyga nisbatan</span></p></div>
-              <Bars values={[4, 6, 5, 8, 6, 9, 7, 10]} />
+              <div className="min-w-0"><b className="whitespace-nowrap text-[19px] leading-none">{som(demoClinic ? REVENUE.month.total : clinicIncome)}</b><p className="mt-1 truncate text-[10.5px] text-muted">{demoClinic ? 'namuna hisob' : clinicIncome ? 'saqlangan to‘lovlar' : 'Hali tushum yo‘q'}</p></div>
             </div>
           </Stat>
           <Stat icon={Armchair} title="Kreslo bandligi">
@@ -198,7 +231,7 @@ export default function Klinika() {
 
           <div className="min-w-0 space-y-3">
             <MiniCalendar visits={visits} date={date} onPick={(iso) => { setDate(iso); setView('day') }} />
-            <Revenue />
+            <Revenue demo={demoClinic} total={clinicIncome} />
           </div>
         </div>
 
@@ -207,12 +240,17 @@ export default function Klinika() {
           <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
             <CardHead title="Xodimlar" onMore={() => setStaffOpen(true)} />
             <ul className="mt-1 divide-y divide-line">
-              {STAFF.slice(0, 4).map((s) => <StaffRow key={s.id} s={s} menu={menu} setMenu={setMenu} />)}
+              {demoClinic ? STAFF.slice(0, 4).map((s) => <StaffRow key={s.id} s={s} menu={menu} setMenu={setMenu} />) : (
+                <li className="px-2 py-6 text-center text-[12.5px] text-muted">Xodimlar ro‘yxati bo‘sh. Bu bo‘lim faqat sizning klinikangiz uchun.</li>
+              )}
             </ul>
           </section>
           <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
             <CardHead title="Ombor ogohlantirishlari" onMore={() => navigate('/ombor')} />
             <ul className="mt-1 space-y-2">
+              {stock.filter((r) => r.status === 'kam' || r.status === 'tugash').length === 0 && (
+                <li className="px-2 py-6 text-center text-[12.5px] text-muted">Ogohlantirish yo‘q. Ombor bo‘sh yoki zaxira yetarli.</li>
+              )}
               {stock.filter((r) => r.status === 'kam' || r.status === 'tugash').slice(0, 4).map((r) => (
                 <li key={r.id} className="flex items-center gap-2 rounded-xl border border-line p-1.5">
                   <img src={r.image} alt="" className="size-11 shrink-0 rounded-lg bg-[#f5f8fb] object-contain" />
@@ -237,7 +275,11 @@ export default function Klinika() {
       {settingsOpen && <SettingsDialog value={settings} onClose={() => setSettingsOpen(false)} onSave={saveSettings} />}
       {staffOpen && (
         <Dialog title="Barcha xodimlar" onClose={() => setStaffOpen(false)}>
-          <ul className="divide-y divide-line">{STAFF.map((s) => <StaffRow key={s.id} s={s} menu={menu} setMenu={setMenu} plain />)}</ul>
+          <ul className="divide-y divide-line">
+            {demoClinic ? STAFF.map((s) => <StaffRow key={s.id} s={s} menu={menu} setMenu={setMenu} plain />) : (
+              <li className="px-2 py-6 text-center text-[12.5px] text-muted">Hali xodim qo‘shilmagan.</li>
+            )}
+          </ul>
         </Dialog>
       )}
       {order && (
@@ -443,8 +485,17 @@ function MiniCalendar({ visits, date, onPick }) {
   )
 }
 
-function Revenue() {
+function Revenue({ demo, total }) {
   const [period, setPeriod] = useState('month')
+  if (!demo) {
+    return (
+      <section className="rounded-2xl bg-white p-3 shadow-card">
+        <b className="text-[13px]">Daromad statistikasi</b>
+        <p className="mt-2 text-[19px] font-bold">{som(total)}</p>
+        <p className="mt-3 text-[12.5px] text-muted">{total ? 'Bu raqam faqat sizning to‘lovlaringizdan olinadi.' : 'Hali tushum yo‘q. Bemor to‘lovlari shu yerda yig‘iladi.'}</p>
+      </section>
+    )
+  }
   const r = REVENUE[period]
   const max = Math.max(...r.income)
   return (

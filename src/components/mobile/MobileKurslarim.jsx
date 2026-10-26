@@ -22,7 +22,10 @@ const lessonsOf = (c) => TOPICS[c.id].map((title, i) => ({ n: i + 1, title, minu
 
 export default function MobileKurslarim() {
   const profile = useProfile()
-  const rows = COURSES.map((c) => ({ ...c, done: courseDone(profile, c) }))
+  const enrolled = profile.accountLive
+    ? COURSES.filter((c) => profile.favCourses?.includes(c.id) || Object.prototype.hasOwnProperty.call(profile.courseDone || {}, c.id))
+    : COURSES
+  const rows = enrolled.map((c) => ({ ...c, done: courseDone(profile, c) }))
   const active = rows.filter((c) => c.done < c.lessons)
   const done = rows.filter((c) => c.done === c.lessons)
   const [tab, setTab] = useState('active')
@@ -91,8 +94,8 @@ export default function MobileKurslarim() {
           ) : (
             <div className="mt-2 rounded-2xl border border-dashed border-[#cfe3e0] bg-white px-4 py-6 text-center">
               <CircleCheck className={`mx-auto size-8 ${teal}`} strokeWidth={1.5} />
-              <p className={`mt-2 text-[14px] font-semibold ${navy}`}>Barcha kurslar tugallangan</p>
-              <p className="mt-0.5 text-[12px] text-muted">Yangi kurslar sertifikat bilan shu yerda paydo bo‘ladi</p>
+              <p className={`mt-2 text-[14px] font-semibold ${navy}`}>{rows.length ? 'Barcha kurslar tugallangan' : 'Hali kurs yo‘q'}</p>
+              <p className="mt-0.5 text-[12px] text-muted">{rows.length ? 'Yangi kurslar sertifikat bilan shu yerda paydo bo‘ladi' : 'Kursni saqlang yoki boshlang — progress faqat sizning hisobingizda qoladi'}</p>
               <Link to="/talim" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0b6d73] px-4 text-[13px] font-semibold text-white">Kurslarni ko‘rish</Link>
             </div>
           )}

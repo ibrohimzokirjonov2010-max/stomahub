@@ -1,3 +1,6 @@
+import { useSyncExternalStore } from 'react'
+import { bindBlob, touchBlob } from './recordSync'
+
 const photo = (name) => `/images/bemorlar/${name}.jpg`
 
 export const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
@@ -148,6 +151,48 @@ export function planFor(patient) {
   const plan = patient.total || 2500000
   const paid = Math.min(patient.paid || 0, plan)
   return { name: 'Davolash rejasi', date: patient.last || '01.10.2026', plan, paid }
+}
+
+let paymentRows = seedPayments
+const paymentListeners = new Set()
+function emitPayments() {
+  paymentListeners.forEach((fn) => fn())
+  touchBlob('clinic_payments')
+}
+bindBlob('clinic_payments', {
+  get: () => paymentRows,
+  empty: () => [],
+  set: (next) => {
+    paymentRows = Array.isArray(next) ? next : paymentRows
+    paymentListeners.forEach((fn) => fn())
+  },
+})
+
+export function useClinicPayments() {
+  return useSyncExternalStore((fn) => {
+    paymentListeners.add(fn)
+    return () => paymentListeners.delete(fn)
+  }, () => paymentRows)
+}
+
+export function replaceClinicPayments(next) {
+  paymentRows = typeof next === 'function' ? next(paymentRows) : next
+  emitPayments()
+}
+
+export function addClinicPayment(row) {
+  paymentRows = [row, ...paymentRows]
+  emitPayments()
+}
+
+export function patchClinicPayment(id, patch) {
+  paymentRows = paymentRows.map((row) => (row.id === id ? { ...row, ...patch } : row))
+  emitPayments()
+}
+
+export function nextClinicReceipt() {
+  const n = paymentRows.reduce((max, row) => Math.max(max, Number(String(row.receipt || '').replace(/\D/g, '')) || 0), 0) + 1
+  return `TL-${String(n).padStart(5, '0')}`
 }
 
 export function detailOf(row) {

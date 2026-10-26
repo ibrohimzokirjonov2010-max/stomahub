@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { seminarChips, seminarCard, som } from '../../seminarsData'
 import { publicRecords, useHub } from '../../hubStore'
+import HubNotice from '../HubNotice'
 import { useCart } from '../../cart'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -90,6 +91,7 @@ export default function MobileSeminars() {
   return (
     <div className="min-h-screen bg-[#f6f9fb] pb-[86px]">
       <div className="px-3.5 pt-3">
+        <HubNotice hub={hub} />
         <SeminarTopBar onCalendar={() => setSheet('mine')} onBell={() => setToast('Yangi bildirishnomalar yo‘q')} />
 
         <div className="mt-3 flex gap-2">

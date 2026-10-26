@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { marketProducts } from './marketData'
+import { bindBlob, touchBlob } from './recordSync'
 
 const photo = (src) => src
 
@@ -70,7 +71,18 @@ function seed() {
 
 let rows = seed()
 const listeners = new Set()
-const emit = () => listeners.forEach((fn) => fn())
+const emit = () => {
+  listeners.forEach((fn) => fn())
+  touchBlob('stock')
+}
+bindBlob('stock', {
+  get: () => rows,
+  empty: () => [],
+  set: (next) => {
+    rows = Array.isArray(next) ? next : rows
+    listeners.forEach((fn) => fn())
+  },
+})
 
 export function useOmbor() {
   return useSyncExternalStore(

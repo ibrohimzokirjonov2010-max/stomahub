@@ -51,10 +51,7 @@ export default function Confirm() {
   const { notify } = useOrg()
   const { id } = useParams()
   const hub = useHub()
-  const sem = useMemo(() => {
-    const key = id === 'implant' ? 'implant-nov' : id
-    return hub.seminars.find((s) => s.id === key) || hub.seminars.find((s) => s.status === 'yakunlangan') || hub.seminars[0]
-  }, [hub.seminars, id])
+  const sem = useMemo(() => hub.seminars.find((s) => s.id === id) || null, [hub.seminars, id])
   const people = hub.participants.filter((p) => p.seminarId === sem?.id)
   const arrived = people.filter((p) => p.arrived)
   const shown = (arrived.length ? arrived : people).slice(0, 8).map((p) => ({ name: p.name, phone: p.phone, time: p.registered, avatar: p.avatar }))
@@ -73,7 +70,9 @@ export default function Confirm() {
     revenue,
     fee,
     net,
+    arrived: arrived.length,
     certs: hub.certs.filter((c) => !c.seminarId || c.seminarId === sem?.id).filter((c) => c.state === 'done').length,
+    certNames: hub.certs.filter((c) => (!c.seminarId || c.seminarId === sem?.id) && c.state === 'done').slice(0, 5).map((c) => c.name),
     edit: `/tashkilotchi/seminarlar/yangi?tahrir=${sem?.id || ''}`,
     facts: [
       { icon: Calendar, k: 'Sana', v: sem?.date || '—' },
@@ -84,7 +83,7 @@ export default function Confirm() {
       { icon: Wallet, k: 'Jami daromad', v: som(revenue) },
     ],
   }
-  const [photos, setPhotos] = useState(PHOTOS)
+  const [photos, setPhotos] = useState([])
   const [dirty, setDirty] = useState(false)
   const [all, setAll] = useState(false)
   const [askOpen, setAskOpen] = useState(false)
@@ -92,9 +91,8 @@ export default function Confirm() {
   const inputRef = useRef(null)
   const inputRefM = useRef(null)
 
-  const countLabel = dirty ? photos.length : 5
-  const source = shown.length ? shown : PEOPLE
-  const rows = all ? source : source.slice(0, 5)
+  const countLabel = photos.length
+  const rows = all ? shown : shown.slice(0, 5)
 
   const add = (file) => {
     if (!file) return
@@ -128,12 +126,23 @@ export default function Confirm() {
     setAskOpen(true)
   }
 
+  if (!sem) {
+    return (
+      <div className="rounded-2xl border border-dashed border-[#d5ebe6] bg-white p-8 text-center">
+        <p className="text-[15px] font-semibold text-[#143044]">Seminar topilmadi</p>
+        <p className="mt-1 text-[13px] text-[#7e9398]">Tasdiqlash sahifasi faqat sizning seminarlaringiz uchun ochiladi.</p>
+        <Link to="/tashkilotchi/seminarlar" className="mt-4 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Seminarlar</Link>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="hidden lg:block">
         <Desktop
           photos={photos}
           countLabel={countLabel}
+          arrivedLabel={`${arrived.length} / ${people.length} keldi`}
           rows={rows}
           all={all}
           setAll={setAll}
@@ -168,7 +177,7 @@ export default function Confirm() {
   )
 }
 
-function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop, add, remove, inputRef, onAsk, meta }) {
+function Desktop({ photos, countLabel, arrivedLabel, rows, all, setAll, over, setOver, onDrop, add, remove, inputRef, onAsk, meta }) {
   return (
     <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: 'minmax(0,1fr) 308px' }}>
       <div className="min-w-0">
@@ -251,7 +260,7 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2.5 pt-0.5">
-                <span className="text-[13px] font-semibold text-[var(--color-org-teal)]">42 / 50 keldi</span>
+                <span className="text-[13px] font-semibold text-[var(--color-org-teal)]">{arrivedLabel}</span>
                 <button type="button" onClick={() => setAll((v) => !v)} className="inline-flex h-8 items-center rounded-lg border border-[#d5ebe6] bg-white px-3 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]">
                   {all ? 'Yig‘ish' : 'Barchasini ko‘rish'}
                 </button>
@@ -269,6 +278,9 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
                   </tr>
                 </thead>
                 <tbody>
+                  {rows.length === 0 && (
+                    <tr><td colSpan={5} className="py-8 text-center text-[13px] text-[#7e9398]">Hali check-in yo‘q. Ishtirokchilar kelgach, ro‘yxat shu yerda chiqadi.</td></tr>
+                  )}
                   {rows.map((p, i) => (
                     <tr key={p.name} className="border-b border-[#f3f7f6] last:border-0">
                       <td className="py-2.5 pr-2 text-[12.5px] text-[#8aa0a4]">{i + 1}</td>
@@ -308,7 +320,8 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
               </div>
             </div>
             <div className="mt-3 grid grid-cols-5 gap-2.5">
-              {PEOPLE.slice(0, 5).map((p) => <MiniCert key={p.name} name={p.name} />)}
+              {(meta.certNames || []).length === 0 && <p className="text-[13px] text-[#7e9398]">Hali sertifikat berilmagan.</p>}
+              {(meta.certNames || []).map((name) => <MiniCert key={name} name={name} />)}
             </div>
             <div className="mt-2.5 flex justify-end">
               <Link to="/tashkilotchi/sertifikatlar" className="text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:underline">Barchasini ko‘rish</Link>
@@ -492,9 +505,9 @@ function Mobile({ photos, add, remove, inputRef, onAsk, meta }) {
       </section>
 
       <div className="grid grid-cols-3 gap-2">
-        <Stat icon={Users} label="Ishtirokchilar" value="42 keldi" hint="42 / 50 chipta" />
-        <Stat icon={Award} label="Sertifikatlar" value="42 ta" hint="yaratildi" />
-        <Stat icon={Calendar} label="Seminar kuni" value="21 oktabr 2026" hint="09:00 – 18:00" />
+        <Stat icon={Users} label="Ishtirokchilar" value={`${meta.arrived || 0} keldi`} hint={`${meta.arrived || 0} / ${meta.people} kishi`} />
+        <Stat icon={Award} label="Sertifikatlar" value={`${meta.certs} ta`} hint="berilgan" />
+        <Stat icon={Calendar} label="Seminar kuni" value={meta.when || '—'} hint={meta.place || ''} />
       </div>
 
       <section className={`${card} p-3`}>
@@ -502,9 +515,7 @@ function Mobile({ photos, add, remove, inputRef, onAsk, meta }) {
           <FileText className="size-4 text-[var(--color-org-teal)]" /> Qo‘shimcha ma’lumot
         </p>
         <div className="mt-2 rounded-xl bg-[#f4f7f8] px-3 py-2.5 text-[12.5px] leading-relaxed text-[#3e5560]">
-          Seminar reja bo‘yicha o‘tkazildi. Barcha ishtirokchilar qatnashdi.
-          <br />
-          Foto va video materiallar ilova qilindi.
+          Qo‘shimcha izoh yo‘q. Zal rasmlarini yuklagach, pul so‘rovini yuborishingiz mumkin.
         </div>
       </section>
 

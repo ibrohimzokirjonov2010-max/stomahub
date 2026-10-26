@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Megaphone, Star, Mic, ChartColumn, Settings, CircleQuestionMark } from 'lucide-react'
 import { FAQ, som } from '../data'
 import { addMessage, addSpeaker, downloadText, saveMarketing, saveSettings, useHub } from '../../hubStore'
+import { profileStore } from '../../profileStore'
+import { signOut } from '../../sessionStore'
 import { useOrg } from '../Shell'
 import { Badge, Btn, Card, Field, Toggle, inputCls } from '../ui'
 
@@ -78,7 +80,7 @@ export function Reports() {
     certs: hub.certs.filter((c) => c.seminarId === s.id && c.state === 'done').length,
     id: s.id,
   }))
-  const confirmId = hub.seminars.find((s) => s.status === 'yakunlangan')?.id || hub.seminars.find((s) => s.id === 'implant-nov')?.id || hub.seminars[0]?.id
+  const confirmId = hub.seminars.find((s) => s.status === 'yakunlangan')?.id || hub.seminars[0]?.id
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -90,6 +92,7 @@ export function Reports() {
           <table className="w-full min-w-[640px] text-left text-[13px]">
             <thead><tr className="border-b border-[#eef3f2] text-[12px] text-[#8aa0a4]">{['Seminar', 'Ishtirokchi', 'Tushum', 'Sertifikat'].map((h) => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}</tr></thead>
             <tbody>
+              {!rows.length && <tr><td colSpan={4} className="px-3 py-8 text-center text-[#7e9398]">Hali seminar yo‘q. Hisobot birinchi seminardan keyin paydo bo‘ladi.</td></tr>}
               {rows.map((r) => (
                 <tr key={r.id} className="border-b border-[#f3f7f6]">
                   <td className="px-3 py-3 font-medium">{r.seminar}</td>
@@ -114,6 +117,7 @@ export function Ratings() {
       <h1 className="text-[22px] font-bold">Reyting va sharhlar</h1>
       <p className="mt-0.5 text-[13px] text-[#6e868c]">Ishtirokchilar seminarlaringiz haqida qoldirgan fikrlar.</p>
       <div className="mt-4 grid gap-3">
+        {!hub.reviews.length && <p className="rounded-2xl border border-dashed border-[#d5ebe6] bg-white px-4 py-10 text-center text-[13px] text-[#6e868c]">Hali sharh yo‘q. Ishtirokchilar fikri shu yerda chiqadi.</p>}
         {hub.reviews.map((r) => (
           <article key={r.name} className="rounded-2xl border border-[#e6f1ef] bg-white p-4">
             <div className="flex items-center gap-3">
@@ -131,6 +135,7 @@ export function Ratings() {
 
 export function SettingsPage() {
   const { notify } = useOrg()
+  const navigate = useNavigate()
   const hub = useHub()
   const [name, setName] = useState(hub.settings?.name || '')
   const [email, setEmail] = useState(hub.settings?.email || '')
@@ -147,6 +152,7 @@ export function SettingsPage() {
         </div>
         <div className="mt-3 flex items-center justify-between text-[13px]"><span>Yangi ro‘yxat haqida xabar</span><Toggle on={notes} onChange={setNotes} label="Bildirishnoma" /></div>
         <Btn className="mt-4" onClick={() => { if (name.trim().length < 3 || !email.includes('@')) { setErr('Ism va emailni to‘g‘ri kiriting'); return } setErr(''); saveSettings({ name: name.trim(), email: email.trim(), notes }); notify('Sozlamalar saqlandi') }}>Saqlash</Btn>
+        <button type="button" className="mt-3 text-[13px] font-semibold text-[#d14343]" onClick={async () => { await signOut(); profileStore.update({ loggedOut: true }); navigate('/kirish') }}>Chiqish</button>
       </Card>
     </div>
   )

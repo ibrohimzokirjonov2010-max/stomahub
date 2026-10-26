@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, Plus, Filter, LayoutGrid, Armchair, Building2, BriefcaseBusiness, Wrench, Heart, MapPin, CalendarDays, Check, ImagePlus } from 'lucide-react'
 import { ADS, DEALS, AD_CATS, AD_CITIES, SELLERS, dealName, adPrice } from '../../elonlarData'
+import { bindBlob, touchBlob } from '../../recordSync'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
@@ -17,7 +18,19 @@ const subs = new Set()
 const emit = (next) => {
   store = { ...store, ...next }
   subs.forEach((f) => f())
+  touchBlob('saved_ads')
 }
+bindBlob('saved_ads', {
+  get: () => ({ added: store.added, saved: [...store.saved] }),
+  empty: () => ({ added: [], saved: [] }),
+  set: (payload) => {
+    store = {
+      added: Array.isArray(payload?.added) ? payload.added : [],
+      saved: new Set(Array.isArray(payload?.saved) ? payload.saved : []),
+    }
+    subs.forEach((f) => f())
+  },
+})
 export function useAds() {
   return useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f) }, () => store)
 }

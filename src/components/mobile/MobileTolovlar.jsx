@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   AlertOctagon, ArrowDownRight, ArrowUpRight, BellRing, CalendarDays, ChevronDown, ChevronRight, Clock, CreditCard, ListChecks, Plus, Receipt, RotateCcw, Search, Share2, UserRound, Wallet,
 } from 'lucide-react'
-import { seedPayments, methodOf, METHODS } from '../../tolovData'
+import { addClinicPayment, methodOf, METHODS, nextClinicReceipt, patchClinicPayment, useClinicPayments } from '../../tolovData'
 import { debtOf, usePlans } from '../../rejaData'
 import { todayIso, parts } from '../../uchrashuvData'
 import { MobileToast } from './parts'
@@ -21,13 +21,10 @@ const MON_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'A
 const DAYS = ['Dsh', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak']
 export const TODAY = todayIso()
 
-let rows = seedPayments
-const listeners = new Set()
-const emit = () => listeners.forEach((fn) => fn())
-export const useTolovlar = () => useSyncExternalStore((fn) => { listeners.add(fn); return () => listeners.delete(fn) }, () => rows)
-export function addTolov(row) { rows = [row, ...rows]; emit() }
-export function patchTolov(id, patch) { rows = rows.map((r) => (r.id === id ? { ...r, ...patch } : r)); emit() }
-export const nextReceipt = () => `TL-${String(rows.reduce((m, r) => Math.max(m, Number(r.receipt.replace(/\D/g, '')) || 0), 0) + 1).padStart(5, '0')}`
+export const useTolovlar = useClinicPayments
+export const addTolov = addClinicPayment
+export const patchTolov = patchClinicPayment
+export const nextReceipt = nextClinicReceipt
 
 export const PSTATUS = {
   Tolandi: ['To‘lov qabul qilindi', 'bg-[#e6f8ec] text-[#1c9a52]'],

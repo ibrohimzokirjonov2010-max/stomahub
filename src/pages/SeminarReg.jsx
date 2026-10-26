@@ -85,8 +85,10 @@ export default function SeminarReg() {
     setPromoMsg(`Chegirma qo‘llandi: ${som(q.discount)}`)
   }
 
-  const accept = (payId) => {
-    const res = register(id, {
+  const accept = async (payId) => {
+    let res
+    try {
+      res = await register(id, {
       name: form.name.trim(),
       phone: form.phone,
       email: form.email,
@@ -101,6 +103,10 @@ export default function SeminarReg() {
       plan: 'Standart',
       price: amount,
     })
+    } catch (error) {
+      setError(error?.message || 'To‘lov amalga oshmadi')
+      return
+    }
     if (!res?.ok) { setError(res?.error || 'To‘lov amalga oshmadi'); return }
     const link = PAY[payId]
     if (link) window.open(link, '_blank', 'noopener,noreferrer')

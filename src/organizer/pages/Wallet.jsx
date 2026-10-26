@@ -110,8 +110,14 @@ function DesktopWallet() {
     { icon: Coins, title: 'Jami o‘tkazilgan', value: `${som(wallet.transferred)}`, text: 'Oldingi to‘lovlar (muvaffaqiyatli o‘tkazilgan)', info: false },
   ]
 
-  const submit = () => {
-    const res = withdraw(n, picked)
+  const submit = async () => {
+    let res
+    try {
+      res = await withdraw(n, picked)
+    } catch (error) {
+      setErr(error?.message || 'So‘rov yuborilmadi')
+      return
+    }
     if (!res.ok) { setErr(res.error); return }
     setErr('')
     setSent(true)
@@ -378,9 +384,15 @@ function MobileWallet() {
   const [err, setErr] = useState('')
   const rows = mobileRows(wallet).filter((t) => filter === 'all' || t.kind === filter)
   const card = hub.requisites.find((r) => r.id === picked) || hub.requisites[0]
-  const ask = () => {
+  const ask = async () => {
     const n = Number(String(amount).replace(/\s/g, ''))
-    const res = withdraw(n, picked)
+    let res
+    try {
+      res = await withdraw(n, picked)
+    } catch (error) {
+      setErr(error?.message || 'So‘rov yuborilmadi')
+      return
+    }
     if (!res.ok) { setErr(res.error); return }
     setErr('')
     setAmount('')

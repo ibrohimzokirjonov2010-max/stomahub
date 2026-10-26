@@ -95,24 +95,24 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   const [params] = useSearchParams()
   const editing = params.get('tahrir')
   const [step, setStep] = useState(0)
-  const [tickets, setTickets] = useState([{ id: 'oddiy', name: 'Oddiy', price: 300000, seats: 30, perks: ['Seminarga kirish', 'Sertifikat'], active: true, icon: 'gem' }])
-  const [speakers, setSpeakers] = useState([{ id: 'sp', name: 'Karimov Behzod', role: 'Implantolog', city: 'Toshkent', avatar: '/images/ustalar/usta-jasur.jpg', bio: SPEAKER_BIO }])
-  const [promos, setPromos] = useState([{ id: 'stoma50', code: 'STOMA50', off: '50000', kind: 'summa', note: 'Erta ro‘yxat', on: true, limit: 20 }])
+  const [tickets, setTickets] = useState([])
+  const [speakers, setSpeakers] = useState([])
+  const [promos, setPromos] = useState([])
   const [form, setForm] = useState({
-    name: 'Implantologiya: amaliy kurs',
+    name: '',
     topic: 'Implantologiya',
-    date: '2026-10-21',
+    date: '',
     start: '09:00',
     end: '18:00',
-    place: 'Toshkent City Kongress Markazi',
-    hours: '16',
-    min: '10',
-    bring: BRING,
-    cover: '/images/seminars/teeth.jpg',
+    place: '',
+    hours: '',
+    min: '',
+    bring: '',
+    cover: '',
   })
-  const [ticket, setTicket] = useState({ name: 'Oddiy', price: '300000', seats: '30', note: 'Seminarda ishtirok etish uchun asosiy chipta.' })
-  const [speaker, setSpeaker] = useState({ name: 'Karimov Behzod', role: 'Implantolog', bio: SPEAKER_BIO, avatar: '/images/ustalar/usta-jasur.jpg' })
-  const [promo, setPromo] = useState({ code: 'STOMA50', sum: '50000', uses: '20', until: '2026-10-30', note: 'Erta ro‘yxatdan o‘tganlar uchun maxsus chegirma.' })
+  const [ticket, setTicket] = useState({ name: '', price: '', seats: '', note: '' })
+  const [speaker, setSpeaker] = useState({ name: '', role: '', bio: '', avatar: '' })
+  const [promo, setPromo] = useState({ code: '', sum: '', uses: '', until: '', note: '' })
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
   useEffect(() => {

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useCatalogVersion } from './recordSync'
+import './catalogBindings'
 import { CartProvider } from './cart'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
@@ -10,6 +12,7 @@ import SeminarsPage from './pages/SeminarsPage'
 import Seminar from './pages/Seminar'
 import SeminarReg from './pages/SeminarReg'
 import Shell from './organizer/Shell'
+import OrganizerGate from './organizer/OrganizerGate'
 import Dashboard from './organizer/pages/Dashboard'
 import Seminars from './organizer/pages/Seminars'
 import Participants from './organizer/pages/Participants'
@@ -106,6 +109,7 @@ import MobileSeminarlarim from './components/mobile/MobileSeminarlarim'
 import MobileKurslarim from './components/mobile/MobileKurslarim'
 
 export default function App() {
+  useCatalogVersion()
   return (
     <CartProvider>
       <BrowserRouter>
@@ -128,7 +132,7 @@ export default function App() {
           />
           <Route path="/ortiqcha" element={<Responsive mobile={<MobileSurplus />}><ShopLayout active="surplus" search="icon" placeholder="Ortiqcha materiallar ichidan qidiring..."><Surplus /></ShopLayout></Responsive>} />
           <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
-          <Route path="/tashkilotchi" element={<Shell />}>
+          <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<Dashboard />} />
             <Route path="seminarlar" element={<Seminars />} />
             <Route path="seminarlar/yangi" element={<Wizard />} />

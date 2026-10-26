@@ -143,27 +143,27 @@ export default function Wizard() {
   const [tag, setTag] = useState('')
   const lock = useRef(false)
   const [form, setForm] = useState({
-    name: 'Implantologiya: nazariya va amaliyot',
-    about: ABOUT,
+    name: '',
+    about: '',
     topic: 'Implantologiya',
     format: 'Offline (joyida)',
     category: 'Tibbiy amaliy seminar',
-    tags: ['Implantologiya', 'Jarrohlik', 'Amaliyot', 'Master-klass'],
-    cover: COVERS[0],
-    thumbs: COVERS,
-    start: '2026-11-24',
+    tags: [],
+    cover: '',
+    thumbs: [],
+    start: '',
     startTime: '10:00',
-    end: '2026-11-24',
+    end: '',
     endTime: '18:00',
     multi: false,
     placeType: 'offline',
-    place: 'Toshkent, Congress Hall',
-    address: 'Toshkent shahri, Amir Temur shoh ko‘chasi, 1-uy',
-    placeImg: '/images/seminars/hotel.jpg',
-    tickets: INITIAL_TICKETS,
-    speakers: INITIAL_SPEAKERS,
+    place: '',
+    address: '',
+    placeImg: '',
+    tickets: [],
+    speakers: [],
     template: 'teal',
-    promos: INITIAL_PROMOS,
+    promos: [],
   })
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
 
@@ -400,8 +400,8 @@ export default function Wizard() {
                     </span>
                   </label>
                 </div>
-                <label className="relative block h-[108px] cursor-pointer overflow-hidden rounded-xl">
-                  <img src={form.placeImg} alt="" className="size-full object-cover" />
+                <label className="relative block h-[108px] cursor-pointer overflow-hidden rounded-xl bg-[#f4fbfa]">
+                  {form.placeImg ? <img src={form.placeImg} alt="" className="size-full object-cover" /> : <span className="grid size-full place-items-center text-[12px] text-[#8aa0a4]">Manzil rasmi yo‘q</span>}
                   <span className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1 rounded-lg bg-white/92 py-1 text-[11px] font-semibold shadow-sm" style={{ color: TEAL }}>
                     <Camera className="size-3.5" /> Manzil rasmini yuklash
                   </span>
@@ -418,6 +418,7 @@ export default function Wizard() {
               </button>
             )} />
             <div className="mt-3 grid gap-3 md:grid-cols-3">
+              {form.tickets.length === 0 && <p className="text-[13px] text-[#7e9398] md:col-span-3">Hali chipta turi yo‘q. O‘zingiz qo‘shing.</p>}
               {form.tickets.map((t) => {
                 const tone = TONE[t.tone] || TONE.teal
                 const Icon = TICKET_ICON[t.icon] || Ticket
@@ -588,8 +589,8 @@ export default function Wizard() {
               <p className="text-[13px] font-bold">Oldindan ko‘rish</p>
               <button type="button" onClick={() => go(0)} className="text-[12px] font-semibold" style={{ color: TEAL }}>Tahrirlash</button>
             </div>
-            <img src={form.cover} alt="" className="h-[92px] w-full rounded-lg object-cover" />
-            <p className="mt-1.5 text-[13px] font-bold leading-snug">{form.name}</p>
+            {form.cover ? <img src={form.cover} alt="" className="h-[92px] w-full rounded-lg object-cover" /> : <div className="grid h-[92px] place-items-center rounded-lg bg-[#f4fbfa] text-[12px] text-[#8aa0a4]">Muqova yo‘q</div>}
+            <p className="mt-1.5 text-[13px] font-bold leading-snug">{form.name || 'Seminar nomi kiritilmagan'}</p>
             <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0" style={{ color: TEAL }} /> {uzDate(form.start)}, {form.startTime} – {form.endTime}</p>
             <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0" style={{ color: TEAL }} /> {form.place || 'Manzil kiritilmagan'}</p>
             <div className="mt-1.5 flex flex-wrap gap-1">

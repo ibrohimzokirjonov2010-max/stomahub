@@ -6,7 +6,8 @@ import {
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import { ToothIcon } from '../components/icons'
-import { OWNER, TYPES, TYPE_LABEL, TYPE_LINE, certs, STATS } from '../sertifikatData'
+import { TYPES, TYPE_LABEL, TYPE_LINE, certs, STATS } from '../sertifikatData'
+import { useProfile } from '../profileStore'
 
 const THEMES = {
   teal: { bg: '#ffffff', ink: '#0b3b4a', accent: '#0e8f8a', corner: 'linear-gradient(135deg, #0e8f8a, #6fd0c4)', frame: '#cfe9e5' },
@@ -24,6 +25,10 @@ export default function Sertifikatlar() {
 }
 
 function Board() {
+  const profile = useProfile()
+  const owner = profile.accountLive ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
+  const library = profile.accountLive ? [] : certs
+  const stats = profile.accountLive ? { count: 0, cme: 0, done: 0 } : STATS
   const [params, setParams] = useSearchParams()
   const [type, setType] = useState('all')
   const [query, setQuery] = useState('')
@@ -34,14 +39,14 @@ function Board() {
 
   const list = useMemo(() => {
     const text = query.trim().toLowerCase()
-    const rows = certs.filter((c) => {
+    const rows = library.filter((c) => {
       if (type !== 'all' && type !== 'cme' && c.type !== type) return false
       if (text && !`${c.title} ${c.speaker} ${c.id}`.toLowerCase().includes(text)) return false
       return true
     })
     if (type === 'cme') return [...rows].sort((a, b) => b.cme - a.cme)
     return [...rows].sort((a, b) => (sort === 'new' ? b.iso.localeCompare(a.iso) : a.iso.localeCompare(b.iso)))
-  }, [type, query, sort])
+  }, [type, query, sort, library])
 
   const ping = (text) => {
     setToast(text)
@@ -59,9 +64,9 @@ function Board() {
           <p className="text-[13px] text-muted">Siz olgan barcha sertifikatlar va yutuqlar</p>
         </div>
         <div className="flex divide-x divide-[#d7ebe8] rounded-2xl bg-[#eef9f7] px-1 py-2">
-          <Stat icon={Award} value={STATS.count} label="ta sertifikat" />
-          <Stat icon={Star} value={STATS.cme} label="CME ballari" />
-          <Stat icon={Clock} value={STATS.done} label="ta kurs yakunlangan" />
+          <Stat icon={Award} value={stats.count} label="ta sertifikat" />
+          <Stat icon={Star} value={stats.cme} label="CME ballari" />
+          <Stat icon={Clock} value={stats.done} label="ta kurs yakunlangan" />
         </div>
       </div>
 
@@ -85,7 +90,7 @@ function Board() {
       </div>
 
       {list.length === 0 ? (
-        <p className="mt-6 rounded-2xl bg-white p-8 text-center text-[13px] text-muted shadow-card">Sertifikat topilmadi.</p>
+        <p className="mt-6 rounded-2xl bg-white p-8 text-center text-[13px] text-muted shadow-card">{profile.accountLive ? 'Hali sertifikat yo‘q. Seminar yoki kursni yakunlagach, u shu yerda saqlanadi.' : 'Sertifikat topilmadi.'}</p>
       ) : (
         <div className="cert-grid mt-4">
           {list.map((c) => (
@@ -102,7 +107,7 @@ function Board() {
               </p>
               <div className="mt-2 flex gap-1.5">
                 <button type="button" onClick={() => show(c)} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-[#f0f8f7] text-[12px] font-semibold text-sea"><Eye className="size-3.5" /> Ko‘rish</button>
-                <button type="button" onClick={() => printCert(c)} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-[#f0f8f7] text-[12px] font-semibold text-sea"><Download className="size-3.5" /> Yuklab olish</button>
+                <button type="button" onClick={() => printCert(c, owner)} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-[#f0f8f7] text-[12px] font-semibold text-sea"><Download className="size-3.5" /> Yuklab olish</button>
                 <button type="button" onClick={() => show(c)} aria-label="QR kod" className="grid size-8 place-items-center rounded-lg bg-[#f0f8f7] text-sea"><QrCode className="size-4" /></button>
               </div>
             </article>
@@ -117,6 +122,8 @@ function Board() {
 }
 
 function Viewer({ c, onClose, onToast }) {
+  const profile = useProfile()
+  const owner = profile.accountLive ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
   const [scale, setScale] = useState(100)
   const stage = useRef(null)
   const link = `${window.location.origin}/sertifikatlar?cert=${c.id}`
@@ -135,7 +142,7 @@ function Viewer({ c, onClose, onToast }) {
   const share = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: c.title, text: `${OWNER} — ${c.title}`, url: link })
+        await navigator.share({ title: c.title, text: `${owner} — ${c.title}`, url: link })
         return
       } catch {
         return
@@ -195,10 +202,10 @@ function Viewer({ c, onClose, onToast }) {
                   <span className="text-[11.5px] text-muted">Ushbu QR kodni skanerlab, sertifikatning haqiqiyligini tekshirishingiz mumkin.</span>
                 </span>
               </div>
-              <button type="button" onClick={() => printCert(c)} className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-sea text-[13px] font-semibold text-white"><Download className="size-4" /> PDF yuklab olish</button>
+              <button type="button" onClick={() => printCert(c, owner)} className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-sea text-[13px] font-semibold text-white"><Download className="size-4" /> PDF yuklab olish</button>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button type="button" onClick={share} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-sea text-[13px] font-semibold text-sea"><Share2 className="size-4" /> Ulashish</button>
-                <button type="button" onClick={() => printCert(c)} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-sea text-[13px] font-semibold text-sea"><Printer className="size-4" /> Chop etish</button>
+                <button type="button" onClick={() => printCert(c, owner)} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-sea text-[13px] font-semibold text-sea"><Printer className="size-4" /> Chop etish</button>
               </div>
             </aside>
           </div>
@@ -209,6 +216,8 @@ function Viewer({ c, onClose, onToast }) {
 }
 
 export function Certificate({ c, big }) {
+  const profile = useProfile()
+  const owner = profile.accountLive ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
   const t = THEMES[c.theme] || THEMES.teal
   const dark = c.theme === 'dark'
   return (
@@ -222,7 +231,7 @@ export function Certificate({ c, big }) {
         </span>
         <span className="mt-[1.5cqw] font-serif tracking-[0.18em]" style={{ fontSize: '8cqw', lineHeight: 1, color: dark ? t.accent : t.ink }}>SERTIFIKAT</span>
         <span className="mt-[1.6cqw]" style={{ fontSize: '2.2cqw' }}>Mazkur sertifikat bilan tasdiqlanadiki,</span>
-        <span className="mt-[1.2cqw] font-serif font-bold" style={{ fontSize: '4.6cqw' }}>{big ? `Dr. ${OWNER}` : OWNER}</span>
+        <span className="mt-[1.2cqw] font-serif font-bold" style={{ fontSize: '4.6cqw' }}>{big ? `Dr. ${owner}` : owner}</span>
         <span className="mt-[0.8cqw] font-semibold" style={{ fontSize: '3.2cqw', color: t.accent, lineHeight: 1.15 }}>{big ? `«${c.title}»` : c.title}</span>
         <span className="mt-[0.8cqw]" style={{ fontSize: '2.1cqw' }}>{TYPE_LINE[c.type]}</span>
         {big && (
@@ -308,7 +317,7 @@ export function Qr({ seed, className = 'size-20' }) {
   )
 }
 
-export function printCert(c) {
+export function printCert(c, owner = 'Sizning ismingiz') {
   const t = THEMES[c.theme] || THEMES.teal
   const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]))
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(c.id)}</title>
@@ -328,7 +337,7 @@ h1 { font-size: 64px; letter-spacing: 10px; margin: 14px 0 8px; font-weight: 400
 <div class="s" style="font-weight:700;color:${t.accent}">StomaHub</div>
 <h1>SERTIFIKAT</h1>
 <div class="s">Mazkur sertifikat bilan tasdiqlanadiki,</div>
-<div class="n">Dr. ${esc(OWNER)}</div>
+<div class="n">Dr. ${esc(owner)}</div>
 <div class="t">«${esc(c.title)}»</div>
 <div class="s" style="margin-top:8px">${esc(TYPE_LINE[c.type])}</div>
 <div class="s" style="margin-top:16px">${c.hours} soat · ${c.cme} CME · ${esc(c.date)}</div>

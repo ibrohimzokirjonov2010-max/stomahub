@@ -1,10 +1,13 @@
 import { useSyncExternalStore } from 'react'
-import {
-  ACTIVITY, CERTS, FACES, IMG, ORG, PARTICIPANTS, PROMOS, REVIEWS, SEMINARS, WIZARD_SPEAKERS,
-} from './organizer/data'
+import { FACES, IMG } from './organizer/data'
 import { seminars as CATALOG } from './seminarsData'
+import { friendlySupabaseError, supabase } from './supabaseClient'
+import {
+  pullHub, pushCancel, pushCert, pushCheckIn, pushConfirm, pushDuplicate, pushMessage,
+  pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
+  pushSettingsBundle, pushSpeaker, pushTickets, pushWithdraw, remoteRegister, subscribeHub,
+} from './hubRemote'
 
-const KEY = 'stomahub-hub-v1'
 export const FEE = 0.12
 
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
@@ -14,9 +17,6 @@ const TOPIC_CAT = {
   Implantologiya: 'impl', Endodontiya: 'endo', Ortodontiya: 'orto', Estetika: 'estet',
   Jarrohlik: 'surg', Bolalar: 'other', Parodontologiya: 'paro',
 }
-const TICKET_PRICE = { VIP: 2500000, 'VIP chipta': 2500000, Standart: 1200000, 'Standart chipta': 1200000, Student: 800000, 'Student chipta': 800000, Guruh: 1000000, 'Guruh chipta': 1000000 }
-const METHODS = ['Payme', 'Click', 'Uzum', 'Paynet']
-
 const listeners = new Set()
 
 function isoFromLabel(label) {
@@ -37,140 +37,115 @@ function cityOf(place, address, fallback = 'Toshkent') {
   return ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Farg‘ona', 'Namangan', 'Nukus'].find((c) => blob.includes(c)) || fallback
 }
 
-function ticketPrice(name) {
-  return TICKET_PRICE[name] || 450000
+const EMPTY = {
+  v: 1,
+  seminars: [],
+  catalog: [],
+  participants: [],
+  payments: [],
+  promos: [],
+  certs: [],
+  withdrawals: [],
+  requisites: [],
+  activity: [],
+  reviews: [],
+  speakers: [],
+  settings: { name: '', email: '', notes: true, city: 'Toshkent' },
+  marketing: { push: true, email: true, telegram: false, budget: '' },
+  qrSound: true,
+  messages: [],
+  myRegistrations: [],
+  loading: true,
+  ready: false,
+  error: '',
 }
 
-function enrichSeminar(s) {
-  const start = isoFromLabel(s.date)
-  const price = s.sold ? Math.max(250000, Math.round(s.revenue / s.sold / 10000) * 10000) : 450000
-  return {
-    ...s,
-    published: true,
-    held: s.status === 'yakunlangan',
-    about: `${s.title}. ${s.days}. ${s.speaker} ishtirokida.`,
-    formatDetail: 'Offline (joyida)',
-    category: 'Tibbiy amaliy seminar',
-    tags: [s.topic],
-    cover: s.image,
-    start,
-    startTime: '10:00',
-    end: start,
-    endTime: '18:00',
-    place: `${s.city}, Congress Hall`,
-    address: `${s.city}`,
-    placeImg: IMG.hall2,
-    template: 'teal',
-    checked: 0,
-    tickets: [{
-      id: `${s.id}-std`, name: 'Standart', price, seats: s.seats, total: s.seats, sold: s.sold,
-      left: Math.max(0, s.seats - s.sold), active: true, perks: ['Seminarga kirish', 'Sertifikat'], icon: 'gem', note: 'Asosiy chipta',
-    }],
-    speakers: [{ id: `sp-${s.id}`, name: s.speaker, role: s.topic, city: s.city, avatar: FACES[10], bio: s.days }],
-    wizardPromos: [],
-  }
-}
-
-function seed() {
-  const seminars = SEMINARS.map(enrichSeminar)
-  const ids = seminars.map((s) => s.id)
-  const participants = PARTICIPANTS.map((p, i) => ({
-    ...p,
-    seminarId: ids[i % ids.length],
-    arrived: false,
-    code: `QR-${String(p.id).padStart(4, '0')}`,
-  }))
-  const payments = participants
-    .filter((p) => p.pay === 'paid' || p.pay === 'wait' || p.pay === 'cancel')
-    .map((p) => {
-      const sem = seminars.find((s) => s.id === p.seminarId)
-      const state = p.pay === 'paid' ? 'ok' : p.pay === 'wait' ? 'wait' : 'cancel'
-      return {
-        id: `ST2026-${String(p.id).padStart(3, '0')}`,
-        who: p.name,
-        clinic: p.clinic,
-        seminar: sem?.title || '',
-        seminarId: p.seminarId,
-        sum: ticketPrice(p.ticket),
-        method: METHODS[p.id % METHODS.length],
-        state,
-        phone: p.phone,
-        email: p.email,
-        ticket: p.ticket,
-        when: p.registered,
-        avatar: p.avatar,
-        face: (p.id - 1) % 8,
-      }
-    })
-  seminars.forEach((s) => {
-    const mine = participants.filter((p) => p.seminarId === s.id)
-    const paid = payments.filter((p) => p.seminarId === s.id && p.state === 'ok')
-    s.sold = mine.filter((p) => p.pay === 'paid' || p.pay === 'wait').length
-    s.seats = Math.max(s.seats, s.sold)
-    s.revenue = paid.reduce((n, p) => n + p.sum, 0)
-    s.checked = mine.filter((p) => p.arrived).length
-    if (s.tickets[0]) {
-      s.tickets[0].sold = s.sold
-      s.tickets[0].seats = s.seats
-      s.tickets[0].total = s.seats
-      s.tickets[0].left = Math.max(0, s.seats - s.sold)
-    }
-  })
-  return {
-    v: 1,
-    seminars,
-    participants,
-    payments,
-    promos: [
-      ...PROMOS.map((p, i) => ({ ...p, seminar: i % 5 === 0 ? 'endo' : 'implant-nov' })),
-      { id: 'stoma10', code: 'STOMA10', kind: 'foiz', value: 10, used: 0, limit: 500, status: 'faol', seminar: 'all', from: 'bugun', to: 'ochiq' },
-      { id: 'doctor20', code: 'DOCTOR20', kind: 'foiz', value: 20, used: 0, limit: 500, status: 'faol', seminar: 'all', from: 'bugun', to: 'ochiq' },
-      { id: 'stomahub', code: 'STOMAHUB', kind: 'foiz', value: 15, used: 0, limit: 500, status: 'faol', seminar: 'all', from: 'bugun', to: 'ochiq' },
-    ],
-    certs: CERTS.map((c) => ({ ...c, seminarId: 'implant-nov' })),
-    withdrawals: [],
-    requisites: [{ id: '4521', label: 'Karta **** 4521', detail: 'Humo · 04/28' }],
-    activity: ACTIVITY.map((a) => ({ ...a })),
-    reviews: REVIEWS.map((r) => ({ ...r })),
-    speakers: WIZARD_SPEAKERS.map((s) => ({ ...s })),
-    settings: { name: ORG.name, email: 'ibrohim@stomahub.uz', notes: true, city: ORG.city },
-    marketing: { push: true, email: true, telegram: false, budget: '150 000' },
-    qrSound: true,
-    messages: [],
-  }
-}
-
-function load() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || 'null')
-    if (raw?.v === 1 && Array.isArray(raw.seminars)) return raw
-  } catch { /* yangi holat */ }
-  return seed()
-}
-
-let state = load()
+let state = { ...EMPTY }
+let epoch = 0
+let refreshTimer = null
+let stopListen = () => {}
 
 function commit(next) {
   state = next
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next))
-  } catch {
-    const slim = {
-      ...next,
-      seminars: next.seminars.map((s) => ({
-        ...s,
-        cover: String(s.cover || '').startsWith('data:') ? s.image : s.cover,
-        form: s.form ? { ...s.form, cover: s.image, thumbs: (s.form.thumbs || []).filter((t) => !String(t).startsWith('data:')) } : s.form,
-      })),
-    }
-    state = slim
-    try { localStorage.setItem(KEY, JSON.stringify(slim)) } catch { /* xotirada qoladi */ }
-  }
   listeners.forEach((l) => l())
 }
 
+function publishMine(rows) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('stomahub-registrations', { detail: rows || [] }))
+}
+
+function scheduleRefresh() {
+  const seen = epoch
+  clearTimeout(refreshTimer)
+  refreshTimer = setTimeout(async () => {
+    try {
+      const next = await pullHub()
+      if (seen !== epoch) return
+      commit({ ...next, loading: false, ready: true, error: '' })
+      publishMine(next.myRegistrations)
+    } catch (error) {
+      if (seen !== epoch) return
+      commit({ ...state, loading: false, ready: true, error: friendlySupabaseError(error) })
+    }
+  }, 250)
+}
+
+function remote(task) {
+  const seen = epoch
+  Promise.resolve().then(task).then(() => {
+    if (seen === epoch) scheduleRefresh()
+  }).catch((error) => {
+    commit({ ...state, error: friendlySupabaseError(error) })
+    scheduleRefresh()
+  })
+}
+
+export function retryHub() {
+  return hydrate()
+}
+
+async function hydrate() {
+  const seen = epoch
+  if (!state.ready) commit({ ...state, loading: true, error: '' })
+  try {
+    const next = await pullHub()
+    if (seen !== epoch) return
+    commit({ ...next, loading: false, ready: true, error: '' })
+    publishMine(next.myRegistrations)
+  } catch (error) {
+    if (seen !== epoch) return
+    commit({ ...state, loading: false, ready: true, error: friendlySupabaseError(error) })
+  }
+}
+
+function boot() {
+  if (!supabase) {
+    commit({ ...EMPTY, loading: false, ready: true, error: 'Supabase sozlanmagan. VITE_SUPABASE_URL va VITE_SUPABASE_ANON_KEY ni kiriting.' })
+    return
+  }
+  const listen = () => {
+    stopListen()
+    stopListen = subscribeHub(() => scheduleRefresh())
+  }
+  listen()
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      listen()
+      hydrate()
+    }
+  })
+}
+boot()
+
 function patch(fn) {
+  epoch += 1
   commit(fn(state))
+}
+
+function rememberSettings() {
+  const snap = getHub()
+  remote(() => pushSettingsBundle({ settings: snap.settings, marketing: snap.marketing, qrSound: snap.qrSound }))
 }
 
 const subscribe = (l) => {
@@ -284,6 +259,8 @@ export function saveSeminar(form, { publish, id } = {}) {
       text: name,
     }),
   }))
+  const snap = getHub()
+  remote(() => pushSeminar(snap.seminars.find((item) => item.id === nextId), snap.promos.filter((item) => item.seminar === nextId), { isNew: !existing }))
   return { ok: true, id: nextId }
 }
 
@@ -309,6 +286,7 @@ export function cancelSeminar(id, reason) {
       activity: pushActivity(s.activity, { icon: 'cal', title: 'Seminar bekor qilindi', text: s.seminars.find((x) => x.id === id)?.title || id }),
     }
   })
+  remote(() => pushCancel(id, reason))
 }
 
 export function duplicateSeminar(id) {
@@ -330,6 +308,7 @@ export function duplicateSeminar(id) {
     tickets: (src.tickets || []).map((t) => ({ ...t, id: `${t.id}-c`, sold: 0, left: t.seats || t.total })),
   }
   patch((s) => ({ ...s, seminars: [copy, ...s.seminars] }))
+  remote(() => pushDuplicate(copy))
   return copyId
 }
 
@@ -340,6 +319,7 @@ export function confirmHeld(id) {
     seminars: s.seminars.map((x) => (x.id === real ? { ...x, status: 'yakunlangan', held: true, published: true, badge: 'Yakunlangan' } : x)),
     activity: pushActivity(s.activity, { icon: 'award', title: 'Seminar o‘tkazilgani tasdiqlandi', text: s.seminars.find((x) => x.id === real)?.title || real }),
   }))
+  remote(() => pushConfirm(real))
 }
 
 export function addParticipant(row) {
@@ -351,6 +331,7 @@ export function addParticipant(row) {
     seminars: bumpSeminar(s.seminars, person.seminarId, { sold: person.pay === 'cancel' ? 0 : 1 }),
     activity: pushActivity(s.activity, { icon: 'user', title: `${person.name} qo‘shildi`, text: 'Ishtirokchi' }),
   }))
+  remote(() => pushParticipant(person))
   return person
 }
 
@@ -363,6 +344,7 @@ export function removeParticipant(id) {
       seminars: p ? bumpSeminar(s.seminars, p.seminarId, { sold: -1 }) : s.seminars,
     }
   })
+  remote(() => pushRemoveParticipant(id))
 }
 
 function bumpSeminar(list, id, { sold = 0, revenue = 0, checked = 0 } = {}) {
@@ -384,6 +366,7 @@ export function checkIn(id) {
     seminars: bumpSeminar(s.seminars, person.seminarId, { checked: 1 }),
     activity: pushActivity(s.activity, { icon: 'qr', title: `${person.name} — Keldi`, text: s.seminars.find((x) => x.id === person.seminarId)?.title || '' }),
   }))
+  remote(() => pushCheckIn(id))
   return { ...person, arrived: true }
 }
 
@@ -397,6 +380,7 @@ export function checkInQuery(seminarId, query) {
 }
 
 export function quotePromo(code, seminarId, amount) {
+  if (!state.ready) return { ok: false, error: 'Ma’lumotlar yuklanmoqda' }
   const c = String(code || '').trim().toUpperCase()
   if (!c) return { ok: false, error: 'Promokodni kiriting' }
   const same = state.promos.filter((x) => x.code.toUpperCase() === c)
@@ -412,74 +396,41 @@ export function quotePromo(code, seminarId, amount) {
   return { ok: true, discount, promo: p }
 }
 
-export function registerSale(input) {
-  const sem = state.seminars.find((s) => s.id === input.seminarId)
+function touchSeminar(list, seminar) {
+  if (!seminar?.id) return list
+  return list.map((item) => (item.id === seminar.id ? {
+    ...item,
+    sold: seminar.sold,
+    revenue: Number(seminar.revenue) || 0,
+    checked: seminar.checked,
+    seats: seminar.seats,
+    tickets: (item.tickets || []).map((ticket) => {
+      const sold = ticket.name === seminar.ticketName ? (ticket.sold || 0) + 1 : ticket.sold
+      return ticket.name === seminar.ticketName ? { ...ticket, sold, left: Math.max(0, (ticket.seats || ticket.total || 0) - sold) } : ticket
+    }),
+  } : item))
+}
+
+export async function registerSale(input) {
+  const pool = [...(state.catalog || []), ...state.seminars]
+  const sem = pool.find((item) => item.id === input.seminarId)
   if (sem?.status === 'bekor') return { ok: false, error: 'Seminar bekor qilingan' }
-  const subtotal = Number(input.subtotal) || 0
-  let discount = 0
-  let promo = null
-  if (input.promoCode) {
-    const q = quotePromo(input.promoCode, input.seminarId, subtotal)
-    if (!q.ok) return q
-    discount = q.discount
-    promo = q.promo
-  }
-  const paid = Math.max(0, subtotal - discount)
-  const id = Date.now()
-  const ticket = input.ticket || 'Standart'
-  const person = {
-    id,
-    name: input.name,
-    clinic: input.clinic || '—',
-    phone: input.phone,
-    email: input.email,
-    ticket,
-    pay: 'paid',
-    registered: uzLong(new Date().toISOString().slice(0, 10)) + `, ${nowLabel()}`,
-    city: input.city || sem?.city || 'Toshkent',
-    role: input.spec || 'Stomatolog',
-    avatar: FACES[id % FACES.length],
-    seminarId: input.seminarId,
-    arrived: false,
-    code: `QR-${id}`,
-  }
-  const payment = {
-    id: `ST${new Date().getFullYear()}-${id}`,
-    who: person.name,
-    clinic: person.clinic,
-    seminar: sem?.title || input.title || 'Seminar',
-    seminarId: input.seminarId,
-    sum: paid,
-    gross: subtotal,
-    discount,
-    promo: promo?.code || '',
-    method: input.method || 'Click',
-    state: 'ok',
-    phone: person.phone,
-    email: person.email,
-    ticket,
-    when: person.registered,
-    avatar: person.avatar,
-    face: id % 8,
-  }
+  if (!supabase) return { ok: false, error: state.error || 'Supabase sozlanmagan' }
+  const res = await remoteRegister(input)
+  if (!res.ok) return res
+  const person = res.person
+  const payment = res.payment
   patch((s) => ({
     ...s,
-    participants: [person, ...s.participants],
-    payments: [payment, ...s.payments],
-    seminars: sem ? s.seminars.map((x) => {
-      if (x.id !== sem.id) return x
-      const tickets = (x.tickets || []).map((t) => {
-        const hit = t.name === ticket || t.id === input.ticketId
-        if (!hit) return t
-        const sold = (t.sold || 0) + 1
-        return { ...t, sold, left: Math.max(0, (t.seats || t.total || 0) - sold) }
-      })
-      return { ...x, sold: (x.sold || 0) + 1, seats: Math.max(x.seats || 0, (x.sold || 0) + 1), revenue: (x.revenue || 0) + paid, tickets }
-    }) : s.seminars,
-    promos: promo ? s.promos.map((p) => (p.id === promo.id ? { ...p, used: (p.used || 0) + 1 } : p)) : s.promos,
-    activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qabul qilindi', text: `${person.name} — ${paid.toLocaleString('ru-RU')} so‘m` }),
+    participants: person ? [person, ...s.participants.filter((item) => item.id !== person.id)] : s.participants,
+    payments: payment ? [payment, ...s.payments.filter((item) => item.id !== payment.id)] : s.payments,
+    seminars: touchSeminar(s.seminars, { ...res.seminar, ticketName: person?.ticket }),
+    catalog: touchSeminar(s.catalog || [], { ...res.seminar, ticketName: person?.ticket }),
+    promos: res.promoId ? s.promos.map((item) => (String(item.id) === String(res.promoId) ? { ...item, used: (item.used || 0) + 1 } : item)) : s.promos,
+    activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qabul qilindi', text: `${person?.name || ''} — ${(res.paid || 0).toLocaleString('ru-RU')} so‘m` }),
   }))
-  return { ok: true, paid, discount, person, payment }
+  scheduleRefresh()
+  return { ok: true, paid: res.paid, discount: res.discount, person, payment }
 }
 
 export function refundPayment(id) {
@@ -493,6 +444,7 @@ export function refundPayment(id) {
       activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qaytarildi', text: pay.who }),
     }
   })
+  remote(() => pushRefund(id))
 }
 
 export function saveTickets(seminarId, tickets) {
@@ -504,6 +456,7 @@ export function saveTickets(seminarId, tickets) {
       return { ...x, tickets, seats: Math.max(seats, x.sold || 0), form: x.form ? { ...x.form, tickets } : x.form }
     }),
   }))
+  remote(() => pushTickets(seminarId, tickets))
 }
 
 export function upsertPromo(row) {
@@ -512,53 +465,65 @@ export function upsertPromo(row) {
     const promos = i >= 0 ? s.promos.map((p) => (p.id === row.id ? { ...p, ...row } : p)) : [row, ...s.promos]
     return { ...s, promos }
   })
+  remote(() => pushPromo(getHub().promos.find((item) => item.id === row.id) || row))
 }
 
-export function withdraw(amount, requisite) {
+export async function withdraw(amount, requisite) {
   const w = walletOf(state)
   const n = Number(amount) || 0
   if (n < 1000) return { ok: false, error: 'Kamida 1 000 so‘m kiriting' }
   if (n > w.available) return { ok: false, error: 'Yechib olish mumkin bo‘lgan summadan oshmasin' }
-  const row = { id: `w-${Date.now()}`, amount: n, card: requisite || '4521', date: new Date().toLocaleDateString('ru-RU'), method: 'card' }
+  const res = await pushWithdraw(n, requisite)
+  if (!res?.ok) return res || { ok: false, error: 'So‘rov yuborilmadi' }
+  const row = { id: res.id || `w-${Date.now()}`, amount: n, card: requisite || '4521', date: new Date().toLocaleDateString('ru-RU'), method: 'card' }
   patch((s) => ({
     ...s,
     withdrawals: [row, ...s.withdrawals],
     activity: pushActivity(s.activity, { icon: 'pay', title: 'Pul yechish so‘rovi', text: `${n.toLocaleString('ru-RU')} so‘m` }),
   }))
+  scheduleRefresh()
   return { ok: true }
 }
 
 export function addRequisite(item) {
   patch((s) => ({ ...s, requisites: [...s.requisites, item] }))
+  remote(() => pushRequisite(item))
 }
 
 export function issueCert(id) {
   const code = `STH-2026-${String(id).padStart(4, '0')}`
+  const date = uzLong(new Date().toISOString().slice(0, 10))
   patch((s) => ({
     ...s,
-    certs: s.certs.map((c) => (c.id === id ? { ...c, state: 'done', code, date: uzLong(new Date().toISOString().slice(0, 10)) } : c)),
+    certs: s.certs.map((c) => (c.id === id ? { ...c, state: 'done', code, date } : c)),
   }))
+  remote(() => pushCert(id, code, date))
   return code
 }
 
 export function saveSettings(next) {
   patch((s) => ({ ...s, settings: { ...s.settings, ...next } }))
+  rememberSettings()
 }
 
 export function saveMarketing(next) {
   patch((s) => ({ ...s, marketing: { ...s.marketing, ...next } }))
+  rememberSettings()
 }
 
 export function addSpeaker(row) {
   patch((s) => ({ ...s, speakers: [...s.speakers, row] }))
+  remote(() => pushSpeaker(row))
 }
 
 export function setQrSound(on) {
   patch((s) => ({ ...s, qrSound: on }))
+  rememberSettings()
 }
 
 export function addMessage(text) {
   patch((s) => ({ ...s, messages: [...s.messages, { id: Date.now(), text, at: nowLabel() }] }))
+  remote(() => pushMessage(text))
 }
 
 export function walletOf(s = state) {
@@ -641,7 +606,8 @@ export function toPublic(s) {
 }
 
 export function publicRecords(s = state) {
-  const extra = s.seminars.filter((x) => x.published && x.status !== 'qoralama').map(toPublic)
+  const source = Array.isArray(s.catalog) ? s.catalog : s.seminars
+  const extra = source.filter((x) => x.published && x.status !== 'qoralama').map(toPublic)
   const ids = new Set(extra.map((x) => x.id))
   return [...CATALOG.filter((x) => !ids.has(x.id)), ...extra]
 }
@@ -662,6 +628,6 @@ export function downloadText(filename, text, mime = 'text/plain') {
 }
 
 export function resetHub() {
-  localStorage.removeItem(KEY)
-  commit(seed())
+  epoch += 1
+  return hydrate()
 }

@@ -5,12 +5,12 @@ import {
   Download, House, Mail, MapPin, MoreVertical, Plus, QrCode, SlidersHorizontal, Ticket,
   UserRound, Users, Wallet, X, XCircle,
 } from 'lucide-react'
-import { PAY_LABEL } from '../data'
+import { PAY_LABEL, som } from '../data'
 import { useOrg } from '../Shell'
 import { addParticipant, checkIn, downloadText, removeParticipant, useHub } from '../../hubStore'
 import { Btn, Field, Modal, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
-import { FACE, MOBILE_PEOPLE, MOBILE_SEMINAR } from './participantsData'
+import { FACE } from './participantsData'
 import './participants.css'
 
 const TEAL = 'var(--color-org-teal)'
@@ -609,19 +609,31 @@ function MobileParticipants() {
   const [chip, setChip] = useState('all')
   const [sheet, setSheet] = useState(null)
 
+  const sem = hub.seminars[0]
+  const people = useMemo(() => {
+    const tints = [['#e5f6f3', '#0d8a84'], ['#f1e9ff', '#7c3aed'], ['#e7f0ff', '#2563eb'], ['#fff3e0', '#e08a00']]
+    return hub.participants
+      .filter((p) => !sem || p.seminarId === sem.id)
+      .map((p, i) => ({
+        ...p,
+        pay: p.pay === 'paid' || p.pay === 'ok' ? 'paid' : p.pay === 'wait' ? 'wait' : 'cancel',
+        initials: String(p.name || '').split(' ').map((w) => w[0] || '').join('').slice(0, 2).toUpperCase() || '—',
+        tint: tints[i % tints.length],
+      }))
+  }, [hub.participants, sem])
   const counts = useMemo(() => ({
-    all: MOBILE_PEOPLE.length,
-    paid: MOBILE_PEOPLE.filter((p) => p.pay === 'paid').length,
-    wait: MOBILE_PEOPLE.filter((p) => p.pay === 'wait').length,
-    cancel: MOBILE_PEOPLE.filter((p) => p.pay === 'cancel').length,
-  }), [])
+    all: people.length,
+    paid: people.filter((p) => p.pay === 'paid').length,
+    wait: people.filter((p) => p.pay === 'wait').length,
+    cancel: people.filter((p) => p.pay === 'cancel').length,
+  }), [people])
 
-  const list = useMemo(() => MOBILE_PEOPLE.filter((p) => {
+  const list = useMemo(() => people.filter((p) => {
     if (chip === 'paid' && p.pay !== 'paid') return false
     if (chip === 'wait' && p.pay !== 'wait') return false
     if (chip === 'cancel' && p.pay !== 'cancel') return false
     return true
-  }), [chip])
+  }), [people, chip])
 
   const chips = [
     ['all', 'Hammasi', counts.all],
@@ -633,13 +645,17 @@ function MobileParticipants() {
   return (
     <div className="bg-white text-[#143044]">
       <div className="flex gap-2.5 pb-2">
-        <img src={MOBILE_SEMINAR.image} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
-        <div className="min-w-0">
-          <span className="inline-flex rounded-full bg-[#e7f6f3] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-org-teal)]">{MOBILE_SEMINAR.topic}</span>
-          <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{MOBILE_SEMINAR.title}</p>
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {MOBILE_SEMINAR.when}</p>
-          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {MOBILE_SEMINAR.place}</p>
-        </div>
+        {sem ? (
+          <>
+            <img src={sem.image || '/images/seminars/teeth.jpg'} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full bg-[#e7f6f3] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-org-teal)]">{sem.topic || 'Seminar'}</span>
+              <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{sem.title}</p>
+              <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {sem.date}{sem.startTime ? `, ${sem.startTime}` : ''}</p>
+              <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {sem.place || sem.city || 'Manzil yo‘q'}</p>
+            </div>
+          </>
+        ) : <p className="py-4 text-[13px] text-[#7e9398]">Hali seminar yo‘q. Ishtirokchilar birinchi seminaringizdan keyin shu yerda chiqadi.</p>}
       </div>
 
       <div className="grid grid-cols-4 border-b border-[#e8f1f0] bg-white">
@@ -665,7 +681,7 @@ function MobileParticipants() {
             <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
               <h2 className="text-[15px] font-bold">Ishtirokchilar ro‘yxati</h2>
               <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-org-teal)]">
-                <Users className="size-4" /> {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}
+                <Users className="size-4" /> {people.length} / {sem?.seats || 0}
               </span>
             </div>
             <div className="flex items-center justify-end px-3">
@@ -722,17 +738,18 @@ function MobileParticipants() {
         )}
         {tab === 'umumiy' && (
           <div className="space-y-2 px-3 py-3 text-[13px]">
-            <p className="font-bold">{MOBILE_SEMINAR.title}</p>
-            <p className="text-[#5e787e]">{MOBILE_SEMINAR.when}</p>
-            <p className="text-[#5e787e]">{MOBILE_SEMINAR.place}</p>
-            <p className="rounded-xl bg-[#f4fbfa] p-3 text-[12.5px] text-[#3e5a62]">Ro‘yxatdan o‘tganlar: {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}. To‘langan: {counts.paid}. Kutilmoqda: {counts.wait}.</p>
+            <p className="font-bold">{sem?.title || 'Hali seminar yo‘q'}</p>
+            <p className="text-[#5e787e]">{sem ? `${sem.date || ''}${sem.startTime ? `, ${sem.startTime}` : ''}` : 'Seminar yarating'}</p>
+            <p className="text-[#5e787e]">{sem?.place || sem?.city || ''}</p>
+            <p className="rounded-xl bg-[#f4fbfa] p-3 text-[12.5px] text-[#3e5a62]">Ro‘yxatdan o‘tganlar: {people.length} / {sem?.seats || 0}. To‘langan: {counts.paid}. Kutilmoqda: {counts.wait}.</p>
           </div>
         )}
         {tab === 'tickets' && (
           <ul className="space-y-2 px-3 py-3">
-            {[['Standart', '1 200 000 so‘m'], ['VIP', '2 500 000 so‘m'], ['Student', '800 000 so‘m']].map(([n, p]) => (
-              <li key={n} className="flex items-center justify-between rounded-xl border border-[#e6f1ef] px-3 py-2.5 text-[13px]">
-                <span className="font-semibold">{n}</span><span className="text-[var(--color-org-teal)]">{p}</span>
+            {(sem?.tickets || []).length === 0 && <li className="rounded-xl border border-dashed border-[#e6f1ef] px-3 py-6 text-center text-[13px] text-[#7e9398]">Hali chipta turi yo‘q.</li>}
+            {(sem?.tickets || []).map((t) => (
+              <li key={t.id} className="flex items-center justify-between rounded-xl border border-[#e6f1ef] px-3 py-2.5 text-[13px]">
+                <span className="font-semibold">{t.name}</span><span className="text-[var(--color-org-teal)]">{som(t.price)}</span>
               </li>
             ))}
           </ul>
@@ -759,7 +776,7 @@ function MobileParticipants() {
             </div>
             <p className="text-[13px]">Chipta: <b>{sheet.ticket}</b></p>
             <p className="mt-1 text-[13px]">To‘lov: <b>{M_PAY[sheet.pay]}</b></p>
-            <button type="button" onClick={() => { const hit = hub.participants.find((p) => p.name === sheet.name); if (hit) checkIn(hit.id); else { const person = addParticipant({ name: sheet.name, phone: sheet.phone || '', seminarId: hub.seminars[0]?.id, ticket: 'Standart', pay: 'paid', clinic: '—', email: '', city: 'Toshkent', role: 'Stomatolog' }); checkIn(person.id) } notify(`${sheet.name} — Keldi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
+            <button type="button" onClick={() => { checkIn(sheet.id); notify(`${sheet.name} — Keldi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
               <Check className="size-4" /> QR check-in qilish
             </button>
           </div>

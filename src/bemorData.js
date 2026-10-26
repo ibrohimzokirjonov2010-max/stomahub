@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { bindBlob, touchBlob } from './recordSync'
 
 const photo = (name) => `/images/bemorlar/${name}.jpg`
 export const som = (n) => `${n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
@@ -159,7 +160,18 @@ function seed() {
 
 let rows = seed()
 const listeners = new Set()
-const emit = () => listeners.forEach((fn) => fn())
+const emit = () => {
+  listeners.forEach((fn) => fn())
+  touchBlob('patients')
+}
+bindBlob('patients', {
+  get: () => rows,
+  empty: () => [],
+  set: (next) => {
+    rows = Array.isArray(next) ? next : rows
+    listeners.forEach((fn) => fn())
+  },
+})
 
 export function useBemorlar() {
   return useSyncExternalStore(

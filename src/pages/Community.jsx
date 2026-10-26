@@ -6,8 +6,9 @@ import {
 import ShopLayout from '../components/market/ShopLayout'
 import { ToothIcon } from '../components/icons'
 import {
-  ME, TOPICS, CATS, catTopic, TRENDS, LEADERS, KINDS, KIND_LABEL, SAMPLE_SHOTS, seedPosts, seedSaved, PROMO,
+  TOPICS, CATS, catTopic, TRENDS, LEADERS, KINDS, KIND_LABEL, SAMPLE_SHOTS, seedPosts, seedSaved, PROMO,
 } from '../communityData'
+import { useProfile } from '../profileStore'
 
 const CLINIC = [
   ['shikoyat', 'Shikoyat', 'Bemorning shikoyatlari va anamnezi...'],
@@ -46,7 +47,18 @@ export default function Community() {
   )
 }
 
+function viewerOf(profile) {
+  if (!profile?.accountLive) return { name: 'Mehmon', role: 'Stomatolog', place: 'Toshkent', avatar: '/images/avatar.jpg' }
+  return {
+    name: profile.name || 'Shifokor',
+    role: profile.role || 'Stomatolog',
+    place: profile.city || 'Toshkent',
+    avatar: profile.avatar || '/images/avatar.jpg',
+  }
+}
+
 function Board({ query }) {
+  const me = viewerOf(useProfile())
   const [topic, setTopic] = useState('all')
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('yangi')
@@ -101,11 +113,11 @@ function Board({ query }) {
       rank: 0,
       kind: form.kind,
       topic: catTopic[form.cat] || 'endo',
-      author: ME.name,
-      role: ME.role,
-      place: ME.place,
+      author: me.name,
+      role: me.role,
+      place: me.place,
       time: 'Hozir',
-      avatar: ME.avatar,
+      avatar: me.avatar,
       title: form.title.trim(),
       body: [form.body.trim(), ...notes].filter(Boolean).join(' '),
       tags: [{ t: KIND_LABEL[form.kind] || 'Post', tone: form.kind === 'keys' ? 'keys' : 'talk' }, ...form.tags.map((t) => ({ t, tone: t.startsWith('#') ? 'hash' : '' }))],
@@ -211,7 +223,7 @@ function Board({ query }) {
                     <button type="button" onClick={() => setSaved((s) => { const n = new Set(s); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} className={`inline-flex items-center gap-1 ${saved.has(p.id) ? 'text-sea' : ''}`}><Bookmark className={`size-4 ${saved.has(p.id) ? 'fill-sea' : ''}`} /> Saqlash</button>
                     <button type="button" onClick={() => share(p)} className="ml-auto inline-flex items-center gap-1"><Share2 className="size-4" /> Ulashish</button>
                   </div>
-                  {openId === p.id && <Thread post={p} onAdd={(text) => setPosts((rows) => rows.map((row) => row.id === p.id ? { ...row, extra: (row.extra || 0) + 1, thread: [...(row.thread || []), { name: ME.name, text }] } : row))} />}
+                  {openId === p.id && <Thread post={p} onAdd={(text) => setPosts((rows) => rows.map((row) => row.id === p.id ? { ...row, extra: (row.extra || 0) + 1, thread: [...(row.thread || []), { name: me.name, text }] } : row))} />}
                 </article>
               ))}
             </div>
@@ -294,6 +306,7 @@ function Board({ query }) {
 }
 
 function Composer({ initialKind, onClose, onPublish }) {
+  const me = viewerOf(useProfile())
   const [form, setForm] = useState(() => ({ ...emptyForm(), kind: KINDS.some((k) => k.id === initialKind && k.id !== 'maqola') ? initialKind : 'keys' }))
   const [error, setError] = useState('')
   const patch = (key, value) => setForm((f) => ({ ...f, [key]: value }))
@@ -468,10 +481,10 @@ function Composer({ initialKind, onClose, onPublish }) {
               <section className="rounded-2xl border border-line bg-white p-3">
                 <b className="text-[12px] text-muted">Post ko‘rinishi (oldindan)</b>
                 <div className="mt-2 flex items-center gap-2">
-                  <img src={ME.avatar} alt="" className="size-8 rounded-full object-cover" />
+                  <img src={me.avatar} alt="" className="size-8 rounded-full object-cover" />
                   <span className="min-w-0 flex-1">
-                    <b className="block truncate text-[12px]">{ME.name}</b>
-                    <span className="text-[10px] text-muted">{ME.role} · {ME.place}</span>
+                    <b className="block truncate text-[12px]">{me.name}</b>
+                    <span className="text-[10px] text-muted">{me.role} · {me.place}</span>
                   </span>
                   <span className="rounded-full bg-sea-50 px-2 py-0.5 text-[10px] font-semibold text-sea">{KIND_LABEL[form.kind]}</span>
                 </div>

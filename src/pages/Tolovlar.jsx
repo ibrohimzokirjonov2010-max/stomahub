@@ -6,21 +6,14 @@ import {
 import ShopLayout from '../components/market/ShopLayout'
 import { useBemorlar } from '../bemorData'
 import {
-  DAILY, MONTHLY, METHODS, STATUSES, WEEKLY, detailOf, methodOf, planFor, seedPayments, som,
+  METHODS, STATUSES, detailOf, methodOf, planFor, replaceClinicPayments, som, useClinicPayments,
 } from '../tolovData'
 
-const KPI = [
-  { label: 'Jami tushum', value: '52 400 000 so‘m', delta: '+12%', up: true, icon: Wallet, tint: '#e7f7f4', color: '#0f9b8e' },
-  { label: 'Naqd tushum', value: '8 700 000 so‘m', delta: '+5%', up: true, icon: Banknote, tint: '#e8f8ee', color: '#1f9d55' },
-  { label: 'Karta to‘lovlari', value: '28 300 000 so‘m', delta: '+18%', up: true, icon: CreditCard, tint: '#e8f1ff', color: '#2f6fed' },
-  { label: 'Qolgan qarzdorlik', value: '14 600 000 so‘m', delta: '-8%', up: false, icon: CreditCard, tint: '#fdecec', color: '#e11d48', card: '#fff6f6' },
-]
-
-const DONUT = [
-  { id: 'Karta', label: 'Karta', sum: '28 300 000', pct: 54, dot: '#2fbf9b' },
-  { id: 'Click', label: 'Click', sum: '12 600 000', pct: 24, dot: '#7b68b8' },
-  { id: 'Payme', label: 'Payme', sum: '7 800 000', pct: 15, dot: '#3d74d6' },
-  { id: 'Naqd', label: 'Naqd', sum: '7 400 000', pct: 7, dot: '#f0b429' },
+const KPI_META = [
+  { label: 'Jami tushum', icon: Wallet, tint: '#e7f7f4', color: '#0f9b8e' },
+  { label: 'Naqd tushum', icon: Banknote, tint: '#e8f8ee', color: '#1f9d55' },
+  { label: 'Karta to‘lovlari', icon: CreditCard, tint: '#e8f1ff', color: '#2f6fed' },
+  { label: 'Qolgan qarzdorlik', icon: CreditCard, tint: '#fdecec', color: '#e11d48', card: '#fff6f6' },
 ]
 
 const QUICK = [
@@ -32,7 +25,8 @@ const QUICK = [
 
 export default function Tolovlar() {
   const patients = useBemorlar()
-  const [rows, setRows] = useState(seedPayments)
+  const rows = useClinicPayments()
+  const setRows = replaceClinicPayments
   const [headerQ, setHeaderQ] = useState('')
   const [q, setQ] = useState('')
   const [method, setMethod] = useState('all')
@@ -56,7 +50,6 @@ export default function Tolovlar() {
     })
   }, [rows, headerQ, q, method, status])
 
-  const editorial = !`${headerQ} ${q}`.trim() && method === 'all' && status === 'all'
   const pages = Math.max(1, Math.ceil(filtered.length / per))
   const safePage = Math.min(page, pages)
   const slice = filtered.slice((safePage - 1) * per, safePage * per)
@@ -89,20 +82,23 @@ export default function Tolovlar() {
     setMenu(null)
   }
 
-  const shares = editorial
-    ? DONUT
-    : METHODS.filter((m) => m.id !== 'Otkazma').map((m) => {
-        const sum = filtered.filter((r) => r.method === m.id).reduce((s, r) => s + r.amount, 0)
-        return { id: m.id, label: m.label, sum: sum.toLocaleString('ru-RU').replace(/\u00a0/g, ' '), raw: sum, dot: m.dot, pct: 0 }
-      }).map((m, _, arr) => {
-        const total = arr.reduce((s, x) => s + x.raw, 0) || 1
-        return { ...m, pct: Math.round((m.raw / total) * 100) }
-      })
+  const shares = METHODS.filter((m) => m.id !== 'Otkazma').map((m) => {
+    const sum = filtered.filter((r) => r.method === m.id && r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
+    return { id: m.id, label: m.label, sum: sum.toLocaleString('ru-RU').replace(/\u00a0/g, ' '), raw: sum, dot: m.dot, pct: 0 }
+  }).map((m, _, arr) => {
+    const total = arr.reduce((s, x) => s + x.raw, 0) || 1
+    return { ...m, pct: Math.round((m.raw / total) * 100) }
+  })
+  const liveTotal = filtered.filter((r) => r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
+  const cashTotal = filtered.filter((r) => r.method === 'Naqd' && r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
+  const cardTotal = filtered.filter((r) => r.method === 'Karta' && r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
+  const debtTotal = filtered.filter((r) => r.status === 'Qisman').reduce((s, r) => s + Math.round(r.amount * 0.35), 0)
+  const kpiValues = [som(liveTotal), som(cashTotal), som(cardTotal), som(debtTotal)]
 
-  const donutTotal = editorial ? '52.4M' : `${(filtered.reduce((s, r) => s + r.amount, 0) / 1e6).toFixed(1)}M`
+  const donutTotal = som(liveTotal)
   const paidSum = filtered.filter((r) => r.status === 'Tolandi').reduce((s, r) => s + r.amount, 0)
   const allSum = filtered.reduce((s, r) => s + r.amount, 0) || 1
-  const progress = editorial ? 40 : Math.min(100, Math.round((paidSum / allSum) * 100))
+  const progress = filtered.length ? Math.min(100, Math.round((paidSum / allSum) * 100)) : 0
 
   return (
     <ShopLayout active="tolov" placeholder="Bemor, telefon, ID yoki xizmat nomi bo‘yicha qidiring..." onQuery={setHeaderQ}>
@@ -115,12 +111,12 @@ export default function Tolovlar() {
           <div className="flex gap-2">
             <div className="relative">
               <button type="button" onClick={(e) => { e.stopPropagation(); setRangeOpen((v) => !v) }} className="inline-flex h-9 items-center gap-2 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold">
-                <Calendar className="size-4 text-muted" /> 01.10.2026 – 31.10.2026 <ChevronDown className="size-3.5 text-muted" />
+                <Calendar className="size-4 text-muted" /> Barcha to‘lovlar <ChevronDown className="size-3.5 text-muted" />
               </button>
               {rangeOpen && (
                 <div className="absolute right-0 z-20 mt-1 w-56 rounded-xl border border-line bg-white p-3 text-[12px] shadow-card" onClick={(e) => e.stopPropagation()}>
                   <p className="font-semibold text-ink">Hisobot davri</p>
-                  <p className="mt-1 text-muted">01.10.2026 – 31.10.2026</p>
+                  <p className="mt-1 text-muted">Filtr tanlanmagan — barcha saqlangan to‘lovlar</p>
                 </div>
               )}
             </div>
@@ -129,13 +125,13 @@ export default function Tolovlar() {
         </div>
 
         <div className="tolov-stats mt-4">
-          {KPI.map((k) => (
+          {KPI_META.map((k, index) => (
             <article key={k.label} className="flex items-center gap-3 rounded-2xl border border-line px-3 py-3 shadow-card" style={{ background: k.card || '#fff' }}>
               <span className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ background: k.tint, color: k.color }}><k.icon className="size-5" /></span>
               <div className="min-w-0">
                 <p className="text-[12px] text-muted">{k.label}</p>
-                <p className="truncate text-[15px] font-bold text-ink">{editorial ? k.value : som(k.label.startsWith('Qolgan') ? filtered.filter((r) => r.status === 'Qisman').reduce((s, r) => s + Math.round(r.amount * 0.35), 0) : filtered.filter((r) => (k.label.startsWith('Naqd') ? r.method === 'Naqd' : k.label.startsWith('Karta') ? r.method === 'Karta' : r.status === 'Tolandi')).reduce((s, r) => s + r.amount, 0))}</p>
-                <p className="text-[11px] font-semibold" style={{ color: k.up ? '#16a34a' : '#e11d48' }}>{k.delta} <span className="font-normal text-muted">o‘tgan oyga nisbatan</span></p>
+                <p className="truncate text-[15px] font-bold text-ink">{kpiValues[index]}</p>
+                <p className="text-[11px] text-muted">joriy ro‘yxat bo‘yicha</p>
               </div>
             </article>
           ))}
@@ -152,7 +148,7 @@ export default function Tolovlar() {
                   ))}
                 </div>
               </div>
-              <Bars mode={chart} />
+              <Bars mode={chart} rows={filtered} />
             </section>
 
             <section className="rounded-2xl border border-line bg-white shadow-card">
@@ -336,30 +332,51 @@ function conic(shares) {
   return `conic-gradient(${parts.join(', ')})`
 }
 
-function Bars({ mode }) {
-  const values = mode === 'hafta' ? WEEKLY : mode === 'oy' ? MONTHLY : DAILY
-  const max = mode === 'kun' ? 8 : Math.max(...values)
-  const labels = mode === 'kun'
-    ? ['1 okt', '5 okt', '10 okt', '15 okt', '20 okt', '25 okt', '31 okt']
-    : mode === 'hafta'
-      ? ['1-hafta', '2-hafta', '3-hafta', '4-hafta', '5-hafta']
-      : ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+function paymentBuckets(rows, mode) {
+  const map = new Map()
+  rows.forEach((row) => {
+    const [d, m, y] = String(row.date || '').split('.')
+    if (!d || !m || !y) return
+    let key = `${y}-${m}`
+    let label = `${m}.${String(y).slice(2)}`
+    if (mode === 'kun') {
+      key = `${y}-${m}-${d}`
+      label = `${d}.${m}`
+    } else if (mode === 'hafta') {
+      const week = Math.ceil(Number(d) / 7)
+      key = `${y}-${m}-w${week}`
+      label = `${week}-hafta`
+    }
+    const cur = map.get(key) || { label, value: 0 }
+    if (row.status !== 'Qaytarilgan') cur.value += Number(row.amount) || 0
+    map.set(key, cur)
+  })
+  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, item]) => item).slice(-16)
+}
+
+function Bars({ mode, rows }) {
+  const buckets = paymentBuckets(rows, mode)
+  if (!buckets.length) {
+    return <p className="py-10 text-center text-[13px] text-muted">Hali to‘lov yo‘q. Yangi to‘lov qo‘shilgach, grafik shu yerda chiqadi.</p>
+  }
+  const max = Math.max(...buckets.map((item) => item.value), 1)
   return (
     <div className="mt-3">
       <div className="flex gap-2">
         <div className="flex h-[156px] flex-col justify-between pb-1 text-[10px] text-muted">
-          {(mode === 'kun' ? ['8M', '6M', '4M', '2M', '0'] : ['', '', '', '', '0']).map((l, i) => <span key={i}>{mode === 'kun' ? l : (i === 4 ? '0' : '')}</span>)}
+          <span>{som(max).replace(' so‘m', '')}</span>
+          <span>0</span>
         </div>
         <div className="relative min-w-0 flex-1">
           <div className="flex h-[156px] items-end gap-[3px] border-b border-line" style={{ backgroundImage: 'repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), #eef2f6 calc(25% - 1px), #eef2f6 25%)' }}>
-            {values.map((v, i) => (
-              <div key={i} title={`${v}${mode === 'kun' ? ' mln' : ''}`} className="min-w-0 flex-1 rounded-t-[3px]" style={{ height: `${Math.max(4, (v / max) * 100)}%`, background: i % 4 === 0 ? '#149e86' : i % 3 === 0 ? '#3ec6b0' : '#7ed9c8' }} />
+            {buckets.map((item, i) => (
+              <div key={item.label + i} title={`${item.label}: ${som(item.value)}`} className="min-w-0 flex-1 rounded-t-[3px]" style={{ height: `${Math.max(4, (item.value / max) * 100)}%`, background: i % 4 === 0 ? '#149e86' : i % 3 === 0 ? '#3ec6b0' : '#7ed9c8' }} />
             ))}
           </div>
         </div>
       </div>
-      <div className="ml-8 mt-1 flex justify-between text-[10px] text-muted">
-        {labels.map((l) => <span key={l}>{l}</span>)}
+      <div className="ml-8 mt-1 flex justify-between gap-1 text-[10px] text-muted">
+        {buckets.map((item, i) => <span key={item.label + i} className="min-w-0 flex-1 truncate text-center">{item.label}</span>)}
       </div>
     </div>
   )

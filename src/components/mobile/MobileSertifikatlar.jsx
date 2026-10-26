@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Award, GraduationCap, Clock, Star, Calendar, Eye, Download, Share2, Copy, Building2, UserRound, CircleCheck, MapPin, Monitor } from 'lucide-react'
-import { OWNER, certs } from '../../sertifikatData'
+import { certs } from '../../sertifikatData'
+import { useProfile } from '../../profileStore'
 import { Certificate, Qr, printCert } from '../../pages/Sertifikatlar'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -25,14 +26,20 @@ const DONE = certs.filter((c) => c.type === 'online' || c.type === 'training').l
 const linkOf = (c) => `${window.location.origin}/sertifikatlar?cert=${c.id}`
 
 export default function MobileSertifikatlar() {
+  const profile = useProfile()
+  const owner = profile.accountLive ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
   const [params, setParams] = useSearchParams()
   const [tab, setTab] = useState('all')
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const open = certs.find((c) => c.id === params.get('cert')) || null
 
-  const list = useMemo(() => certs.filter((c) => tab === 'all' || c.type === tab).sort((a, b) => b.iso.localeCompare(a.iso)), [tab])
-  const countOf = (k) => (k === 'all' ? certs.length : certs.filter((c) => c.type === k).length)
+  const source = profile.accountLive ? [] : certs
+  const list = useMemo(() => source.filter((c) => tab === 'all' || c.type === tab).sort((a, b) => b.iso.localeCompare(a.iso)), [tab, source])
+  const countOf = (k) => (k === 'all' ? source.length : source.filter((c) => c.type === k).length)
+  const cme = source.reduce((sum, row) => sum + row.cme, 0)
+  const hours = source.reduce((sum, row) => sum + row.hours, 0)
+  const done = source.filter((row) => row.type === 'online' || row.type === 'training').length
 
   const show = (c) => setParams((p) => { const n = new URLSearchParams(p); n.set('cert', c.id); return n })
   const close = () => setParams((p) => { const n = new URLSearchParams(p); n.delete('cert'); return n })
@@ -44,14 +51,14 @@ export default function MobileSertifikatlar() {
   const share = async (c) => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: c.title, text: `${OWNER} — ${c.title}`, url: linkOf(c) })
+        await navigator.share({ title: c.title, text: `${owner} — ${c.title}`, url: linkOf(c) })
       } catch { /* bekor qilindi */ }
       return
     }
     copy(linkOf(c), 'Tekshirish havolasi nusxalandi')
   }
   const download = (c) => {
-    printCert(c)
+    printCert(c, owner)
     setToast('PDF tayyorlanmoqda...')
   }
 
@@ -66,11 +73,11 @@ export default function MobileSertifikatlar() {
           <span className="grid size-[54px] shrink-0 place-items-center rounded-full bg-[#dff3f0] text-[#0b8a95]"><Award className="size-7" strokeWidth={1.6} /></span>
           <div className="ml-3 min-w-0 flex-1">
             <p className="text-[12px] text-ink-2">Jami CME ballari</p>
-            <p className="flex items-baseline gap-1.5 leading-none"><b className="text-[34px] font-extrabold tracking-tight text-[#0d2a4a]">{TOTAL_CME}</b><span className="text-[13px] text-ink-2">ball</span></p>
+            <p className="flex items-baseline gap-1.5 leading-none"><b className="text-[34px] font-extrabold tracking-tight text-[#0d2a4a]">{cme}</b><span className="text-[13px] text-ink-2">ball</span></p>
             <p className="mt-1 text-[10.5px] leading-snug text-muted">Professional rivojlanishingiz uchun rahmat!</p>
           </div>
           <div className="ml-2 flex shrink-0 flex-col gap-2 border-l border-line pl-3">
-            {[[GraduationCap, certs.length, 'Sertifikatlar soni'], [Clock, TOTAL_HOURS, 'O‘quv soatlari'], [Star, DONE, 'Tugallangan kurslar']].map(([Icon, v, l]) => (
+            {[[GraduationCap, source.length, 'Sertifikatlar soni'], [Clock, hours, 'O‘quv soatlari'], [Star, done, 'Tugallangan kurslar']].map(([Icon, v, l]) => (
               <span key={l} className="flex items-center gap-2">
                 <Icon className="size-[18px] shrink-0 text-[#0b6d73]" strokeWidth={1.6} />
                 <span>
@@ -95,6 +102,7 @@ export default function MobileSertifikatlar() {
       </div>
 
       <div className="mt-3 flex flex-col gap-2.5 px-3.5">
+        {!list.length && <p className="mt-4 rounded-2xl bg-white px-4 py-8 text-center text-[13px] text-muted">{profile.accountLive ? 'Hali sertifikat yo‘q. Yakunlangan seminar va kurslar shu yerda paydo bo‘ladi.' : 'Sertifikat topilmadi.'}</p>}
         {list.map((c) => (
           <article key={c.id} className="rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
             <div className="flex gap-2.5">

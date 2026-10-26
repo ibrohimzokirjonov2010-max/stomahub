@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { bindBlob, touchBlob } from './recordSync'
 import { shiftIso } from './klinikaData'
 
 const face = (n) => `/images/bemorlar/bemor-${n}.jpg`
@@ -193,7 +194,19 @@ function seed() {
 let plans = seed()
 let templates = []
 const listeners = new Set()
-const emit = () => listeners.forEach((fn) => fn())
+const emit = () => {
+  listeners.forEach((fn) => fn())
+  touchBlob('plans')
+}
+bindBlob('plans', {
+  get: () => ({ plans, templates }),
+  empty: () => ({ plans: [], templates: [] }),
+  set: (payload) => {
+    plans = Array.isArray(payload?.plans) ? payload.plans : plans
+    templates = Array.isArray(payload?.templates) ? payload.templates : []
+    listeners.forEach((fn) => fn())
+  },
+})
 const subscribe = (fn) => {
   listeners.add(fn)
   return () => listeners.delete(fn)

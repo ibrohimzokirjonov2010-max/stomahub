@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { ME } from './communityData'
+import { bindBlob, touchBlob } from './recordSync'
 
 const face = (n) => `/images/bemorlar/${n}.jpg`
 const sem = (n) => `/images/seminars/${n}.jpg`
@@ -113,10 +114,34 @@ const seed = [
 
 let state = { posts: seed, liked: new Set(['sardor-implant']), saved: new Set(), likedComments: new Set(), hidden: new Set() }
 const subs = new Set()
+let quiet = false
 const set = (next) => {
   state = { ...state, ...next }
   subs.forEach((fn) => fn())
+  if (!quiet) touchBlob('community')
 }
+bindBlob('community', {
+  get: () => ({
+    posts: state.posts,
+    liked: [...state.liked],
+    saved: [...state.saved],
+    hidden: [...state.hidden],
+    likedComments: [...state.likedComments],
+  }),
+  empty: () => ({ posts: [], liked: [], saved: [], hidden: [], likedComments: [] }),
+  set: (payload) => {
+    quiet = true
+    state = {
+      posts: payload?.posts || state.posts,
+      liked: new Set(payload?.liked || []),
+      saved: new Set(payload?.saved || []),
+      hidden: new Set(payload?.hidden || []),
+      likedComments: new Set(payload?.likedComments || []),
+    }
+    subs.forEach((fn) => fn())
+    quiet = false
+  },
+})
 const subscribe = (fn) => {
   subs.add(fn)
   return () => subs.delete(fn)
@@ -153,7 +178,7 @@ export const feed = {
     set({ posts: [post, ...state.posts] })
   },
   comment(postId, text, parentId, image) {
-    const c = { id: `m${Date.now()}`, name: ME.name, role: ME.role, time: 'Hozir', avatar: ME.avatar, text, image, likes: 0, replies: [], mine: true }
+    const c = { id: `m${Date.now()}`, name: 'Shifokor', role: 'Stomatolog', time: 'Hozir', avatar: '', text, image, likes: 0, replies: [], mine: true }
     set({
       posts: mapPost(postId, (p) => ({
         ...p,

@@ -20,15 +20,6 @@ const TYPE_STYLE = {
   users: { icon: Users, bg: '#fdecee', color: '#ef6b6b' },
 }
 
-const DONUT = [
-  { label: 'VIP', pct: 41, n: 400, color: '#0e8b82' },
-  { label: 'Standart', pct: 43, n: 420, color: '#3ec9bb' },
-  { label: 'Student', pct: 12, n: 120, color: '#f0b42a' },
-  { label: 'Guruh', pct: 4, n: 40, color: '#f07268' },
-]
-
-const BARS = [18, 32, 44, 56, 72, 86, 102, 120, 138, 156, 176, 196]
-
 const MOBILE_SEED = [
   {
     id: 'oddiy',
@@ -76,7 +67,7 @@ export default function Tickets() {
 function useSeminarPick() {
   const hub = useHub()
   const list = hub.seminars
-  const [sid, setSid] = useState(() => list.find((s) => s.id === 'implant-nov')?.id || list[0]?.id || '')
+  const [sid, setSid] = useState(() => list[0]?.id || '')
   const sem = list.find((s) => s.id === sid) || list[0]
   return { list, sid, setSid, sem }
 }
@@ -224,7 +215,7 @@ function DesktopTickets() {
 
             <div className="grid items-stretch gap-3 lg:grid-cols-2">
               <Panel title="Chipta sotuvlari dinamikasi" extra={<MetricSelect value={metric} onChange={setMetric} />} className="h-full">
-                <SalesBars values={metric === 'Tushum' ? BARS.map((n) => Math.round(n * 0.72)) : BARS} />
+                <SalesBars items={all.map((ticket) => ({ label: ticket.name, value: metric === 'Tushum' ? (ticket.sold || 0) * (ticket.price || 0) : (ticket.sold || 0) }))} />
               </Panel>
               <Panel title="Chipta turlari bo‘yicha sotuv" className="h-full">
                 <SalesDonut rows={all} />
@@ -234,7 +225,7 @@ function DesktopTickets() {
 
           <div className="space-y-3">
             <Panel title="Chipta ko‘rinishi (namuna)" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Dizaynni sozlash</button>}>
-              <VipTicket />
+              <VipTicket sem={sem} />
               <Btn className="mt-3 w-full" onClick={() => { downloadText('qr-chiptalar.txt', all.map((t) => `${t.name} · ${t.sold || 0} ta · ${sem?.title || ''}`).join('\n')); notify('QR kod yuklab olindi') }}><Download className="size-4" /> QR kodni yuklab olish</Btn>
             </Panel>
             <Panel title="Tezkor amallar">
@@ -247,7 +238,7 @@ function DesktopTickets() {
       {tab === 'sales' && (
         <div className="mt-3 grid gap-3 lg:grid-cols-2">
           <Panel title="Chipta sotuvlari dinamikasi" extra={<MetricSelect value={metric} onChange={setMetric} />}>
-            <SalesBars values={BARS} />
+            <SalesBars items={all.map((ticket) => ({ label: ticket.name, value: metric === 'Tushum' ? (ticket.sold || 0) * (ticket.price || 0) : (ticket.sold || 0) }))} />
           </Panel>
           <Panel title="Chipta turlari bo‘yicha sotuv"><SalesDonut rows={all} /></Panel>
         </div>
@@ -301,6 +292,10 @@ function MobileTickets() {
   const total = all.reduce((s, t) => s + (t.total || 0), 0)
   const rows = all
 
+  if (!sem) {
+    return <p className="px-4 py-10 text-center text-[13px] text-[#7e9398]">Hali seminar yo‘q. Avval seminar yarating, keyin chipta turini qo‘shing.</p>
+  }
+
   const save = (row) => {
     const idx = all.findIndex((x) => x.id === row.id)
     const mapped = {
@@ -336,7 +331,7 @@ function MobileTickets() {
       </section>
 
       <nav className="mt-3 flex items-center justify-between gap-1 px-0.5">
-        <MobileTab to={`/tashkilotchi/seminarlar/${sem?.id || 'implant-nov'}`} icon={House} label="Umumiy" />
+        <MobileTab to={sem ? `/tashkilotchi/seminarlar/${sem.id}` : '/tashkilotchi/seminarlar'} icon={House} label="Umumiy" />
         <MobileTab to="/tashkilotchi/ishtirokchilar" icon={Users} label="Ishtirokchilar" />
         <MobileTab icon={Ticket} label="Chiptalar" active />
         <MobileTab to="/tashkilotchi/qr" icon={QrCode} label="Check-in" />
@@ -469,26 +464,29 @@ function MetricSelect({ value, onChange }) {
   )
 }
 
-function SalesBars({ values }) {
-  const max = 200
-  const ticks = [200, 150, 100, 50, 0]
+function SalesBars({ items }) {
+  if (!items.length || items.every((item) => !item.value)) {
+    return <p className="py-10 text-center text-[13px] text-[#7e9398]">Hali sotuv yo‘q. Chipta sotilgach, grafik shu yerda chiqadi.</p>
+  }
+  const max = Math.max(...items.map((item) => item.value), 1)
   return (
     <div>
       <div className="flex h-[150px] gap-1.5">
         <div className="flex h-full w-7 shrink-0 flex-col justify-between text-right text-[10px] leading-none text-[#9aafb4]">
-          {ticks.map((n) => <span key={n}>{n}</span>)}
+          <span>{max}</span>
+          <span>0</span>
         </div>
         <div className="flex min-w-0 flex-1 items-end gap-[5px] border-b border-[#e8f0ef]">
-          {values.map((v, i) => (
-            <div key={MONTHS[i]} className="group relative flex h-full min-w-0 flex-1 items-end" title={`${MONTHS[i]} · ${v}`}>
-              <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[#12324a] px-1.5 py-0.5 text-[10px] text-white group-hover:block">{MONTHS[i]} · {v}</span>
-              <span className="block w-full rounded-t-[4px]" style={{ height: `${Math.max(3, (v / max) * 100)}%`, background: 'linear-gradient(180deg,#8fe6dc 0%,#1aa396 48%,#0c8a80 100%)' }} />
+          {items.map((item) => (
+            <div key={item.label} className="group relative flex h-full min-w-0 flex-1 items-end" title={`${item.label} · ${item.value}`}>
+              <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[#12324a] px-1.5 py-0.5 text-[10px] text-white group-hover:block">{item.label} · {item.value}</span>
+              <span className="block w-full rounded-t-[4px]" style={{ height: `${Math.max(3, (item.value / max) * 100)}%`, background: 'linear-gradient(180deg,#8fe6dc 0%,#1aa396 48%,#0c8a80 100%)' }} />
             </div>
           ))}
         </div>
       </div>
       <div className="ml-8 mt-1.5 flex gap-[5px]">
-        {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[10px] leading-none text-[#93a8ad]">{m}</span>)}
+        {items.map((item) => <span key={item.label} className="flex-1 truncate text-center text-[10px] leading-none text-[#93a8ad]">{item.label}</span>)}
       </div>
     </div>
   )
@@ -542,7 +540,10 @@ function SalesDonut({ rows = [] }) {
   )
 }
 
-function VipTicket() {
+function VipTicket({ sem }) {
+  if (!sem) {
+    return <p className="rounded-2xl bg-[#f4fbfa] px-4 py-8 text-center text-[13px] text-[#7e9398]">Hali chipta yo‘q. Seminar yarating va chipta turini qo‘shing.</p>
+  }
   return (
     <div className="relative min-h-[214px] overflow-hidden rounded-[16px] text-white" style={{ background: '#055b58' }}>
       <img src="/images/organizer/ticket-implant.jpg" alt="" className="absolute inset-y-0 right-0 h-full w-[68%] object-cover object-center" />
@@ -552,13 +553,13 @@ function VipTicket() {
           <ToothIcon className="size-[16px] text-white" strokeWidth={1.7} />
           <span className="text-[13px] font-bold tracking-tight">StomaHub</span>
         </div>
-        <p className="mt-3 max-w-[168px] text-[14.5px] font-bold leading-[1.2]">Implantologiya: nazariya va amaliyot</p>
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-white/85"><Calendar className="size-3.5 shrink-0" /> 24-noyabr 2026, 10:00</p>
-        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/85"><MapPin className="size-3.5 shrink-0" /> Toshkent, Congress Hall</p>
+        <p className="mt-3 max-w-[168px] text-[14.5px] font-bold leading-[1.2]">{sem.title}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-white/85"><Calendar className="size-3.5 shrink-0" /> {sem.date || 'Sana yo‘q'}{sem.startTime ? `, ${sem.startTime}` : ''}</p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/85"><MapPin className="size-3.5 shrink-0" /> {sem.place || sem.city || 'Manzil kiritilmagan'}</p>
         <div className="mt-auto grid grid-cols-2 gap-2 pt-3 text-[11px]">
           <div>
             <p className="text-white/65">Ishtirokchi</p>
-            <p className="font-semibold">Aliyeva Mohira</p>
+            <p className="font-semibold">Ism familiya</p>
           </div>
           <div>
             <p className="text-white/65">Chipta turi</p>
