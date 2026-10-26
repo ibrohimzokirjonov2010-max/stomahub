@@ -126,7 +126,7 @@ export default function MijozDetail() {
           <button type="button" onClick={() => setEdit(true)} className="mt-4 flex items-center gap-2 rounded-full bg-[#0F766E] px-5 py-2.5 text-[13px] text-white"><Pencil className="size-4" />Mijoz profilini tahrirlash</button>
         </div>
         <div className="mt-3 grid grid-cols-4 divide-x divide-[#CCFBF1] rounded-xl bg-[#F0FDFA] py-3 text-[11px] text-[#5C6E80]">
-          {[[ShoppingCart, st.count, 'Jami buyurtma'], [CalendarDays, st.last ? dmy(st.last) : '—', 'Oxirgi buyurtma'], [Wallet, num(Math.round(st.sum/1000))+"k", 'Jami xarid summasi'], [BadgeCheck, c.blocked ? 'Blok' : 'Faol', 'Holat']].map(([I, v, l]) => <div key={l} className="px-2"><div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-[#10283F]"><I className="size-5 shrink-0 text-[#0F766E]" /><span className="truncate">{v}</span></div><div className="mt-1.5">{l}</div></div>)}
+          {[[ShoppingCart, st.count, 'Jami buyurtma'], [CalendarDays, st.last ? dmy(st.last) : '—', 'Oxirgi buyurtma'], [Wallet, num(Math.round(st.sum/1000))+"k", 'Jami xarid summasi'], [BadgeCheck, c.blocked ? 'Blok' : 'Faol', 'Holat']].map(([I, v, l]) => <div key={l} className="px-1.5"><I className="size-5 text-[#0F766E]" /><div className="mt-1 whitespace-nowrap text-[12px] font-bold tracking-tight text-[#10283F]">{v}</div><div className="mt-0.5 leading-tight">{l}</div></div>)}
         </div>
         <div className="mt-4"><Chips tabs={[['orders', 'Buyurtmalar', st.list.length], ['reviews', 'Sharhlar', reviews.length], ['notes', 'Izohlar', notes.length], ['info', 'Ma’lumotlar']]} value={mtab} onChange={setMtab} /></div>
         <div className="mt-3 space-y-2.5">

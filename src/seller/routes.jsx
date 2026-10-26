@@ -12,6 +12,7 @@ import ChegirmaDetail from './pages/ChegirmaDetail'
 import Sharhlar from './pages/Sharhlar'
 import Chegirmalar from './pages/Chegirmalar'
 import Reklama from './pages/Reklama'
+import ReklamaDetail from './pages/ReklamaDetail'
 import Analitika from './pages/Analitika'
 import Hamyon from './pages/Hamyon'
 import Sozlamalar from './pages/Sozlamalar'
@@ -31,6 +32,7 @@ export const sellerRoutes = (
     <Route path="sharhlar" element={<Sharhlar />} />
     <Route path="chegirmalar" element={<Chegirmalar />} />
     <Route path="reklama" element={<Reklama />} />
+    <Route path="reklama/:id" element={<ReklamaDetail />} />
     <Route path="analitika" element={<Analitika />} />
     <Route path="hamyon" element={<Hamyon />} />
     <Route path="sozlamalar" element={<Sozlamalar />} />

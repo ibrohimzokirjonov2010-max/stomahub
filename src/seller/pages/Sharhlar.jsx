@@ -93,7 +93,7 @@ export default function Sharhlar() {
     return { ...r, p, o, c, who: c?.name || r.author_name || o?.customer_name || 'Xaridor', city: c?.city || '', phone: c?.phone || o?.customer_phone || '' }
   }).sort((a, b) => b.created_at.localeCompare(a.created_at)), [data.reviews, data.products, data.orders, data.customers])
   const cnt = (f) => rows.filter(f).length
-  const tabs = [['all', 'Barchasi', rows.length], ['javobsiz', 'Javobsiz', cnt((r) => !r.reply && !r.hidden)], ['javob', 'Javob berilgan', cnt((r) => r.reply && !r.hidden)], ...(mobile ? [] : [['hidden', 'Yashirilgan', cnt((r) => r.hidden)]])]
+  const tabs = [['all', 'Barchasi', rows.length], ['javobsiz', 'Javobsiz', cnt((r) => !r.reply && !r.hidden)], ['javob', 'Javob berilgan', cnt((r) => r.reply && !r.hidden)], ['hidden', 'Yashirilgan', cnt((r) => r.hidden)]]
   const list = rows.filter((r) => {
     if (tab === 'javobsiz' && (r.reply || r.hidden)) return false
     if (tab === 'javob' && (!r.reply || r.hidden)) return false

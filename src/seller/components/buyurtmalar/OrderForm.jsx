@@ -48,9 +48,12 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
     return out
   }, [data.products])
   const subtotal = items.reduce((s, it) => s + it.price * it.qty, 0)
-  const activeDiscounts = data.discounts.filter((d) => d.active !== false && !d.is_draft && (!d.ends_on || d.ends_on >= today()) && (!d.starts_on || d.starts_on <= today()) && (!d.usage_limit || data.orders.filter((o) => o.discount_id === d.id && o.status !== 'bekor').length < d.usage_limit))
+  const activeDiscounts = data.discounts.filter((d) => d.active !== false && !d.is_draft && (!d.ends_on || d.ends_on >= today()) && (!d.starts_on || d.starts_on <= today()) && (!d.usage_limit || data.orders.filter((o) => o.discount_id === d.id && o.status !== 'bekor_qilindi').length < d.usage_limit))
   const disc = activeDiscounts.find((d) => d.id === discountId)
-  const discAmt = !disc || subtotal < Number(disc.min_order || 0) ? 0 : Math.min(subtotal, disc.kind === 'summa' ? Number(disc.value || 0) : disc.kind === 'foiz' || disc.kind === 'promokod' || !disc.kind ? Math.round(subtotal * Number(disc.value ?? disc.percent ?? 0) / 100) : 0)
+  const inScope = (pr) => !disc || disc.scope === 'all' || !disc.scope || (disc.scope === 'products' ? (disc.product_ids || []).includes(pr.id) || disc.product_id === pr.id : pr.category === disc.category)
+  const elig = items.filter((it) => inScope(it.product)).reduce((s, it) => s + it.price * it.qty, 0)
+  const free = items.filter((it) => inScope(it.product)).reduce((s, it) => s + Math.floor(it.qty / 3) * it.price, 0)
+  const discAmt = !disc || subtotal < Number(disc.min_order || 0) ? 0 : disc.kind === 'bir_bepul' ? free : Math.min(elig, disc.kind === 'summa' ? Number(disc.value || 0) : Math.round(elig * Number(disc.value || disc.percent || 0) / 100))
   const pd = !disc && cust?.personal_discount ? Number(cust.personal_discount) : 0
   const pdAmt = pd ? Math.round(subtotal * pd / 100) : 0
   const net = subtotal - discAmt - pdAmt
@@ -81,7 +84,8 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
     <div className="rounded-xl bg-[#F0FDFA] p-3.5 text-[13px]">
       <div className="mb-2 flex items-center gap-2 font-bold"><Calculator className="size-5 text-[#0F766E]" />Buyurtma summasi</div>
       <Row k="Mahsulotlar jami" v={som(subtotal)} />
-      {discAmt > 0 && <Row k="Chegirma" v={`−${som(discAmt)}`} />}
+      {discAmt > 0 && <Row k={disc.kind === 'bir_bepul' ? 'Chegirma (2+1)' : 'Chegirma'} v={`−${som(discAmt)}`} />}
+      {disc && !discAmt && items.length > 0 && <p className="text-[12px] text-[#5C6E80]">{subtotal < Number(disc.min_order || 0) ? `Chegirma uchun minimal buyurtma: ${som(disc.min_order)}` : !elig ? 'Tanlangan chegirma bu mahsulotlarga tegishli emas' : '2+1: har 3 donadan bittasi bepul'}</p>}
       {pdAmt > 0 && <Row k={`Shaxsiy chegirma (${pd}%)`} v={`−${som(pdAmt)}`} />}
       <Row k="Yetkazib berish" v={som(fe)} />
       <div className="my-2 flex items-center justify-between rounded-lg bg-[#CCFBF1] px-3 py-2.5 font-bold"><span>Jami summa</span><span>{som(net + fe)}</span></div>

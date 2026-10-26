@@ -31,9 +31,9 @@ export default function Chegirmalar() {
   const [filters, setFilters] = useState(false)
   useEffect(() => { if (sp.get('new')) { setForm({}); sp.delete('new'); setSp(sp, { replace: true }) } }, [sp, setSp])
   const rows = useMemo(() => data.discounts.map((d) => ({ ...d, s: statusOf(d, data.orders), used: usesOf(d, data.orders).length, prods: productsOf(d, data.products) })).sort((a, b) => b.created_at.localeCompare(a.created_at)), [data.discounts, data.orders, data.products])
-  const grp = (r) => (r.s === 'toxtatilgan' ? 'faol' : r.s)
+  const grp = (r) => r.s
   const cnt = (k) => rows.filter((r) => grp(r) === k).length
-  const tabs = [...(mobile ? [['all', 'Barchasi', rows.length]] : []), ['faol', 'Faol', cnt('faol')], ['reja', 'Rejalashtirilgan', cnt('reja')], ['tugagan', 'Tugagan', cnt('tugagan')], ...(mobile ? [] : [['qoralama', 'Qoralama', cnt('qoralama')]])]
+  const tabs = [...(mobile ? [['all', 'Barchasi', rows.length]] : []), ['faol', 'Faol', cnt('faol')], ['reja', 'Rejalashtirilgan', cnt('reja')], ['toxtatilgan', 'To‘xtatilgan', cnt('toxtatilgan')], ['tugagan', 'Tugagan', cnt('tugagan')], ...(mobile ? [] : [['qoralama', 'Qoralama', cnt('qoralama')]])]
   const list = rows.filter((r) => {
     if (tab !== 'all' && grp(r) !== tab) return false
     if (kind && r.kind !== kind) return false

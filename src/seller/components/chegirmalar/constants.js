@@ -11,7 +11,7 @@ export const DKIND = Object.fromEntries(DKINDS.map((k) => [k[0], k]))
 export const SCOPES = [['all', 'Barcha mahsulotlar', 'Do‘kondagi barcha mahsulotlarga'], ['products', 'Tanlangan mahsulotlar', 'Ma’lum mahsulotlarga'], ['category', 'Kategoriya', 'Ma’lum kategoriyalarga']]
 export const today = () => new Date().toISOString().slice(0, 10)
 export const STATUS = { faol: ['Faol', 'on'], reja: ['Rejalashtirilgan', 'mid'], tugagan: ['Tugagan', 'off'], qoralama: ['Qoralama', 'off'], toxtatilgan: ['To‘xtatilgan', 'off'] }
-export function usesOf(d, orders) { return orders.filter((o) => o.discount_id === d.id && o.status !== 'bekor') }
+export function usesOf(d, orders) { return orders.filter((o) => o.discount_id === d.id && o.status !== 'bekor_qilindi') }
 export function statusOf(d, orders = []) {
   if (d.is_draft) return 'qoralama'
   const t = today()
