@@ -35,10 +35,17 @@ const fmt = (d) => `${d.getDate()} ${MON[d.getMonth()]}, ${String(d.getHours()).
 export function timeline(order) {
   const start = parseAt(order.at)
   const stage = STAGE[order.status] ?? 0
+  const hist = Object.fromEntries((order.history || []).map((h) => [h.status, h.at]))
+  const STEP_DB = [['yangi'], ['tayyorlanmoqda', 'tasdiqlandi'], ['yetkazilmoqda'], ['yetkazildi']]
+  const realAt = (i) => {
+    if (i === 0 && order.createdAt) return new Date(order.createdAt)
+    const at = STEP_DB[i].map((k) => hist[k]).find(Boolean)
+    return at ? new Date(at) : null
+  }
   return STEPS.map((label, i) => ({
     label: order.mode === 'pickup' && i === 2 ? 'Tayyor' : order.mode === 'pickup' && i === 3 ? 'Olib ketildi' : label,
     state: i < stage || (stage === 3 && i === 3) ? 'done' : i === stage ? 'current' : 'todo',
-    time: start && i <= stage ? fmt(new Date(start.getTime() + OFFSETS[i] * 60000)) : '',
+    time: i > stage ? '' : order.live ? (realAt(i) ? fmt(realAt(i)) : '') : start ? fmt(new Date(start.getTime() + OFFSETS[i] * 60000)) : '',
   }))
 }
 
