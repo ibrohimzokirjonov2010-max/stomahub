@@ -19,6 +19,7 @@ function useShopName() {
     supabase.from('profiles').select('shop_name').eq('id', session.user.id).maybeSingle()
       .then(({ data }) => setShop(data?.shop_name || ''))
   }, [session.user])
+  useEffect(() => { const h = (e) => setShop(e.detail); window.addEventListener('shop-name', h); return () => window.removeEventListener('shop-name', h) }, [])
   return shop || session.profile?.name || 'Do‘kon'
 }
 
