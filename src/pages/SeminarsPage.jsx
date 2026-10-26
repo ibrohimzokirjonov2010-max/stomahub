@@ -4,8 +4,16 @@ import {
   LayoutGrid, Crosshair, Microscope, Smile, Sparkles, Activity, Scissors, Ellipsis, ChevronDown, ChevronLeft, ChevronRight,
   Plus, MapPin, Clock, Users, Heart, CalendarDays, Award, Handshake, BadgeCheck, X,
 } from 'lucide-react'
-import { seminarChips, seminars, monthOrder, mySeminars, whyAttend } from '../seminarsData'
+import { seminarChips, mySeminars, whyAttend } from '../seminarsData'
+import { publicRecords, useHub } from '../hubStore'
 import { som } from '../marketData'
+
+const UZ = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
+const monthLabel = (key) => {
+  const [y, m] = String(key || '').split('-')
+  return `${UZ[Number(m)] || m} ${y}`
+}
+const dateKeyOf = (s) => `${s.monthKey}-${String(s.day).padStart(2, '0')}`
 
 const chipIcons = { all: LayoutGrid, impl: Crosshair, endo: Microscope, orto: Smile, estet: Sparkles, paro: Activity, surg: Scissors, other: Ellipsis }
 const whyIcons = [Award, Handshake, BadgeCheck, Users]
@@ -19,15 +27,24 @@ const sorts = {
 }
 
 export default function SeminarsPage() {
+  const hub = useHub()
+  const seminars = publicRecords(hub)
   const [cat, setCat] = useState('all')
   const [format, setFormat] = useState('')
   const [band, setBand] = useState('')
   const [month, setMonth] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   const [sort, setSort] = useState('near')
   const [liked, setLiked] = useState({})
   const [ask, setAsk] = useState(false)
   const [sent, setSent] = useState(false)
   const [onlyMine, setOnlyMine] = useState(false)
+
+  const monthOptions = useMemo(() => {
+    const keys = [...new Set(seminars.map((s) => s.monthKey))].sort()
+    return keys.map((key) => [key, monthLabel(key)])
+  }, [seminars])
 
   const list = useMemo(() => {
     return seminars
@@ -37,9 +54,20 @@ export default function SeminarsPage() {
       .filter((s) => !onlyMine || s.mine)
       .filter((s) => band !== 'low' || s.price <= 1000000)
       .filter((s) => band !== 'high' || s.price > 1000000)
+      .filter((s) => {
+        const key = dateKeyOf(s)
+        if (from && key < from) return false
+        if (to && key > to) return false
+        return true
+      })
       .slice()
       .sort(sorts[sort].fn)
-  }, [cat, format, band, month, sort, onlyMine])
+  }, [seminars, cat, format, band, month, sort, onlyMine, from, to])
+
+  const groups = useMemo(() => {
+    const keys = [...new Set(list.map((s) => s.monthKey))].sort()
+    return keys.map((key) => ({ key, label: monthLabel(key) }))
+  }, [list])
 
   return (
     <div className="grid gap-4 pb-8 pt-3 xl:grid-cols-[minmax(0,1fr)_262px]">
@@ -68,26 +96,26 @@ export default function SeminarsPage() {
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1.3fr_1.15fr]">
           <Select label="Format" value={format} onChange={setFormat} options={formats} />
-          <Select label="Sana oralig‘i" value={month} onChange={setMonth} options={[['2026-10', 'Oktabr 2026'], ['2026-11', 'Noyabr 2026']]} />
+          <Select label="Sana oralig‘i" value={month} onChange={setMonth} options={monthOptions} />
           <Select label="Narx" value={band} onChange={setBand} options={[['low', '1 000 000 gacha'], ['high', '1 000 000 dan yuqori']]} />
           <div className="flex h-[42px] items-center gap-2 rounded-lg bg-white px-3 shadow-card">
             <CalendarDays className="size-4 shrink-0 text-ink-2" />
-            <input type="date" className="w-full bg-transparent text-[10px] text-ink outline-none" aria-label="Boshlanish" />
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full bg-transparent text-[10px] text-ink outline-none" aria-label="Boshlanish" />
             <span className="text-muted">—</span>
-            <input type="date" className="w-full bg-transparent text-[10px] text-ink outline-none" aria-label="Tugash" />
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full bg-transparent text-[10px] text-ink outline-none" aria-label="Tugash" />
           </div>
           <Select label="Saralash" value={sort} onChange={setSort} options={Object.entries(sorts).map(([k, v]) => [k, v.label])} noAll />
         </div>
 
         <div className="mt-4 flex flex-col gap-5">
-          {monthOrder.map((m) => {
+          {groups.map((m) => {
             const rows = list.filter((s) => s.monthKey === m.key)
             if (!rows.length) return null
             return (
               <section key={m.key}>
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-[14px] font-bold text-ink">{m.label} <span className="ml-1 text-[11px] font-medium text-muted">{rows.length} ta seminar</span></h2>
-                  <button onClick={() => { setCat('all'); setFormat(''); setBand(''); setMonth(''); setOnlyMine(false) }} className="text-[10px] font-medium text-sea hover:underline">Barchasini ko‘rish</button>
+                  <button onClick={() => { setCat('all'); setFormat(''); setBand(''); setMonth(''); setFrom(''); setTo(''); setOnlyMine(false) }} className="text-[10px] font-medium text-sea hover:underline">Barchasini ko‘rish</button>
                 </div>
                 <div className="flex flex-col gap-2">
                   {rows.map((s) => <SeminarRow key={s.id} item={s} liked={!!liked[s.id]} onLike={() => setLiked((v) => ({ ...v, [s.id]: !v[s.id] }))} />)}
@@ -158,7 +186,7 @@ function SeminarRow({ item: s, liked, onLike }) {
       </Link>
       <div className="min-w-0">
         <Link to={`/seminarlar/${s.id}`} className="inline-flex rounded-md bg-sea-50 px-1.5 py-0.5 text-[9px] font-semibold text-sea-600">{seminarChips.find((c) => c.key === s.cat)?.label}</Link>
-        <Link to={`/seminarlar/${s.id}`} className="mt-0.5 block text-[12px] font-bold leading-snug text-ink hover:text-sea">{s.title}</Link>
+        <Link to={`/seminarlar/${s.id}`} className="mt-0.5 block text-[12px] font-bold leading-snug text-ink hover:text-sea">{s.title}{s.cancelled ? <span className="ml-1 rounded bg-[#fde8e8] px-1 text-[9px] font-bold text-[#dc2626]">Bekor qilingan</span> : null}</Link>
         <p className="truncate text-[10px] text-muted">{s.text}</p>
         <p className="mt-1 flex items-center gap-2 truncate text-[9px] text-ink-2">
           <span className="flex items-center gap-1"><MapPin className="size-3 shrink-0 text-muted" />{s.city}</span>
@@ -184,7 +212,9 @@ function SeminarRow({ item: s, liked, onLike }) {
             <Heart className={`size-3.5 ${liked ? 'fill-sale text-sale' : ''}`} />
           </button>
         </div>
-        <Link to={`/seminarlar/${s.id}/royxat`} className="mt-1 inline-flex h-[28px] items-center rounded-lg bg-sea px-2.5 text-[10.5px] font-semibold text-white transition hover:bg-sea-600">Ro‘yxatdan o‘tish</Link>
+        {s.cancelled
+          ? <span className="mt-1 inline-flex h-[28px] items-center rounded-lg bg-[#fde8e8] px-2.5 text-[10.5px] font-semibold text-[#dc2626]">Bekor qilingan</span>
+          : <Link to={`/seminarlar/${s.id}/royxat`} className="mt-1 inline-flex h-[28px] items-center rounded-lg bg-sea px-2.5 text-[10.5px] font-semibold text-white transition hover:bg-sea-600">Ro‘yxatdan o‘tish</Link>}
       </div>
     </article>
   )

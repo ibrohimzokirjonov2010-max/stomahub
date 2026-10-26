@@ -5,8 +5,9 @@ import {
   Download, House, Mail, MapPin, MoreVertical, Plus, QrCode, SlidersHorizontal, Ticket,
   UserRound, Users, Wallet, X, XCircle,
 } from 'lucide-react'
-import { PARTICIPANTS, PAY_LABEL, SEMINARS } from '../data'
+import { PAY_LABEL } from '../data'
 import { useOrg } from '../Shell'
+import { addParticipant, checkIn, downloadText, removeParticipant, useHub } from '../../hubStore'
 import { Btn, Field, Modal, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
 import { FACE, MOBILE_PEOPLE, MOBILE_SEMINAR } from './participantsData'
@@ -175,6 +176,8 @@ export default function Participants() {
 
 function DesktopParticipants() {
   const { query, notify } = useOrg()
+  const hub = useHub()
+  const SEMINARS = hub.seminars
   const [seminar, setSeminar] = useState('endo')
   const [semOpen, setSemOpen] = useState(false)
   const semRef = useRef(null)
@@ -183,8 +186,8 @@ function DesktopParticipants() {
   const [ticket, setTicket] = useState('all')
   const [pay, setPay] = useState('all')
   const [city, setCity] = useState('all')
-  const [rows, setRows] = useState(PARTICIPANTS)
-  const [selected, setSelected] = useState(PARTICIPANTS[0].id)
+  const rows = useMemo(() => hub.participants.filter((p) => p.seminarId === seminar), [hub.participants, seminar])
+  const [selected, setSelected] = useState(null)
   const [panel, setPanel] = useState(true)
   const [tab, setTab] = useState('info')
   const [add, setAdd] = useState(false)
@@ -208,7 +211,7 @@ function DesktopParticipants() {
     })
   }, [rows, query, q, ticket, pay, city])
 
-  const designLock = !pagerFree && per === 8 && filtered.length === 180 && !`${query} ${q}`.trim() && ticket === 'all' && pay === 'all' && city === 'all'
+  const designLock = false
   const pages = designLock ? 18 : Math.max(1, Math.ceil(filtered.length / per) || 1)
   const safe = Math.min(page, pages)
   const slice = filtered.slice((safe - 1) * per, safe * per)
@@ -248,7 +251,7 @@ function DesktopParticipants() {
               bordered
               label="Yana"
               items={[
-                { label: 'Excel yuklab olish', onClick: () => notify('Excel yuklab olindi') },
+                { label: 'Excel yuklab olish', onClick: () => { downloadText('ishtirokchilar.csv', ['ism,telefon,email,chipta,tolov,keldi', ...filtered.map((p) => `${p.name},${p.phone},${p.email},${p.ticket},${p.pay},${p.arrived ? 'Keldi' : ''}`)].join('\n'), 'text/csv'); notify('Excel yuklab olindi') } },
                 { label: 'Email yuborish', onClick: () => setMail(true) },
               ]}
             />
@@ -257,10 +260,10 @@ function DesktopParticipants() {
       </div>
 
       <section className="mt-3 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-        <KpiCard icon={Users} label="Jami ishtirokchilar" value="180 / 200" pct="90%" pctClass="text-[#16a34a]" bar={90} iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
-        <KpiCard icon={Wallet} label="To‘lov qilingan" value="150" pct="83%" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
-        <KpiCard icon={Clock} label="Kutilmoqda" value="20" pct="11%" pctClass="text-[#e09a12]" iconBg="bg-[#fff6e8] text-[#e09a12]" />
-        <KpiCard icon={XCircle} label="Bekor qilingan" value="10" pct="6%" pctClass="text-[#e11d48]" iconBg="bg-[#fdecef] text-[#e11d48]" />
+        <KpiCard icon={Users} label="Jami ishtirokchilar" value={`${rows.length} / ${current.seats || rows.length}`} pct={current.seats ? `${Math.round((rows.length / current.seats) * 100)}%` : ''} pctClass="text-[#16a34a]" bar={current.seats ? Math.round((rows.length / current.seats) * 100) : 0} iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
+        <KpiCard icon={Wallet} label="To‘lov qilingan" value={String(rows.filter((p) => p.pay === 'paid').length)} pct="" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
+        <KpiCard icon={Clock} label="Kutilmoqda" value={String(rows.filter((p) => p.pay === 'wait').length)} pct="" pctClass="text-[#e09a12]" iconBg="bg-[#fff6e8] text-[#e09a12]" />
+        <KpiCard icon={XCircle} label="Keldi" value={String(rows.filter((p) => p.arrived).length)} pct="" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[#16a34a]" />
       </section>
 
       <div className="mt-2.5 flex items-center gap-2 rounded-2xl border border-[#e6f1ef] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
@@ -299,7 +302,7 @@ function DesktopParticipants() {
           <Link to="/tashkilotchi/qr" className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#b7e3dc] bg-white px-2.5 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
             <QrCode className="size-4" /> QR check-in
           </Link>
-          <button type="button" onClick={() => notify('Excel yuklab olindi')} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
+          <button type="button" onClick={() => { downloadText('ishtirokchilar.csv', ['ism,telefon,email,chipta,tolov,keldi', ...filtered.map((p) => `${p.name},${p.phone},${p.email},${p.ticket},${p.pay},${p.arrived ? 'Keldi' : ''}`)].join('\n'), 'text/csv'); notify('Excel yuklab olindi') }} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
             <Download className="size-4 text-[#1f9d55]" /> Excel yuklab olish
           </button>
           <button type="button" onClick={() => setMail(true)} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
@@ -309,9 +312,9 @@ function DesktopParticipants() {
             bordered
             label="Seminar amallari"
             items={[
-              { label: 'Excel yuklab olish', onClick: () => notify('Excel yuklab olindi') },
+              { label: 'Excel yuklab olish', onClick: () => { downloadText('ishtirokchilar.csv', ['ism,telefon,email,chipta,tolov,keldi', ...filtered.map((p) => `${p.name},${p.phone},${p.email},${p.ticket},${p.pay},${p.arrived ? 'Keldi' : ''}`)].join('\n'), 'text/csv'); notify('Excel yuklab olindi') } },
               { label: 'Email yuborish', onClick: () => setMail(true) },
-              { label: 'QR check-in', onClick: () => notify('QR check-in ochildi') },
+              { label: 'QR check-in', onClick: () => { window.location.assign('/tashkilotchi/qr') } },
             ]}
           />
         </div>
@@ -362,7 +365,7 @@ function DesktopParticipants() {
                         <VertMenu
                           items={[
                             { label: 'Email', onClick: () => { setSelected(p.id); setMail(true) } },
-                            { label: 'O‘chirish', danger: true, onClick: () => { setRows((list) => list.filter((x) => x.id !== p.id)); notify('O‘chirildi') } },
+                            { label: 'O‘chirish', danger: true, onClick: () => { removeParticipant(p.id); notify('O‘chirildi') } },
                           ]}
                         />
                       </td>
@@ -479,8 +482,9 @@ function DesktopParticipants() {
               <p className="mt-1 text-[12px] font-semibold leading-tight">Ishtirokchi QR-kodi</p>
               <p className="text-[10.5px] leading-tight text-[#8aa0a4]">Kirish paytida skanerlang</p>
             </div>
-            <button type="button" onClick={() => notify(`${person.name} check-in qilindi`)} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-xl text-[12.5px] font-semibold text-white" style={{ background: TEAL }}>
-              <Check className="size-4" strokeWidth={2.6} /> QR check-in qilish
+            {person.arrived && <p className="mt-2 text-center text-[12px] font-semibold text-[#16a34a]">Keldi</p>}
+            <button type="button" onClick={() => { checkIn(person.id); notify(`${person.name} — Keldi`) }} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-xl text-[12.5px] font-semibold text-white" style={{ background: TEAL }}>
+              <Check className="size-4" strokeWidth={2.6} /> {person.arrived ? 'Qayta belgilash' : 'QR check-in qilish'}
             </button>
             <div className="mt-1.5 grid grid-cols-2 gap-1.5">
               <Link to="/tashkilotchi/sertifikatlar" className="inline-flex h-9 items-center justify-center rounded-xl border border-[#d7ebe6] text-[12px] font-semibold text-[#1c4a5a]">Sertifikat berish</Link>
@@ -491,8 +495,8 @@ function DesktopParticipants() {
       </div>
 
       <AddModal open={add} onClose={() => setAdd(false)} onSave={(row) => {
-        setRows((list) => [row, ...list])
-        setSelected(row.id)
+        const person = addParticipant({ ...row, seminarId: seminar })
+        setSelected(person.id)
         setPanel(true)
         setPagerFree(true)
         setAdd(false)
@@ -600,6 +604,7 @@ const M_PAY = { paid: 'To‘langan', wait: 'Kutilmoqda', cancel: 'Bekor qilingan
 
 function MobileParticipants() {
   const { notify } = useOrg()
+  const hub = useHub()
   const [tab, setTab] = useState('people')
   const [chip, setChip] = useState('all')
   const [sheet, setSheet] = useState(null)
@@ -754,7 +759,7 @@ function MobileParticipants() {
             </div>
             <p className="text-[13px]">Chipta: <b>{sheet.ticket}</b></p>
             <p className="mt-1 text-[13px]">To‘lov: <b>{M_PAY[sheet.pay]}</b></p>
-            <button type="button" onClick={() => { notify(`${sheet.name} check-in qilindi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
+            <button type="button" onClick={() => { const hit = hub.participants.find((p) => p.name === sheet.name); if (hit) checkIn(hit.id); else { const person = addParticipant({ name: sheet.name, phone: sheet.phone || '', seminarId: hub.seminars[0]?.id, ticket: 'Standart', pay: 'paid', clinic: '—', email: '', city: 'Toshkent', role: 'Stomatolog' }); checkIn(person.id) } notify(`${sheet.name} — Keldi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
               <Check className="size-4" /> QR check-in qilish
             </button>
           </div>

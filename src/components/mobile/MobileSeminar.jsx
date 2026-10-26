@@ -4,7 +4,8 @@ import {
   ChevronLeft, ChevronRight, Bookmark, Share2, CalendarDays, Clock, MapPin, Tag, CalendarRange, ListChecks, Gift, BookOpen,
   Users, Coffee, FileBadge, Folder, ArrowRight, CircleCheck, CalendarPlus, Check, Ticket,
 } from 'lucide-react'
-import { seminarMobile, som } from '../../seminarsData'
+import { seminarView, som } from '../../seminarsData'
+import { publicRecord, useHub } from '../../hubStore'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { ToothIcon, BottomSheet } from './MobileSeminars'
@@ -30,11 +31,13 @@ export default function MobileSeminar() {
 }
 
 function SeminarView({ id }) {
-  const s = seminarMobile(id)
+  const hub = useHub()
+  const rec = publicRecord(id, hub)
+  const s = rec ? seminarView(rec) : null
   const navigate = useNavigate()
   const store = useSeminarStore()
-  const reg = store.registered[s.id]
-  const saved = store.saved.includes(s.id)
+  const reg = s ? store.registered[s.id] : null
+  const saved = s ? store.saved.includes(s.id) : false
   const [tab, setTab] = useState('about')
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState('')
@@ -57,6 +60,15 @@ function SeminarView({ id }) {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  if (!s) {
+    return (
+      <div className="px-4 py-16 text-center">
+        <p className="text-[16px] font-bold text-ink">Seminar topilmadi</p>
+        <button type="button" onClick={() => navigate('/seminarlar')} className="mt-3 text-[13px] font-semibold text-sea">Seminarlarga qaytish</button>
+      </div>
+    )
+  }
 
   const goTo = (key) => {
     setTab(key)
@@ -222,8 +234,8 @@ function SeminarView({ id }) {
                 <span className="rounded-md bg-sale px-1.5 font-bold text-white">-{s.off}%</span>
               </p>
             </div>
-            <button type="button" onClick={() => navigate(`/seminarlar/${s.id}/royxat`)} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
-              Ro‘yxatdan o‘tish <ArrowRight className="size-[18px]" />
+            <button type="button" disabled={s.cancelled} onClick={() => { if (!s.cancelled) navigate(`/seminarlar/${s.id}/royxat`) }} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:bg-[#fde8e8] disabled:text-[#dc2626] disabled:shadow-none">
+              {s.cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'} {!s.cancelled && <ArrowRight className="size-[18px]" />}
             </button>
           </>
         )}

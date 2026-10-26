@@ -3,22 +3,15 @@ import { Link } from 'react-router-dom'
 import {
   Check, ChevronDown, ChevronRight, CircleHelp, Clock, Coins, CreditCard, FileText, Info, Landmark, Lock, Plus, Undo2, Upload, UserRound, Wallet as WalletIcon, X,
 } from 'lucide-react'
-import { WALLET_TX, som } from '../data'
+import { som } from '../data'
+import { addRequisite, useHub, walletOf, withdraw } from '../../hubStore'
 import { useOrg } from '../Shell'
-
-const AVAILABLE = 8200000
 
 const STATUS = {
   hold: { label: 'Ushlab turilgan', icon: Clock, cls: 'bg-[#fff4e0] text-[#e1960b]' },
   paid: { label: 'O‘tkazildi', icon: Check, cls: 'bg-[#e7f8ee] text-[#16a34a]' },
   refund: { label: 'Qaytarildi', icon: Undo2, cls: 'bg-[#eef2f3] text-[#7d8b90]' },
 }
-
-const BALANCES = [
-  { icon: Lock, title: 'Ushlab turilgan', value: '12 500 000 so‘m', text: 'Seminar o‘tkazilgandan keyin yechib olish mumkin', info: true },
-  { icon: WalletIcon, title: 'Yechib olish mumkin', value: '8 200 000 so‘m', text: 'Hozir pul yechish so‘rovini yuborishingiz mumkin', info: true },
-  { icon: Coins, title: 'Jami o‘tkazilgan', value: '45 600 000 so‘m', text: 'Oldingi to‘lovlar (muvaffaqiyatli o‘tkazilgan)', info: false },
-]
 
 const FILTERS = [
   { value: 'all', label: 'Barchasi' },
@@ -27,16 +20,33 @@ const FILTERS = [
   { value: 'refund', label: 'Qaytarildi' },
 ]
 
-const MOBILE_TX = [
-  { date: '21.10.2026', time: '18:24', title: 'Implantologiya: amaliy kurs', sub: 'To‘lov (Aliyeva Mohira)', amount: 300000, kind: 'in', status: 'Tushum' },
-  { date: '21.10.2026', time: '17:11', title: 'Implantologiya: amaliy kurs', sub: 'To‘lov (Karimov Bekzod)', amount: 500000, kind: 'in', status: 'Tushum' },
-  { date: '20.10.2026', time: '16:30', title: 'Pul yechish', sub: 'Karta **** 4521', amount: -5000000, kind: 'out', status: 'Yuborilgan' },
-  { date: '19.10.2026', time: '14:12', title: 'Implantologiya: amaliy kurs', sub: 'To‘lov (Toirov Dilshod)', amount: 300000, kind: 'in', status: 'Tushum' },
-  { date: '18.10.2026', time: '11:02', title: 'Implantologiya: amaliy kurs', sub: 'To‘lov (Saidova Malika)', amount: 300000, kind: 'in', status: 'Tushum' },
-  { date: '17.10.2026', time: '20:45', title: 'Komissiya', sub: 'Implantologiya: amaliy kurs', amount: -120000, kind: 'fee', status: 'Komissiya' },
-  { date: '17.10.2026', time: '20:45', title: 'Implantologiya: amaliy kurs', sub: 'To‘lov (Usmonov Javohir)', amount: 500000, kind: 'in', status: 'Tushum' },
-  { date: '16.10.2026', time: '13:20', title: 'Implantologiya: amaliy kurs', sub: 'To‘lov (Raximova Sevara)', amount: 300000, kind: 'in', status: 'Tushum' },
-]
+function compact(n) {
+  return Math.round(n).toLocaleString('ru-RU')
+}
+
+function mobileRows(wallet) {
+  const rows = []
+  for (const r of wallet.rows) {
+    if (r.who === 'Yechish') {
+      rows.push({ id: r.id, date: r.date, time: '', title: 'Pul yechish', sub: r.seminar, amount: -r.sum, kind: 'out', status: 'Yuborilgan' })
+      continue
+    }
+    rows.push({
+      id: `${r.id}-in`,
+      date: r.date,
+      time: '',
+      title: r.seminar,
+      sub: `To‘lov (${r.who})`,
+      amount: r.sum,
+      kind: 'in',
+      status: r.state === 'refund' ? 'Qaytarildi' : 'Tushum',
+    })
+    if (r.fee) {
+      rows.push({ id: `${r.id}-fee`, date: r.date, time: '', title: 'Komissiya', sub: r.seminar, amount: -r.fee, kind: 'fee', status: 'Komissiya' })
+    }
+  }
+  return rows
+}
 
 const MOBILE_FILTERS = [
   { id: 'all', label: 'Barchasi' },
@@ -49,6 +59,7 @@ const STATUS_TONE = {
   Tushum: 'text-[#16a34a]',
   Yuborilgan: 'text-[#3b82f6]',
   Komissiya: 'text-[#8b979c]',
+  Qaytarildi: 'text-[#8b979c]',
 }
 
 const FACTS = [
@@ -77,26 +88,34 @@ export default function Wallet() {
 }
 
 function DesktopWallet() {
-  const { notify } = useOrg()
+  const { notify, query } = useOrg()
+  const hub = useHub()
+  const wallet = walletOf(hub)
   const [filter, setFilter] = useState('all')
   const [filterOpen, setFilterOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('card')
-  const [picked, setPicked] = useState('4521')
+  const [picked, setPicked] = useState(hub.requisites[0]?.id || '4521')
   const [cardOpen, setCardOpen] = useState(false)
   const [err, setErr] = useState('')
   const [sent, setSent] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
-  const rows = useMemo(() => WALLET_TX.filter((t) => filter === 'all' || t.state === filter), [filter])
+  const q = (query || '').trim().toLowerCase()
+  const rows = useMemo(() => wallet.rows.filter((t) => (filter === 'all' || t.state === filter) && (!q || `${t.seminar} ${t.who}`.toLowerCase().includes(q))), [wallet.rows, filter, q])
   const n = Number(String(amount).replace(/\s/g, ''))
   const filterLabel = FILTERS.find((f) => f.value === filter)?.label
+  const balances = [
+    { icon: Lock, title: 'Ushlab turilgan', value: `${som(wallet.hold)}`, text: 'Seminar o‘tkazilgandan keyin yechib olish mumkin', info: true },
+    { icon: WalletIcon, title: 'Yechib olish mumkin', value: `${som(wallet.available)}`, text: 'Hozir pul yechish so‘rovini yuborishingiz mumkin', info: true },
+    { icon: Coins, title: 'Jami o‘tkazilgan', value: `${som(wallet.transferred)}`, text: 'Oldingi to‘lovlar (muvaffaqiyatli o‘tkazilgan)', info: false },
+  ]
 
   const submit = () => {
-    if (!n || n < 1000) { setErr('Kamida 1 000 so‘m kiriting'); return }
-    if (n > AVAILABLE) { setErr('Yechib olish mumkin bo‘lgan summadan oshmasin'); return }
-    if (!picked) { setErr('Rekvizit tanlang'); return }
+    const res = withdraw(n, picked)
+    if (!res.ok) { setErr(res.error); return }
     setErr('')
     setSent(true)
+    setAmount('')
     notify('So‘rov yuborildi')
   }
 
@@ -108,7 +127,7 @@ function DesktopWallet() {
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)_240px] items-start gap-3">
         <div className="min-w-0 space-y-3">
           <section className="grid grid-cols-3 gap-3">
-            {BALANCES.map((b) => <Balance key={b.title} {...b} />)}
+            {balances.map((b) => <Balance key={b.title} {...b} />)}
           </section>
 
           <section className="rounded-2xl border border-[#d7f0ea] bg-[#f4fbfa] px-4 py-3.5">
@@ -170,10 +189,10 @@ function DesktopWallet() {
                   const st = STATUS[t.state]
                   const Icon = st.icon
                   return (
-                    <tr key={t.date + t.seminar} className="border-b border-[#f3f7f6] last:border-0">
+                    <tr key={t.id} className="border-b border-[#f3f7f6] last:border-0">
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{t.date}</td>
                       <td className="px-2 py-2.5 align-middle text-[12px] font-medium leading-snug">
-                        <Link to="/tashkilotchi/seminarlar/implant" className="line-clamp-2 text-[#143044] hover:text-[var(--color-org-teal)]">{t.seminar}</Link>
+                        {t.seminarId ? <Link to={`/tashkilotchi/seminarlar/${t.seminarId}`} className="line-clamp-2 text-[#143044] hover:text-[var(--color-org-teal)]">{t.seminar}</Link> : <span className="line-clamp-2">{t.seminar}</span>}
                       </td>
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px]">{som(t.sum)}</td>
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{som(t.fee)}</td>
@@ -203,7 +222,7 @@ function DesktopWallet() {
               Pul yechish so‘rovi
             </h2>
             <p className="mt-2.5 text-[12px] text-[#6e868c]">Yechib olish mumkin bo‘lgan summa</p>
-            <p className="mt-0.5 text-[20px] font-bold leading-tight tracking-tight text-[#14a394]">8 200 000 so‘m</p>
+            <p className="mt-0.5 text-[20px] font-bold leading-tight tracking-tight text-[#14a394]">{som(wallet.available)}</p>
 
             <label className="mt-3 block">
               <span className="mb-1.5 block text-[12.5px] font-medium text-[#1c4a5a]">Yechib olish summasi</span>
@@ -236,9 +255,11 @@ function DesktopWallet() {
               </button>
               {cardOpen && (
                 <ul className="absolute left-0 right-0 z-30 mt-1 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-                  <li>
-                    <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] font-medium hover:bg-[#f4fbfa]" onClick={() => { setPicked('4521'); setMethod('card'); setCardOpen(false) }}>Karta **** 4521 · Humo</button>
-                  </li>
+                  {hub.requisites.map((r) => (
+                    <li key={r.id}>
+                      <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] font-medium hover:bg-[#f4fbfa]" onClick={() => { setPicked(r.id); setMethod('card'); setCardOpen(false) }}>{r.label} · {r.detail}</button>
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
@@ -273,7 +294,7 @@ function DesktopWallet() {
         </div>
       </div>
 
-      {addOpen && <AddRequisite onClose={() => setAddOpen(false)} onSave={() => { setAddOpen(false); notify('Rekvizit saqlandi') }} />}
+      {addOpen && <AddRequisite onClose={() => setAddOpen(false)} onSave={(item) => { addRequisite(item); setPicked(item.id); setAddOpen(false); notify('Rekvizit saqlandi') }} />}
     </div>
   )
 }
@@ -327,7 +348,7 @@ function AddRequisite({ onClose, onSave }) {
       <form
         className="w-full max-w-[400px] rounded-2xl bg-white p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
-        onSubmit={(e) => { e.preventDefault(); if (!name.trim() || !detail.trim()) { setBad(true); return } onSave() }}
+        onSubmit={(e) => { e.preventDefault(); if (!name.trim() || !detail.trim()) { setBad(true); return } onSave({ id: detail.replace(/\D/g, '').slice(-4) || String(Date.now()).slice(-4), label: name.trim(), detail: detail.trim() }) }}
       >
         <div className="flex items-center justify-between">
           <h3 className="text-[15px] font-bold">Rekvizit qo‘shish</h3>
@@ -348,9 +369,23 @@ function AddRequisite({ onClose, onSave }) {
 
 function MobileWallet() {
   const { notify } = useOrg()
+  const hub = useHub()
+  const wallet = walletOf(hub)
   const [filter, setFilter] = useState('all')
   const [cardOpen, setCardOpen] = useState(false)
-  const rows = MOBILE_TX.filter((t) => filter === 'all' || t.kind === filter)
+  const [amount, setAmount] = useState('')
+  const [picked, setPicked] = useState(hub.requisites[0]?.id || '4521')
+  const [err, setErr] = useState('')
+  const rows = mobileRows(wallet).filter((t) => filter === 'all' || t.kind === filter)
+  const card = hub.requisites.find((r) => r.id === picked) || hub.requisites[0]
+  const ask = () => {
+    const n = Number(String(amount).replace(/\s/g, ''))
+    const res = withdraw(n, picked)
+    if (!res.ok) { setErr(res.error); return }
+    setErr('')
+    setAmount('')
+    notify(`${som(n)} yechish so‘rovi yuborildi`)
+  }
 
   return (
     <div className="text-[#143044]">
@@ -358,9 +393,9 @@ function MobileWallet() {
       <p className="mt-1 text-[13.5px] text-[#6e868c]">Daromadlaringiz va to‘lovlar</p>
 
       <section className="mt-3 grid grid-cols-3 gap-2">
-        <MiniStat icon={CreditCard} label="Ushlab turilgan" value="2 300 000" help />
-        <MiniStat icon={WalletIcon} label="Yechib olish mumkin" value="8 800 000" />
-        <MiniStat icon={Coins} label="Jami o‘tkazilgan" value="15 400 000" />
+        <MiniStat icon={CreditCard} label="Ushlab turilgan" value={compact(wallet.hold)} help />
+        <MiniStat icon={WalletIcon} label="Yechib olish mumkin" value={compact(wallet.available)} />
+        <MiniStat icon={Coins} label="Jami o‘tkazilgan" value={compact(wallet.transferred)} />
       </section>
 
       <section className="mt-3 rounded-2xl border border-[#e6f1ef] bg-[#f7fcfb] px-3 py-3">
@@ -391,15 +426,24 @@ function MobileWallet() {
         <p className="mt-0.5 text-[12px] text-[#6e868c]">Mablag‘ni o‘z karta hisobingizga o‘tkazing.</p>
         <button type="button" onClick={() => setCardOpen((v) => !v)} className="mt-3 flex h-12 w-full items-center gap-2.5 rounded-xl bg-[#f4fbfa] px-3 text-left">
           <span className="grid size-8 place-items-center rounded-lg bg-white text-[var(--color-org-teal)]"><CreditCard className="size-4" /></span>
-          <span className="flex-1 text-[14px] font-semibold tracking-wide">**** 4521</span>
+          <span className="flex-1 text-[14px] font-semibold tracking-wide">{card?.label || '**** 4521'}</span>
           <ChevronDown className="size-4 text-[#8aa4a8]" />
         </button>
         {cardOpen && (
           <div className="absolute left-3 right-3 z-20 mt-1 rounded-xl border border-[#e6eeec] bg-white p-2 shadow-lg">
-            <p className="px-2 py-1.5 text-[12.5px] font-semibold">Karta **** 4521 · Humo 04/28</p>
+            {hub.requisites.map((r) => (
+              <button key={r.id} type="button" className="block w-full px-2 py-1.5 text-left text-[12.5px] font-semibold" onClick={() => { setPicked(r.id); setCardOpen(false) }}>{r.label} · {r.detail}</button>
+            ))}
           </div>
         )}
-        <button type="button" onClick={() => notify('8 800 000 so‘m yechish so‘rovi yuborildi')} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-org-teal)] text-[15px] font-semibold text-white">
+        <label className="mt-3 block text-[12px] font-medium text-[#1c4a5a]">Summa
+          <span className="mt-1 flex h-11 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3">
+            <input value={amount} onChange={(e) => { setAmount(moneyInput(e.target.value)); setErr('') }} inputMode="numeric" placeholder="Masalan: 100 000" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none" />
+            <span className="text-[12px] text-[#8aa0a4]">so‘m</span>
+          </span>
+        </label>
+        {err && <p className="mt-1 text-[12px] text-[#e11d48]">{err}</p>}
+        <button type="button" onClick={ask} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-org-teal)] text-[15px] font-semibold text-white">
           <Upload className="size-4" strokeWidth={2.2} /> Pul yechish
         </button>
       </section>

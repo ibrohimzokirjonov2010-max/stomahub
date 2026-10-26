@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 import {
   ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, CreditCard, Download, Info, Mail, MapPin, UserRound, X,
 } from 'lucide-react'
-import { seminarPage } from '../seminarsData'
+import { buildSeminarPage } from '../seminarsData'
+import { addMessage, publicRecord, quotePromo, useHub } from '../hubStore'
+import { register } from '../components/mobile/seminarStore'
 import { som } from '../marketData'
 
 const PAY = {
@@ -17,8 +19,10 @@ const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', "Farg�
 
 export default function SeminarReg() {
   const { id } = useParams()
-  const seminar = seminarPage(id)
-  const view = useMemo(() => profile(seminar), [seminar])
+  const hub = useHub()
+  const rec = publicRecord(id, hub)
+  const seminar = rec ? buildSeminarPage(rec) : null
+  const view = useMemo(() => (seminar ? profile(seminar) : null), [seminar])
   const [step, setStep] = useState(1)
   const [method, setMethod] = useState('click')
   const [sheet, setSheet] = useState(true)
@@ -27,6 +31,30 @@ export default function SeminarReg() {
   const [paidAt, setPaidAt] = useState('')
   const [help, setHelp] = useState(false)
   const [sent, setSent] = useState(false)
+  const [helpText, setHelpText] = useState('')
+  const [promo, setPromo] = useState('')
+  const [promoMsg, setPromoMsg] = useState('')
+  const [discount, setDiscount] = useState(0)
+  const [planId, setPlanId] = useState(() => seminar?.plans?.find((p) => /standart/i.test(p.name))?.id || seminar?.plans?.[0]?.id || '')
+  if (!seminar || !view) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-[18px] font-bold text-ink">Seminar topilmadi</p>
+        <Link to="/seminarlar" className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminarlarga qaytish</Link>
+      </div>
+    )
+  }
+  if (seminar.cancelled) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-[18px] font-bold text-ink">Seminar bekor qilingan</p>
+        <p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p>
+        <Link to={`/seminarlar/${id}`} className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminar sahifasi</Link>
+      </div>
+    )
+  }
+  const plan = seminar.plans.find((p) => p.id === planId) || seminar.plans[0]
+  const amount = Math.max(0, plan.price - discount)
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
@@ -50,15 +78,38 @@ export default function SeminarReg() {
     setSheet(true)
   }
 
-  const accept = (id) => {
-    const link = PAY[id]
+  const applyCode = () => {
+    const q = quotePromo(promo, id, plan.price)
+    if (!q.ok) { setDiscount(0); setPromoMsg(q.error); return }
+    setDiscount(q.discount)
+    setPromoMsg(`Chegirma qo‘llandi: ${som(q.discount)}`)
+  }
+
+  const accept = (payId) => {
+    const res = register(id, {
+      name: form.name.trim(),
+      phone: form.phone,
+      email: form.email,
+      clinic: form.clinic,
+      city: form.city,
+      spec: form.spec,
+      ticketName: plan.name,
+      methodLabel: payId === 'payme' ? 'Payme' : payId === 'uzcard' ? 'Uzcard' : 'Click',
+      gross: plan.price,
+      promo: discount ? promo.trim() : '',
+      title: view.title,
+      plan: 'Standart',
+      price: amount,
+    })
+    if (!res?.ok) { setError(res?.error || 'To‘lov amalga oshmadi'); return }
+    const link = PAY[payId]
     if (link) window.open(link, '_blank', 'noopener,noreferrer')
     const now = new Date()
     const months = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
     const hh = String(now.getHours()).padStart(2, '0')
     const mm = String(now.getMinutes()).padStart(2, '0')
     setPaidAt(`${now.getDate()}-${months[now.getMonth()]} ${now.getFullYear()}, ${hh}:${mm}`)
-    setMethod(id)
+    setMethod(payId)
     setStep(3)
   }
 
@@ -140,6 +191,21 @@ export default function SeminarReg() {
           {step === 2 && (
             <section className="mt-4">
               <h2 className="text-[16px] font-bold">To‘lov usulini tanlang</h2>
+              {seminar.organizer && seminar.plans.length > 1 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {seminar.plans.map((p) => (
+                    <button key={p.id} type="button" onClick={() => { setPlanId(p.id); setDiscount(0); setPromoMsg('') }} className={`h-10 rounded-xl border px-3 text-[12.5px] font-semibold ${p.id === plan.id ? 'border-[#149e86] bg-[#e7f8f4] text-[#0f766e]' : 'border-line bg-white text-ink'}`}>
+                      {p.name} · {som(p.price)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input value={promo} onChange={(e) => { setPromo(e.target.value.toUpperCase()); setPromoMsg('') }} placeholder="Promokod" className="h-11 w-40 rounded-xl border border-line px-3 text-[13px] uppercase outline-none" />
+                <button type="button" onClick={applyCode} className="h-11 rounded-xl bg-[#0b6d73] px-4 text-[13px] font-semibold text-white">Qo‘llash</button>
+                {promoMsg && <span className="text-[12.5px] text-[#0f766e]">{promoMsg}</span>}
+                {discount > 0 && <span className="text-[12.5px] text-muted line-through">{som(view.price)}</span>}
+              </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <Method id="click" on={method === 'click'} title="Click" text="Click orqali to‘lov" onClick={() => pick('click')} />
                 <Method id="payme" on={method === 'payme'} title="Payme" text="Payme orqali to‘lov" onClick={() => pick('payme')} />
@@ -148,7 +214,7 @@ export default function SeminarReg() {
               {sheet && method !== 'uzcard' && (
                 <PaySheet
                   method={method}
-                  amount={view.price}
+                  amount={amount}
                   order={view.order}
                   onClose={() => setSheet(false)}
                   onOther={() => setSheet(false)}
@@ -156,7 +222,7 @@ export default function SeminarReg() {
                 />
               )}
               {sheet && method === 'uzcard' && (
-                <Uzcard amount={view.price} onClose={() => setSheet(false)} onPay={() => accept('uzcard')} />
+                <Uzcard amount={amount} onClose={() => setSheet(false)} onPay={() => accept('uzcard')} />
               )}
             </section>
           )}
@@ -221,7 +287,7 @@ export default function SeminarReg() {
           {step < 3 ? (
             <>
               <p className="mt-3 text-[12px] text-muted">Seminar narxi</p>
-              <b className="text-[22px] text-[#149e86]">{som(view.price)}</b>
+              <b className="text-[22px] text-[#149e86]">{som(amount)}</b>
               <div className="mt-2 rounded-xl bg-[#e7f8f4] p-3 text-[12.5px]">
                 <b className="mb-1 block">Narxga quyidagilar kiradi:</b>
                 {includes.map((t) => <p key={t} className="mt-1 flex gap-1.5"><Check className="mt-0.5 size-3.5 shrink-0 text-[#149e86]" /> {t}</p>)}
@@ -233,7 +299,7 @@ export default function SeminarReg() {
               <Row k="Buyurtma raqami" v={`#${view.order}`} />
               <Row k="To‘lov usuli" v={method === 'payme' ? 'Payme' : method === 'uzcard' ? 'Uzcard / Humo' : 'Click'} />
               <Row k="To‘lov sanasi" v={paidAt} />
-              <Row k="Seminar narxi" v={som(view.price)} />
+              <Row k="Seminar narxi" v={som(amount)} />
             </div>
           )}
         </aside>
@@ -249,8 +315,9 @@ export default function SeminarReg() {
             <div className="bemor-dialog-body px-4 pb-4">
               {sent ? <p className="text-[13px]">Xabaringiz qabul qilindi. Operator telefon raqamingizga bog‘lanadi.</p> : (
                 <>
-                  <textarea placeholder="Savolingizni yozing..." className="h-24 w-full rounded-xl border border-line px-3 py-2 text-[13px] outline-none" />
-                  <button type="button" onClick={() => setSent(true)} className="mt-2 h-10 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">Yuborish</button>
+                  <textarea value={helpText} onChange={(e) => setHelpText(e.target.value)} placeholder="Savolingizni yozing..." className="h-24 w-full rounded-xl border border-line px-3 py-2 text-[13px] outline-none" />
+                  {error && help && <p className="mt-1 text-[12px] text-[#e11d48]">{error}</p>}
+                  <button type="button" onClick={() => { if (helpText.trim().length < 5) { setError('Xabar kamida 5 ta belgidan iborat bo‘lsin'); return } addMessage(helpText.trim()); setError(''); setHelpText(''); setSent(true) }} className="mt-2 h-10 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">Yuborish</button>
                 </>
               )}
             </div>

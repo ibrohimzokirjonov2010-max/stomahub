@@ -4,7 +4,8 @@ import {
   Calendar, Check, ChevronDown, Crown, Download, Gem, GraduationCap, House, Link2, MapPin,
   Pencil, Plus, QrCode, ShoppingCart, Tag, Ticket, Users, Wallet,
 } from 'lucide-react'
-import { MONTHS, TICKET_TYPES, som } from '../data'
+import { MONTHS, som } from '../data'
+import { downloadText, saveTickets, upsertPromo, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Btn, Field, MenuBtn, Modal, QrMark, Toggle, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
@@ -72,22 +73,36 @@ export default function Tickets() {
   return <DesktopTickets />
 }
 
+function useSeminarPick() {
+  const hub = useHub()
+  const list = hub.seminars
+  const [sid, setSid] = useState(() => list.find((s) => s.id === 'implant-nov')?.id || list[0]?.id || '')
+  const sem = list.find((s) => s.id === sid) || list[0]
+  return { list, sid, setSid, sem }
+}
+
 function DesktopTickets() {
-  const { notify } = useOrg()
+  const { notify, query } = useOrg()
+  const { list, sid, setSid, sem } = useSeminarPick()
   const [tab, setTab] = useState('types')
-  const [rows, setRows] = useState(TICKET_TYPES)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [promo, setPromo] = useState(false)
   const [design, setDesign] = useState(false)
   const [metric, setMetric] = useState('Sotilgan chiptalar')
+  const all = sem?.tickets || []
+  const q = (query || '').trim().toLowerCase()
+  const rows = all.filter((t) => !q || `${t.name} ${t.note || ''}`.toLowerCase().includes(q))
+  const seats = all.reduce((n, t) => n + (Number(t.total || t.seats) || 0), 0)
+  const sold = all.reduce((n, t) => n + (Number(t.sold) || 0), 0)
+  const revenue = all.reduce((n, t) => n + (Number(t.sold) || 0) * (Number(t.price) || 0), 0)
+  const left = Math.max(0, seats - sold)
 
+  const commit = (next) => { if (sem) saveTickets(sem.id, next) }
   const saveRow = (row) => {
-    setRows((list) => {
-      const idx = list.findIndex((x) => x.id === row.id)
-      if (idx === -1) return [...list, row]
-      return list.map((x) => (x.id === row.id ? { ...x, ...row } : x))
-    })
+    const idx = all.findIndex((x) => x.id === row.id)
+    const mapped = { ...row, seats: row.total, total: row.total }
+    commit(idx === -1 ? [...all, mapped] : all.map((x) => (x.id === row.id ? { ...x, ...mapped } : x)))
     setOpen(false)
     setEditing(null)
     notify('Chipta turi saqlandi')
@@ -114,24 +129,28 @@ function DesktopTickets() {
 
       <section className="flex items-center justify-between gap-3 rounded-2xl border border-[#e6f1ef] bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
         <div className="flex min-w-0 items-center gap-3">
-          <img src="/images/organizer/ticket-implant.jpg" alt="" className="h-14 w-[72px] shrink-0 rounded-xl object-cover object-center" />
+          <img src={sem?.image || '/images/organizer/ticket-implant.jpg'} alt="" className="h-14 w-[72px] shrink-0 rounded-xl object-cover object-center" />
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-bold leading-tight text-[#143044]">Implantologiya: nazariya va amaliyot</p>
+            <label className="block text-[11px] text-[#8aa0a4]">Seminar
+              <select value={sid} onChange={(e) => setSid(e.target.value)} className="mt-0.5 block h-7 max-w-[280px] truncate rounded-lg border border-[#e4eeec] bg-white px-2 text-[13px] font-bold text-[#143044]">
+                {list.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+              </select>
+            </label>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[#5e787e]">
-              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> 24-noyabr 2026</span>
-              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> Toshkent</span>
-              <span className="inline-flex h-5 items-center rounded-full border border-[#b7e3da] bg-[#f3fbfa] px-2 text-[11px] font-semibold text-[var(--color-org-teal)]">Offline</span>
+              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {sem?.date}</span>
+              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {sem?.city}</span>
+              <span className="inline-flex h-5 items-center rounded-full border border-[#b7e3da] bg-[#f3fbfa] px-2 text-[11px] font-semibold text-[var(--color-org-teal)]">{sem?.format || 'Offline'}</span>
             </p>
           </div>
         </div>
-        <Btn kind="ghost" to="/tashkilotchi/seminarlar/yangi" className="h-9 shrink-0 px-3">Seminarni o‘zgartirish</Btn>
+        <Btn kind="ghost" to={`/tashkilotchi/seminarlar/yangi?tahrir=${sem?.id || ''}`} className="h-9 shrink-0 px-3">Seminarni o‘zgartirish</Btn>
       </section>
 
       <section className="mt-3 grid grid-cols-4 gap-3">
-        <Kpi icon={Ticket} label="Jami chiptalar" value="1 240" delta="+18%" />
-        <Kpi icon={ShoppingCart} label="Sotilgan chiptalar" value="980" delta="+25%" />
-        <Kpi icon={Wallet} label="Umumiy tushum" value="45 600 000 so‘m" delta="+32%" />
-        <Kpi icon={Ticket} label="Qolgan chiptalar" value="260" delta="-18%" down />
+        <Kpi icon={Ticket} label="Jami chiptalar" value={String(seats)} delta="" />
+        <Kpi icon={ShoppingCart} label="Sotilgan chiptalar" value={String(sold)} delta="" />
+        <Kpi icon={Wallet} label="Umumiy tushum" value={som(revenue)} delta="" />
+        <Kpi icon={Ticket} label="Qolgan chiptalar" value={String(left)} delta="" />
       </section>
 
       <div className="mt-3.5 flex flex-wrap gap-2">
@@ -187,8 +206,8 @@ function DesktopTickets() {
                             <span className="inline-flex items-center">
                               <button type="button" aria-label="Tahrirlash" onClick={() => { setEditing(t); setOpen(true) }} className="grid size-8 place-items-center text-[var(--color-org-teal)]"><Pencil className="size-4" /></button>
                               <MenuBtn items={[
-                                { label: t.active ? 'Nofaol qilish' : 'Faol qilish', onClick: () => setRows((list) => list.map((x) => x.id === t.id ? { ...x, active: !x.active } : x)) },
-                                { label: 'O‘chirish', danger: true, onClick: () => setRows((list) => list.filter((x) => x.id !== t.id)) },
+                                { label: t.active ? 'Nofaol qilish' : 'Faol qilish', onClick: () => commit(all.map((x) => x.id === t.id ? { ...x, active: !x.active } : x)) },
+                                { label: 'O‘chirish', danger: true, onClick: () => commit(all.filter((x) => x.id !== t.id)) },
                               ]} />
                             </span>
                           </td>
@@ -208,7 +227,7 @@ function DesktopTickets() {
                 <SalesBars values={metric === 'Tushum' ? BARS.map((n) => Math.round(n * 0.72)) : BARS} />
               </Panel>
               <Panel title="Chipta turlari bo‘yicha sotuv" className="h-full">
-                <SalesDonut />
+                <SalesDonut rows={all} />
               </Panel>
             </div>
           </div>
@@ -216,10 +235,10 @@ function DesktopTickets() {
           <div className="space-y-3">
             <Panel title="Chipta ko‘rinishi (namuna)" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Dizaynni sozlash</button>}>
               <VipTicket />
-              <Btn className="mt-3 w-full" onClick={() => notify('QR kod yuklab olindi')}><Download className="size-4" /> QR kodni yuklab olish</Btn>
+              <Btn className="mt-3 w-full" onClick={() => { downloadText('qr-chiptalar.txt', all.map((t) => `${t.name} · ${t.sold || 0} ta · ${sem?.title || ''}`).join('\n')); notify('QR kod yuklab olindi') }}><Download className="size-4" /> QR kodni yuklab olish</Btn>
             </Panel>
             <Panel title="Tezkor amallar">
-              <QuickGrid notify={notify} onQr={() => { setTab('qr'); notify('QR kodlar yaratildi') }} onPromo={() => setPromo(true)} />
+              <QuickGrid notify={notify} rows={all} shareId={sem?.id} onQr={() => { setTab('qr'); notify('QR kodlar yaratildi') }} onPromo={() => setPromo(true)} />
             </Panel>
           </div>
         </div>
@@ -230,7 +249,7 @@ function DesktopTickets() {
           <Panel title="Chipta sotuvlari dinamikasi" extra={<MetricSelect value={metric} onChange={setMetric} />}>
             <SalesBars values={BARS} />
           </Panel>
-          <Panel title="Chipta turlari bo‘yicha sotuv"><SalesDonut /></Panel>
+          <Panel title="Chipta turlari bo‘yicha sotuv"><SalesDonut rows={all} /></Panel>
         </div>
       )}
 
@@ -245,7 +264,7 @@ function DesktopTickets() {
         <Panel title="QR kodlar" className="mt-3">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {rows.map((t) => (
-              <button key={t.id} type="button" onClick={() => notify(`${t.name} QR yuklab olindi`)} className="rounded-xl border border-[#e6f1ef] p-3 text-center hover:bg-[#f6fbfa]">
+              <button key={t.id} type="button" onClick={() => { downloadText(`${t.name}-qr.txt`, `${sem?.title || ''}\n${t.name}\n${t.sold || 0} ta kod`); notify(`${t.name} QR yuklab olindi`) }} className="rounded-xl border border-[#e6f1ef] p-3 text-center hover:bg-[#f6fbfa]">
                 <p className="mb-2 text-[12.5px] font-semibold">{t.name}</p>
                 <QrMark size={84} seed={t.id} />
                 <p className="mt-1 text-[11px] text-[#8aa0a4]">{t.sold} ta kod</p>
@@ -258,7 +277,7 @@ function DesktopTickets() {
       {tab === 'settings' && <TicketSettings notify={notify} />}
 
       <TicketModal open={open} initial={editing} onClose={() => { setOpen(false); setEditing(null) }} onSave={saveRow} />
-      <PromoModal open={promo} onClose={() => setPromo(false)} onSave={() => { setPromo(false); notify('Promo-kod qo‘shildi') }} />
+      <PromoModal open={promo} onClose={() => setPromo(false)} onSave={(code) => { upsertPromo({ id: Date.now(), code, name: code, kind: 'foiz', value: 10, used: 0, limit: 100, from: 'bugun', to: 'ochiq', status: 'faol', seminar: sem?.id || 'all' }); setPromo(false); notify('Promo-kod qo‘shildi') }} />
       <Modal open={design} title="Dizaynni sozlash" onClose={() => setDesign(false)}>
         <p className="text-[13px] text-[#5e787e]">Chipta foni hozircha StomaHub teal uslubida. Tish va implant rasmi namuna chiptada ko‘rinadi.</p>
         <Btn className="mt-4" onClick={() => setDesign(false)}>Tayyor</Btn>
@@ -269,28 +288,34 @@ function DesktopTickets() {
 
 function MobileTickets() {
   const { notify } = useOrg()
-  const [rows, setRows] = useState(MOBILE_SEED)
+  const { list, sid, setSid, sem } = useSeminarPick()
+  const all = (sem?.tickets || []).map((t) => ({
+    ...t,
+    total: t.total || t.seats || 0,
+    perks: t.perks?.length ? t.perks : ['Seminarga kirish'],
+    image: t.image || '/images/organizer/ticket-hall.jpg',
+  }))
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const sold = rows.reduce((s, t) => s + t.sold, 0)
-  const total = rows.reduce((s, t) => s + t.total, 0)
+  const sold = all.reduce((s, t) => s + (t.sold || 0), 0)
+  const total = all.reduce((s, t) => s + (t.total || 0), 0)
+  const rows = all
 
   const save = (row) => {
-    setRows((list) => {
-      const idx = list.findIndex((x) => x.id === row.id)
-      if (idx === -1) {
-          return [...list, {
-          id: row.id,
-          name: row.name,
-          price: row.price,
-          perks: row.perks?.length ? row.perks : ['Seminarga kirish'],
-          sold: 0,
-          total: row.total,
-          image: '/images/organizer/ticket-hall.jpg',
-        }]
-      }
-      return list.map((x) => (x.id === row.id ? { ...x, name: row.name, price: row.price, total: row.total, perks: row.perks?.length ? row.perks : x.perks } : x))
-    })
+    const idx = all.findIndex((x) => x.id === row.id)
+    const mapped = {
+      id: row.id,
+      name: row.name,
+      price: row.price,
+      perks: row.perks?.length ? row.perks : ['Seminarga kirish'],
+      sold: row.sold || 0,
+      total: row.total,
+      seats: row.total,
+      left: Math.max(0, row.total - (row.sold || 0)),
+      active: true,
+      image: '/images/organizer/ticket-hall.jpg',
+    }
+    saveTickets(sem.id, idx === -1 ? [...all, mapped] : all.map((x) => (x.id === row.id ? { ...x, ...mapped } : x)))
     setOpen(false)
     setEditing(null)
     notify('Chipta turi saqlandi')
@@ -299,17 +324,19 @@ function MobileTickets() {
   return (
     <div className="-mx-3 bg-white px-4 pb-8">
       <section className="flex gap-3 rounded-2xl border border-[#e7f1ef] bg-white p-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-        <img src="/images/organizer/ticket-implant.jpg" alt="" className="size-[72px] shrink-0 rounded-xl object-cover" />
+        <img src={sem?.image || '/images/organizer/ticket-implant.jpg'} alt="" className="size-[72px] shrink-0 rounded-xl object-cover" />
         <div className="min-w-0 py-0.5">
-          <p className="text-[11.5px] text-[#8b93a7]">Implantologiya</p>
-          <p className="text-[15px] font-bold leading-tight text-[#24185f]">Implantologiya: amaliy kurs</p>
-          <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 – 18:00</p>
-          <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi</p>
+          <select value={sid} onChange={(e) => setSid(e.target.value)} className="max-w-full bg-transparent text-[11.5px] text-[#8b93a7]">
+            {list.map((s) => <option key={s.id} value={s.id}>{s.topic || s.title}</option>)}
+          </select>
+          <p className="text-[15px] font-bold leading-tight text-[#24185f]">{sem?.title}</p>
+          <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {sem?.date}{sem?.startTime ? `, ${sem.startTime}` : ''}</p>
+          <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {sem?.place || sem?.city}</p>
         </div>
       </section>
 
       <nav className="mt-3 flex items-center justify-between gap-1 px-0.5">
-        <MobileTab to="/tashkilotchi/seminarlar/implant-nov" icon={House} label="Umumiy" />
+        <MobileTab to={`/tashkilotchi/seminarlar/${sem?.id || 'implant-nov'}`} icon={House} label="Umumiy" />
         <MobileTab to="/tashkilotchi/ishtirokchilar" icon={Users} label="Ishtirokchilar" />
         <MobileTab icon={Ticket} label="Chiptalar" active />
         <MobileTab to="/tashkilotchi/qr" icon={QrCode} label="Check-in" />
@@ -393,9 +420,11 @@ function Kpi({ icon: Icon, label, value, delta, down }) {
       <div className="min-w-0">
         <p className="truncate text-[12px] leading-tight text-[#6e868c]">{label}</p>
         <p className="mt-0.5 truncate text-[20px] font-bold leading-none tracking-tight text-[#143044]">{value}</p>
-        <p className={cx('mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold leading-none', down ? 'text-[#e11d48]' : 'text-[#16a34a]')}>
-          <TrendArrow down={down} /> {delta}
-        </p>
+        {delta ? (
+          <p className={cx('mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold leading-none', down ? 'text-[#e11d48]' : 'text-[#16a34a]')}>
+            <TrendArrow down={down} /> {delta}
+          </p>
+        ) : null}
       </div>
     </article>
   )
@@ -465,19 +494,27 @@ function SalesBars({ values }) {
   )
 }
 
-function SalesDonut() {
+function SalesDonut({ rows = [] }) {
   const size = 132
   const c = 66
   const r = 46
   const stroke = 18
   const circ = 2 * Math.PI * r
-  const visual = [DONUT[1], DONUT[3], DONUT[0], DONUT[2]]
+  const colors = ['#0e8b82', '#3ec9bb', '#f0b42a', '#f07268', '#8b5cf6']
+  const sum = rows.reduce((n, t) => n + (Number(t.sold) || 0), 0)
+  const parts = (rows.length ? rows : [{ name: 'Chipta', sold: 0 }]).map((t, i) => ({
+    label: t.name,
+    n: Number(t.sold) || 0,
+    pct: sum ? Math.round(((Number(t.sold) || 0) / sum) * 100) : 0,
+    color: colors[i % colors.length],
+  }))
+  const visual = parts.filter((p) => p.pct > 0)
   let acc = 0
   return (
     <div className="flex items-center gap-3">
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-          {visual.map((p) => {
+          {(visual.length ? visual : [{ label: 'empty', pct: 100, color: '#e6f1ef' }]).map((p) => {
             const len = (p.pct / 100) * circ + 0.8
             const rot = (acc / 100) * 360 - 90
             acc += p.pct
@@ -486,13 +523,13 @@ function SalesDonut() {
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center">
           <div>
-            <div className="text-[18px] font-bold leading-none text-[#143044]">980</div>
+            <div className="text-[18px] font-bold leading-none text-[#143044]">{sum}</div>
             <div className="mt-0.5 text-[11px] text-[#7e9398]">chipta</div>
           </div>
         </div>
       </div>
       <ul className="min-w-0 flex-1 space-y-2">
-        {DONUT.map((t) => (
+        {parts.map((t) => (
           <li key={t.label} className="grid grid-cols-[10px_minmax(0,1fr)_34px_32px] items-center gap-1.5 text-[12.5px]">
             <span className="size-2.5 rounded-full" style={{ background: t.color }} />
             <span className="truncate text-[#3e5a62]">{t.label}</span>
@@ -542,12 +579,12 @@ function VipTicket() {
   )
 }
 
-function QuickGrid({ notify, onQr, onPromo }) {
+function QuickGrid({ notify, onQr, onPromo, rows = [], shareId }) {
   const items = [
     { icon: QrCode, label: 'QR kodlar yaratish', onClick: onQr },
-    { icon: Download, label: 'Excel yuklab olish', onClick: () => notify('Excel yuklab olindi') },
+    { icon: Download, label: 'Excel yuklab olish', onClick: () => { downloadText('chiptalar.csv', ['Nom,Narx,Soni,Sotilgan', ...rows.map((t) => `${t.name},${t.price},${t.total || t.seats || 0},${t.sold || 0}`)].join('\n'), 'text/csv'); notify('Excel yuklab olindi') } },
     { icon: Tag, label: 'Promo-kod qo‘shish', onClick: onPromo },
-    { icon: Link2, label: 'Chipta linkini ulashish', onClick: () => notify('Havola nusxalandi') },
+    { icon: Link2, label: 'Chipta linkini ulashish', onClick: () => { const url = `${window.location.origin}/seminarlar/${shareId || ''}`; navigator.clipboard?.writeText(url).catch(() => {}); notify('Havola nusxalandi') } },
   ]
   return (
     <div className="grid grid-cols-2 gap-x-2 gap-y-3">
@@ -580,12 +617,14 @@ function TicketSettings({ notify }) {
 }
 
 function PromoModal({ open, onClose, onSave }) {
+  const [code, setCode] = useState('')
+  const [err, setErr] = useState('')
   return (
     <Modal open={open} title="Promo-kod qo‘shish" onClose={onClose}>
-      <Field label="Promo-kod" req><input className={inputCls()} placeholder="EARLYBIRD" /></Field>
+      <Field label="Promo-kod" req error={err}><input className={inputCls(err)} value={code} onChange={(e) => { setCode(e.target.value.toUpperCase()); setErr('') }} placeholder="EARLYBIRD" /></Field>
       <div className="mt-4 flex justify-end gap-2">
         <Btn kind="soft" onClick={onClose}>Bekor qilish</Btn>
-        <Btn onClick={onSave}>Saqlash</Btn>
+        <Btn onClick={() => { if (code.trim().length < 3) { setErr('Kodni kiriting'); return } onSave(code.trim()) }}>Saqlash</Btn>
       </div>
     </Modal>
   )

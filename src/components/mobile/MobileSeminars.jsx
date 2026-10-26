@@ -4,7 +4,8 @@ import {
   Search, SlidersHorizontal, LayoutGrid, Scissors, Sparkles, HeartPulse, Ellipsis, ChevronDown, Bookmark, CalendarDays,
   Clock, MapPin, UserRound, ArrowRight, ShoppingCart, Bell, Video, X, Check, CircleCheck,
 } from 'lucide-react'
-import { seminars, seminarChips, seminarCard, som } from '../../seminarsData'
+import { seminarChips, seminarCard, som } from '../../seminarsData'
+import { publicRecords, useHub } from '../../hubStore'
 import { useCart } from '../../cart'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -35,8 +36,6 @@ const SORTS = {
 }
 const CITIES = ['Toshkent', 'Samarqand']
 const EMPTY = { city: '', month: '', live: false }
-const CARDS = seminars.map(seminarCard)
-
 const matches = (s, f) =>
   (!f.city || s.city === f.city) && (!f.month || s.monthKey === f.month) && (!f.live || s.format.includes('jonli'))
 
@@ -66,6 +65,8 @@ export default function MobileSeminars() {
   const navigate = useNavigate()
   const location = useLocation()
   const store = useSeminarStore()
+  const hub = useHub()
+  const cards = useMemo(() => publicRecords(hub).map(seminarCard), [hub])
   const [cat, setCat] = useState('all')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('date')
@@ -76,10 +77,10 @@ export default function MobileSeminars() {
 
   const base = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return CARDS.filter((x) => cat === 'all' || x.cat === cat).filter(
+    return cards.filter((x) => cat === 'all' || x.cat === cat).filter(
       (x) => !s || `${x.title} ${x.text} ${x.speaker.name} ${x.city} ${x.place}`.toLowerCase().includes(s),
     )
-  }, [cat, q])
+  }, [cards, cat, q])
   const list = useMemo(() => base.filter((x) => matches(x, filter)).sort(SORTS[sort].fn), [base, filter, sort])
   const activeFilters = Object.keys(EMPTY).filter((k) => filter[k] !== EMPTY[k]).length
   const rows = [seminarChips.slice(0, 5), seminarChips.slice(5)]
@@ -148,7 +149,7 @@ export default function MobileSeminars() {
       {sheet === 'filter' && (
         <FilterSheet initial={filter} count={(f) => base.filter((x) => matches(x, f)).length} onClose={() => setSheet(null)} onApply={(f) => { setFilter(f); setSheet(null) }} />
       )}
-      {sheet === 'mine' && <MineSheet store={store} onClose={() => { setSheet(null); if (location.state?.mine) navigate('.', { replace: true, state: null }) }} />}
+      {sheet === 'mine' && <MineSheet cards={cards} store={store} onClose={() => { setSheet(null); if (location.state?.mine) navigate('.', { replace: true, state: null }) }} />}
 
       <MobileToast text={toast} onClose={closeToast} />
       <MobileTabBar />
@@ -189,7 +190,9 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span className="whitespace-nowrap text-[13px] font-extrabold text-[#0d3b44]">{som(s.price)}</span>
-            {registered ? (
+            {s.cancelled ? (
+              <span className="flex h-8 items-center rounded-lg bg-[#fde8e8] px-2 text-[10px] font-semibold text-[#dc2626]">Bekor qilingan</span>
+            ) : registered ? (
               <span className="flex h-8 items-center gap-1 rounded-lg bg-[#e5f6ec] px-2 text-[10px] font-semibold text-ok"><CircleCheck className="size-3.5" /> Ro‘yxatdasiz</span>
             ) : (
               <button type="button" onClick={onRegister} className="flex h-8 items-center gap-1 rounded-lg bg-sea px-2 text-[10px] font-semibold text-white active:scale-[0.97]">
@@ -265,9 +268,9 @@ function FilterSheet({ initial, count, onClose, onApply }) {
   )
 }
 
-function MineSheet({ store, onClose }) {
-  const reg = CARDS.filter((s) => store.registered[s.id])
-  const saved = CARDS.filter((s) => store.saved.includes(s.id) && !store.registered[s.id])
+function MineSheet({ cards, store, onClose }) {
+  const reg = cards.filter((s) => store.registered[s.id])
+  const saved = cards.filter((s) => store.saved.includes(s.id) && !store.registered[s.id])
   const Row = ({ s, badge }) => (
     <Link to={store.registered[s.id]?.order ? `/seminarlar/${s.id}/royxat` : `/seminarlar/${s.id}`} className="flex items-center gap-3 rounded-2xl border border-line p-2">
       <img src={s.image} alt="" className="size-14 shrink-0 rounded-xl object-cover" />

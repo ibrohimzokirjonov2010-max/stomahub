@@ -5,8 +5,9 @@ import {
   CreditCard, FileText, House, LayoutGrid, MapPin, MessageSquare, MoreVertical, Pencil,
   Plus, Ticket, Trash2, Users, Wallet, X,
 } from 'lucide-react'
-import { CHECKINS, PAYMENTS, SEMINARS, num, som } from '../data'
+import { CHECKINS, PAYMENTS, num, som } from '../data'
 import { useOrg } from '../Shell'
+import { cancelSeminar, duplicateSeminar, useHub } from '../../hubStore'
 
 const REASONS = ['Sana o‘zgardi', 'Ma’ruzachi kelmaydi', 'Joy topilmadi', 'Ishtirokchilar yetarli emas', 'Boshqa sabab']
 
@@ -61,39 +62,47 @@ const IMPLANT = {
 
 const cx = (...a) => a.filter(Boolean).join(' ')
 
-function modelFor(id) {
-  if (id === 'implant') return IMPLANT
-  const sem = SEMINARS.find((s) => s.id === id)
-  if (!sem) return null
+function modelFor(id, seminars = []) {
+  const real = id === 'implant' ? (seminars.find((s) => s.id === 'implant-nov') ? 'implant-nov' : id) : id
+  const sem = seminars.find((s) => s.id === real) || (id === 'implant' ? null : null)
+  if (!sem) {
+    if (id === 'implant') return IMPLANT
+    return null
+  }
   return {
     id: sem.id,
     topic: sem.topic,
     title: sem.title,
     mobileTitle: sem.title,
-    when: `${sem.date}, 10:00 – 18:00`,
+    when: `${sem.date}, ${sem.startTime || '10:00'} – ${sem.endTime || '18:00'}`,
     dateLabel: sem.date,
-    timeLabel: '10:00 – 18:00',
-    place: sem.city,
-    mobilePlace: sem.city,
+    timeLabel: `${sem.startTime || '10:00'} – ${sem.endTime || '18:00'}`,
+    place: sem.place || sem.city,
+    mobilePlace: sem.place || sem.city,
     city: 'O‘zbekiston',
     venueLines: [sem.city, ''],
     mobileVenue: [sem.city, ''],
-    image: sem.image,
-    venueImage: sem.image,
+    image: sem.cover || sem.image,
+    venueImage: sem.placeImg || sem.image,
     sold: sem.sold,
     seats: sem.seats,
     revenue: sem.revenue,
     mobileRevenue: sem.revenue,
-    checked: sem.sold,
+    checked: sem.checked || 0,
     hours: 8,
     minPeople: 15,
-    description: `${sem.title} — ${sem.days}. ${sem.speaker} ishtirokida.`,
-    mobileDescription: `${sem.title}. ${sem.days}.`,
+    description: sem.about || `${sem.title} — ${sem.days}. ${sem.speaker} ishtirokida.`,
+    mobileDescription: sem.about || `${sem.title}. ${sem.days}.`,
     bring: ['Noutbuk', 'Shaxsiy asboblar', 'Qulay kiyim'],
     refundPeople: sem.sold,
     refundSum: Math.round(sem.revenue * 0.48),
-    speakers: [{ name: sem.speaker, specialty: sem.topic, bio: sem.days, avatar: '/images/bemorlar/bemor-sardor.jpg' }],
-    mobileSpeakers: [{ name: sem.speaker, role: sem.topic, avatar: '/images/bemorlar/bemor-sardor.jpg' }],
+    speakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '/images/bemorlar/bemor-sardor.jpg' }]).map((sp) => ({
+      name: sp.name, specialty: sp.role || sem.topic, bio: sp.bio || sem.days, avatar: sp.avatar || '/images/bemorlar/bemor-sardor.jpg',
+    })),
+    mobileSpeakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '/images/bemorlar/bemor-sardor.jpg' }]).map((sp) => ({
+      name: sp.name, role: sp.role || sem.topic, avatar: sp.avatar || '/images/bemorlar/bemor-sardor.jpg',
+    })),
+    liveStatus: sem.status,
   }
 }
 
@@ -111,8 +120,9 @@ export default function Detail() {
   const navigate = useNavigate()
   const org = useOrg()
   const notify = org?.notify
+  const hub = useHub()
   const [params, setParams] = useSearchParams()
-  const m = modelFor(id)
+  const m = modelFor(id, hub.seminars)
   const mobileQuery = '(max-width: 767.98px)'
   const [mobile, setMobile] = useState(() => (typeof window !== 'undefined' ? window.matchMedia(mobileQuery).matches : false))
   const [tab, setTab] = useState('umumiy')
@@ -122,7 +132,7 @@ export default function Detail() {
   const [note, setNote] = useState('')
   const [ack, setAck] = useState(() => params.get('bekor') === '1' && typeof window !== 'undefined' && window.matchMedia(mobileQuery).matches)
   const [warn, setWarn] = useState('')
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState(() => modelFor(id, hub.seminars)?.liveStatus === 'bekor')
   const [msg, setMsg] = useState('')
   const menuRef = useRef(null)
   const closeRef = useRef(() => {})
@@ -183,7 +193,12 @@ export default function Detail() {
   }
 
   const edit = () => navigate(`/tashkilotchi/seminarlar/yangi?tahrir=${m.id}`)
-  const duplicate = () => { setMenu(false); notify?.('Seminar nusxalandi') }
+  const duplicate = () => {
+    setMenu(false)
+    const copyId = duplicateSeminar(m.id)
+    notify?.(copyId ? 'Seminar nusxalandi' : 'Nusxa olinmadi')
+    if (copyId) navigate(`/tashkilotchi/seminarlar/yangi?tahrir=${copyId}`)
+  }
   const openCancel = () => {
     setMenu(false)
     setReason('')
@@ -197,6 +212,7 @@ export default function Detail() {
       setWarn(!reason ? 'Sababni tanlang' : 'Tasdiqlang')
       return
     }
+    cancelSeminar(m.id, reason)
     setDone(true)
     closeCancel()
     notify?.('Seminar bekor qilindi')

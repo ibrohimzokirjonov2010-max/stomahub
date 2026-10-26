@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronLeft, Star, Landmark, Ellipsis, MoreVertical,
 } from 'lucide-react'
 import { ACTIVITY, CITIES, ORG } from './data'
+import { useHub } from '../hubStore'
 
 const Ctx = createContext(null)
 export const useOrg = () => useContext(Ctx)
@@ -149,8 +150,10 @@ function TabLink({ to, label, icon: Icon, active, end, onClick }) {
 export default function Shell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const hub = useHub()
   const [query, setQuery] = useState('')
   const [city, setCity] = useState(ORG.city)
+  const [cityOn, setCityOn] = useState(false)
   const [panel, setPanel] = useState(null)
   const [more, setMore] = useState(false)
   const [kebab, setKebab] = useState(false)
@@ -196,7 +199,7 @@ export default function Shell() {
     clearTimeout(timer.current)
     timer.current = setTimeout(() => setToast(null), 2400)
   }
-  const value = useMemo(() => ({ query, setQuery, city, notify }), [query, city])
+  const value = useMemo(() => ({ query, setQuery, city, cityOn, notify }), [query, city, cityOn])
   const ph = placeholderFor(pathname)
 
   const goBack = () => {
@@ -242,9 +245,12 @@ export default function Shell() {
               </button>
               {panel === 'city' && (
                 <ul className="absolute right-0 z-40 mt-1 w-40 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+                  <li>
+                    <button type="button" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-[#f4fbfa]" onClick={() => { setCity(ORG.city); setCityOn(false); setPanel(null) }}>Barcha shaharlar</button>
+                  </li>
                   {CITIES.map((c) => (
                     <li key={c}>
-                      <button type="button" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-[#f4fbfa]" onClick={() => { setCity(c); setPanel(null) }}>{c}</button>
+                      <button type="button" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-[#f4fbfa]" onClick={() => { setCity(c); setCityOn(true); setPanel(null) }}>{c}</button>
                     </li>
                   ))}
                 </ul>
@@ -263,7 +269,7 @@ export default function Shell() {
                 <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[11px] text-[#8aa0a4]">
                   {['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].map((d) => <span key={d}>{d}</span>)}
                   {Array.from({ length: 30 }, (_, i) => (
-                    <button key={i} type="button" onClick={() => { notify(`${i + 1}-noyabr tanlandi`); setPanel(null) }} className={`grid h-7 place-items-center rounded-lg ${i + 1 === 24 ? 'bg-[var(--color-org-teal)] text-white' : 'hover:bg-[#f3faf8]'}`}>{i + 1}</button>
+                    <button key={i} type="button" onClick={() => { setPanel(null); navigate(`/tashkilotchi/seminarlar?kun=${i + 1}`) }} className={`grid h-7 place-items-center rounded-lg ${i + 1 === 24 ? 'bg-[var(--color-org-teal)] text-white' : 'hover:bg-[#f3faf8]'}`}>{i + 1}</button>
                   ))}
                 </div>
               </div>
@@ -272,7 +278,7 @@ export default function Shell() {
               <div className="absolute right-8 top-10 z-40 w-[320px] rounded-2xl border border-[#e6eeec] bg-white p-3 shadow-xl">
                 <p className="mb-2 text-[13px] font-bold">Bildirishnomalar</p>
                 <ul className="space-y-2">
-                  {ACTIVITY.map((a) => (
+                  {(hub.activity?.length ? hub.activity : ACTIVITY).map((a) => (
                     <li key={a.title} className="rounded-xl px-1 py-1 hover:bg-[#f6fbfa]">
                       <p className="text-[12.5px] font-semibold">{a.title}</p>
                       <p className="text-[11.5px] text-[#7e9398]">{a.text} · {a.time}</p>
@@ -284,7 +290,7 @@ export default function Shell() {
             <div className="flex items-center gap-2.5">
               <img src={ORG.avatar} alt="" className="size-8 rounded-full object-cover" />
               <div className="hidden leading-tight lg:block">
-                <p className="text-[13px] font-semibold text-[#143044]">{ORG.name}</p>
+                <p className="text-[13px] font-semibold text-[#143044]">{hub.settings?.name || ORG.name}</p>
                 <p className="text-[11px] text-[#8aa0a6]">{ORG.role}</p>
               </div>
             </div>
@@ -358,7 +364,7 @@ export default function Shell() {
                 <div className="absolute inset-x-3 top-16 z-40 rounded-2xl border border-[#e6eeec] bg-white p-3 shadow-xl">
                   <p className="mb-2 text-[13px] font-bold">Bildirishnomalar</p>
                   <ul className="space-y-2">
-                    {ACTIVITY.map((a) => (
+                    {(hub.activity?.length ? hub.activity : ACTIVITY).map((a) => (
                       <li key={a.title}>
                         <p className="text-[12.5px] font-semibold">{a.title}</p>
                         <p className="text-[11.5px] text-[#7e9398]">{a.text} · {a.time}</p>

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Award, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown,
   GraduationCap, Image as ImageIcon, Info, LayoutGrid, MapPin, Monitor, Pencil, Plus, Save, Star, Ticket, Trash2,
 } from 'lucide-react'
 import { ORG, num, som } from '../data'
 import { useOrg } from '../Shell'
+import { getHub, saveSeminar } from '../../hubStore'
 import { useMobile } from '../../useMobile'
 import { ABOUT, CATS, COVERS, FORMATS, STEPS, TEAL, TOPICS, box, readImage, uzDate } from './wizardBits'
 import { PromoModal, SpeakerModal, TicketModal } from './WizardModals'
@@ -129,9 +130,11 @@ function Head({ n, title, sub, extra }) {
 
 export default function Wizard() {
   const mobile = useMobile()
+  const navigate = useNavigate()
   const { notify } = useOrg()
   const [params] = useSearchParams()
   const editing = params.get('tahrir')
+  const [formError, setFormError] = useState('')
   const [active, setActive] = useState(0)
   const [modal, setModal] = useState(null)
   const [sheet, setSheet] = useState(null)
@@ -163,6 +166,47 @@ export default function Wizard() {
     promos: INITIAL_PROMOS,
   })
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+
+  useEffect(() => {
+    if (!editing) return
+    const s = getHub().seminars.find((x) => x.id === editing)
+    if (!s) return
+    if (s.form) {
+      setForm(s.form)
+      return
+    }
+    setForm((f) => ({
+      ...f,
+      name: s.title,
+      about: s.about || f.about,
+      topic: s.topic || f.topic,
+      format: s.formatDetail || f.format,
+      tags: s.tags || f.tags,
+      cover: s.cover || s.image,
+      start: s.start || f.start,
+      startTime: s.startTime || f.startTime,
+      end: s.end || s.start || f.end,
+      endTime: s.endTime || f.endTime,
+      place: s.place || f.place,
+      address: s.address || f.address,
+      tickets: s.tickets?.length ? s.tickets : f.tickets,
+      speakers: s.speakers?.length ? s.speakers : f.speakers,
+      template: s.template || f.template,
+      promos: s.wizardPromos || f.promos,
+    }))
+  }, [editing])
+
+  const persist = (publish) => {
+    const res = saveSeminar(form, { publish, id: editing || undefined })
+    if (!res.ok) {
+      setFormError(res.error)
+      notify(res.error)
+      return
+    }
+    setFormError('')
+    notify(publish ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi')
+    navigate('/tashkilotchi/seminarlar')
+  }
 
   const go = (index) => {
     const i = Math.max(0, Math.min(STEPS.length - 1, index))
@@ -241,7 +285,7 @@ export default function Wizard() {
         <div className="mt-3 min-w-0 space-y-3 xl:col-start-2 xl:row-start-2 xl:mt-0">
           <section id="info" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n="1" title="Asosiy ma’lumotlar" sub="Seminar nomi, tavsifi, mavzusi va muqova rasmi" extra={(
-              <button type="button" onClick={() => notify('Qoralama saqlandi')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
+              <button type="button" onClick={() => persist(false)} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Save className="size-3.5" /> Qoralama saqlash
               </button>
             )} />
@@ -524,13 +568,14 @@ export default function Wizard() {
             </ul>
           </section>
 
+          {formError && <p className="text-[12.5px] font-semibold text-[#e11d48]">{formError}</p>}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <button type="button" onClick={() => go(active - 1)} disabled={active === 0} className="h-10 rounded-xl border border-[#e4eeec] bg-white px-4 text-[13px] font-semibold text-[#1c4a5a] disabled:opacity-40">Oldingi</button>
             <div className="flex gap-2">
-              <button type="button" onClick={() => notify('Qoralama saqlandi')} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3.5 text-[13px] font-semibold" style={{ color: TEAL }}>
+              <button type="button" onClick={() => persist(false)} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3.5 text-[13px] font-semibold" style={{ color: TEAL }}>
                 <Save className="size-4" /> Qoralama saqlash
               </button>
-              <button type="button" onClick={() => (active === STEPS.length - 1 ? notify('Seminar e’lon qilindi') : go(active + 1))} className="inline-flex h-10 items-center gap-1 rounded-xl px-4 text-[13px] font-semibold text-white" style={{ background: TEAL }}>
+              <button type="button" onClick={() => (active === STEPS.length - 1 ? persist(true) : go(active + 1))} className="inline-flex h-10 items-center gap-1 rounded-xl px-4 text-[13px] font-semibold text-white" style={{ background: TEAL }}>
                 {active === STEPS.length - 1 ? 'E’lon qilish' : 'Keyingi'} <ChevronRight className="size-4" />
               </button>
             </div>
@@ -602,10 +647,10 @@ export default function Wizard() {
               Seminar e’lon qilingandan so‘ng, uni tahrirlash mumkin bo‘ladi.
             </p>
           </div>
-          <button type="button" onClick={() => (active === STEPS.length - 1 ? notify('Seminar e’lon qilindi') : go(active + 1))} className="mt-2 flex h-10 w-full items-center justify-center gap-1 rounded-xl text-[13.5px] font-semibold text-white" style={{ background: TEAL }}>
+          <button type="button" onClick={() => (active === STEPS.length - 1 ? persist(true) : go(active + 1))} className="mt-2 flex h-10 w-full items-center justify-center gap-1 rounded-xl text-[13.5px] font-semibold text-white" style={{ background: TEAL }}>
             {active === STEPS.length - 1 ? 'E’lon qilish' : 'Keyingi bosqich'} <ChevronRight className="size-4" />
           </button>
-          <button type="button" onClick={() => notify('Qoralama saqlandi')} className="mt-1.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white text-[13px] font-semibold" style={{ color: TEAL }}>
+          <button type="button" onClick={() => persist(false)} className="mt-1.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white text-[13px] font-semibold" style={{ color: TEAL }}>
             <Save className="size-4" /> Qoralama saqlash
           </button>
         </aside>

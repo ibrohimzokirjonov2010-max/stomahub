@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Calendar, ChevronDown, ChevronRight, Clock, FileText, MapPin, Percent, Tag, Ticket, Upload, User, Users, Wallet, X,
 } from 'lucide-react'
 import { ToothIcon } from '../../components/icons'
 import { TEAL_MOBILE, readImage, uzDate } from './wizardBits'
+import { getHub, saveSeminar } from '../../hubStore'
 
 const GREEN = TEAL_MOBILE
 
@@ -89,7 +91,13 @@ const BRING = '- Shaxsiy instrumentlar to‘plami\n- Bloknot va ruchka\n- Qulay 
 const SPEAKER_BIO = '10 yillik tajribaga ega implantolog. Xalqaro konferensiyalarda ma’ruzachi. Amaliy implantologiya bo‘yicha mutaxassis.'
 
 export default function WizardMobile({ sheet, setSheet, notify }) {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const editing = params.get('tahrir')
   const [step, setStep] = useState(0)
+  const [tickets, setTickets] = useState([{ id: 'oddiy', name: 'Oddiy', price: 300000, seats: 30, perks: ['Seminarga kirish', 'Sertifikat'], active: true, icon: 'gem' }])
+  const [speakers, setSpeakers] = useState([{ id: 'sp', name: 'Karimov Behzod', role: 'Implantolog', city: 'Toshkent', avatar: '/images/ustalar/usta-jasur.jpg', bio: SPEAKER_BIO }])
+  const [promos, setPromos] = useState([{ id: 'stoma50', code: 'STOMA50', off: '50000', kind: 'summa', note: 'Erta ro‘yxat', on: true, limit: 20 }])
   const [form, setForm] = useState({
     name: 'Implantologiya: amaliy kurs',
     topic: 'Implantologiya',
@@ -106,6 +114,50 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   const [speaker, setSpeaker] = useState({ name: 'Karimov Behzod', role: 'Implantolog', bio: SPEAKER_BIO, avatar: '/images/ustalar/usta-jasur.jpg' })
   const [promo, setPromo] = useState({ code: 'STOMA50', sum: '50000', uses: '20', until: '2026-10-30', note: 'Erta ro‘yxatdan o‘tganlar uchun maxsus chegirma.' })
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+
+  useEffect(() => {
+    if (!editing) return
+    const s = getHub().seminars.find((x) => x.id === editing)
+    if (!s) return
+    setForm((f) => ({
+      ...f,
+      name: s.title,
+      topic: s.topic || f.topic,
+      date: s.start || f.date,
+      start: s.startTime || f.start,
+      end: s.endTime || f.end,
+      place: s.place || f.place,
+      cover: s.cover || s.image || f.cover,
+    }))
+    if (s.tickets?.length) setTickets(s.tickets)
+    if (s.speakers?.length) setSpeakers(s.speakers)
+  }, [editing])
+
+  const publish = (asDraft) => {
+    const res = saveSeminar({
+      name: form.name,
+      about: form.bring || form.name,
+      topic: form.topic,
+      format: 'Offline (joyida)',
+      category: 'Tibbiy amaliy seminar',
+      tags: [form.topic],
+      cover: form.cover,
+      thumbs: [form.cover],
+      start: form.date,
+      startTime: form.start,
+      end: form.date,
+      endTime: form.end,
+      place: form.place,
+      address: form.place,
+      tickets,
+      speakers,
+      template: 'teal',
+      promos,
+    }, { publish: !asDraft, id: editing || undefined })
+    if (!res.ok) { notify(res.error); return }
+    notify(asDraft ? 'Qoralama saqlandi' : 'Seminar e’lon qilindi')
+    navigate('/tashkilotchi/seminarlar')
+  }
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search)
@@ -201,7 +253,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           onAdd={() => setSheet('ticket')}
           onNext={() => setStep(2)}
           onBack={() => setStep(0)}
-          rows={[{ name: 'Oddiy', meta: '300 000 so‘m · 30 ta' }]}
+          rows={tickets.map((t) => ({ name: t.name, meta: `${Number(t.price).toLocaleString('ru-RU')} so‘m · ${t.seats || t.total} ta` }))}
         />
       )}
       {step === 2 && (
@@ -212,7 +264,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           onAdd={() => setSheet('speaker')}
           onNext={() => setStep(3)}
           onBack={() => setStep(1)}
-          rows={[{ name: 'Karimov Behzod', meta: 'Implantolog' }]}
+          rows={speakers.map((s) => ({ name: s.name, meta: s.role }))}
         />
       )}
       {step === 3 && (
@@ -229,7 +281,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           onAdd={() => setSheet('promo')}
           onNext={() => setStep(6)}
           onBack={() => setStep(4)}
-          rows={[{ name: 'STOMA50', meta: '50 000 so‘m · 30.10.2026' }]}
+          rows={promos.map((p) => ({ name: p.code, meta: `${Number(String(p.off).replace(/\D/g, '') || p.value || 0).toLocaleString('ru-RU')} so‘m` }))}
         />
       )}
       {step === 6 && (
@@ -237,12 +289,13 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           <p className="text-[15px] font-bold">{form.name}</p>
           <p className="mt-1 text-[13px] text-[#607078]">{uzDate(form.date, 'words')} · {form.start} – {form.end}</p>
           <p className="text-[13px] text-[#607078]">{form.place}</p>
-          <Next onClick={() => notify('Seminar e’lon qilindi')}>E’lon qilish</Next>
-          <button type="button" onClick={() => setStep(5)} className="mt-2 h-11 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
+          <Next onClick={() => publish(false)}>E’lon qilish</Next>
+          <button type="button" onClick={() => publish(true)} className="mt-2 h-11 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Qoralama saqlash</button>
+          <button type="button" onClick={() => setStep(5)} className="h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
         </div>
       )}
 
-      <Sheet open={sheet === 'ticket'} onClose={() => setSheet(null)} icon={Ticket} title="Chipta turi qo‘shish" sub="Seminar uchun chipta turini yarating." onSave={() => { setSheet(null); notify('Chipta turi saqlandi') }}>
+      <Sheet open={sheet === 'ticket'} onClose={() => setSheet(null)} icon={Ticket} title="Chipta turi qo‘shish" sub="Seminar uchun chipta turini yarating." onSave={() => { if (!ticket.name.trim() || !Number(ticket.price) || !Number(ticket.seats)) { notify('Nom, narx va joylar kerak'); return } setTickets((list) => [...list, { id: `t-${Date.now()}`, name: ticket.name.trim(), price: Number(ticket.price), seats: Number(ticket.seats), perks: [ticket.note].filter(Boolean), active: true, icon: 'gem', note: ticket.note }]); setSheet(null); notify('Chipta turi saqlandi') }}>
         <Field label="Chipta turi nomi" icon={Ticket} value={ticket.name} onChange={(v) => setTicket({ ...ticket, name: v })} />
         <Field label="Narxi" icon={Wallet} value={Number(ticket.price || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} suffix="so‘m" onChange={(v) => setTicket({ ...ticket, price: v.replace(/\D/g, '') })} />
         <Field label="Maksimal soni" icon={Users} value={ticket.seats} onChange={(v) => setTicket({ ...ticket, seats: v.replace(/\D/g, '') })} />
@@ -254,7 +307,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         </label>
       </Sheet>
 
-      <Sheet open={sheet === 'speaker'} onClose={() => setSheet(null)} icon={User} title="Ma’ruzachi qo‘shish" sub="Seminarga ma’ruzachi ma’lumotlarini kiriting." onSave={() => { setSheet(null); notify('Ma’ruzachi saqlandi') }}>
+      <Sheet open={sheet === 'speaker'} onClose={() => setSheet(null)} icon={User} title="Ma’ruzachi qo‘shish" sub="Seminarga ma’ruzachi ma’lumotlarini kiriting." onSave={() => { if (speaker.name.trim().length < 3) { notify('Ismni kiriting'); return } setSpeakers((list) => [...list, { id: `s-${Date.now()}`, name: speaker.name.trim(), role: speaker.role || 'Mutaxassis', city: 'Toshkent', avatar: speaker.avatar, bio: speaker.bio }]); setSheet(null); notify('Ma’ruzachi saqlandi') }}>
         <div>
           <Lab>Rasm</Lab>
           <div className="flex items-center gap-3">
@@ -283,7 +336,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         </label>
       </Sheet>
 
-      <Sheet open={sheet === 'promo'} onClose={() => setSheet(null)} icon={Percent} title="Promo-kod qo‘shish" sub="Chipta sotuvini rag‘batlantirish uchun promo-kod yarating." onSave={() => { setSheet(null); notify('Promo-kod saqlandi') }}>
+      <Sheet open={sheet === 'promo'} onClose={() => setSheet(null)} icon={Percent} title="Promo-kod qo‘shish" sub="Chipta sotuvini rag‘batlantirish uchun promo-kod yarating." onSave={() => { if (promo.code.trim().length < 3 || !Number(promo.sum)) { notify('Kod va chegirma summasini kiriting'); return } setPromos((list) => [...list, { id: `p-${Date.now()}`, code: promo.code.trim().toUpperCase(), off: promo.sum, kind: 'summa', note: promo.note, on: true, limit: Number(promo.uses) || 20, to: promo.until }]); setSheet(null); notify('Promo-kod saqlandi') }}>
         <Field label="Promo-kod" icon={Tag} value={promo.code} onChange={(v) => setPromo({ ...promo, code: v.toUpperCase() })} />
         <Field label="Chegirma summasi" icon={Wallet} suffix="so‘m" value={Number(promo.sum || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} onChange={(v) => setPromo({ ...promo, sum: v.replace(/\D/g, '') })} />
         <Field label="Maksimal ishlatish soni" icon={Users} value={promo.uses} onChange={(v) => setPromo({ ...promo, uses: v.replace(/\D/g, '') })} />

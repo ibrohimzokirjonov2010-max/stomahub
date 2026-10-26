@@ -6,8 +6,11 @@ import {
   BadgeCheck, Syringe, HelpCircle, Car, TrainFront, X, Image as ImageIcon,
 } from 'lucide-react'
 import { ToothIcon } from '../components/icons'
-import { seminarPage } from '../seminarsData'
+import { buildSeminarPage } from '../seminarsData'
+import { publicRecord, useHub } from '../hubStore'
 import { som } from '../marketData'
+
+const MONTHS = { YAN: 'Yanvar', FEV: 'Fevral', MAR: 'Mart', APR: 'Aprel', MAY: 'May', IYN: 'Iyun', IYL: 'Iyul', AVG: 'Avgust', SEN: 'Sentabr', OKT: 'Oktabr', NOY: 'Noyabr', DEK: 'Dekabr' }
 
 const yang = (n) => `/images/yangiliklar/${n}.jpg`
 const pic = (n) => `/images/seminars/${n}.jpg`
@@ -97,16 +100,17 @@ function detail(d) {
     }
   }
   const plan = d.plans[0]
-  const month = d.mon === 'OKT' ? 'Oktabr' : 'Noyabr'
-  const mm = d.mon === 'OKT' ? '10' : '11'
-  const [from, to] = d.time.split(' – ').map((t) => t.replace(':', ''))
+  const year = String(d.monthKey || '2026-11').slice(0, 4)
+  const mm = String(d.monthKey || '2026-11').slice(5, 7)
+  const month = MONTHS[d.mon] || 'Noyabr'
+  const [from, to] = String(d.time || '10:00 – 18:00').split(' – ').map((t) => t.replace(':', ''))
   return {
     kicker: d.catName,
     title: d.title,
     lead: d.lead,
-    dayTitle: `${Number(d.day)} ${month} 2026`,
+    dayTitle: `${Number(d.day)} ${month} ${year}`,
     dayText: `${d.weekday}, ${d.time}`,
-    dayShort: `${Number(d.day)} ${month} 2026`,
+    dayShort: `${Number(d.day)} ${month} ${year}`,
     city: d.city,
     venueShort: d.place,
     price: plan.price,
@@ -130,20 +134,31 @@ function detail(d) {
     schedule: d.schedule.map(([time, text]) => [time, text, '']),
     venue: { ...d.venue, lines: [[Building2, 'Konferens-zal'], [Car, 'Avtoturargoh mavjud']] },
     similar: d.similar.map((s) => ({ to: `/seminarlar/${s.id}`, title: s.title, date: `${s.date}, ${s.city}`, price: s.price, image: s.image })),
-    ics: { start: `2026${mm}${d.day}T${from}00`, end: `2026${mm}${d.day}T${to}00` },
+    ics: { start: `${year}${mm}${String(d.day).padStart(2, '0')}T${from}00`, end: `${year}${mm}${String(d.day).padStart(2, '0')}T${to}00` },
   }
 }
 
 export default function Seminar() {
   const { id } = useParams()
-  const d = seminarPage(id)
-  const v = detail(d)
+  const hub = useHub()
+  const rec = publicRecord(id, hub)
+  const d = rec ? buildSeminarPage(rec) : null
   const [tab, setTab] = useState('about')
   const [faq, setFaq] = useState(0)
   const [shot, setShot] = useState(null)
   const [note, setNote] = useState(null)
   const [corp, setCorp] = useState(false)
   const [profile, setProfile] = useState(false)
+  if (!d) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-[18px] font-bold text-ink">Seminar topilmadi</p>
+        <Link to="/seminarlar" className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminarlarga qaytish</Link>
+      </div>
+    )
+  }
+  const v = detail(d)
+  const cancelled = !!d.cancelled
   const left = v.seats - v.taken
   const regTo = `/seminarlar/${d.id}/royxat`
 
@@ -322,7 +337,7 @@ export default function Seminar() {
       <aside className="min-w-0 space-y-3">
         <section id="sem-price" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
           <div className="flex gap-2">
-            <span className="rounded-lg bg-[#fde8e8] px-2.5 py-1 text-[12px] font-bold text-[#dc2626]">Ro‘yxatdan o‘tish</span>
+            <span className="rounded-lg bg-[#fde8e8] px-2.5 py-1 text-[12px] font-bold text-[#dc2626]">{cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'}</span>
             <span className="rounded-lg border border-[#fbd5d5] px-2.5 py-1 text-[12px] font-semibold text-[#dc2626]">{left} ta o‘rin qoldi</span>
           </div>
           <p className="mt-3 text-[12px] text-muted line-through">{som(v.oldPrice)}</p>
@@ -336,7 +351,9 @@ export default function Seminar() {
           <div className="mt-3 flex justify-between text-[11.5px] text-muted"><span>Band joylar</span><span>{v.taken}/{v.seats}</span></div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#e7eef5]"><span className="block h-full rounded-full bg-sea" style={{ width: `${Math.max(4, (v.taken / v.seats) * 100)}%` }} /></div>
           <p className="mt-2 text-[13px] font-bold text-sea">{left} ta o‘rin qoldi</p>
-          <Link to={regTo} className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-xl bg-sea text-[13.5px] font-semibold text-white">Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></Link>
+          {cancelled
+            ? <span className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#fde8e8] text-[13.5px] font-semibold text-[#dc2626]">Ro‘yxat yopiq</span>
+            : <Link to={regTo} className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-xl bg-sea text-[13.5px] font-semibold text-white">Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></Link>}
           <button type="button" onClick={() => downloadIcs(v)} className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sea text-[12.5px] font-semibold text-sea"><CalendarPlus className="size-4" /> Kalendarga qo‘shish</button>
         </section>
 

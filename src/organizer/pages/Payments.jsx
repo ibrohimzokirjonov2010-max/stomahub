@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { FACES, num, som } from '../data'
 import { useOrg } from '../Shell'
+import { downloadText, refundPayment, useHub } from '../../hubStore'
 import { Modal } from '../ui'
 
 const TEAL = 'var(--color-org-teal)'
@@ -196,6 +197,7 @@ function Up({ children, color }) {
 
 export default function Payments() {
   const org = useOrg()
+  const hub = useHub()
   const query = org?.query || ''
   const notify = org?.notify || (() => {})
   const [tab, setTab] = useState('all')
@@ -203,8 +205,10 @@ export default function Payments() {
   const [seminar, setSeminar] = useState('all')
   const [method, setMethod] = useState('all')
   const [state, setState] = useState('all')
-  const [rows, setRows] = useState(DESIGN)
-  const [selected, setSelected] = useState(DESIGN[0].id)
+  const [span, setSpan] = useState('all')
+  const [page, setPage] = useState(1)
+  const rows = hub.payments
+  const [selected, setSelected] = useState(hub.payments[0]?.id)
   const [panel, setPanel] = useState(true)
   const [checked, setChecked] = useState({})
   const [range, setRange] = useState('year')
@@ -219,23 +223,39 @@ export default function Payments() {
     return rows.filter((p) => {
       if (tab !== 'all' && p.state !== tab) return false
       if (state !== 'all' && p.state !== state) return false
-      if (seminar !== 'all' && !p.seminar.toLowerCase().includes(seminar)) return false
+      if (seminar !== 'all' && p.seminarId !== seminar && !p.seminar.toLowerCase().includes(String(seminar).toLowerCase())) return false
       if (method !== 'all' && p.method !== method) return false
+      if (span === 'nov' && !String(p.when).toLowerCase().includes('noy')) return false
       if (s && !`${p.who} ${p.seminar} ${p.id} ${p.clinic}`.toLowerCase().includes(s)) return false
       return true
     })
-  }, [rows, query, q, tab, state, seminar, method])
+  }, [rows, query, q, tab, state, seminar, method, span])
 
-  const shown = filtered.slice(0, 8)
+  const per = 8
+  const pages = Math.max(1, Math.ceil(filtered.length / per))
+  const shown = filtered.slice((Math.min(page, pages) - 1) * per, Math.min(page, pages) * per)
   const pay = rows.find((p) => p.id === selected) || shown[0] || null
   const allChecked = shown.length > 0 && shown.every((p) => checked[p.id])
 
-  const reset = () => { setQ(''); setSeminar('all'); setMethod('all'); setState('all'); setTab('all') }
+  const reset = () => { setQ(''); setSeminar('all'); setMethod('all'); setState('all'); setTab('all'); setSpan('all'); setPage(1) }
+  const counts = {
+    all: rows.length,
+    ok: rows.filter((p) => p.state === 'ok').length,
+    wait: rows.filter((p) => p.state === 'wait').length,
+    cancel: rows.filter((p) => p.state === 'cancel').length,
+    refund: rows.filter((p) => p.state === 'refund').length,
+  }
+  const revenue = rows.filter((p) => p.state === 'ok').reduce((n, p) => n + p.sum, 0)
   const doRefund = () => {
     if (!pay) return
-    setRows((list) => list.map((p) => p.id === pay.id ? { ...p, state: 'refund' } : p))
+    refundPayment(pay.id)
     setRefund(false)
     notify('To‘lov qaytarildi')
+  }
+  const receiptOf = (p) => {
+    if (!p) return
+    downloadText(`chek-${p.id}.txt`, `StomaHub chek\nID: ${p.id}\nIshtirokchi: ${p.who}\nSeminar: ${p.seminar}\nChipta: ${p.ticket}\nSumma: ${som(p.sum)}\nUsul: ${p.method}\nSana: ${p.when}\nHolat: ${p.state}\n`)
+    notify('Chek yuklab olindi')
   }
 
   return (
@@ -258,17 +278,17 @@ export default function Payments() {
                 { value: 'q', label: 'So‘nggi 90 kun' },
               ]}
             />
-            <button type="button" onClick={() => notify('Hisobot yuklab olindi')} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg px-3.5 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgb(2_128_137/0.25)]" style={{ background: TEAL }}>
+            <button type="button" onClick={() => { downloadText('tolovlar.csv', ['id,ism,seminar,summa,usul,holat', ...filtered.map((p) => `${p.id},${p.who},${p.seminar},${p.sum},${p.method},${p.state}`)].join('\n'), 'text/csv'); notify('Hisobot yuklab olindi') }} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg px-3.5 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgb(2_128_137/0.25)]" style={{ background: TEAL }}>
               <Download className="size-3.5" /> Hisobotni yuklab olish
             </button>
           </div>
         </div>
 
         <section className="mt-2 grid grid-cols-4 gap-2">
-          <KpiCard icon={Wallet} label="Umumiy tushum" value="98 600 000 so‘m" iconBg="#e7f7f4" iconColor={TEAL} foot={<><Up color="#16a34a">+28%</Up><span className="text-[#7d939a]">o‘tgan oyga nisbatan</span></>} />
-          <KpiCard icon={Check} label="Muvaffaqiyatli to‘lovlar" value="950" iconBg="#e7f7f4" iconColor={TEAL} foot={<Up color="#16a34a">92%</Up>} />
-          <KpiCard icon={Clock} label="Kutilayotgan to‘lovlar" value="60" iconBg="#e7f7f4" iconColor={TEAL} foot={<span className="font-semibold text-[#d0890b]">6%</span>} />
-          <KpiCard icon={XCircle} label="Bekor qilingan to‘lovlar" value="20" iconBg="#fdecef" iconColor="#e11d48" foot={<span className="font-semibold text-[#e11d48]">2%</span>} />
+          <KpiCard icon={Wallet} label="Umumiy tushum" value={som(revenue)} iconBg="#e7f7f4" iconColor={TEAL} foot={<span className="text-[#7d939a]">muvaffaqiyatli</span>} />
+          <KpiCard icon={Check} label="Muvaffaqiyatli to‘lovlar" value={String(counts.ok)} iconBg="#e7f7f4" iconColor={TEAL} foot={<Up color="#16a34a">{rows.length ? `${Math.round((counts.ok / rows.length) * 100)}%` : '0%'}</Up>} />
+          <KpiCard icon={Clock} label="Kutilayotgan to‘lovlar" value={String(counts.wait)} iconBg="#e7f7f4" iconColor={TEAL} foot={<span className="font-semibold text-[#d0890b]">{rows.length ? `${Math.round((counts.wait / rows.length) * 100)}%` : '0%'}</span>} />
+          <KpiCard icon={XCircle} label="Bekor qilingan to‘lovlar" value={String(counts.cancel + counts.refund)} iconBg="#fdecef" iconColor="#e11d48" foot={<span className="font-semibold text-[#e11d48]">qaytarilgan {counts.refund}</span>} />
         </section>
 
         <div className={`mt-2.5 grid min-h-0 flex-1 gap-2.5 ${panel ? 'grid-cols-[minmax(0,1fr)_220px]' : 'grid-cols-1'}`}>
@@ -288,8 +308,14 @@ export default function Payments() {
             </div>
 
             <div className="flex shrink-0 flex-nowrap gap-1.5">
-              {TABS.map((t) => (
-                <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`h-[24px] whitespace-nowrap rounded-full px-2.5 text-[11.5px] font-semibold ${tab === t.id ? 'text-white' : 'border border-[#e5eeec] bg-white text-[#3e5960]'}`} style={tab === t.id ? { background: TEAL } : undefined}>{t.label}</button>
+              {[
+                ['all', `Barcha to‘lovlar (${counts.all})`],
+                ['ok', `Muvaffaqiyatli (${counts.ok})`],
+                ['wait', `Kutilayotgan (${counts.wait})`],
+                ['cancel', `Bekor qilingan (${counts.cancel})`],
+                ['refund', `Qaytarilgan (${counts.refund})`],
+              ].map(([id, label]) => (
+                <button key={id} type="button" onClick={() => { setTab(id); setPage(1) }} className={`h-[24px] whitespace-nowrap rounded-full px-2.5 text-[11.5px] font-semibold ${tab === id ? 'text-white' : 'border border-[#e5eeec] bg-white text-[#3e5960]'}`} style={tab === id ? { background: TEAL } : undefined}>{label}</button>
               ))}
             </div>
 
@@ -299,10 +325,10 @@ export default function Payments() {
                   <Search className="size-3.5 shrink-0 text-[#8aa4a8]" />
                   <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ishtirokchi, seminar yoki tranzaksiya ID..." className="min-w-0 flex-1 bg-transparent text-[12px] outline-none placeholder:text-[#9aafb4]" />
                 </label>
-                <Drop value={seminar} onChange={setSeminar} className="w-[132px]" options={[{ value: 'all', label: 'Barcha seminarlar' }, ...SEMINARS.map((s) => ({ value: s.toLowerCase(), label: s }))]} />
+                <Drop value={seminar} onChange={(v) => { setSeminar(v); setPage(1) }} className="w-[132px]" options={[{ value: 'all', label: 'Barcha seminarlar' }, ...hub.seminars.map((s) => ({ value: s.id, label: s.title }))]} />
                 <Drop value={method} onChange={setMethod} className="w-[118px]" options={[{ value: 'all', label: 'Barcha usullar' }, ...['Payme', 'Click', 'Uzum', 'Paynet'].map((m) => ({ value: m, label: m }))]} />
                 <Drop value={state} onChange={setState} className="w-[128px]" options={[{ value: 'all', label: 'Barcha holatlar' }, ...Object.entries(STATE_META).map(([value, m]) => ({ value, label: m.label }))]} />
-                <Drop value="all" onChange={() => {}} className="w-[124px]" icon={<Calendar className="size-3.5 text-[#8aa4a8]" />} options={[{ value: 'all', label: 'Sana oralig‘i' }, { value: 'nov', label: 'Noyabr 2026' }]} />
+                <Drop value={span} onChange={(v) => { setSpan(v); setPage(1) }} className="w-[124px]" icon={<Calendar className="size-3.5 text-[#8aa4a8]" />} options={[{ value: 'all', label: 'Sana oralig‘i' }, { value: 'nov', label: 'Noyabr 2026' }]} />
                 <button type="button" onClick={reset} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#b7e4de] bg-white px-2.5 text-[12px] font-semibold" style={{ color: TEAL }}>
                   <Filter className="size-3.5" /> Filtrlar
                 </button>
@@ -373,16 +399,15 @@ export default function Payments() {
               <div className="flex shrink-0 items-center justify-between gap-2 border-t border-[#f0f5f4] px-3 py-1.5">
                 <div className="flex items-center gap-2 text-[12px] text-[#6e868c]">
                   <span className="inline-flex h-7 items-center gap-1 rounded-lg border border-[#e5eeec] bg-white px-2">10 <ChevronDown className="size-3 text-[#8aa4a8]" /></span>
-                  <span>dan 1–8 gacha, jami 1 030 ta</span>
+                  <span>dan {(Math.min(page, pages) - 1) * per + (shown.length ? 1 : 0)}–{(Math.min(page, pages) - 1) * per + shown.length} gacha, jami {filtered.length} ta</span>
                 </div>
                 <div className="flex items-center gap-0.5 text-[12px]">
-                  <button type="button" aria-label="Oldingi" className="grid size-7 place-items-center text-[#8aa4a8]"><ChevronLeft className="size-3.5" /></button>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button key={n} type="button" className={`grid h-7 min-w-7 place-items-center rounded-lg font-semibold ${n === 1 ? 'text-white' : 'text-[#3e5960]'}`} style={n === 1 ? { background: TEAL } : undefined}>{n}</button>
+                  <button type="button" aria-label="Oldingi" onClick={() => setPage((p) => Math.max(1, p - 1))} className="grid size-7 place-items-center text-[#8aa4a8]"><ChevronLeft className="size-3.5" /></button>
+                  {Array.from({ length: Math.min(5, pages) }, (_, i) => i + 1).map((n) => (
+                    <button key={n} type="button" onClick={() => setPage(n)} className={`grid h-7 min-w-7 place-items-center rounded-lg font-semibold ${n === Math.min(page, pages) ? 'text-white' : 'text-[#3e5960]'}`} style={n === Math.min(page, pages) ? { background: TEAL } : undefined}>{n}</button>
                   ))}
-                  <span className="px-1 text-[#8aa0a4]">…</span>
-                  <button type="button" className="grid h-7 min-w-7 place-items-center rounded-lg px-1 font-semibold text-[#3e5960]">103</button>
-                  <button type="button" aria-label="Keyingi" className="grid size-7 place-items-center text-[#5e787e]"><ChevronRight className="size-3.5" /></button>
+                  {pages > 5 && <button type="button" onClick={() => setPage(pages)} className="grid h-7 min-w-7 place-items-center rounded-lg px-1 font-semibold text-[#3e5960]">{pages}</button>}
+                  <button type="button" aria-label="Keyingi" onClick={() => setPage((p) => Math.min(pages, p + 1))} className="grid size-7 place-items-center text-[#5e787e]"><ChevronRight className="size-3.5" /></button>
                 </div>
               </div>
             </section>
@@ -418,7 +443,7 @@ export default function Payments() {
               </dl>
               <div className="mt-auto space-y-1.5 pt-2">
                 <button type="button" onClick={() => setReceipt(true)} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#d5eee8] bg-[#f3fbf9] text-[12.5px] font-semibold" style={{ color: TEAL }}><Eye className="size-3.5" /> Chekni ko‘rish</button>
-                <button type="button" onClick={() => notify('Chek yuklab olindi')} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: TEAL }}><Download className="size-3.5" /> Chekni yuklab olish</button>
+                <button type="button" onClick={() => receiptOf(pay)} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg text-[12.5px] font-semibold text-white" style={{ background: TEAL }}><Download className="size-3.5" /> Chekni yuklab olish</button>
                 <button type="button" onClick={() => setRefund(true)} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e4eeec] bg-white text-[12.5px] font-semibold text-[#1c4a5a]"><RefreshCw className="size-3.5" /> To‘lovni qaytarish</button>
                 <button type="button" onClick={() => setMail(true)} className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#e4eeec] bg-white text-[12.5px] font-semibold text-[#1c4a5a]"><Mail className="size-3.5" /> Email yuborish</button>
               </div>
@@ -475,27 +500,33 @@ function Row({ icon: Icon, label, children }) {
 }
 
 function MobilePay({ notify }) {
+  const hub = useHub()
+  const sem = hub.seminars.find((s) => s.status !== 'qoralama') || hub.seminars[0]
   const [tab, setTab] = useState('all')
   const [filter, setFilter] = useState(false)
   const [open, setOpen] = useState(null)
-  const rows = MOBILE_ROWS.filter((r) => tab === 'all' || (tab === 'paid' ? r.state === 'paid' : tab === 'wait' ? r.state === 'wait' : r.state === 'refund'))
-  const counts = { all: 42, paid: 40, wait: 2, refund: 0 }
+  const source = hub.payments.slice(0, 40).map((p, i) => ({
+    n: i + 1, id: p.id, init: p.who.split(' ').map((w) => w[0]).join('').slice(0, 2), who: p.who, phone: p.phone, sum: p.sum, via: p.method,
+    state: p.state === 'ok' ? 'paid' : p.state === 'wait' ? 'wait' : p.state === 'refund' ? 'refund' : 'cancel',
+  }))
+  const rows = source.filter((r) => tab === 'all' || (tab === 'paid' ? r.state === 'paid' : tab === 'wait' ? r.state === 'wait' : r.state === 'refund'))
+  const counts = { all: source.length, paid: source.filter((r) => r.state === 'paid').length, wait: source.filter((r) => r.state === 'wait').length, refund: source.filter((r) => r.state === 'refund').length }
 
   return (
     <div className="text-[#1c2340] md:hidden">
       <div className="rounded-2xl bg-white">
         <div className="flex gap-2 px-3 pb-1.5 pt-2">
-          <img src="/images/seminars/teeth.jpg" alt="" className="h-14 w-[68px] shrink-0 rounded-xl object-cover" />
+          <img src={sem?.image || '/images/seminars/teeth.jpg'} alt="" className="h-14 w-[68px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0">
-            <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f4] px-2 text-[10.5px] font-semibold" style={{ color: TEAL }}>Implantologiya</span>
-            <p className="text-[13.5px] font-bold leading-tight text-[#3b37c9]">Implantologiya: amaliy kurs</p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6b728a]"><Calendar className="size-3" style={{ color: TEAL }} /> 21 oktabr 2026, 09:00 – 18:00</p>
-            <p className="flex items-center gap-1 text-[11px] text-[#6b728a]"><MapPin className="size-3" style={{ color: TEAL }} /> Toshkent City Kongress Markazi</p>
+            <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f4] px-2 text-[10.5px] font-semibold" style={{ color: TEAL }}>{sem?.topic}</span>
+            <p className="text-[13.5px] font-bold leading-tight text-[#3b37c9]">{sem?.title}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6b728a]"><Calendar className="size-3" style={{ color: TEAL }} /> {sem?.date}</p>
+            <p className="flex items-center gap-1 text-[11px] text-[#6b728a]"><MapPin className="size-3" style={{ color: TEAL }} /> {sem?.place || sem?.city}</p>
           </div>
         </div>
         <div className="grid grid-cols-5 border-b border-[#eef1f6] px-1">
           {[
-            [Home, 'Umumiy', '/tashkilotchi/seminarlar/implant'],
+            [Home, 'Umumiy', `/tashkilotchi/seminarlar/${sem?.id || 'implant-nov'}`],
             [Users, 'Ishtirokchilar', '/tashkilotchi/ishtirokchilar'],
             [Ticket, 'Chiptalar', '/tashkilotchi/chiptalar'],
             [Wallet, 'To‘lovlar', null],
@@ -594,7 +625,7 @@ function MobilePay({ notify }) {
             <p className="text-[13px] text-[#6b728a]">{open.phone}</p>
             <p className="mt-1 text-[18px] font-bold" style={{ color: TEAL }}>{som(open.sum)}</p>
             <p className="text-[13px]">{open.via} · {open.state === 'paid' ? 'To‘langan' : 'Kutilmoqda'}</p>
-            <button type="button" onClick={() => { notify('Chek yuklab olindi'); setOpen(null) }} className="mt-3 h-10 w-full rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>Chekni yuklab olish</button>
+            <button type="button" onClick={() => { downloadText(`chek-${open.id || open.n}.txt`, `StomaHub chek\n${open.who}\n${som(open.sum)}\n${open.via || open.method || ''}\n`); notify('Chek yuklab olindi'); setOpen(null) }} className="mt-3 h-10 w-full rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>Chekni yuklab olish</button>
           </div>
         </div>
       )}
