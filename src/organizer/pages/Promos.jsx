@@ -4,8 +4,9 @@ import {
   Award, BadgePercent, Calendar, ChevronDown, ChevronLeft, ChevronRight, Coins, Copy, Gift,
   Home, MapPin, MoreVertical, Plus, Search, SlidersHorizontal, Ticket, TrendingUp, Users, Wallet, X,
 } from 'lucide-react'
-import { SEMINARS, som } from '../data'
+import { som } from '../data'
 import { useOrg } from '../Shell'
+import { upsertPromo, useHub } from '../../hubStore'
 
 const APOST = '\u2018'
 const SO = `so${APOST}m`
@@ -309,12 +310,14 @@ function CreateForm({ form, setForm, err, onSave, onClose, nameRef, compact }) {
 
 function Desktop() {
   const { query, notify } = useOrg()
+  const hub = useHub()
+  const SEMINARS = hub.seminars.length ? hub.seminars : []
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
   const [seminar, setSeminar] = useState('all')
   const [kind, setKind] = useState('all')
   const [status, setStatus] = useState('all')
-  const [rows, setRows] = useState(ROWS0)
+  const rows = hub.promos
   const [form, setForm] = useState(blank)
   const [err, setErr] = useState({})
   const [showForm, setShowForm] = useState(true)
@@ -334,7 +337,7 @@ function Desktop() {
       if (tab !== 'all' && p.status !== tab) return false
       if (status !== 'all' && p.status !== status) return false
       if (kind !== 'all' && p.kind !== kind) return false
-      if (seminar !== 'all' && p.seminar !== seminar) return false
+      if (seminar !== 'all' && p.seminar !== seminar && p.seminar !== 'all') return false
       if (s && !`${p.code} ${p.name || ''}`.toLowerCase().includes(s)) return false
       return true
     })
@@ -364,7 +367,7 @@ function Desktop() {
     setErr(e)
     if (Object.keys(e).length) return
     const value = Number(form.value)
-    setRows((list) => [{
+    upsertPromo({
       id: Date.now(),
       code: form.code.trim().toUpperCase(),
       name: form.name.trim(),
@@ -376,7 +379,7 @@ function Desktop() {
       to: uzShort(form.to, true),
       status: 'faol',
       seminar: picked,
-    }, ...list])
+    })
     setForm(blank)
     setErr({})
     notify('Promo-kod saqlandi')
@@ -506,8 +509,8 @@ function Desktop() {
                     </td>
                     <td className="px-0.5">
                       <MiniMenu items={[
-                        { label: 'Nusxa yaratish', onClick: () => { setRows((list) => [{ ...p, id: Date.now(), code: `${p.code.slice(0, 14)}2`, used: 0 }, ...list]); notify('Nusxa yaratildi') } },
-                        { label: p.status === 'nofaol' ? 'Faollashtirish' : 'Nofaol qilish', onClick: () => setRows((list) => list.map((x) => x.id === p.id ? { ...x, status: x.status === 'nofaol' ? 'faol' : 'nofaol' } : x)) },
+                        { label: 'Nusxa yaratish', onClick: () => { upsertPromo({ ...p, id: Date.now(), code: `${p.code.slice(0, 14)}2`, used: 0 }); notify('Nusxa yaratildi') } },
+                        { label: p.status === 'nofaol' ? 'Faollashtirish' : 'Nofaol qilish', onClick: () => upsertPromo({ ...p, status: p.status === 'nofaol' ? 'faol' : 'nofaol' }) },
                       ]} />
                     </td>
                   </tr>
@@ -548,7 +551,14 @@ const M_TABS = [
 
 function Mobile() {
   const { notify } = useOrg()
-  const [rows, setRows] = useState(MOBILE0)
+  const hub = useHub()
+  const sem = hub.seminars.find((s) => s.id === 'implant-nov') || hub.seminars.find((s) => s.published) || hub.seminars[0]
+  const rows = hub.promos.map((p) => ({
+    ...p,
+    off: p.kind === 'summa' ? `${som(p.value)} chegirma` : `${p.value}% chegirma`,
+    date: p.to || p.from || '',
+    label: p.status === 'faol' ? 'Faol' : p.status === 'yakun' ? 'Tugagan' : 'Nofaol',
+  }))
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(blank)
   const [err, setErr] = useState({})
@@ -559,17 +569,19 @@ function Mobile() {
     setErr(e)
     if (Object.keys(e).length) return
     const value = Number(form.value)
-    const off = form.kind === 'foiz' ? `${value}% chegirma` : `${som(value)} chegirma`
-    const date = form.to ? form.to.split('-').reverse().join('.') : '24.11.2026'
-    setRows((list) => [{
-      id: `m${Date.now()}`,
+    upsertPromo({
+      id: Date.now(),
       code: form.code.trim().toUpperCase(),
-      off,
+      name: form.name.trim(),
+      kind: form.kind,
+      value,
       used: 0,
-      limit: form.limited ? Number(form.limit) : 100,
-      date,
-      status: 'Faol',
-    }, ...list])
+      limit: form.limited ? Number(form.limit) : 999,
+      from: form.from || 'bugun',
+      to: form.to || 'ochiq',
+      status: 'faol',
+      seminar: sem?.id || 'all',
+    })
     setForm(blank)
     setErr({})
     setOpen(false)
@@ -578,19 +590,19 @@ function Mobile() {
 
   return (
     <div className="-mx-3 -mb-4 min-h-[calc(100dvh-8.5rem)] bg-[#f6f7fb] px-4 pb-8 pt-1 text-[#24185a]">
-      <Link to="/tashkilotchi/seminarlar/implant-nov" className="flex items-center gap-3 rounded-2xl border border-[#eef0f5] bg-white p-2.5 shadow-[0_1px_3px_rgb(30_20_60/0.04)]">
-        <img src="/images/seminars/teeth.jpg" alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />
+      <Link to={`/tashkilotchi/seminarlar/${sem?.id || 'implant-nov'}`} className="flex items-center gap-3 rounded-2xl border border-[#eef0f5] bg-white p-2.5 shadow-[0_1px_3px_rgb(30_20_60/0.04)]">
+        <img src={sem?.image || '/images/seminars/teeth.jpg'} alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold leading-none text-[var(--color-org-teal)]">Implantologiya</span>
+          <span className="block text-[11px] font-semibold leading-none text-[var(--color-org-teal)]">{sem?.topic || 'Seminar'}</span>
           <span className="mt-1 flex items-start justify-between gap-1">
-            <span className="text-[14.5px] font-bold leading-tight text-[#3a2a86]">Implantologiya: amaliy kurs</span>
+            <span className="text-[14.5px] font-bold leading-tight text-[#3a2a86]">{sem?.title || 'Seminar'}</span>
             <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#b0b4c4]" />
           </span>
           <span className="mt-1.5 flex items-center gap-1 text-[11px] text-[#6d7385]">
-            <Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 – 18:00
+            <Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {sem?.date || ''}{sem?.startTime ? `, ${sem.startTime}` : ''}
           </span>
           <span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6d7385]">
-            <MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi
+            <MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {sem?.place || sem?.city || ''}
           </span>
         </span>
       </Link>
@@ -616,7 +628,7 @@ function Mobile() {
 
       <div className="mt-3 space-y-2.5">
         {rows.map((p) => {
-          const live = p.status === 'Faol'
+          const live = p.status === 'faol'
           return (
             <article key={p.id} className="rounded-2xl border border-[#eef0f5] bg-white px-3 py-3 shadow-[0_1px_3px_rgb(30_20_60/0.04)]">
               <div className="flex gap-2.5">
@@ -634,7 +646,7 @@ function Mobile() {
                   {menu === p.id && (
                     <div className="mt-1 overflow-hidden rounded-xl border border-[#eef0f5] bg-white shadow-md">
                       <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f6f7fb]" onClick={() => { navigator.clipboard?.writeText(p.code).catch(() => {}); notify('Promo-kod nusxalandi'); setMenu(null) }}>Nusxalash</button>
-                      <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f6f7fb]" onClick={() => { setRows((list) => list.map((x) => x.id === p.id ? { ...x, status: x.status === 'Faol' ? 'Tugagan' : 'Faol' } : x)); setMenu(null) }}>{live ? 'Nofaol qilish' : 'Faollashtirish'}</button>
+                      <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f6f7fb]" onClick={() => { upsertPromo({ ...p, status: p.status === 'faol' ? 'nofaol' : 'faol' }); setMenu(null) }}>{live ? 'Nofaol qilish' : 'Faollashtirish'}</button>
                     </div>
                   )}
                   <div className="mt-2.5 flex items-center gap-3">
@@ -654,7 +666,7 @@ function Mobile() {
                     </div>
                     <span className={`ml-auto inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-[12px] font-semibold ${live ? 'bg-[#e7f8ee] text-[#1aa35a]' : 'bg-[#eef1f3] text-[#8b939c]'}`}>
                       <span className={`size-1.5 rounded-full ${live ? 'bg-[#1aa35a]' : 'bg-[#a0a7ae]'}`} />
-                      {p.status}
+                      {p.label}
                     </span>
                   </div>
                 </div>

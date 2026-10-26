@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { registerSale } from '../../hubStore'
 
 const KEY = 'stomahub-seminars'
 const SEED_SAVED = ['mikroskop-endo', 'aligner']
@@ -33,7 +34,27 @@ export function toggleSaved(id) {
 }
 
 export function register(id, info) {
-  write({ ...state, registered: { ...state.registered, [id]: info } })
+  let next = info
+  if (info?.name && info.gross != null && !info.synced) {
+    const res = registerSale({
+      seminarId: id,
+      name: info.name,
+      phone: info.phone,
+      email: info.email,
+      clinic: info.clinic,
+      city: info.city,
+      spec: info.spec,
+      ticket: info.ticketName || 'Standart',
+      method: info.methodLabel || info.method || 'Click',
+      subtotal: Number(info.gross) || 0,
+      promoCode: info.promo || '',
+      title: info.title,
+    })
+    if (!res.ok) return res
+    next = { ...info, price: res.paid, synced: true, order: res.payment?.id || info.order }
+  }
+  write({ ...state, registered: { ...state.registered, [id]: next } })
+  return { ok: true, info: next }
 }
 
 export function useSeminarStore() {

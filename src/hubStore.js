@@ -1,0 +1,667 @@
+import { useSyncExternalStore } from 'react'
+import {
+  ACTIVITY, CERTS, FACES, IMG, ORG, PARTICIPANTS, PROMOS, REVIEWS, SEMINARS, WIZARD_SPEAKERS,
+} from './organizer/data'
+import { seminars as CATALOG } from './seminarsData'
+
+const KEY = 'stomahub-hub-v1'
+export const FEE = 0.12
+
+const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
+const MON_CODE = ['YAN', 'FEV', 'MAR', 'APR', 'MAY', 'IYN', 'IYL', 'AVG', 'SEN', 'OKT', 'NOY', 'DEK']
+const WEEK = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba']
+const TOPIC_CAT = {
+  Implantologiya: 'impl', Endodontiya: 'endo', Ortodontiya: 'orto', Estetika: 'estet',
+  Jarrohlik: 'surg', Bolalar: 'other', Parodontologiya: 'paro',
+}
+const TICKET_PRICE = { VIP: 2500000, 'VIP chipta': 2500000, Standart: 1200000, 'Standart chipta': 1200000, Student: 800000, 'Student chipta': 800000, Guruh: 1000000, 'Guruh chipta': 1000000 }
+const METHODS = ['Payme', 'Click', 'Uzum', 'Paynet']
+
+const listeners = new Set()
+
+function isoFromLabel(label) {
+  const m = String(label || '').toLowerCase().match(/(\d{1,2})-([a-zʻ'’]+)\s+(\d{4})/)
+  if (!m) return '2026-11-24'
+  const idx = MONTHS.findIndex((name) => name.startsWith(m[2].slice(0, 3)))
+  return `${m[3]}-${String((idx >= 0 ? idx : 10) + 1).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`
+}
+
+export function uzLong(iso) {
+  if (!iso || !iso.includes('-')) return iso || ''
+  const [y, m, d] = iso.split('-').map(Number)
+  return `${d}-${MONTHS[(m || 1) - 1]} ${y}`
+}
+
+function cityOf(place, address, fallback = 'Toshkent') {
+  const blob = `${place || ''} ${address || ''}`
+  return ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Farg‘ona', 'Namangan', 'Nukus'].find((c) => blob.includes(c)) || fallback
+}
+
+function ticketPrice(name) {
+  return TICKET_PRICE[name] || 450000
+}
+
+function enrichSeminar(s) {
+  const start = isoFromLabel(s.date)
+  const price = s.sold ? Math.max(250000, Math.round(s.revenue / s.sold / 10000) * 10000) : 450000
+  return {
+    ...s,
+    published: true,
+    held: s.status === 'yakunlangan',
+    about: `${s.title}. ${s.days}. ${s.speaker} ishtirokida.`,
+    formatDetail: 'Offline (joyida)',
+    category: 'Tibbiy amaliy seminar',
+    tags: [s.topic],
+    cover: s.image,
+    start,
+    startTime: '10:00',
+    end: start,
+    endTime: '18:00',
+    place: `${s.city}, Congress Hall`,
+    address: `${s.city}`,
+    placeImg: IMG.hall2,
+    template: 'teal',
+    checked: 0,
+    tickets: [{
+      id: `${s.id}-std`, name: 'Standart', price, seats: s.seats, total: s.seats, sold: s.sold,
+      left: Math.max(0, s.seats - s.sold), active: true, perks: ['Seminarga kirish', 'Sertifikat'], icon: 'gem', note: 'Asosiy chipta',
+    }],
+    speakers: [{ id: `sp-${s.id}`, name: s.speaker, role: s.topic, city: s.city, avatar: FACES[10], bio: s.days }],
+    wizardPromos: [],
+  }
+}
+
+function seed() {
+  const seminars = SEMINARS.map(enrichSeminar)
+  const ids = seminars.map((s) => s.id)
+  const participants = PARTICIPANTS.map((p, i) => ({
+    ...p,
+    seminarId: ids[i % ids.length],
+    arrived: false,
+    code: `QR-${String(p.id).padStart(4, '0')}`,
+  }))
+  const payments = participants
+    .filter((p) => p.pay === 'paid' || p.pay === 'wait' || p.pay === 'cancel')
+    .map((p) => {
+      const sem = seminars.find((s) => s.id === p.seminarId)
+      const state = p.pay === 'paid' ? 'ok' : p.pay === 'wait' ? 'wait' : 'cancel'
+      return {
+        id: `ST2026-${String(p.id).padStart(3, '0')}`,
+        who: p.name,
+        clinic: p.clinic,
+        seminar: sem?.title || '',
+        seminarId: p.seminarId,
+        sum: ticketPrice(p.ticket),
+        method: METHODS[p.id % METHODS.length],
+        state,
+        phone: p.phone,
+        email: p.email,
+        ticket: p.ticket,
+        when: p.registered,
+        avatar: p.avatar,
+        face: (p.id - 1) % 8,
+      }
+    })
+  seminars.forEach((s) => {
+    const mine = participants.filter((p) => p.seminarId === s.id)
+    const paid = payments.filter((p) => p.seminarId === s.id && p.state === 'ok')
+    s.sold = mine.filter((p) => p.pay === 'paid' || p.pay === 'wait').length
+    s.seats = Math.max(s.seats, s.sold)
+    s.revenue = paid.reduce((n, p) => n + p.sum, 0)
+    s.checked = mine.filter((p) => p.arrived).length
+    if (s.tickets[0]) {
+      s.tickets[0].sold = s.sold
+      s.tickets[0].seats = s.seats
+      s.tickets[0].total = s.seats
+      s.tickets[0].left = Math.max(0, s.seats - s.sold)
+    }
+  })
+  return {
+    v: 1,
+    seminars,
+    participants,
+    payments,
+    promos: [
+      ...PROMOS.map((p, i) => ({ ...p, seminar: i % 5 === 0 ? 'endo' : 'implant-nov' })),
+      { id: 'stoma10', code: 'STOMA10', kind: 'foiz', value: 10, used: 0, limit: 500, status: 'faol', seminar: 'all', from: 'bugun', to: 'ochiq' },
+      { id: 'doctor20', code: 'DOCTOR20', kind: 'foiz', value: 20, used: 0, limit: 500, status: 'faol', seminar: 'all', from: 'bugun', to: 'ochiq' },
+      { id: 'stomahub', code: 'STOMAHUB', kind: 'foiz', value: 15, used: 0, limit: 500, status: 'faol', seminar: 'all', from: 'bugun', to: 'ochiq' },
+    ],
+    certs: CERTS.map((c) => ({ ...c, seminarId: 'implant-nov' })),
+    withdrawals: [],
+    requisites: [{ id: '4521', label: 'Karta **** 4521', detail: 'Humo · 04/28' }],
+    activity: ACTIVITY.map((a) => ({ ...a })),
+    reviews: REVIEWS.map((r) => ({ ...r })),
+    speakers: WIZARD_SPEAKERS.map((s) => ({ ...s })),
+    settings: { name: ORG.name, email: 'ibrohim@stomahub.uz', notes: true, city: ORG.city },
+    marketing: { push: true, email: true, telegram: false, budget: '150 000' },
+    qrSound: true,
+    messages: [],
+  }
+}
+
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null')
+    if (raw?.v === 1 && Array.isArray(raw.seminars)) return raw
+  } catch { /* yangi holat */ }
+  return seed()
+}
+
+let state = load()
+
+function commit(next) {
+  state = next
+  try {
+    localStorage.setItem(KEY, JSON.stringify(next))
+  } catch {
+    const slim = {
+      ...next,
+      seminars: next.seminars.map((s) => ({
+        ...s,
+        cover: String(s.cover || '').startsWith('data:') ? s.image : s.cover,
+        form: s.form ? { ...s.form, cover: s.image, thumbs: (s.form.thumbs || []).filter((t) => !String(t).startsWith('data:')) } : s.form,
+      })),
+    }
+    state = slim
+    try { localStorage.setItem(KEY, JSON.stringify(slim)) } catch { /* xotirada qoladi */ }
+  }
+  listeners.forEach((l) => l())
+}
+
+function patch(fn) {
+  commit(fn(state))
+}
+
+const subscribe = (l) => {
+  listeners.add(l)
+  return () => listeners.delete(l)
+}
+
+export function getHub() { return state }
+export function useHub() {
+  return useSyncExternalStore(subscribe, getHub)
+}
+
+function nowLabel() {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function pushActivity(list, item) {
+  return [{ ...item, time: item.time || nowLabel() }, ...list].slice(0, 24)
+}
+
+export function saveSeminar(form, { publish, id } = {}) {
+  const name = String(form.name || '').trim()
+  if (name.length < 3) return { ok: false, error: 'Seminar nomini kiriting' }
+  if (String(form.about || '').trim().length < 10) return { ok: false, error: 'Qisqa tavsif kamida 10 belgi bo‘lsin' }
+  if (!form.start) return { ok: false, error: 'Sana kiriting' }
+  if (!String(form.place || '').trim()) return { ok: false, error: 'Joyni kiriting' }
+  const tickets = form.tickets || []
+  if (publish && !tickets.length) return { ok: false, error: 'Kamida bitta chipta turi kerak' }
+
+  const existing = id ? state.seminars.find((s) => s.id === id) : null
+  const nextId = existing?.id || `${name.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 36) || 'seminar'}-${Math.random().toString(36).slice(2, 6)}`
+  const status = publish ? (existing && existing.status !== 'qoralama' ? existing.status : 'rejalashtirilgan') : 'qoralama'
+  const seats = tickets.reduce((n, t) => n + (Number(t.seats || t.total) || 0), 0) || existing?.seats || 0
+  const sold = existing?.sold || 0
+  const mappedTickets = tickets.map((t) => {
+    const total = Number(t.seats || t.total) || 0
+    const soldN = t.sold || 0
+    return {
+      id: t.id, name: t.name, price: Number(t.price) || 0, seats: total, total, sold: soldN,
+      left: Math.max(0, total - soldN), active: t.active !== false, perks: t.perks || [], icon: t.icon || 'gem', note: t.note || '',
+    }
+  })
+  const speakerName = form.speakers?.[0]?.name || existing?.speaker || 'Ma’ruzachi'
+  const record = {
+    ...(existing || {}),
+    id: nextId,
+    title: name,
+    speaker: speakerName,
+    date: uzLong(form.start),
+    city: cityOf(form.place, form.address, existing?.city),
+    format: /onlayn|online/i.test(form.format || '') && /gibrid|offline|oflayn/i.test(form.format || '') ? 'Gibrid' : /onlayn|online/i.test(form.format || '') ? 'Onlayn' : 'Oflayn',
+    formatDetail: form.format || 'Offline (joyida)',
+    days: form.start && form.end && form.start !== form.end ? '2 kunlik seminar' : '1 kunlik seminar',
+    sold,
+    seats: Math.max(seats, sold),
+    revenue: existing?.revenue || 0,
+    status,
+    published: !!publish,
+    badge: status === 'qoralama' ? 'Qoralama' : status === 'bekor' ? 'Bekor qilingan' : status === 'yakunlangan' ? 'Yakunlangan' : status === 'jarayonda' ? 'Jarayonda' : 'Rejalashtirilgan',
+    image: String(form.cover || '').startsWith('data:') ? (existing?.image || form.cover) : (form.cover || existing?.image || IMG.teeth),
+    cover: form.cover || existing?.cover || IMG.teeth,
+    topic: form.topic || existing?.topic || 'Boshqa',
+    about: form.about,
+    category: form.category,
+    tags: form.tags || [],
+    start: form.start,
+    startTime: form.startTime || '10:00',
+    end: form.end || form.start,
+    endTime: form.endTime || '18:00',
+    place: form.place,
+    address: form.address || '',
+    placeImg: form.placeImg || IMG.hall2,
+    tickets: mappedTickets,
+    speakers: form.speakers || [],
+    template: form.template || 'teal',
+    wizardPromos: form.promos || [],
+    form: { ...form, tickets, speakers: form.speakers || [], promos: form.promos || [] },
+    held: existing?.held || false,
+    checked: existing?.checked || 0,
+  }
+  const promos = [...state.promos]
+  ;(form.promos || []).filter((p) => p.on !== false && p.code).forEach((p) => {
+    const code = String(p.code).toUpperCase()
+    const pct = Number(String(p.off || p.value || '').replace(/[^\d]/g, '')) || 0
+    const kind = /so‘m|som|sum/i.test(String(p.off || '')) || p.kind === 'summa' ? 'summa' : 'foiz'
+    const row = {
+      id: p.id || `pr-${code}`,
+      code,
+      name: p.note || code,
+      kind,
+      value: pct,
+      used: promos.find((x) => x.code === code && (x.seminar === nextId || x.seminar === 'all'))?.used || 0,
+      limit: Number(p.limit) || 100,
+      from: p.from || 'bugun',
+      to: p.to || p.note || 'ochiq',
+      status: p.on === false ? 'nofaol' : 'faol',
+      seminar: nextId,
+    }
+    const i = promos.findIndex((x) => x.code === code && (x.seminar === nextId || x.seminar === 'all'))
+    if (i >= 0) promos[i] = { ...promos[i], ...row, id: promos[i].id }
+    else promos.unshift(row)
+  })
+  patch((s) => ({
+    ...s,
+    seminars: existing ? s.seminars.map((x) => (x.id === nextId ? record : x)) : [record, ...s.seminars],
+    promos,
+    activity: pushActivity(s.activity, {
+      icon: 'cal',
+      title: publish ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi',
+      text: name,
+    }),
+  }))
+  return { ok: true, id: nextId }
+}
+
+export function cancelSeminar(id, reason) {
+  patch((s) => {
+    let drop = 0
+    const payments = s.payments.map((p) => {
+      if (p.seminarId !== id || p.state !== 'ok') return p
+      drop += Number(p.sum) || 0
+      return { ...p, state: 'refund' }
+    })
+    return {
+      ...s,
+      payments,
+      seminars: s.seminars.map((x) => (x.id === id ? {
+        ...x,
+        status: 'bekor',
+        published: true,
+        badge: 'Bekor qilingan',
+        cancelReason: reason || '',
+        revenue: Math.max(0, (x.revenue || 0) - drop),
+      } : x)),
+      activity: pushActivity(s.activity, { icon: 'cal', title: 'Seminar bekor qilindi', text: s.seminars.find((x) => x.id === id)?.title || id }),
+    }
+  })
+}
+
+export function duplicateSeminar(id) {
+  const src = state.seminars.find((s) => s.id === id)
+  if (!src) return null
+  const copyId = `${src.id}-nusxa-${Math.random().toString(36).slice(2, 5)}`
+  const copy = {
+    ...src,
+    id: copyId,
+    title: `${src.title} (nusxa)`,
+    status: 'qoralama',
+    published: false,
+    badge: 'Qoralama',
+    sold: 0,
+    revenue: 0,
+    checked: 0,
+    held: false,
+    form: src.form ? { ...src.form, name: `${src.title} (nusxa)` } : undefined,
+    tickets: (src.tickets || []).map((t) => ({ ...t, id: `${t.id}-c`, sold: 0, left: t.seats || t.total })),
+  }
+  patch((s) => ({ ...s, seminars: [copy, ...s.seminars] }))
+  return copyId
+}
+
+export function confirmHeld(id) {
+  const real = id === 'implant' ? 'implant-nov' : id
+  patch((s) => ({
+    ...s,
+    seminars: s.seminars.map((x) => (x.id === real ? { ...x, status: 'yakunlangan', held: true, published: true, badge: 'Yakunlangan' } : x)),
+    activity: pushActivity(s.activity, { icon: 'award', title: 'Seminar o‘tkazilgani tasdiqlandi', text: s.seminars.find((x) => x.id === real)?.title || real }),
+  }))
+}
+
+export function addParticipant(row) {
+  const id = row.id || Date.now()
+  const person = { arrived: false, pay: 'paid', code: `QR-${id}`, avatar: FACES[id % FACES.length], ...row, id }
+  patch((s) => ({
+    ...s,
+    participants: [person, ...s.participants],
+    seminars: bumpSeminar(s.seminars, person.seminarId, { sold: person.pay === 'cancel' ? 0 : 1 }),
+    activity: pushActivity(s.activity, { icon: 'user', title: `${person.name} qo‘shildi`, text: 'Ishtirokchi' }),
+  }))
+  return person
+}
+
+export function removeParticipant(id) {
+  patch((s) => {
+    const p = s.participants.find((x) => x.id === id)
+    return {
+      ...s,
+      participants: s.participants.filter((x) => x.id !== id),
+      seminars: p ? bumpSeminar(s.seminars, p.seminarId, { sold: -1 }) : s.seminars,
+    }
+  })
+}
+
+function bumpSeminar(list, id, { sold = 0, revenue = 0, checked = 0 } = {}) {
+  return list.map((s) => {
+    if (s.id !== id) return s
+    const nextSold = Math.max(0, (s.sold || 0) + sold)
+    const tickets = (s.tickets || []).map((t, i) => (i === 0 ? { ...t, sold: Math.max(0, (t.sold || 0) + sold), left: Math.max(0, (t.seats || t.total || 0) - Math.max(0, (t.sold || 0) + sold)) } : t))
+    return { ...s, sold: nextSold, seats: Math.max(s.seats || 0, nextSold), revenue: Math.max(0, (s.revenue || 0) + revenue), checked: Math.max(0, (s.checked || 0) + checked), tickets }
+  })
+}
+
+export function checkIn(id) {
+  const person = state.participants.find((p) => p.id === id)
+  if (!person) return null
+  if (person.arrived) return person
+  patch((s) => ({
+    ...s,
+    participants: s.participants.map((p) => (p.id === id ? { ...p, arrived: true } : p)),
+    seminars: bumpSeminar(s.seminars, person.seminarId, { checked: 1 }),
+    activity: pushActivity(s.activity, { icon: 'qr', title: `${person.name} — Keldi`, text: s.seminars.find((x) => x.id === person.seminarId)?.title || '' }),
+  }))
+  return { ...person, arrived: true }
+}
+
+export function checkInQuery(seminarId, query) {
+  const q = String(query || '').trim().toLowerCase()
+  const pool = state.participants.filter((p) => !seminarId || p.seminarId === seminarId)
+  const hit = pool.find((p) => !p.arrived && q && (`${p.name} ${p.phone} ${p.code} ${p.email}`.toLowerCase().includes(q)))
+    || pool.find((p) => !p.arrived)
+  if (!hit) return null
+  return checkIn(hit.id)
+}
+
+export function quotePromo(code, seminarId, amount) {
+  const c = String(code || '').trim().toUpperCase()
+  if (!c) return { ok: false, error: 'Promokodni kiriting' }
+  const same = state.promos.filter((x) => x.code.toUpperCase() === c)
+  const live = same.filter((x) => x.status === 'faol')
+  const p = live.find((x) => !x.seminar || x.seminar === 'all' || x.seminar === seminarId)
+  if (!p) {
+    if (!same.length || !live.length) return { ok: false, error: 'Promokod topilmadi yoki muddati o‘tgan' }
+    if (live.some((x) => x.seminar && x.seminar !== 'all' && x.seminar !== seminarId)) return { ok: false, error: 'Promokod bu seminar uchun emas' }
+    return { ok: false, error: 'Promokod limiti tugagan' }
+  }
+  if (Number(p.limit) && Number(p.used) >= Number(p.limit)) return { ok: false, error: 'Promokod limiti tugagan' }
+  const discount = p.kind === 'summa' ? Math.min(amount, Number(p.value) || 0) : Math.round((amount * (Number(p.value) || 0)) / 100)
+  return { ok: true, discount, promo: p }
+}
+
+export function registerSale(input) {
+  const sem = state.seminars.find((s) => s.id === input.seminarId)
+  if (sem?.status === 'bekor') return { ok: false, error: 'Seminar bekor qilingan' }
+  const subtotal = Number(input.subtotal) || 0
+  let discount = 0
+  let promo = null
+  if (input.promoCode) {
+    const q = quotePromo(input.promoCode, input.seminarId, subtotal)
+    if (!q.ok) return q
+    discount = q.discount
+    promo = q.promo
+  }
+  const paid = Math.max(0, subtotal - discount)
+  const id = Date.now()
+  const ticket = input.ticket || 'Standart'
+  const person = {
+    id,
+    name: input.name,
+    clinic: input.clinic || '—',
+    phone: input.phone,
+    email: input.email,
+    ticket,
+    pay: 'paid',
+    registered: uzLong(new Date().toISOString().slice(0, 10)) + `, ${nowLabel()}`,
+    city: input.city || sem?.city || 'Toshkent',
+    role: input.spec || 'Stomatolog',
+    avatar: FACES[id % FACES.length],
+    seminarId: input.seminarId,
+    arrived: false,
+    code: `QR-${id}`,
+  }
+  const payment = {
+    id: `ST${new Date().getFullYear()}-${id}`,
+    who: person.name,
+    clinic: person.clinic,
+    seminar: sem?.title || input.title || 'Seminar',
+    seminarId: input.seminarId,
+    sum: paid,
+    gross: subtotal,
+    discount,
+    promo: promo?.code || '',
+    method: input.method || 'Click',
+    state: 'ok',
+    phone: person.phone,
+    email: person.email,
+    ticket,
+    when: person.registered,
+    avatar: person.avatar,
+    face: id % 8,
+  }
+  patch((s) => ({
+    ...s,
+    participants: [person, ...s.participants],
+    payments: [payment, ...s.payments],
+    seminars: sem ? s.seminars.map((x) => {
+      if (x.id !== sem.id) return x
+      const tickets = (x.tickets || []).map((t) => {
+        const hit = t.name === ticket || t.id === input.ticketId
+        if (!hit) return t
+        const sold = (t.sold || 0) + 1
+        return { ...t, sold, left: Math.max(0, (t.seats || t.total || 0) - sold) }
+      })
+      return { ...x, sold: (x.sold || 0) + 1, seats: Math.max(x.seats || 0, (x.sold || 0) + 1), revenue: (x.revenue || 0) + paid, tickets }
+    }) : s.seminars,
+    promos: promo ? s.promos.map((p) => (p.id === promo.id ? { ...p, used: (p.used || 0) + 1 } : p)) : s.promos,
+    activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qabul qilindi', text: `${person.name} — ${paid.toLocaleString('ru-RU')} so‘m` }),
+  }))
+  return { ok: true, paid, discount, person, payment }
+}
+
+export function refundPayment(id) {
+  patch((s) => {
+    const pay = s.payments.find((p) => p.id === id)
+    if (!pay || pay.state === 'refund') return s
+    return {
+      ...s,
+      payments: s.payments.map((p) => (p.id === id ? { ...p, state: 'refund' } : p)),
+      seminars: bumpSeminar(s.seminars, pay.seminarId, { revenue: -(pay.sum || 0) }),
+      activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qaytarildi', text: pay.who }),
+    }
+  })
+}
+
+export function saveTickets(seminarId, tickets) {
+  patch((s) => ({
+    ...s,
+    seminars: s.seminars.map((x) => {
+      if (x.id !== seminarId) return x
+      const seats = tickets.reduce((n, t) => n + (Number(t.seats || t.total) || 0), 0)
+      return { ...x, tickets, seats: Math.max(seats, x.sold || 0), form: x.form ? { ...x.form, tickets } : x.form }
+    }),
+  }))
+}
+
+export function upsertPromo(row) {
+  patch((s) => {
+    const i = s.promos.findIndex((p) => p.id === row.id)
+    const promos = i >= 0 ? s.promos.map((p) => (p.id === row.id ? { ...p, ...row } : p)) : [row, ...s.promos]
+    return { ...s, promos }
+  })
+}
+
+export function withdraw(amount, requisite) {
+  const w = walletOf(state)
+  const n = Number(amount) || 0
+  if (n < 1000) return { ok: false, error: 'Kamida 1 000 so‘m kiriting' }
+  if (n > w.available) return { ok: false, error: 'Yechib olish mumkin bo‘lgan summadan oshmasin' }
+  const row = { id: `w-${Date.now()}`, amount: n, card: requisite || '4521', date: new Date().toLocaleDateString('ru-RU'), method: 'card' }
+  patch((s) => ({
+    ...s,
+    withdrawals: [row, ...s.withdrawals],
+    activity: pushActivity(s.activity, { icon: 'pay', title: 'Pul yechish so‘rovi', text: `${n.toLocaleString('ru-RU')} so‘m` }),
+  }))
+  return { ok: true }
+}
+
+export function addRequisite(item) {
+  patch((s) => ({ ...s, requisites: [...s.requisites, item] }))
+}
+
+export function issueCert(id) {
+  const code = `STH-2026-${String(id).padStart(4, '0')}`
+  patch((s) => ({
+    ...s,
+    certs: s.certs.map((c) => (c.id === id ? { ...c, state: 'done', code, date: uzLong(new Date().toISOString().slice(0, 10)) } : c)),
+  }))
+  return code
+}
+
+export function saveSettings(next) {
+  patch((s) => ({ ...s, settings: { ...s.settings, ...next } }))
+}
+
+export function saveMarketing(next) {
+  patch((s) => ({ ...s, marketing: { ...s.marketing, ...next } }))
+}
+
+export function addSpeaker(row) {
+  patch((s) => ({ ...s, speakers: [...s.speakers, row] }))
+}
+
+export function setQrSound(on) {
+  patch((s) => ({ ...s, qrSound: on }))
+}
+
+export function addMessage(text) {
+  patch((s) => ({ ...s, messages: [...s.messages, { id: Date.now(), text, at: nowLabel() }] }))
+}
+
+export function walletOf(s = state) {
+  let hold = 0
+  let ready = 0
+  const paymentRows = []
+  for (const p of s.payments) {
+    if (p.state === 'wait') continue
+    const sem = s.seminars.find((x) => x.id === p.seminarId)
+    const sum = Number(p.sum) || 0
+    const fee = p.state === 'ok' ? Math.round(sum * FEE) : 0
+    const net = p.state === 'ok' ? sum - fee : 0
+    let bucket = 'refund'
+    if (p.state === 'ok' && (sem?.held || sem?.status === 'yakunlangan')) {
+      bucket = 'paid'
+      ready += net
+    } else if (p.state === 'ok') {
+      bucket = 'hold'
+      hold += net
+    }
+    paymentRows.push({
+      id: p.id, date: p.when, seminar: p.seminar, seminarId: p.seminarId, sum, fee, net, state: bucket, who: p.who,
+    })
+  }
+  let transferred = 0
+  const outs = s.withdrawals.map((w) => {
+    transferred += w.amount
+    ready -= w.amount
+    return { id: w.id, date: w.date, seminar: `Pul yechish · **** ${w.card}`, seminarId: '', sum: w.amount, fee: 0, net: w.amount, state: 'paid', who: 'Yechish' }
+  })
+  return {
+    hold,
+    available: Math.max(0, ready),
+    transferred,
+    rows: [...outs, ...paymentRows].slice(0, 40),
+  }
+}
+
+export function toPublic(s) {
+  const [y, m, d] = (s.start || isoFromLabel(s.date)).split('-').map(Number)
+  const date = new Date(y, (m || 1) - 1, d || 1)
+  const active = (s.tickets || []).filter((t) => t.active !== false && t.price)
+  const price = active.length ? Math.min(...active.map((t) => Number(t.price) || 0)) : 450000
+  const seats = (s.tickets || []).reduce((n, t) => n + (Number(t.seats || t.total) || 0), 0) || s.seats || 30
+  const sold = s.sold || 0
+  const cat = TOPIC_CAT[s.topic] || 'other'
+  const online = /onlayn|online/i.test(s.format || '') && !/gibrid|oflayn|offline/i.test(s.format || '')
+  const hybrid = /gibrid/i.test(s.format || '') || (/onlayn|online/i.test(s.formatDetail || '') && /offline|oflayn/i.test(s.formatDetail || ''))
+  return {
+    id: s.id,
+    cat,
+    day: String(d || 1).padStart(2, '0'),
+    mon: MON_CODE[(m || 1) - 1],
+    weekday: WEEK[date.getDay()],
+    monthKey: `${y}-${String(m || 1).padStart(2, '0')}`,
+    title: s.title,
+    text: String(s.about || s.days || '').slice(0, 140),
+    city: s.city,
+    place: s.place || s.city,
+    time: `${s.startTime || '10:00'} – ${s.endTime || '18:00'}`,
+    hours: '8 soat',
+    speaker: {
+      name: s.speakers?.[0]?.name || s.speaker,
+      role: s.speakers?.[0]?.role || s.topic,
+      avatar: s.speakers?.[0]?.avatar || FACES[0],
+    },
+    cme: 6,
+    left: Math.max(0, seats - sold),
+    seats,
+    price,
+    tickets: (s.tickets || []).filter((t) => t.active !== false && t.price).map((t) => ({
+      id: t.id, name: t.name, price: Number(t.price) || 0, seats: Number(t.seats || t.total) || 0, left: t.left, perks: t.perks || [],
+    })),
+    format: online ? 'Online' : hybrid ? 'Offline + jonli efir' : 'Offline',
+    image: s.cover && !String(s.cover).startsWith('data:') ? s.cover : (s.image || IMG.teeth),
+    status: s.status,
+    cancelled: s.status === 'bekor',
+    organizer: true,
+  }
+}
+
+export function publicRecords(s = state) {
+  const extra = s.seminars.filter((x) => x.published && x.status !== 'qoralama').map(toPublic)
+  const ids = new Set(extra.map((x) => x.id))
+  return [...CATALOG.filter((x) => !ids.has(x.id)), ...extra]
+}
+
+export function publicRecord(id, s = state) {
+  return publicRecords(s).find((x) => x.id === id) || null
+}
+
+export function downloadText(filename, text, mime = 'text/plain') {
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(a.href)
+}
+
+export function resetHub() {
+  localStorage.removeItem(KEY)
+  commit(seed())
+}

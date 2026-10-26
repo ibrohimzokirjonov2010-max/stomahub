@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import {
   Award, Building2, Calendar, Camera, Check, ChevronLeft, Clock, FileText, Image as ImageIcon,
   Info, MapPin, Pencil, Send, Ticket, Upload, Users, Wallet, X,
 } from 'lucide-react'
 import { ToothIcon } from '../../components/icons'
 import { som } from '../data'
+import { confirmHeld, FEE, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Modal } from '../ui'
 
@@ -48,6 +49,41 @@ const card = 'rounded-2xl border border-[#e6f1ef] bg-white shadow-[0_1px_2px_rgb
 
 export default function Confirm() {
   const { notify } = useOrg()
+  const { id } = useParams()
+  const hub = useHub()
+  const sem = useMemo(() => {
+    const key = id === 'implant' ? 'implant-nov' : id
+    return hub.seminars.find((s) => s.id === key) || hub.seminars.find((s) => s.status === 'yakunlangan') || hub.seminars[0]
+  }, [hub.seminars, id])
+  const people = hub.participants.filter((p) => p.seminarId === sem?.id)
+  const arrived = people.filter((p) => p.arrived)
+  const shown = (arrived.length ? arrived : people).slice(0, 8).map((p) => ({ name: p.name, phone: p.phone, time: p.registered, avatar: p.avatar }))
+  const pays = hub.payments.filter((p) => p.seminarId === sem?.id && p.state === 'ok')
+  const revenue = pays.reduce((n, p) => n + (Number(p.sum) || 0), 0)
+  const fee = Math.round(revenue * FEE)
+  const net = Math.max(0, revenue - fee)
+  const meta = {
+    id: sem?.id,
+    topic: sem?.topic || 'Seminar',
+    title: sem?.title || 'Seminar',
+    image: sem?.image || TEETH,
+    when: `${sem?.date || ''}${sem?.startTime ? `, ${sem.startTime}` : ''}${sem?.endTime ? ` — ${sem.endTime}` : ''}`,
+    place: sem?.place || sem?.city || '',
+    people: people.length,
+    revenue,
+    fee,
+    net,
+    certs: hub.certs.filter((c) => !c.seminarId || c.seminarId === sem?.id).filter((c) => c.state === 'done').length,
+    edit: `/tashkilotchi/seminarlar/yangi?tahrir=${sem?.id || ''}`,
+    facts: [
+      { icon: Calendar, k: 'Sana', v: sem?.date || '—' },
+      { icon: MapPin, k: 'Manzil', v: sem?.city || '—' },
+      { icon: Building2, k: 'Zal', v: sem?.place || '—' },
+      { icon: Users, k: 'Ishtirokchilar', v: `${people.length} kishi` },
+      { icon: Ticket, k: 'Chipta narxi', v: som(sem?.tickets?.[0]?.price || 0) },
+      { icon: Wallet, k: 'Jami daromad', v: som(revenue) },
+    ],
+  }
   const [photos, setPhotos] = useState(PHOTOS)
   const [dirty, setDirty] = useState(false)
   const [all, setAll] = useState(false)
@@ -57,7 +93,8 @@ export default function Confirm() {
   const inputRefM = useRef(null)
 
   const countLabel = dirty ? photos.length : 5
-  const rows = all ? PEOPLE : PEOPLE.slice(0, 5)
+  const source = shown.length ? shown : PEOPLE
+  const rows = all ? source : source.slice(0, 5)
 
   const add = (file) => {
     if (!file) return
@@ -81,6 +118,7 @@ export default function Confirm() {
 
   const ask = () => {
     if (photos.length < 3) { notify('Kamida 3 ta zal rasmi kerak'); return }
+    if (sem?.id) confirmHeld(sem.id)
     setAskOpen(false)
     notify('Pul so‘rovi yuborildi')
   }
@@ -106,6 +144,7 @@ export default function Confirm() {
           remove={remove}
           inputRef={inputRef}
           onAsk={openAsk}
+          meta={meta}
         />
       </div>
       <div className="lg:hidden">
@@ -115,9 +154,10 @@ export default function Confirm() {
           remove={remove}
           inputRef={inputRefM}
           onAsk={openAsk}
+          meta={meta}
         />
       </div>
-      <Modal open={askOpen} title="Pulni so‘rash" sub={`${som(15400000)} hamyoningizga so‘raladi.`} onClose={() => setAskOpen(false)}>
+      <Modal open={askOpen} title="Pulni so‘rash" sub={`${som(net)} hamyoningizga so‘raladi.`} onClose={() => setAskOpen(false)}>
         <p className="text-[13px] leading-relaxed text-[#3e5a62]">Zal rasmlari va ishtirokchilar ro‘yxati tekshiruvga yuboriladi.</p>
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={() => setAskOpen(false)} className="inline-flex h-10 items-center rounded-xl border border-[#e4eeec] bg-white px-3.5 text-[13px] font-semibold text-[#1c4a5a]">Ortga</button>
@@ -128,7 +168,7 @@ export default function Confirm() {
   )
 }
 
-function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop, add, remove, inputRef, onAsk }) {
+function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop, add, remove, inputRef, onAsk, meta }) {
   return (
     <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: 'minmax(0,1fr) 308px' }}>
       <div className="min-w-0">
@@ -142,14 +182,14 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
 
         <div className="mt-4 space-y-3">
           <section className={`${card} flex items-center gap-3.5 px-4 py-3.5`}>
-            <img src={TEETH} alt="" className="h-[72px] w-[92px] shrink-0 rounded-xl object-cover" />
+            <img src={meta.image} alt="" className="h-[72px] w-[92px] shrink-0 rounded-xl object-cover" />
             <div className="min-w-0 flex-1">
-              <span className="inline-flex h-[22px] items-center rounded-full bg-[#e7f6f3] px-2 text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
-              <p className="mt-1 text-[15.5px] font-bold leading-tight text-[#123044]">Implantologiya: nazariya va amaliyot</p>
+              <span className="inline-flex h-[22px] items-center rounded-full bg-[#e7f6f3] px-2 text-[11px] font-semibold text-[var(--color-org-teal)]">{meta.topic}</span>
+              <p className="mt-1 text-[15.5px] font-bold leading-tight text-[#123044]">{meta.title}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-[#6e868c]">
-                <span className="inline-flex items-center gap-1.5"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> 21 oktabr 2026</span>
-                <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> Toshkent, O‘zbekiston</span>
-                <span className="inline-flex items-center gap-1.5"><Users className="size-3.5 text-[var(--color-org-teal)]" /> 50 ishtirokchi</span>
+                <span className="inline-flex items-center gap-1.5"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {meta.when}</span>
+                <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {meta.place}</span>
+                <span className="inline-flex items-center gap-1.5"><Users className="size-3.5 text-[var(--color-org-teal)]" /> {meta.people} ishtirokchi</span>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2.5 rounded-2xl bg-[#fff7ea] px-3 py-2">
@@ -263,7 +303,7 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3 pt-0.5">
-                <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">42 ta sertifikat berilgan</span>
+                <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">{meta.certs} ta sertifikat berilgan</span>
                 <Link to="/tashkilotchi/sertifikatlar" className="text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:underline">Sertifikatlar ro‘yxati</Link>
               </div>
             </div>
@@ -287,19 +327,19 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
         <section className={`${card} p-4`}>
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[14.5px] font-bold text-[#123044]">Seminar ma’lumotlari</h3>
-            <Link to="/tashkilotchi/seminarlar/yangi?tahrir=implant" className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
+            <Link to={meta.edit} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
               <Pencil className="size-3.5" /> Tahrirlash
             </Link>
           </div>
           <div className="mt-3 flex items-center gap-2.5">
-            <img src={TEETH} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
+            <img src={meta.image} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
             <div className="min-w-0">
-              <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
-              <p className="mt-1 text-[13px] font-bold leading-snug text-[#123044]">Implantologiya: nazariya va amaliyot</p>
+              <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[var(--color-org-teal)]">{meta.topic}</span>
+              <p className="mt-1 text-[13px] font-bold leading-snug text-[#123044]">{meta.title}</p>
             </div>
           </div>
           <dl className="mt-3 space-y-2">
-            {FACTS.map((f) => (
+            {meta.facts.map((f) => (
               <div key={f.k} className="flex items-start gap-2 text-[12.5px]">
                 <f.icon className="mt-0.5 size-4 shrink-0 text-[var(--color-org-teal)]" strokeWidth={1.8} />
                 <dt className="shrink-0 text-[#8aa0a4]">{f.k}</dt>
@@ -314,16 +354,16 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
           <div className="mt-2.5 space-y-2 text-[12.5px]">
             <div className="flex items-center justify-between gap-3 border-b border-[#f1f5f4] pb-2">
               <span className="text-[#8aa0a4]">Jami daromad</span>
-              <span className="font-semibold text-[#143044]">{som(17500000)}</span>
+              <span className="font-semibold text-[#143044]">{som(meta.revenue)}</span>
             </div>
             <div className="flex items-center justify-between gap-3 border-b border-[#f1f5f4] pb-2">
               <span className="text-[#8aa0a4]">Platforma komissiyasi (12%)</span>
-              <span className="font-semibold text-[#143044]">{som(2100000)}</span>
+              <span className="font-semibold text-[#143044]">{som(meta.fee)}</span>
             </div>
           </div>
           <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-[#e7f7f4] px-2.5 py-2.5">
             <span className="text-[12px] font-bold leading-tight text-[var(--color-org-teal)]">Sizga o‘tkaziladigan summa</span>
-            <span className="shrink-0 text-[12.5px] font-bold text-[var(--color-org-teal)]">{som(15400000)}</span>
+            <span className="shrink-0 text-[12.5px] font-bold text-[var(--color-org-teal)]">{som(meta.net)}</span>
           </div>
         </section>
 
@@ -370,7 +410,7 @@ function DesktopSteps() {
   )
 }
 
-function Mobile({ photos, add, remove, inputRef, onAsk }) {
+function Mobile({ photos, add, remove, inputRef, onAsk, meta }) {
   const steps = [
     { key: 'done', title: 'Yuborildi', sub: '21.10.2026', sub2: '18:45' },
     { key: 'now', title: 'Tekshiruv', sub: 'Ma’lumotlar tomonidan tekshirilmoqda' },
@@ -380,15 +420,15 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
   return (
     <div className="space-y-3 pb-1">
       <section className={`${card} flex gap-3 p-3`}>
-        <img src={TEETH} alt="" className="h-[76px] w-[76px] shrink-0 rounded-xl object-cover" />
+        <img src={meta.image} alt="" className="h-[76px] w-[76px] shrink-0 rounded-xl object-cover" />
         <div className="min-w-0">
-          <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
-          <p className="mt-1 text-[14.5px] font-bold leading-tight text-[#123044]">Implantologiya: amaliy kurs</p>
+          <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[var(--color-org-teal)]">{meta.topic}</span>
+          <p className="mt-1 text-[14.5px] font-bold leading-tight text-[#123044]">{meta.title}</p>
           <p className="mt-1.5 flex items-start gap-1.5 text-[11.5px] leading-snug text-[#5e787e]">
-            <Calendar className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 — 18:00
+            <Calendar className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {meta.when}
           </p>
           <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-[#5e787e]">
-            <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi
+            <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {meta.place}
           </p>
         </div>
       </section>

@@ -141,8 +141,15 @@ function scheduleFor(s) {
   ]
 }
 
+const MON_NAME = { YAN: 'yanvar', FEV: 'fevral', MAR: 'mart', APR: 'aprel', MAY: 'may', IYN: 'iyun', IYL: 'iyul', AVG: 'avgust', SEN: 'sentabr', OKT: 'oktabr', NOY: 'noyabr', DEK: 'dekabr' }
+
 export function seminarPage(id) {
-  const s = seminars.find((x) => x.id === id) || seminars[0]
+  const s = seminars.find((x) => x.id === id)
+  if (!s) return null
+  return buildSeminarPage(s)
+}
+
+export function buildSeminarPage(s) {
   const featured = s.id === 'implant-toj'
   const speaker = featured
     ? { name: 'Dr. Aziz Karimov, PhD', role: 'Implantolog, jarroh', avatar: '/images/surplus/seller.jpg', rating: 4.9, reviews: 132, lines: ['15 yil tajriba', '5 000+ implant operatsiyasi', 'Xalqaro treninglar va sertifikatlar', 'Toshkent, DentAKI Clinic'] }
@@ -155,7 +162,7 @@ export function seminarPage(id) {
     lead: featured
       ? 'Diagnostika, jarrohlik protokoli, implant o‘rnatish va implant usti protezlash bo‘yicha intensiv 2 kunlik seminar.'
       : `${s.text}. ${s.city}da, ${s.place}da o‘tadigan amaliy seminar.`,
-    whenTitle: featured ? '24-oktabr 2026' : `${s.day}-${s.mon === 'OKT' ? 'oktabr' : 'noyabr'} 2026`,
+    whenTitle: featured ? '24-oktabr 2026' : `${Number(s.day)}-${MON_NAME[s.mon] || 'noyabr'} ${String(s.monthKey || '2026-11').slice(0, 4)}`,
     whenText: featured ? 'Shanba, 10:00 – 18:00' : `${s.weekday}, ${s.time}`,
     whereTitle: s.city,
     whereText: featured ? 'Hyatt Regency, konferens-zal' : s.place,
@@ -179,7 +186,18 @@ export function seminarPage(id) {
       ? { name: 'Hyatt Regency Tashkent', address: 'Toshkent sh., Navoi ko‘chasi, 1A', image: pic('hotel'), map: 'https://maps.google.com/?q=Hyatt+Regency+Tashkent' }
       : { name: s.place, address: `${s.city}`, image: pic('hotel'), map: `https://maps.google.com/?q=${encodeURIComponent(s.place + ' ' + s.city)}` },
     seatsBanner: featured ? 30 : s.left,
-    plans: plansFor(s),
+    plans: s.organizer && Array.isArray(s.tickets) && s.tickets.length
+      ? s.tickets.filter((t) => t.price).map((t) => ({
+          id: t.id,
+          name: t.name,
+          price: Number(t.price) || 0,
+          oldPrice: Math.round((Number(t.price) || 0) * 1.1),
+          discount: '',
+          perks: t.perks?.length ? t.perks : ['Seminarga kirish', 'Sertifikat'],
+          left: t.left,
+          seats: t.seats || t.total,
+        }))
+      : plansFor(s),
     review: {
       name: 'Dr. Sevara Ahmedova', avatar: '/images/surplus/u6.jpg', date: '12.02.2026', rating: 5,
       text: 'Juda foydali va amaliy seminar. Amaliy qism ayniqsa zo‘r bo‘ldi, tavsiya qilaman!',
@@ -195,7 +213,7 @@ export function seminarPage(id) {
   }
 }
 
-const MONTHS = { OKT: 'oktabr', NOY: 'noyabr' }
+const MONTHS = { YAN: 'yanvar', FEV: 'fevral', MAR: 'mart', APR: 'aprel', MAY: 'may', IYN: 'iyun', IYL: 'iyul', AVG: 'avgust', SEN: 'sentabr', OKT: 'oktabr', NOY: 'noyabr', DEK: 'dekabr' }
 const cardImage = { 'implant-toj': '/images/seminar-1.jpg', 'mikroskop-endo': '/images/seminar-2.jpg', 'kompozit-old': '/images/seminar-4.jpg' }
 const BREAKS = /breyk|Tushlik|qahva/i
 
@@ -221,8 +239,13 @@ export function seminarCard(s) {
 }
 
 export function seminarMobile(id) {
-  const page = seminarPage(id)
-  const card = seminarCard(seminars.find((x) => x.id === page.id))
+  const s = seminars.find((x) => x.id === id)
+  return s ? seminarView(s) : null
+}
+
+export function seminarView(record) {
+  const page = buildSeminarPage(record)
+  const card = seminarCard(record)
   const month = MONTHS[page.mon]
   const d = Number(page.day)
   const items = page.schedule.filter(([, t]) => !BREAKS.test(t))

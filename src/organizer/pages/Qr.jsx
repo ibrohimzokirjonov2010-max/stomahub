@@ -4,8 +4,8 @@ import {
   BarChart3, Calendar, Camera, Check, ChevronDown, ChevronRight, Clock, CreditCard,
   MapPin, Phone, QrCode, Settings, UserRound, X, Zap,
 } from 'lucide-react'
-import { CHECKINS, SEMINARS } from '../data'
 import { useOrg } from '../Shell'
+import { checkInQuery, setQrSound, useHub } from '../../hubStore'
 import { QrMark } from '../ui'
 
 const TABS = [
@@ -28,18 +28,24 @@ const FACES = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `/images/qr-face-${i}.png`)
 
 export default function Qr() {
   const { notify } = useOrg()
+  const hub = useHub()
+  const SEMINARS = hub.seminars
   const [tab, setTab] = useState('scan')
-  const [seminar, setSeminar] = useState('implant-nov')
+  const [seminar, setSeminar] = useState(hub.seminars[0]?.id || 'implant-nov')
   const [open, setOpen] = useState(false)
-  const [list, setList] = useState(() => CHECKINS.map((row, i) => ({ ...row, avatar: FACES[i] || row.avatar })))
   const [scanning, setScanning] = useState(false)
   const [code, setCode] = useState('')
-  const [sound, setSound] = useState(true)
+  const [sound, setSound] = useState(hub.qrSound !== false)
   const [manualOpen, setManualOpen] = useState(false)
   const [mobileScan, setMobileScan] = useState(false)
+  const [last, setLast] = useState(null)
   const pop = useRef(null)
   const sem = SEMINARS.find((s) => s.id === seminar) || SEMINARS[0]
-  const pct = Math.round((sem.sold / sem.seats) * 100)
+  const list = hub.participants.filter((p) => p.seminarId === sem?.id).map((p, i) => ({
+    id: p.id, name: p.name, clinic: p.clinic, time: p.arrived ? 'hozir' : '—', ticket: p.ticket, ok: !!p.arrived, avatar: FACES[i] || p.avatar,
+  }))
+  const arrived = list.filter((p) => p.ok).length
+  const pct = sem?.seats ? Math.round((sem.sold / sem.seats) * 100) : 0
 
   useEffect(() => {
     const fn = (e) => { if (!pop.current?.contains(e.target)) setOpen(false) }
@@ -52,26 +58,30 @@ export default function Qr() {
     setScanning(true)
     window.setTimeout(() => {
       setScanning(false)
-      const hit = list.find((x) => !x.ok)
-      if (hit) {
-        setList((rows) => rows.map((r) => (r.id === hit.id ? { ...r, ok: true, time: 'hozir' } : r)))
-        notify(sound ? `${hit.name} kirish qildi` : `${hit.name} qayd etildi`)
-      } else notify('Yangi kod topilmadi')
+      const hit = checkInQuery(sem?.id, '')
+      if (hit) { setLast(hit); notify(sound ? `${hit.name} — Keldi` : `${hit.name} qayd etildi`) }
+      else notify('Yangi kod topilmadi')
     }, 700)
   }
 
   const manual = () => {
     const name = code.trim()
     if (name.length < 3) { notify('Ism yoki kod kiriting'); return }
-    setList((rows) => [{ id: Date.now(), name, clinic: 'Mehmon', time: 'hozir', ticket: 'Standart', ok: true, avatar: FACES[0] }, ...rows])
+    const hit = checkInQuery(sem?.id, name)
     setCode('')
     setManualOpen(false)
-    notify('Manuel check-in saqlandi')
+    if (hit) setLast(hit)
+    notify(hit ? `${hit.name} — Keldi` : 'Ishtirokchi topilmadi')
   }
 
   const rescan = () => {
     setMobileScan(true)
-    window.setTimeout(() => setMobileScan(false), 900)
+    window.setTimeout(() => {
+      setMobileScan(false)
+      const hit = checkInQuery(sem?.id, '')
+      if (hit) setLast(hit)
+      notify(hit ? `${hit.name} — Keldi` : 'Yangi kod topilmadi')
+    }, 700)
   }
 
   return (
@@ -169,10 +179,10 @@ export default function Qr() {
             )}
             {tab === 'stats' && (
               <div className="grid h-[434px] content-start gap-3 sm:grid-cols-2">
-                <MiniStat label="Jami ishtirokchilar" value="200" />
-                <MiniStat label="Check-in qilingan" value={String(list.filter((x) => x.ok).length + 142)} hint="75%" />
-                <MiniStat label="Kutilmoqda" value="50" hint="25%" />
-                <MiniStat label="QR kodlar" value="200" hint="Barchasi faol" />
+                <MiniStat label="Jami ishtirokchilar" value={String(list.length)} />
+                <MiniStat label="Check-in qilingan" value={String(arrived)} hint={list.length ? `${Math.round((arrived / list.length) * 100)}%` : '0%'} />
+                <MiniStat label="Kutilmoqda" value={String(list.length - arrived)} hint={list.length ? `${Math.round(((list.length - arrived) / list.length) * 100)}%` : '0%'} />
+                <MiniStat label="QR kodlar" value={String(list.length)} hint="Barchasi faol" />
               </div>
             )}
             {tab === 'settings' && (
@@ -181,7 +191,7 @@ export default function Qr() {
                   <span>Muvaffaqiyatli ovoz</span>
                   <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
                 </label>
-                <button type="button" onClick={() => notify('Sozlamalar saqlandi')} className="mt-3 h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Saqlash</button>
+                <button type="button" onClick={() => { setQrSound(sound); notify('Sozlamalar saqlandi') }} className="mt-3 h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Saqlash</button>
               </Panel>
             )}
           </div>
@@ -198,10 +208,10 @@ export default function Qr() {
         </div>
 
         <section className="grid grid-cols-4 gap-3">
-          <Stat icon={UserRound} label="Jami ishtirokchilar" value="200" />
-          <Stat icon={Check} label="Check-in qilingan" value="150" bar={75} barClass="bg-[#14b8a6]" hint="75%" hintClass="text-[var(--color-org-teal)]" />
-          <Stat icon={Clock} label="Kutilmoqda" value="50" bar={25} barClass="bg-[#f0b429]" hint="25%" hintClass="text-[#e09a12]" iconBg="bg-[#fff4e0] text-[#e09a12]" />
-          <Stat icon={QrCode} label="QR kodlar" value="200" hint="Barchasi faol" hintClass="text-[#16a34a]" />
+          <Stat icon={UserRound} label="Jami ishtirokchilar" value={String(list.length)} />
+          <Stat icon={Check} label="Check-in qilingan" value={String(arrived)} bar={list.length ? Math.round((arrived / list.length) * 100) : 0} barClass="bg-[#14b8a6]" hint={list.length ? `${Math.round((arrived / list.length) * 100)}%` : '0%'} hintClass="text-[var(--color-org-teal)]" />
+          <Stat icon={Clock} label="Kutilmoqda" value={String(list.length - arrived)} bar={list.length ? Math.round(((list.length - arrived) / list.length) * 100) : 0} barClass="bg-[#f0b429]" hint="kutilmoqda" hintClass="text-[#e09a12]" iconBg="bg-[#fff4e0] text-[#e09a12]" />
+          <Stat icon={QrCode} label="QR kodlar" value={String(list.length)} hint="Barchasi faol" hintClass="text-[#16a34a]" />
         </section>
       </div>
 
@@ -210,17 +220,17 @@ export default function Qr() {
           <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#e7f6f3] px-2.5 py-1.5 text-[12.5px] font-semibold text-org-teal">
             <UserRound className="size-3.5" />
             Keldi
-            <span className="font-bold">28 / 42</span>
+            <span className="font-bold">{arrived} / {list.length}</span>
           </div>
         </div>
 
         <section className="flex items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white p-2 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-          <img src="/images/seminars/teeth.jpg" alt="" className="size-[52px] shrink-0 rounded-xl object-cover" />
+          <img src={sem?.image || '/images/seminars/teeth.jpg'} alt="" className="size-[52px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</p>
-            <p className="truncate text-[14px] font-bold leading-tight text-[#16324a]">Implantologiya: amaliy kurs</p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6e868c]"><Calendar className="size-3 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 – 18:00</p>
-            <p className="flex items-center gap-1 text-[11px] text-[#6e868c]"><MapPin className="size-3 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi</p>
+            <p className="text-[11px] font-semibold text-[var(--color-org-teal)]">{sem?.topic}</p>
+            <p className="truncate text-[14px] font-bold leading-tight text-[#16324a]">{sem?.title}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6e868c]"><Calendar className="size-3 text-[var(--color-org-teal)]" /> {sem?.date}, {sem?.startTime || '10:00'}</p>
+            <p className="flex items-center gap-1 text-[11px] text-[#6e868c]"><MapPin className="size-3 text-[var(--color-org-teal)]" /> {sem?.place || sem?.city}</p>
           </div>
         </section>
 
@@ -240,10 +250,10 @@ export default function Qr() {
           <CornerFrame />
           <div className="absolute left-1/2 top-[54px] z-[2] w-[150px] -translate-x-1/2 rounded-[20px] border-[5px] border-[#141414] bg-white px-2 pb-2 pt-1.5 text-center shadow-2xl">
             <p className="text-[10px] font-extrabold text-[var(--color-org-teal)]">StomaHub</p>
-            <p className="text-[8px] leading-tight text-[#5c7278]">Implantologiya: amaliy kurs</p>
+            <p className="text-[8px] leading-tight text-[#5c7278]">{sem?.title || 'Seminar'}</p>
             <div className="mx-auto my-1 w-fit"><QrMark size={78} seed={9} /></div>
-            <p className="text-[11px] font-bold leading-tight text-[#163044]">Aliyeva Mohira</p>
-            <span className="mt-0.5 inline-flex rounded-full bg-[#e8eef2] px-2 py-px text-[9px] font-semibold text-[#5e787e]">Standart</span>
+            <p className="text-[11px] font-bold leading-tight text-[#163044]">{last?.name || 'Ishtirokchi'}</p>
+            <span className="mt-0.5 inline-flex rounded-full bg-[#e8eef2] px-2 py-px text-[9px] font-semibold text-[#5e787e]">{last?.ticket || 'Standart'}</span>
             <p className="mt-1 text-[8px] leading-tight text-[#8aa0a4]">21 oktabr 2026</p>
             <p className="text-[8px] leading-tight text-[#8aa0a4]">Toshkent City Kongress Markazi</p>
           </div>
@@ -265,14 +275,14 @@ export default function Qr() {
               <div className="flex items-center gap-2.5">
                 <img src="/images/qr-face-0.png" alt="" className="size-12 rounded-full object-cover" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[16px] font-bold leading-tight text-[#16324a]">Aliyeva Mohira</p>
+                  <p className="text-[16px] font-bold leading-tight text-[#16324a]">{last?.name || 'Ishtirokchi'}</p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-[#5e787e]">
                     <Phone className="size-3.5 text-[var(--color-org-teal)]" />
-                    +998 90 123 45 67
+                    {last?.phone || '—'}
                   </p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-[#5e787e]">
                     <CreditCard className="size-3.5 text-[var(--color-org-teal)]" />
-                    Standart chipta
+                    {last?.ticket || 'Chipta'}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e7f8f1] text-[#16a34a]">

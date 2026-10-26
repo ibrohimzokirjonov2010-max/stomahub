@@ -4,8 +4,9 @@ import {
   Award, Calendar, ChevronDown, ChevronRight, GraduationCap, Info, MapPin, Megaphone, Plus, QrCode,
   Send, Share2, Download, Users, Wallet, X, Check,
 } from 'lucide-react'
-import { ACTIVITY, MONTHS, SEAT, UPCOMING } from '../data'
+import { MONTHS, SEAT, som } from '../data'
 import { useOrg } from '../Shell'
+import { useHub } from '../../hubStore'
 import { Badge, Btn, MiniSelect, Modal, cx } from '../ui'
 
 /** Bar heights traced from the 1280 design (0–200 scale). */
@@ -267,8 +268,24 @@ function SeminarRow({ s, navigate }) {
   )
 }
 
+function upcomingOf(seminars) {
+  return seminars
+    .filter((s) => s.status === 'rejalashtirilgan' || s.status === 'jarayonda')
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      when: `${s.date}, ${s.startTime || '10:00'}`,
+      city: s.city,
+      sold: s.sold,
+      seats: s.seats || 1,
+      seat: s.sold >= s.seats ? 'full' : s.seats && s.sold / s.seats > 0.75 ? 'low' : 'open',
+      image: s.image,
+    }))
+}
+
 function Desktop() {
   const { query, notify } = useOrg()
+  const hub = useHub()
   const navigate = useNavigate()
   const [banner, setBanner] = useState(true)
   const [range, setRange] = useState('1-yan, 2026 — 31-dek, 2026')
@@ -282,9 +299,12 @@ function Desktop() {
 
   const list = useMemo(() => {
     const s = query.trim().toLowerCase()
-    if (!s) return UPCOMING
-    return UPCOMING.filter((x) => `${x.title} ${x.city}`.toLowerCase().includes(s))
-  }, [query])
+    const rows = upcomingOf(hub.seminars)
+    if (!s) return rows
+    return rows.filter((x) => `${x.title} ${x.city}`.toLowerCase().includes(s))
+  }, [query, hub.seminars])
+  const revenue = hub.payments.filter((p) => p.state === 'ok').reduce((n, p) => n + p.sum, 0)
+  const feed = hub.activity?.length ? hub.activity : []
 
   const bars = metric === 'Ishtirokchilar soni' ? BARS : BARS.map((n) => Math.max(8, Math.round(n * 0.55)))
 
@@ -318,10 +338,10 @@ function Desktop() {
       </div>
 
       <section className="grid grid-cols-2 gap-3 min-[1180px]:grid-cols-4">
-        <DashKpi icon={GraduationCap} label="Jami seminarlar" value="12" delta="+3" hint="o‘tgan oyga nisbatan" />
-        <DashKpi icon={Users} label="Jami ishtirokchilar" value="1 240" delta="+18%" hint="o‘tgan oyga nisbatan" />
-        <DashKpi icon={Wallet} label="Umumiy tushum" value="98 600 000 so‘m" delta="+28%" hint="o‘tgan oyga nisbatan" />
-        <DashKpi icon={Award} label="Berilgan sertifikatlar" value="987" delta="+22%" hint="o‘tgan oyga nisbatan" />
+        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(hub.seminars.length)} delta={`+${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length}`} hint="rejalashtirilgan" />
+        <DashKpi icon={Users} label="Jami ishtirokchilar" value={String(hub.participants.length)} delta="" hint="ro‘yxatdagilar" />
+        <DashKpi icon={Wallet} label="Umumiy tushum" value={som(revenue)} delta="" hint="muvaffaqiyatli to‘lovlar" />
+        <DashKpi icon={Award} label="Berilgan sertifikatlar" value={String(hub.certs.filter((c) => c.state === 'done').length)} delta="" hint="berilgan" />
       </section>
 
       <section className="mt-2 grid gap-3 min-[1180px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_276px]">
@@ -330,7 +350,7 @@ function Desktop() {
         </Panel>
         <Panel title="Tushumlar" extra={<MiniSelect label={unit} value={unit} options={['So‘mda', 'Ming so‘m', 'Dollar']} onChange={setUnit} />}>
           <p className="mb-1 text-[20px] font-bold leading-none tracking-tight text-[#143044]">
-            {unit === 'Dollar' ? '7 800 $' : unit === 'Ming so‘m' ? '98 600 ming' : '98 600 000 so‘m'}
+            {unit === 'Dollar' ? `${Math.round(revenue / 12500).toLocaleString('ru-RU')} $` : unit === 'Ming so‘m' ? `${Math.round(revenue / 1000).toLocaleString('ru-RU')} ming` : som(revenue)}
           </p>
           <RevenueChart values={unit === 'Dollar' ? LINE.map((n) => Math.round(n * 0.7)) : LINE} />
         </Panel>
@@ -372,21 +392,21 @@ function Desktop() {
         <div className="min-w-0 space-y-2">
           <Panel title="So‘nggi faoliyatlar" extra={<button type="button" onClick={() => setActivity(true)} className="shrink-0 text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</button>}>
             <ul className="space-y-1.5">
-              {ACTIVITY.map((a) => <Activity key={a.title} a={a} />)}
+              {feed.map((a) => <Activity key={a.title + a.time} a={a} />)}
             </ul>
           </Panel>
           <Panel title="Tezkor amallar" bodyClass="px-1.5 pb-2 pt-1">
             <div className="grid grid-cols-3 gap-1">
               <Quick icon={Send} label="Taklifnoma yuborish" onClick={() => setInvite(true)} />
-              <Quick icon={Download} label="QR tushirish" onClick={() => notify('QR kodlar yuklab olindi')} />
-              <Quick icon={Share2} label="Seminarni ulashish" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/tashkilotchi/seminarlar/implant-nov`).catch(() => {}); notify('Havola nusxalandi') }} />
+              <Quick icon={Download} label="QR tushirish" onClick={() => { const lines = hub.participants.slice(0, 40).map((p) => `${p.code},${p.name},${p.phone}`).join('\n'); const blob = new Blob([`kod,ism,telefon\n${lines}`], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'qr-kodlar.csv'; a.click(); notify('QR kodlar yuklab olindi') }} />
+              <Quick icon={Share2} label="Seminarni ulashish" onClick={() => { const id = list[0]?.id || 'implant-nov'; navigator.clipboard?.writeText(`${window.location.origin}/seminarlar/${id}`).catch(() => {}); notify('Havola nusxalandi') }} />
             </div>
           </Panel>
         </div>
       </section>
 
       <Modal open={activity} title="So‘nggi faoliyatlar" onClose={() => setActivity(false)} width={480}>
-        <ul className="space-y-3">{ACTIVITY.map((a) => <Activity key={a.title} a={a} />)}</ul>
+        <ul className="space-y-3">{feed.map((a) => <Activity key={a.title + a.time} a={a} />)}</ul>
       </Modal>
       <Modal open={invite} title="Taklifnoma yuborish" sub="Ishtirokchi emailini kiriting" onClose={() => setInvite(false)}>
         <input value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} placeholder="email@mail.uz" className="h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" />
@@ -421,6 +441,8 @@ function Status({ ok }) {
 
 function Mobile() {
   const { query } = useOrg()
+  const hub = useHub()
+  const next = hub.seminars.find((s) => s.status === 'rejalashtirilgan' || s.status === 'jarayonda') || hub.seminars[0]
   const [info, setInfo] = useState(false)
   const q = query.trim().toLowerCase()
   const rows = q ? CHECKINS.filter((r) => `${r.name} ${r.phone} ${r.ticket}`.toLowerCase().includes(q)) : CHECKINS
@@ -431,22 +453,22 @@ function Mobile() {
       <h1 className="mt-0.5 text-[24px] font-bold leading-none tracking-tight text-[#143044]">Seminar Pro</h1>
       <p className="mt-1 text-[12.5px] text-[#8aa0a4]">Bugun ham muvaffaqiyatli kun bo‘lsin!</p>
 
-      <Link to="/tashkilotchi/seminarlar/implant-nov" className="mt-3 block rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_8px_24px_rgb(20_60_60/0.04)]">
+      <Link to={`/tashkilotchi/seminarlar/${next?.id || 'implant-nov'}`} className="mt-3 block rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_8px_24px_rgb(20_60_60/0.04)]">
         <div className="flex gap-2.5">
-          <img src="/images/hero-implant.jpg" alt="" className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
+          <img src={next?.image || '/images/hero-implant.jpg'} alt="" className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
-            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
+            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">{next?.topic || 'Implantologiya'}</span>
             <p className="mt-1 flex items-start gap-1 text-[15px] font-bold leading-tight text-[#143044]">
-              <span className="min-w-0 flex-1">Implantologiya: amaliy kurs</span>
+              <span className="min-w-0 flex-1">{next?.title || 'Seminar'}</span>
               <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#9aafb4]" />
             </p>
             <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-snug text-[#6e868c]">
               <Calendar className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
-              <span>21 oktabr 2026, 09:00 – 18:00</span>
+              <span>{next ? `${next.date}, ${next.startTime || '10:00'}` : ''}</span>
             </p>
             <p className="mt-1 flex items-start gap-1.5 text-[12px] leading-snug text-[#6e868c]">
               <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
-              <span>Toshkent City Kongress Markazi</span>
+              <span>{next?.place || next?.city}</span>
             </p>
           </div>
         </div>
@@ -456,7 +478,7 @@ function Mobile() {
               <Users className="size-4" strokeWidth={1.8} />
             </span>
             <span className="text-[13px] font-medium text-[#1c4a5a]">Sotilgan chiptalar</span>
-            <span className="ml-auto text-[13.5px] font-bold text-[#143044]">42 / 50</span>
+            <span className="ml-auto text-[13.5px] font-bold text-[#143044]">{next?.sold || 0} / {next?.seats || 0}</span>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#e6f3f1]">

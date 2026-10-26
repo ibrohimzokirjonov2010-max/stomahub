@@ -4,7 +4,7 @@ import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, Download,
   Filter, Mail, MapPin, MessageSquare, Pencil, QrCode, Search, Send, Shield, Users,
 } from 'lucide-react'
-import { CERTS } from '../data'
+import { downloadText, issueCert, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
@@ -82,21 +82,28 @@ function initials(name) {
 
 export default function Certificates() {
   const { query, notify } = useOrg()
-  const [rows, setRows] = useState(() => decorate(CERTS))
+  const hub = useHub()
+  const rows = useMemo(() => decorate(hub.certs), [hub.certs])
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
   const [state, setState] = useState('all')
   const [ticket, setTicket] = useState('all')
   const [page, setPage] = useState(1)
   const [per, setPer] = useState(10)
-  const [selected, setSelected] = useState(CERTS[0].id)
+  const [selected, setSelected] = useState(() => hub.certs[0]?.id)
   const [checked, setChecked] = useState(() => new Set())
   const [preview, setPreview] = useState(true)
   const [tpl, setTpl] = useState(false)
   const [qr, setQr] = useState(null)
   const [note, setNote] = useState(false)
 
-  const [mobile, setMobile] = useState(buildMobile)
+  const mobile = useMemo(() => hub.certs.map((c) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone || '',
+    state: c.state === 'done' ? 'done' : 'wait',
+    date: c.state === 'done' ? (c.date || '') : '',
+  })), [hub.certs])
   const [mTab, setMTab] = useState('all')
 
   useEffect(() => { setPage(1) }, [q, tab, state, ticket, query, per])
@@ -130,8 +137,7 @@ export default function Certificates() {
   const cert = rows.find((c) => c.id === selected) || slice[0] || rows[0]
 
   const issue = (c) => {
-    const code = `STH-2026-${String(c.id).padStart(4, '0')}`
-    setRows((list) => list.map((x) => (x.id === c.id ? { ...x, state: 'done', code, date: '24-noy 2026' } : x)))
+    issueCert(c.id)
     setSelected(c.id)
     notify('Sertifikat berildi')
   }
@@ -166,7 +172,7 @@ export default function Certificates() {
   })
 
   const sendMobile = (id) => {
-    setMobile((list) => list.map((r) => (r.id === id ? { ...r, state: 'done', date: '21.10.2026' } : r)))
+    issueCert(id)
     notify('Sertifikat yuborildi')
   }
 
@@ -204,7 +210,7 @@ export default function Certificates() {
           setPreview={setPreview}
           onTpl={() => setTpl(true)}
           onNote={() => setNote(true)}
-          onDownload={() => notify('Sertifikat yuklab olindi')}
+          onDownload={() => { if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${COURSE}\n${cert.code || 'berilmagan'}\n${cert.date || ''}`); notify('Sertifikat yuklab olindi') }}
           onMail={() => notify('Email yuborildi')}
           onQr={() => setQr(cert)}
           onResend={() => notify('Sertifikat qayta yuborildi')}
@@ -220,7 +226,7 @@ export default function Certificates() {
           tab={mTab}
           setTab={setMTab}
           onSendAll={() => {
-            setMobile((list) => list.map((r) => (r.state === 'wait' ? { ...r, state: 'done', date: '21.10.2026' } : r)))
+            mobile.filter((r) => r.state === 'wait').forEach((r) => issueCert(r.id))
             notify('Sertifikatlar yuborildi')
           }}
           onSend={sendMobile}
@@ -290,7 +296,7 @@ function Desktop(p) {
           <span>›</span>
           <Link to="/tashkilotchi/seminarlar" className="hover:text-[var(--color-org-teal)]">Mening seminarlarim</Link>
           <span>›</span>
-          <Link to="/tashkilotchi/seminarlar/implant" className="hover:text-[var(--color-org-teal)]">Implantologiya</Link>
+          <Link to="/tashkilotchi/seminarlar/implant-nov" className="hover:text-[var(--color-org-teal)]">Implantologiya</Link>
           <span>›</span>
           <span className="text-[#6e868c]">Sertifikatlar</span>
         </nav>
@@ -571,7 +577,7 @@ function PerSelect({ value, onChange }) {
 }
 
 const M_TABS = [
-  { id: 'umumiy', label: 'Umumiy', to: '/tashkilotchi/seminarlar/implant' },
+  { id: 'umumiy', label: 'Umumiy', to: '/tashkilotchi/seminarlar/implant-nov' },
   { id: 'people', label: 'Ishtirokchilar', to: '/tashkilotchi/ishtirokchilar' },
   { id: 'tickets', label: 'Chiptalar', to: '/tashkilotchi/chiptalar' },
   { id: 'pay', label: 'To‘lovlar', to: '/tashkilotchi/tolovlar' },

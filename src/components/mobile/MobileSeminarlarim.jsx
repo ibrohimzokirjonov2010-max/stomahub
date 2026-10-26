@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarCheck, CalendarDays, CircleCheck, Download, MapPin, QrCode, Ticket, UserRound, Video } from 'lucide-react'
-import { seminarMobile, som } from '../../seminarsData'
+import { seminarView, som } from '../../seminarsData'
+import { publicRecord } from '../../hubStore'
 import { useProfile } from '../../profileStore'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -51,7 +52,9 @@ export const dateLabel = (s) => {
 }
 
 function fromStore(id, reg) {
-  const s = seminarMobile(id)
+  const rec = publicRecord(id)
+  const s = rec ? seminarView(rec) : null
+  if (!s) return null
   const [from, to] = s.time.split(/\s*[-–]\s*/)
   const online = reg.format === 'online'
   return {
@@ -65,7 +68,7 @@ function fromStore(id, reg) {
 
 export function useMySeminars() {
   const store = useSeminarStore()
-  const own = Object.entries(store.registered).filter(([, r]) => r?.order).map(([id, r]) => fromStore(id, r))
+  const own = Object.entries(store.registered).filter(([, r]) => r?.order).map(([id, r]) => fromStore(id, r)).filter(Boolean)
   const all = [...own, ...SEED]
   const now = Date.now()
   return {

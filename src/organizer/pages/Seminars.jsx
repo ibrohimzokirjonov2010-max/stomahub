@@ -4,8 +4,9 @@ import {
   Award, Calendar, CalendarDays, ChevronDown, ChevronRight, LayoutGrid, List,
   MapPin, MoreVertical, Plus, Search, User, Users, Wallet,
 } from 'lucide-react'
-import { SEMINARS, som } from '../data'
+import { som } from '../data'
 import { useOrg } from '../Shell'
+import { useHub } from '../../hubStore'
 
 const BRAND = 'var(--color-org-teal)'
 const INK = '#10182a'
@@ -48,6 +49,7 @@ const MSTATUS = {
   faol: { label: 'Faol', dot: '#22a34a', text: '#1a9a48' },
   qoralama: { label: 'Qoralama', dot: '#b0b7c3', text: '#98a0ae' },
   otgan: { label: 'O‘tgan', dot: '#b0b7c3', text: '#98a0ae' },
+  bekor: { label: 'Bekor qilingan', dot: '#e11d48', text: '#e11d48' },
 }
 
 export default function Seminars() {
@@ -60,7 +62,9 @@ export default function Seminars() {
 }
 
 function Desktop() {
-  const { query } = useOrg()
+  const { query, city: headerCity, cityOn } = useOrg()
+  const hub = useHub()
+  const SEMINARS = hub.seminars
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('all')
@@ -75,6 +79,9 @@ function Desktop() {
       if (tab !== 'all' && x.status !== tab) return false
       if (status !== 'all' && x.status !== status) return false
       if (city !== 'all' && x.city !== city) return false
+      if (cityOn && x.city !== headerCity) return false
+      const day = new URLSearchParams(window.location.search).get('kun')
+      if (day && !(String(x.date).startsWith(`${day}-`) || String(x.start || '').endsWith(`-${String(day).padStart(2, '0')}`))) return false
       const m = monthOf(x.date)
       if (span === '2026' && !x.date.includes('2026')) return false
       if (span === 'kelasi' && m < 10) return false
@@ -87,7 +94,7 @@ function Desktop() {
     if (sort === 'money') list.sort((a, b) => b.revenue - a.revenue)
     if (sort === 'people') list.sort((a, b) => b.sold - a.sold)
     return list
-  }, [query, q, tab, status, city, span, sort])
+  }, [query, q, tab, status, city, cityOn, headerCity, span, sort, SEMINARS])
 
   return (
     <div className="hidden lg:block">
@@ -102,18 +109,19 @@ function Desktop() {
       </div>
 
       <section className="mt-4 grid grid-cols-4 gap-3">
-        <Kpi icon={CalendarDays} label="Jami seminarlar" value="8" hint={<span style={{ color: GREEN }} className="font-medium">3 ta yaqinlashmoqda</span>} />
-        <Kpi icon={Users} label="Jami ishtirokchilar" value="1 240" hint={<Hint delta="+12%" text="o‘tgan oyga nisbatan" />} />
-        <Kpi icon={Wallet} label="Umumiy tushum" value="98 600 000 so‘m" hint={<Hint delta="+28%" text="o‘tgan oyga nisbatan" />} />
-        <Kpi icon={Award} label="Berilgan sertifikatlar" value="987" hint={<><span className="font-semibold" style={{ color: GREEN }}>80%</span> <span>ishtirokchilarga</span></>} />
+        <Kpi icon={CalendarDays} label="Jami seminarlar" value={String(SEMINARS.length)} hint={<span style={{ color: GREEN }} className="font-medium">{SEMINARS.filter((s) => s.status === 'rejalashtirilgan').length} ta yaqinlashmoqda</span>} />
+        <Kpi icon={Users} label="Jami ishtirokchilar" value={String(hub.participants.length)} hint={<span>ro‘yxatdagilar</span>} />
+        <Kpi icon={Wallet} label="Umumiy tushum" value={som(hub.payments.filter((p) => p.state === 'ok').reduce((n, p) => n + p.sum, 0))} hint={<span>muvaffaqiyatli to‘lovlar</span>} />
+        <Kpi icon={Award} label="Berilgan sertifikatlar" value={String(hub.certs.filter((c) => c.state === 'done').length)} hint={<span className="font-semibold" style={{ color: GREEN }}>berilgan</span>} />
       </section>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {TABS.map((t) => {
           const on = tab === t.id
+          const n = t.id === 'all' ? SEMINARS.length : SEMINARS.filter((s) => s.status === t.id).length
           return (
             <button key={t.id} type="button" onClick={() => setTab(t.id)} className="h-[30px] rounded-full px-3 text-[12.5px] font-semibold" style={on ? { background: BRAND, color: '#fff' } : { background: '#fff', color: '#3c4c5c', border: '1px solid #e5eeec' }}>
-              {t.label} ({t.n})
+              {t.label} ({n})
             </button>
           )
         })}
@@ -276,8 +284,8 @@ function Progress({ s }) {
 }
 
 function StatusPill({ status }) {
-  const label = status === 'rejalashtirilgan' ? 'Rejalashtirilgan' : status === 'jarayonda' ? 'Jarayonda' : status === 'yakunlangan' ? 'Yakunlangan' : 'Bekor qilingan'
-  const tone = GREEN
+  const label = status === 'rejalashtirilgan' ? 'Rejalashtirilgan' : status === 'jarayonda' ? 'Jarayonda' : status === 'yakunlangan' ? 'Yakunlangan' : status === 'qoralama' ? 'Qoralama' : 'Bekor qilingan'
+  const tone = status === 'bekor' ? '#e11d48' : status === 'qoralama' ? '#8d93a3' : status === 'yakunlangan' ? '#3b82f6' : GREEN
   return (
     <span className="inline-flex h-[24px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full border bg-white px-2 text-[11.5px] font-semibold" style={{ color: tone, borderColor: '#b7e3d4' }}>
       <span className="size-1.5 rounded-full" style={{ background: tone }} />
@@ -311,7 +319,7 @@ function Kebab({ id }) {
       {open && (
         <div className="absolute right-0 z-30 mt-1 w-40 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
           <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa]" onClick={() => { setOpen(false); navigate(`/tashkilotchi/seminarlar/${id}`) }}>Tafsilotlar</button>
-          <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa]" onClick={() => { setOpen(false); navigate('/tashkilotchi/seminarlar/yangi') }}>Tahrirlash</button>
+          <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa]" onClick={() => { setOpen(false); navigate(`/tashkilotchi/seminarlar/yangi?tahrir=${id}`) }}>Tahrirlash</button>
         </div>
       )}
     </div>
@@ -361,14 +369,27 @@ function SeminarTile({ s }) {
 
 function Mobile() {
   const navigate = useNavigate()
+  const hub = useHub()
   const [tab, setTab] = useState('faol')
   const [menu, setMenu] = useState(null)
+  const MOBILE_ROWS = hub.seminars.map((s) => ({
+    id: s.id,
+    cat: s.topic,
+    title: s.title,
+    date: `${s.date}${s.startTime ? `, ${s.startTime}` : ''}`,
+    place: s.place || s.city,
+    sold: s.sold,
+    seats: s.seats,
+    status: s.status === 'qoralama' ? 'qoralama' : s.status === 'yakunlangan' ? 'otgan' : s.status === 'bekor' ? 'bekor' : 'faol',
+    image: s.image,
+    pos: 'center',
+  }))
   const counts = {
-    faol: MOBILE.filter((s) => s.status === 'faol').length,
-    qoralama: MOBILE.filter((s) => s.status === 'qoralama').length,
-    otgan: MOBILE.filter((s) => s.status === 'otgan').length,
+    faol: MOBILE_ROWS.filter((s) => s.status === 'faol').length,
+    qoralama: MOBILE_ROWS.filter((s) => s.status === 'qoralama').length,
+    otgan: MOBILE_ROWS.filter((s) => s.status === 'otgan' || s.status === 'bekor').length,
   }
-  const rows = MOBILE.filter((s) => s.status === tab)
+  const rows = MOBILE_ROWS.filter((s) => (tab === 'otgan' ? s.status === 'otgan' || s.status === 'bekor' : s.status === tab))
 
   return (
     <div className="lg:hidden">

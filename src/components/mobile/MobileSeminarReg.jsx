@@ -5,7 +5,8 @@ import {
   Coins, CreditCard, Crown, Download, FileBadge, FileText, Hash, Info, LoaderCircle, MapPin, ShieldCheck, ShoppingCart, Tag,
   Ticket, UserRound, Users, Video, X,
 } from 'lucide-react'
-import { seminarMobile, som } from '../../seminarsData'
+import { seminarView, som } from '../../seminarsData'
+import { publicRecord, quotePromo, useHub } from '../../hubStore'
 import { useCart } from '../../cart'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -16,7 +17,7 @@ import { register, useSeminarStore } from './seminarStore'
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Farg‘ona', 'Qarshi', 'Nukus', 'Urganch', 'Termiz']
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Endodontist', 'Parodontolog', 'Bolalar stomatologi', 'Gigiyenist', 'Talaba']
 const YEARS = ['1 yildan kam', ...Array.from({ length: 19 }, (_, i) => String(i + 1)), '20+']
-const MONTH_NAMES = { OKT: 'oktabr', NOY: 'noyabr' }
+const MONTH_NAMES = { YAN: 'yanvar', FEV: 'fevral', MAR: 'mart', APR: 'aprel', MAY: 'may', IYN: 'iyun', IYL: 'iyul', AVG: 'avgust', SEN: 'sentabr', OKT: 'oktabr', NOY: 'noyabr', DEK: 'dekabr' }
 const METHODS = {
   click: ['Click', 'Click orqali to‘lov qilish'],
   payme: ['Payme', 'Payme orqali to‘lov qilish'],
@@ -24,7 +25,6 @@ const METHODS = {
   card: ['Bank kartasi', 'Uzcard, Humo, Visa'],
   split: ['Bo‘lib to‘lash', 'Muddatli to‘lov (3-12 oy)'],
 }
-const PROMOS = { STOMA10: 10, DOCTOR20: 20, STOMAHUB: 15 }
 const SPLITS = [3, 6, 12]
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -33,7 +33,12 @@ const card = 'rounded-2xl bg-white shadow-[0_1px_6px_rgb(11_31_58/0.06)]'
 
 export default function MobileSeminarReg() {
   const { id } = useParams()
-  return <RegView key={id} id={id} />
+  const hub = useHub()
+  const rec = publicRecord(id, hub)
+  const seminar = rec ? seminarView(rec) : null
+  if (!seminar) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar topilmadi</div>
+  if (seminar.cancelled) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar bekor qilingan</div>
+  return <RegView key={id} id={id} seminar={seminar} />
 }
 
 function info(s) {
@@ -56,8 +61,8 @@ function info(s) {
   }
 }
 
-function RegView({ id }) {
-  const s = seminarMobile(id)
+function RegView({ id, seminar }) {
+  const s = seminar
   const m = info(s)
   const navigate = useNavigate()
   const store = useSeminarStore()
@@ -84,10 +89,12 @@ function RegView({ id }) {
 
   useEffect(() => { window.scrollTo(0, 0) }, [step])
 
-  const price = m.base[format]
-  const vip = ticket === 'vip' ? m.vip : 0
+  const orgStd = s.organizer ? s.plans?.find((p) => /standart/i.test(p.name)) || s.plans?.[0] : null
+  const orgVip = s.organizer ? s.plans?.find((p) => /vip/i.test(p.name)) : null
+  const price = orgStd ? orgStd.price : m.base[format]
+  const vip = ticket === 'vip' ? (orgVip ? Math.max(0, orgVip.price - price) : (orgStd ? 0 : m.vip)) : 0
   const subtotal = price + vip
-  const discount = applied ? Math.round((subtotal * applied.pct) / 100 / 1000) * 1000 : 0
+  const discount = applied?.discount || 0
   const total = subtotal - discount
   const monthly = Math.ceil(total / months / 1000) * 1000
   const payNow = method === 'split' ? monthly : total
@@ -119,12 +126,11 @@ function RegView({ id }) {
   const cardErr = method === 'card' && { num: cardDigits.length !== 16 && 'Karta raqami 16 ta raqam', exp: !expOk && 'Muddat noto‘g‘ri' }
 
   const applyPromo = () => {
-    const code = promo.trim().toUpperCase()
-    if (!code) { setPromoErr('Promokodni kiriting'); return }
-    if (!PROMOS[code]) { setPromoErr('Promokod topilmadi yoki muddati o‘tgan'); return }
-    setApplied({ code, pct: PROMOS[code] })
+    const q = quotePromo(promo, s.id, subtotal)
+    if (!q.ok) { setPromoErr(q.error); setApplied(null); return }
+    setApplied({ code: promo.trim().toUpperCase(), discount: q.discount })
     setPromoErr('')
-    setToast(`Promokod qo‘llandi: −${PROMOS[code]}%`)
+    setToast(`Promokod qo‘llandi: −${q.discount.toLocaleString('ru-RU')} so‘m`)
   }
 
   const pay = () => {
@@ -136,14 +142,19 @@ function RegView({ id }) {
   const confirmPaid = useCallback(() => {
     const count = Object.values(store.registered).filter((r) => r.order).length
     const at = new Date()
-    register(s.id, {
+    const res = register(s.id, {
       order: `SEM-${2041 + count}`,
       plan: `${ticket === 'vip' ? 'VIP' : 'Standart'} · ${format === 'online' ? 'Onlayn' : 'Oflayn'}`,
-      ticket, format, cert, method, months: method === 'split' ? months : 0,
+      ticket, ticketName: ticket === 'vip' ? 'VIP' : 'Standart', format, cert, method,
+      methodLabel: METHODS[method]?.[0] || 'Click',
+      months: method === 'split' ? months : 0,
       name: form.name.trim(), phone, email: form.email.trim(),
-      price: total, paid: payNow, promo: applied?.code || '',
+      city: form.city, clinic: form.clinic, spec: form.spec,
+      gross: subtotal, price: total, paid: payNow, promo: applied?.code || '',
+      title: s.title,
       at: at.toISOString(),
     })
+    if (!res?.ok) { setPaying(false); setPromoErr(res?.error || 'To‘lov amalga oshmadi'); return }
     setPaying(false)
     setStep(3)
   }, [store.registered, s.id, ticket, format, cert, method, months, form, phone, total, payNow, applied])
