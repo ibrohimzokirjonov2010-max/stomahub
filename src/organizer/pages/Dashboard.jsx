@@ -64,7 +64,7 @@ function Panel({ title, extra, children, className, bodyClass }) {
 function DashKpi({ icon: Icon, label, value, delta, hint }) {
   return (
     <article className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
         <Icon className="size-[18px]" strokeWidth={1.8} />
       </span>
       <div className="min-w-0">
@@ -152,7 +152,7 @@ function RevenueChart({ values }) {
           i === 10 ? null : <circle key={i} cx={p[0]} cy={p[1]} r="3.1" fill="#fff" stroke="#12a394" strokeWidth="1.8" />
         ))}
         <circle cx={mark[0]} cy={mark[1]} r="7.5" fill="none" stroke="#12a394" strokeOpacity="0.28" strokeWidth="1.5" />
-        <circle cx={mark[0]} cy={mark[1]} r="4.6" fill="#fff" stroke="#0c8f86" strokeWidth="2.4" />
+        <circle cx={mark[0]} cy={mark[1]} r="4.6" fill="#fff" stroke="var(--color-org-teal)" strokeWidth="2.4" />
       </svg>
       <div
         className="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg bg-[#16324a] px-2.5 py-1.5 text-white shadow-[0_8px_18px_rgb(16_32_48/0.18)]"
@@ -205,7 +205,7 @@ function Activity({ a }) {
   const Icon = ICONS[a.icon]
   return (
     <li className="flex items-start gap-2">
-      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-[#e7f7f4] text-[#0c8f86]">
+      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-[#e7f7f4] text-[var(--color-org-teal)]">
         <Icon className="size-3.5" strokeWidth={1.8} />
       </span>
       <div className="min-w-0 flex-1">
@@ -222,7 +222,7 @@ function Activity({ a }) {
 function Quick({ icon: Icon, label, onClick }) {
   return (
     <button type="button" onClick={onClick} className="flex flex-col items-center gap-1 rounded-xl px-1 py-1 text-center hover:bg-[#f4fbfb]">
-      <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+      <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
         <Icon className="size-4" strokeWidth={1.8} />
       </span>
       <span className="max-w-[88px] text-[11px] font-medium leading-[1.15] text-[#1c4a5a]">{label}</span>
@@ -259,7 +259,7 @@ function SeminarRow({ s, navigate }) {
       <button
         type="button"
         onClick={() => navigate(`/tashkilotchi/seminarlar/${s.id}`)}
-        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-[#d5ebe6] bg-white px-2.5 text-[12.5px] font-semibold text-[#0c8f86] hover:bg-[#f4fbfa]"
+        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-[#d5ebe6] bg-white px-2.5 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]"
       >
         Tafsilotlar
       </button>
@@ -303,7 +303,7 @@ function Desktop() {
         <div className="flex shrink-0 items-center gap-2">
           <div className="relative">
             <button type="button" onClick={() => setRangeOpen((v) => !v)} className="flex h-10 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 text-[12.5px] font-medium text-[#1c4a5a]">
-              <Calendar className="size-4 text-[#0c8f86]" /> {range} <ChevronDown className="size-3.5 text-[#8aa4a8]" />
+              <Calendar className="size-4 text-[var(--color-org-teal)]" /> {range} <ChevronDown className="size-3.5 text-[#8aa4a8]" />
             </button>
             {rangeOpen && (
               <ul className="absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
@@ -343,7 +343,7 @@ function Desktop() {
         <div className="min-w-0 space-y-2">
           <Panel
             title="Yaqinlashayotgan seminarlar"
-            extra={<Link to="/tashkilotchi/seminarlar" className="shrink-0 text-[12.5px] font-semibold text-[#0c8f86]">Barchasini ko‘rish</Link>}
+            extra={<Link to="/tashkilotchi/seminarlar" className="shrink-0 text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</Link>}
             bodyClass="px-0 pb-1 pt-1"
           >
             <ul className="divide-y divide-[#eef4f3]">
@@ -353,14 +353,14 @@ function Desktop() {
           </Panel>
           {banner && (
             <div className="flex items-center gap-3 rounded-2xl border border-[#d7f0ea] bg-[#eefaf6] px-3.5 py-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#0c8f86] shadow-[0_1px_2px_rgb(12_143_134/0.08)]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[var(--color-org-teal)] shadow-[0_1px_2px_rgb(12_143_134/0.08)]">
                 <Megaphone className="size-5" strokeWidth={1.8} />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13.5px] font-bold leading-tight text-[#143044]">Seminarlaringizni kengroq auditoriyaga yetkazing</p>
                 <p className="mt-0.5 text-[12px] leading-snug text-[#5f7c80]">Platforma orqali reklama qiling va ko‘proq ishtirokchilar jalb qiling.</p>
               </div>
-              <Link to="/tashkilotchi/marketing" className="inline-flex h-9 shrink-0 items-center rounded-xl border border-[#b7e0d8] bg-white px-3 text-[12.5px] font-semibold text-[#0c8f86] hover:bg-[#f6fdfb]">
+              <Link to="/tashkilotchi/marketing" className="inline-flex h-9 shrink-0 items-center rounded-xl border border-[#b7e0d8] bg-white px-3 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f6fdfb]">
                 Marketing vositalari →
               </Link>
               <button type="button" onClick={() => setBanner(false)} aria-label="Yopish" className="grid size-8 shrink-0 place-items-center rounded-lg text-[#7e9398] hover:bg-white/70">
@@ -370,7 +370,7 @@ function Desktop() {
           )}
         </div>
         <div className="min-w-0 space-y-2">
-          <Panel title="So‘nggi faoliyatlar" extra={<button type="button" onClick={() => setActivity(true)} className="shrink-0 text-[12.5px] font-semibold text-[#0c8f86]">Barchasini ko‘rish</button>}>
+          <Panel title="So‘nggi faoliyatlar" extra={<button type="button" onClick={() => setActivity(true)} className="shrink-0 text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</button>}>
             <ul className="space-y-1.5">
               {ACTIVITY.map((a) => <Activity key={a.title} a={a} />)}
             </ul>
@@ -389,7 +389,7 @@ function Desktop() {
         <ul className="space-y-3">{ACTIVITY.map((a) => <Activity key={a.title} a={a} />)}</ul>
       </Modal>
       <Modal open={invite} title="Taklifnoma yuborish" sub="Ishtirokchi emailini kiriting" onClose={() => setInvite(false)}>
-        <input value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} placeholder="email@mail.uz" className="h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[#0c8f86]" />
+        <input value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} placeholder="email@mail.uz" className="h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" />
         {err && <p className="mt-1 text-[12px] text-[#e11d48]">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <Btn kind="soft" onClick={() => setInvite(false)}>Bekor qilish</Btn>
@@ -435,24 +435,24 @@ function Mobile() {
         <div className="flex gap-2.5">
           <img src="/images/hero-implant.jpg" alt="" className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
-            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[#0c8f86]">Implantologiya</span>
+            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
             <p className="mt-1 flex items-start gap-1 text-[15px] font-bold leading-tight text-[#143044]">
               <span className="min-w-0 flex-1">Implantologiya: amaliy kurs</span>
               <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#9aafb4]" />
             </p>
             <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-snug text-[#6e868c]">
-              <Calendar className="mt-0.5 size-3.5 shrink-0 text-[#0c8f86]" />
+              <Calendar className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
               <span>21 oktabr 2026, 09:00 – 18:00</span>
             </p>
             <p className="mt-1 flex items-start gap-1.5 text-[12px] leading-snug text-[#6e868c]">
-              <MapPin className="mt-0.5 size-3.5 shrink-0 text-[#0c8f86]" />
+              <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
               <span>Toshkent City Kongress Markazi</span>
             </p>
           </div>
         </div>
         <div className="mt-2 border-t border-[#f0f5f4] pt-2">
           <div className="flex items-center gap-2">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]">
               <Users className="size-4" strokeWidth={1.8} />
             </span>
             <span className="text-[13px] font-medium text-[#1c4a5a]">Sotilgan chiptalar</span>
@@ -462,14 +462,14 @@ function Mobile() {
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#e6f3f1]">
               <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: '84%' }} />
             </div>
-            <span className="text-[12.5px] font-semibold text-[#0c8f86]">84%</span>
+            <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">84%</span>
           </div>
         </div>
       </Link>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <article className="rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
-          <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+          <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
             <Users className="size-[18px]" strokeWidth={1.8} />
           </span>
           <p className="mt-2 text-[12px] text-[#6e868c]">Bugungi check-in</p>
@@ -477,7 +477,7 @@ function Mobile() {
           <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Jami: 42 ishtirokchi</p>
         </article>
         <article className="relative rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
-          <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+          <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
             <Wallet className="size-[18px]" strokeWidth={1.8} />
           </span>
           <p className="mt-2 flex items-center gap-1 text-[12px] text-[#6e868c]">
@@ -498,7 +498,7 @@ function Mobile() {
 
       <div className="mt-2 space-y-2">
         <Link to="/tashkilotchi/seminarlar/yangi" className="flex items-center gap-3 rounded-2xl border border-[#e7f2f0] bg-white px-3 py-2 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
             <Plus className="size-5" strokeWidth={1.8} />
           </span>
           <span className="min-w-0 flex-1">
@@ -508,7 +508,7 @@ function Mobile() {
           <ChevronRight className="size-4 shrink-0 text-[#9aafb4]" />
         </Link>
         <Link to="/tashkilotchi/qr" className="flex items-center gap-3 rounded-2xl border border-[#e7f2f0] bg-white px-3 py-2 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
             <QrCode className="size-5" strokeWidth={1.8} />
           </span>
           <span className="min-w-0 flex-1">
@@ -521,7 +521,7 @@ function Mobile() {
 
       <div className="mt-3 flex items-center justify-between gap-2">
         <h2 className="text-[16px] font-bold text-[#143044]">So‘nggi ro‘yxatdan o‘tishlar</h2>
-        <Link to="/tashkilotchi/ishtirokchilar" className="inline-flex shrink-0 items-center gap-0.5 text-[12.5px] font-semibold text-[#0c8f86]">
+        <Link to="/tashkilotchi/ishtirokchilar" className="inline-flex shrink-0 items-center gap-0.5 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
           Barchasini ko‘rish <ChevronRight className="size-3.5" />
         </Link>
       </div>

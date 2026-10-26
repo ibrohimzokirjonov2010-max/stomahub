@@ -116,7 +116,7 @@ export function TicketModal({ open, onClose, onSave }) {
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <Lab req>Narx</Lab>
-            <span className="flex h-10 items-center rounded-xl border border-[#e3eeec] bg-white pr-3 focus-within:border-[#00828e]">
+            <span className="flex h-10 items-center rounded-xl border border-[#e3eeec] bg-white pr-3 focus-within:border-[var(--color-org-teal)]">
               <input className="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none" value={Number(price || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))} />
               <span className="text-[12.5px] text-[#6e868c]">so‘m</span>
             </span>
@@ -129,7 +129,7 @@ export function TicketModal({ open, onClose, onSave }) {
         <label className="block">
           <Lab>Tavsif</Lab>
           <span className="relative block">
-            <textarea maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} className="h-[108px] w-full resize-none rounded-xl border border-[#e3eeec] bg-white px-3 py-2 text-[13px] leading-relaxed outline-none focus:border-[#00828e]" />
+            <textarea maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} className="h-[108px] w-full resize-none rounded-xl border border-[#e3eeec] bg-white px-3 py-2 text-[13px] leading-relaxed outline-none focus:border-[var(--color-org-teal)]" />
             <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] text-[#9aafb4]">{note.length}/500</span>
           </span>
         </label>
@@ -145,7 +145,7 @@ export function TicketModal({ open, onClose, onSave }) {
           <p className="mb-1.5 text-[12.5px] font-medium text-[#1c4a5a]">Ikonka</p>
           <div className="flex gap-1.5">
             {ICONS.map(({ id, Icon }) => (
-              <button key={id} type="button" aria-label={id} onClick={() => setIcon(id)} className={`grid size-9 place-items-center rounded-lg border ${icon === id ? 'border-[#00828e] bg-[#e7f6f4] text-[#00828e]' : 'border-[#e6eeec] text-[#5e787e]'}`}>
+              <button key={id} type="button" aria-label={id} onClick={() => setIcon(id)} className={`grid size-9 place-items-center rounded-lg border ${icon === id ? 'border-[var(--color-org-teal)] bg-[#e7f6f4] text-[var(--color-org-teal)]' : 'border-[#e6eeec] text-[#5e787e]'}`}>
                 <Icon className="size-4" />
               </button>
             ))}
@@ -216,7 +216,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
         <label className="block">
           <Lab>Tavsif</Lab>
           <span className="relative block">
-            <textarea maxLength={500} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} className="h-[88px] w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 text-[13px] leading-snug outline-none focus:border-[#00828e]" />
+            <textarea maxLength={500} value={f.bio} onChange={(e) => setF({ ...f, bio: e.target.value })} className="h-[88px] w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 text-[13px] leading-snug outline-none focus:border-[var(--color-org-teal)]" />
             <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] text-[#9aafb4]">{f.bio.length}/500</span>
           </span>
         </label>
@@ -225,7 +225,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
             <p className="mb-1.5 text-[12.5px] font-medium text-[#1c4a5a]">Ijtimoiy tarmoqlar</p>
             <div className="mb-2 flex gap-1.5">
               {['web', 'fb', 'ig', 'yt', 'in', 'tg'].map((id) => (
-                <button key={id} type="button" aria-label={id} onClick={() => setF({ ...f, net: id })} className={`grid size-8 place-items-center rounded-lg border ${f.net === id ? 'border-[#00828e] bg-[#e7f6f4] text-[#00828e]' : 'border-[#e6eeec] text-[#5e787e]'}`}>
+                <button key={id} type="button" aria-label={id} onClick={() => setF({ ...f, net: id })} className={`grid size-8 place-items-center rounded-lg border ${f.net === id ? 'border-[var(--color-org-teal)] bg-[#e7f6f4] text-[var(--color-org-teal)]' : 'border-[#e6eeec] text-[#5e787e]'}`}>
                   <SocialGlyph kind={id} />
                 </button>
               ))}
@@ -281,7 +281,7 @@ export function PromoModal({ open, onClose, onSave }) {
             <div className="flex h-10 items-center gap-3 text-[13px] text-[#1c4a5a]">
               {[['foiz', 'Foiz (%)'], ['summa', 'Summa (so‘m)']].map(([id, label]) => (
                 <label key={id} className="inline-flex items-center gap-1.5">
-                  <input type="radio" name="kind" checked={f.kind === id} onChange={() => setF({ ...f, kind: id })} className="accent-[#00828e]" />
+                  <input type="radio" name="kind" checked={f.kind === id} onChange={() => setF({ ...f, kind: id })} className="accent-[var(--color-org-teal)]" />
                   {label}
                 </label>
               ))}
@@ -291,7 +291,7 @@ export function PromoModal({ open, onClose, onSave }) {
         <div className="grid grid-cols-[120px_minmax(0,1fr)_88px_auto] items-end gap-2">
           <label>
             <Lab req>Chegirma miqdori</Lab>
-            <span className="flex h-10 items-center rounded-xl border border-[#e3eeec] bg-white pr-3 focus-within:border-[#00828e]">
+            <span className="flex h-10 items-center rounded-xl border border-[#e3eeec] bg-white pr-3 focus-within:border-[var(--color-org-teal)]">
               <input className="h-full w-full bg-transparent px-3 text-[13px] outline-none" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value.replace(/\D/g, '') })} />
               <span className="text-[12.5px] text-[#6e868c]">{f.kind === 'foiz' ? '%' : 'so‘m'}</span>
             </span>

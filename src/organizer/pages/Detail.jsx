@@ -177,7 +177,7 @@ export default function Detail() {
     return (
       <div className="py-16 text-center">
         <p className="font-semibold text-[#143044]">Seminar topilmadi</p>
-        <Link to="/tashkilotchi/seminarlar" className="text-[#0c8f86]">Ro‘yxatga qaytish</Link>
+        <Link to="/tashkilotchi/seminarlar" className="text-[var(--color-org-teal)]">Ro‘yxatga qaytish</Link>
       </div>
     )
   }
@@ -280,7 +280,7 @@ function TabStrip({ tabs, value, onChange, stacked }) {
               stacked
                 ? 'flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium leading-none tracking-[-0.02em]'
                 : 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[13px] font-medium',
-              on ? 'bg-[#e7f6f3] font-semibold text-[#0c8f86]' : 'text-[#5e7380] hover:bg-white/80',
+              on ? 'bg-[#e7f6f3] font-semibold text-[var(--color-org-teal)]' : 'text-[#5e7380] hover:bg-white/80',
             )}
           >
             <Icon className={stacked ? 'size-[18px]' : 'size-4'} strokeWidth={1.8} />
@@ -300,7 +300,7 @@ function Heading({ icon: Icon, children, extra }) {
   return (
     <div className="mb-2.5 flex items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 text-[15px] font-bold text-[#143044]">
-        <Icon className="size-[18px] text-[#0c8f86]" strokeWidth={1.8} />
+        <Icon className="size-[18px] text-[var(--color-org-teal)]" strokeWidth={1.8} />
         {children}
       </h2>
       {extra}
@@ -314,16 +314,16 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
       <div className="flex items-start gap-4">
         <img src={m.image} alt="" className="h-[92px] w-[140px] shrink-0 rounded-2xl object-cover" />
         <div className="min-w-0 flex-1 pt-0.5">
-          <span className="inline-flex rounded-md bg-[#e5f7f4] px-2 py-0.5 text-[11px] font-semibold text-[#0c8f86]">{m.topic}</span>
+          <span className="inline-flex rounded-md bg-[#e5f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">{m.topic}</span>
           <h1 className="mt-1.5 text-[22px] font-bold leading-tight tracking-[-0.02em] text-[#143044]">{m.title}</h1>
           <div className="mt-2 flex flex-wrap items-start gap-x-5 gap-y-1 text-[13px] text-[#5e7380]">
             <span className="inline-flex items-center gap-1.5 pt-px">
-              <Calendar className="size-4 text-[#0c8f86]" strokeWidth={1.8} />
+              <Calendar className="size-4 text-[var(--color-org-teal)]" strokeWidth={1.8} />
               {m.when}
             </span>
             <span>
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="size-4 text-[#0c8f86]" strokeWidth={1.8} />
+                <MapPin className="size-4 text-[var(--color-org-teal)]" strokeWidth={1.8} />
                 {m.place}
               </span>
               <span className="mt-0.5 block pl-[22px] text-[12.5px] text-[#8aa0a6]">{m.city}</span>
@@ -380,7 +380,7 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
                 <Heading
                   icon={Users}
                   extra={(
-                    <button type="button" onClick={actions.edit} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#b7e6de] bg-white px-2.5 text-[12.5px] font-semibold text-[#0c8f86] hover:bg-[#f4fbfa]">
+                    <button type="button" onClick={actions.edit} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#b7e6de] bg-white px-2.5 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]">
                       <Plus className="size-3.5" strokeWidth={2.4} /> Ma’ruzachi qo‘shish
                     </button>
                   )}
@@ -428,12 +428,12 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="flex items-start gap-1.5 text-[12.5px] font-bold leading-snug text-[#143044]">
-                      <MapPin className="mt-0.5 size-3.5 shrink-0 text-[#0c8f86]" />
+                      <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
                       <span className="whitespace-nowrap">{m.place}</span>
                     </p>
                     <p className="pl-[22px] text-[12.5px] text-[#7e9398]">{m.city}</p>
                   </div>
-                  <a href="https://www.google.com/maps/search/?api=1&query=Tashkent+City+Congress+Centre" target="_blank" rel="noreferrer" className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[#0c8f86] px-2.5 text-[12px] font-semibold text-white hover:bg-[#0a7e76]">
+                  <a href="https://www.google.com/maps/search/?api=1&query=Tashkent+City+Congress+Centre" target="_blank" rel="noreferrer" className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[var(--color-org-teal)] px-2.5 text-[12px] font-semibold text-white hover:bg-[#0a7e76]">
                     <MapPin className="size-3.5" /> Xaritada ochish
                   </a>
                 </div>
@@ -450,7 +450,7 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
 
 function IconBox({ icon: Icon, size = 'size-11' }) {
   return (
-    <span className={cx('grid shrink-0 place-items-center rounded-2xl bg-[#e7f7f4] text-[#0c8f86]', size)}>
+    <span className={cx('grid shrink-0 place-items-center rounded-2xl bg-[#e7f7f4] text-[var(--color-org-teal)]', size)}>
       <Icon className="size-5" strokeWidth={1.8} />
     </span>
   )
@@ -464,14 +464,14 @@ function KpiCard({ icon: Icon, label, value, accent, progress }) {
         <p className="truncate text-[12px] text-[#7e9398]">{label}</p>
         <p className="mt-0.5 whitespace-nowrap text-[17px] font-bold leading-tight tracking-tight text-[#143044]">
           {value}
-          {accent && <span className="text-[13px] font-semibold text-[#0c8f86]">{accent}</span>}
+          {accent && <span className="text-[13px] font-semibold text-[var(--color-org-teal)]">{accent}</span>}
         </p>
         {progress != null && (
           <div className="mt-2 flex items-center gap-2">
             <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#e6f3f0]">
               <div className="h-full rounded-full bg-[#14b3a4]" style={{ width: `${progress}%` }} />
             </div>
-            <span className="text-[12px] font-semibold text-[#0c8f86]">{progress}%</span>
+            <span className="text-[12px] font-semibold text-[var(--color-org-teal)]">{progress}%</span>
           </div>
         )}
       </div>
@@ -516,7 +516,7 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
           <div className="mt-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-[15px] font-bold text-[#143044]">Ma’ruzachilar</h2>
-              <Link to="/tashkilotchi/maruzachilar" className="inline-flex items-center gap-0.5 text-[12.5px] font-semibold text-[#0c8f86]">
+              <Link to="/tashkilotchi/maruzachilar" className="inline-flex items-center gap-0.5 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
                 Barchasini ko‘rish <ChevronRight className="size-3.5" />
               </Link>
             </div>
@@ -537,7 +537,7 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
           <div className="mt-3 grid grid-cols-2 gap-2.5">
             <Panel className="p-3">
               <div className="flex items-start gap-2">
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]"><Calendar className="size-[18px]" strokeWidth={1.8} /></span>
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]"><Calendar className="size-[18px]" strokeWidth={1.8} /></span>
                 <div>
                   <p className="text-[11px] text-[#7e9398]">Seminar kuni</p>
                   <p className="text-[13px] font-bold leading-tight text-[#143044]">{m.dateLabel}</p>
@@ -547,7 +547,7 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
             </Panel>
             <a href="https://www.google.com/maps/search/?api=1&query=Tashkent+City+Congress+Centre" target="_blank" rel="noreferrer" className="rounded-2xl border border-[#e7f2f0] bg-white p-3 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
               <div className="flex items-start gap-2">
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]"><MapPin className="size-[18px]" strokeWidth={1.8} /></span>
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]"><MapPin className="size-[18px]" strokeWidth={1.8} /></span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] text-[#7e9398]">Zal manzili</p>
                   <p className="text-[13px] font-bold leading-tight text-[#143044]">{m.mobileVenue[0]}</p>
@@ -561,7 +561,7 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
           <Panel className="mt-3">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-[15px] font-bold text-[#143044]">Tavsif</h2>
-              <button type="button" onClick={actions.edit} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#0c8f86]">
+              <button type="button" onClick={actions.edit} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
                 <Pencil className="size-3.5" /> O‘zgartirish
               </button>
             </div>
@@ -579,7 +579,7 @@ function MobileKpi({ icon: Icon, label, value, unit, progress, foot }) {
   return (
     <article className="rounded-2xl border border-[#e7f2f0] bg-white p-3 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
       <div className="flex items-start gap-2">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
           <Icon className="size-[18px]" strokeWidth={1.8} />
         </span>
         <div className="min-w-0 flex-1">
@@ -604,7 +604,7 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
       <Panel className="mt-3">
         <h2 className="text-[15px] font-bold text-[#143044]">Ishtirokchilar</h2>
         <p className="mt-1 text-[13px] text-[#5e787e]">{m.sold} kishi ro‘yxatdan o‘tgan.</p>
-        <Link to="/tashkilotchi/ishtirokchilar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white">Ochish</Link>
+        <Link to="/tashkilotchi/ishtirokchilar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">Ochish</Link>
       </Panel>
     )
   }
@@ -613,7 +613,7 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
       <Panel className="mt-3">
         <h2 className="text-[15px] font-bold text-[#143044]">Chiptalar</h2>
         <p className="mt-1 text-[13px] text-[#5e787e]">Chipta turlari va sotuvlar.</p>
-        <Link to="/tashkilotchi/chiptalar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white">Ochish</Link>
+        <Link to="/tashkilotchi/chiptalar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">Ochish</Link>
       </Panel>
     )
   }
@@ -629,7 +629,7 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
             </li>
           ))}
         </ul>
-        <Link to="/tashkilotchi/qr" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white">QR Check-in</Link>
+        <Link to="/tashkilotchi/qr" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">QR Check-in</Link>
       </Panel>
     )
   }
@@ -642,7 +642,7 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
             <li key={p.id} className="flex justify-between"><span>{p.who}</span><b>{som(p.sum)}</b></li>
           ))}
         </ul>
-        <Link to="/tashkilotchi/tolovlar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white">Barcha to‘lovlar</Link>
+        <Link to="/tashkilotchi/tolovlar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">Barcha to‘lovlar</Link>
       </Panel>
     )
   }
@@ -651,7 +651,7 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
       <Panel className="mt-3">
         <h2 className="text-[15px] font-bold text-[#143044]">Sertifikatlar</h2>
         <p className="mt-1 text-[13px] text-[#5e787e]">Berilgan sertifikatlarni ko‘ring va yuklab oling.</p>
-        <Link to="/tashkilotchi/sertifikatlar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white">Ochish</Link>
+        <Link to="/tashkilotchi/sertifikatlar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">Ochish</Link>
       </Panel>
     )
   }
@@ -659,9 +659,9 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
     <Panel className="mt-3">
       <h2 className="text-[15px] font-bold text-[#143044]">Xabar yuborish</h2>
       <label className="mt-2 block text-[12.5px] font-medium text-[#1c4a5a]">Ishtirokchilarga xabar</label>
-      <textarea className="mt-1.5 h-24 w-full rounded-xl border border-[#e3eeec] px-3 py-2 text-[13px] outline-none focus:border-[#0c8f86]" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Eslatma yoki o‘zgarish haqida yozing..." />
+      <textarea className="mt-1.5 h-24 w-full rounded-xl border border-[#e3eeec] px-3 py-2 text-[13px] outline-none focus:border-[var(--color-org-teal)]" value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Eslatma yoki o‘zgarish haqida yozing..." />
       {msg.trim().length > 0 && msg.trim().length < 5 && <p className="mt-1 text-[11.5px] text-[#e11d48]">Kamida 5 ta belgi</p>}
-      <button type="button" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white" onClick={() => { if (msg.trim().length < 5) return; setMsg(''); notify?.('Xabar yuborildi') }}>Yuborish</button>
+      <button type="button" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white" onClick={() => { if (msg.trim().length < 5) return; setMsg(''); notify?.('Xabar yuborildi') }}>Yuborish</button>
     </Panel>
   )
 }
@@ -671,7 +671,7 @@ function FieldLabel({ children }) {
 }
 
 function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck, warn, onClose, onConfirm }) {
-  const field = 'h-11 w-full appearance-none rounded-xl border border-[#e3eeec] bg-white text-[13.5px] outline-none focus:border-[#0c8f86]'
+  const field = 'h-11 w-full appearance-none rounded-xl border border-[#e3eeec] bg-white text-[13.5px] outline-none focus:border-[var(--color-org-teal)]'
   return (
     <div className="fixed inset-0 z-[90]">
       <button type="button" aria-label="Yopish" className="absolute inset-0 bg-[#102433]/45" onClick={onClose} />
@@ -691,7 +691,7 @@ function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck,
             <X className="size-4" />
           </button>
           <div className="flex items-start gap-3 pr-8">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
               <Calendar className="size-5" strokeWidth={1.8} />
             </span>
             <div>
@@ -738,7 +738,7 @@ function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck,
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Bekor qilish sababini batafsil yozing..."
-                  className="h-[104px] w-full resize-none rounded-xl border border-[#e3eeec] bg-white px-3 py-2.5 pb-6 text-[13.5px] text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-[#0c8f86]"
+                  className="h-[104px] w-full resize-none rounded-xl border border-[#e3eeec] bg-white px-3 py-2.5 pb-6 text-[13.5px] text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-[var(--color-org-teal)]"
                 />
                 <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] text-[#a0b4b8]">{note.length}/500</span>
               </div>
@@ -747,7 +747,7 @@ function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck,
 
           {sheet ? (
             <div className="mt-3 flex gap-2.5 rounded-xl bg-[#f3fbf8] px-3.5 py-3">
-              <span className="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-full border border-[#0c8f86] text-[11px] font-bold leading-none text-[#0c8f86]">i</span>
+              <span className="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-full border border-[var(--color-org-teal)] text-[11px] font-bold leading-none text-[var(--color-org-teal)]">i</span>
               <div className="text-[13px] leading-snug text-[#3e5560]">
                 <p className="font-bold text-[#143044]">{m.refundPeople} nafar ishtirokchiga 100% pul qaytariladi</p>
                 <p className="mt-1">Jami qaytariladigan summa: <b className="font-bold text-[#143044]">{som(m.refundSum)}</b>.</p>
@@ -757,7 +757,7 @@ function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck,
           ) : (
             <div className="mt-3 rounded-xl bg-[#f3fbf8] px-3.5 py-3">
               <p className="mb-2 flex items-center gap-2 text-[13.5px] font-bold text-[#143044]">
-                <span className="grid size-[18px] place-items-center rounded-full border border-[#0c8f86] text-[11px] font-bold leading-none text-[#0c8f86]">i</span>
+                <span className="grid size-[18px] place-items-center rounded-full border border-[var(--color-org-teal)] text-[11px] font-bold leading-none text-[var(--color-org-teal)]">i</span>
                 Nimalar bo‘ladi?
               </p>
               <ul className="space-y-1.5 text-[12.5px] leading-snug text-[#3e5560]">
@@ -775,7 +775,7 @@ function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck,
               role="checkbox"
               aria-checked={ack}
               onClick={() => setAck((v) => !v)}
-              className={cx('mt-0.5 grid size-5 shrink-0 place-items-center rounded-[5px] border', ack ? 'border-[#0c8f86] bg-[#0c8f86] text-white' : 'border-[#c9d6d8] bg-white')}
+              className={cx('mt-0.5 grid size-5 shrink-0 place-items-center rounded-[5px] border', ack ? 'border-[var(--color-org-teal)] bg-[var(--color-org-teal)] text-white' : 'border-[#c9d6d8] bg-white')}
             >
               {ack && <Check className="size-3.5" strokeWidth={3} />}
             </button>
@@ -792,7 +792,7 @@ function CancelDialog({ sheet, m, reason, setReason, note, setNote, ack, setAck,
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[#dbe3e6] bg-white text-[13.5px] font-semibold text-[#243e4a] hover:bg-[#f7fbfb]">Ortga</button>
-            <button type="button" onClick={onConfirm} className="h-11 rounded-xl bg-[#0c8f86] px-2 text-[13.5px] font-semibold text-white hover:bg-[#0a7e76]">Bekor qilishni tasdiqlash</button>
+            <button type="button" onClick={onConfirm} className="h-11 rounded-xl bg-[var(--color-org-teal)] px-2 text-[13.5px] font-semibold text-white hover:bg-[#0a7e76]">Bekor qilishni tasdiqlash</button>
           </div>
         </div>
       </div>

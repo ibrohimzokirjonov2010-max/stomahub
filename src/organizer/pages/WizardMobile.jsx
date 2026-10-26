@@ -120,7 +120,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   const labels = ['Asosiy ma’lumotlar', 'Chipta turlari', 'Ma’ruzachilar', 'Sertifikat', 'Marketing', 'Promo-kodlar', 'Ko‘rib chiqish']
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-16 z-30 overflow-y-auto bg-white px-4 pb-4 pt-2.5 text-[#1c2433]">
+    <div className="bg-white pb-2 text-[#1c2433]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h1 className="text-[21px] font-bold leading-tight tracking-tight text-[#1c2433]">Yangi seminar yaratish</h1>

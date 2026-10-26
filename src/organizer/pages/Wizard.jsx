@@ -39,7 +39,7 @@ const CERTS = [
 ]
 
 const TONE = {
-  teal: { bar: '#0f9b90', icon: '#0c8f86', badge: 'bg-[#e5f8ef] text-[#15915a]' },
+  teal: { bar: 'var(--color-org-teal)', icon: 'var(--color-org-teal)', badge: 'bg-[#e5f8ef] text-[#15915a]' },
   gold: { bar: '#e0b15a', icon: '#c4922e', badge: '' },
   violet: { bar: '#8b6fd4', icon: '#7c5cbf', badge: '' },
 }
@@ -214,7 +214,7 @@ export default function Wizard() {
     <div className="text-[#143044]">
       <div className="xl:grid xl:grid-cols-[150px_minmax(0,1fr)_292px] xl:items-start xl:gap-x-3 xl:gap-y-3">
         <div className="min-w-0 xl:col-start-2">
-          <Link to="/tashkilotchi/seminarlar" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-[#5e787e] hover:text-[#00828e]">
+          <Link to="/tashkilotchi/seminarlar" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-[#5e787e] hover:text-[var(--color-org-teal)]">
             <ChevronLeft className="size-4" /> Mening seminarlarim
           </Link>
           <h1 className="mt-1 text-[22px] font-bold leading-tight tracking-tight">{editing ? 'Seminarni tahrirlash' : 'Yangi seminar yaratish'}</h1>
@@ -254,7 +254,7 @@ export default function Wizard() {
                 <label className="block">
                   <Lab req>Qisqa tavsif</Lab>
                   <span className="relative block">
-                    <textarea maxLength={500} value={form.about} onChange={(e) => set({ about: e.target.value })} className="h-[72px] w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 pb-5 text-[13px] leading-snug outline-none focus:border-[#00828e]" />
+                    <textarea maxLength={500} value={form.about} onChange={(e) => set({ about: e.target.value })} className="h-[72px] w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 pb-5 text-[13px] leading-snug outline-none focus:border-[var(--color-org-teal)]" />
                     <span className="pointer-events-none absolute bottom-1.5 right-2.5 text-[11px] text-[#9aafb4]">{form.about.length}/500</span>
                   </span>
                 </label>
@@ -272,7 +272,7 @@ export default function Wizard() {
                   </label>
                   <div className="mt-1.5 flex gap-1">
                     {form.thumbs.slice(0, 4).map((src) => (
-                      <button key={src} type="button" onClick={() => set({ cover: src })} className={`h-8 flex-1 overflow-hidden rounded-md ${form.cover === src ? 'ring-2 ring-[#00828e]' : ''}`}>
+                      <button key={src} type="button" onClick={() => set({ cover: src })} className={`h-8 flex-1 overflow-hidden rounded-md ${form.cover === src ? 'ring-2 ring-[var(--color-org-teal)]' : ''}`}>
                         <img src={src} alt="" className="size-full object-cover" />
                       </button>
                     ))}
@@ -298,7 +298,7 @@ export default function Wizard() {
                   onChange={(e) => setTag(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
                   placeholder="+ Teg qo‘shish"
-                  className="h-7 w-[118px] rounded-full border border-dashed border-[#cfe0dc] px-2.5 text-[12px] outline-none placeholder:text-[#7e9398] focus:border-[#00828e]"
+                  className="h-7 w-[118px] rounded-full border border-dashed border-[#cfe0dc] px-2.5 text-[12px] outline-none placeholder:text-[#7e9398] focus:border-[var(--color-org-teal)]"
                 />
               </div>
             </div>
@@ -316,7 +316,7 @@ export default function Wizard() {
                 <div className="flex gap-1.5"><DateBox value={form.end} onChange={(v) => set({ end: v })} /><TimeBox value={form.endTime} onChange={(v) => set({ endTime: v })} /></div>
               </div>
               <button type="button" onClick={() => set({ multi: !form.multi })} className="mb-2 inline-flex items-center gap-2 whitespace-nowrap text-[12.5px] text-[#3e5a62]">
-                <span className={`grid size-4 place-items-center rounded border ${form.multi ? 'border-[#00828e] bg-[#00828e] text-white' : 'border-[#c5d5d2] bg-white'}`}>{form.multi && <Check className="size-3" />}</span>
+                <span className={`grid size-4 place-items-center rounded border ${form.multi ? 'border-[var(--color-org-teal)] bg-[var(--color-org-teal)] text-white' : 'border-[#c5d5d2] bg-white'}`}>{form.multi && <Check className="size-3" />}</span>
                 Bir necha kunlik seminar
               </button>
             </div>
@@ -341,7 +341,7 @@ export default function Wizard() {
                   <label className="block">
                     <Lab req>Manzil</Lab>
                     <span className="flex gap-2">
-                      <span className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 focus-within:border-[#00828e]">
+                      <span className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 focus-within:border-[var(--color-org-teal)]">
                         <MapPin className="size-4 shrink-0" style={{ color: TEAL }} />
                         <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.place} onChange={(e) => set({ place: e.target.value })} />
                       </span>
@@ -350,7 +350,7 @@ export default function Wizard() {
                   </label>
                   <label className="block">
                     <Lab>To‘liq manzil</Lab>
-                    <span className="flex h-10 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 focus-within:border-[#00828e]">
+                    <span className="flex h-10 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 focus-within:border-[var(--color-org-teal)]">
                       <MapPin className="size-4 shrink-0 text-[#8aa4a8]" />
                       <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.address} onChange={(e) => set({ address: e.target.value })} />
                     </span>
@@ -458,7 +458,7 @@ export default function Wizard() {
             {tabCert === 'ready' && (
               <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
                 {CERTS.map((t) => (
-                  <button key={t.id} type="button" onClick={() => set({ template: t.id })} className={`rounded-xl border p-2 text-left ${form.template === t.id ? 'border-[#00828e] ring-2 ring-[#00828e]/25' : 'border-[#e6f1ef]'}`}>
+                  <button key={t.id} type="button" onClick={() => set({ template: t.id })} className={`rounded-xl border p-2 text-left ${form.template === t.id ? 'border-[var(--color-org-teal)] ring-2 ring-[var(--color-org-teal)]/25' : 'border-[#e6f1ef]'}`}>
                     <CertFace tone={t.id} />
                     <p className="mt-1.5 text-center text-[12px] font-semibold">{t.name}</p>
                   </button>

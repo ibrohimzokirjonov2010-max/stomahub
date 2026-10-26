@@ -4,20 +4,3 @@
   line-height: 1.15;
   vertical-align: middle;
 }
-
-/* This page only. Hides the shared cabinet chrome on small screens
-   so the seminar Ishtirokchilar tab can fill the 390px artboard.
-   Shell files themselves are not modified. */
-@media (max-width: 767.98px) {
-  body:has(.org-mobile-participants) header.relative.flex.h-16 {
-    display: none !important;
-  }
-  body:has(.org-mobile-participants) main {
-    padding: 0 !important;
-    overflow: hidden !important;
-    background: #f5fbfb !important;
-  }
-  body:has(.org-mobile-participants) main > div.mb-3 {
-    display: none !important;
-  }
-}

@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  BarChart3,   Calendar, CalendarDays, Camera, Check, ChevronDown, ChevronRight, Clock, CreditCard,
-  House, MapPin, MoreHorizontal, Phone, QrCode, Settings, UserRound, Wallet, X, Zap,
+  BarChart3, Calendar, Camera, Check, ChevronDown, ChevronRight, Clock, CreditCard,
+  MapPin, Phone, QrCode, Settings, UserRound, X, Zap,
 } from 'lucide-react'
-import { ToothIcon } from '../../components/icons'
 import { CHECKINS, SEMINARS } from '../data'
 import { useOrg } from '../Shell'
 import { QrMark } from '../ui'
@@ -18,8 +17,8 @@ const TABS = [
 ]
 
 const TICKET_TONE = {
-  'VIP chipta': 'bg-[#d8f5f2] text-[#0c8f86]',
-  VIP: 'bg-[#d8f5f2] text-[#0c8f86]',
+  'VIP chipta': 'bg-[#d8f5f2] text-[var(--color-org-teal)]',
+  VIP: 'bg-[#d8f5f2] text-[var(--color-org-teal)]',
   Standart: 'bg-[#e5f1ff] text-[#3b82f6]',
   Student: 'bg-[#fff3d4] text-[#d3920b]',
   Guruh: 'bg-[#f1e8ff] text-[#8b5cf6]',
@@ -85,14 +84,14 @@ export default function Qr() {
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <p className="flex items-center gap-1 text-[12px] text-[#8aa0a4]">
-              <Link to="/tashkilotchi" className="hover:text-[#0c8f86]">Boshqaruv paneli</Link>
+              <Link to="/tashkilotchi" className="hover:text-[var(--color-org-teal)]">Boshqaruv paneli</Link>
               <ChevronRight className="size-3.5" />
-              <Link to="/tashkilotchi/seminarlar" className="hover:text-[#0c8f86]">Mening seminarlarim</Link>
+              <Link to="/tashkilotchi/seminarlar" className="hover:text-[var(--color-org-teal)]">Mening seminarlarim</Link>
               <ChevronRight className="size-3.5" />
               <span className="text-[#6d848a]">QR Check-in</span>
             </p>
             <div ref={pop} className="relative">
-              <button type="button" onClick={() => setOpen((v) => !v)} className="flex h-9 items-center gap-2 rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)]">
+              <button type="button" onClick={() => setOpen((v) => !v)} className="flex h-9 items-center gap-2 rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)]">
                 <Calendar className="size-4" /> Seminarni tanlash <ChevronDown className="size-4 opacity-90" />
               </button>
               {open && (
@@ -113,8 +112,8 @@ export default function Qr() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-[15px] font-bold leading-tight text-[#163044]">{sem.title}</p>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#6e868c]">
-              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#0c8f86]" /> {sem.date}, 10:00</span>
-              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#0c8f86]" /> {sem.city}, Congress Hall</span>
+              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {sem.date}, 10:00</span>
+              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {sem.city}, Congress Hall</span>
               <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-[#e7f8ee] px-2 text-[11.5px] font-semibold text-[#16a34a]">
                 <span className="size-1.5 rounded-full bg-[#16a34a]" /> Faol
               </span>
@@ -136,7 +135,7 @@ export default function Qr() {
             {TABS.map(({ id, label, icon: Icon }) => {
               const on = tab === id
               return (
-                <button key={id} type="button" onClick={() => setTab(id)} className={`flex h-9 w-full items-center gap-2 rounded-xl px-2 text-left text-[12.5px] ${on ? 'bg-[#e7f7f4] font-semibold text-[#0c8f86]' : 'text-[#3e5962] hover:bg-[#f6fbfa]'}`}>
+                <button key={id} type="button" onClick={() => setTab(id)} className={`flex h-9 w-full items-center gap-2 rounded-xl px-2 text-left text-[12.5px] ${on ? 'bg-[#e7f7f4] font-semibold text-[var(--color-org-teal)]' : 'text-[#3e5962] hover:bg-[#f6fbfa]'}`}>
                   <Icon className="size-4 shrink-0" strokeWidth={1.8} />
                   <span className="truncate">{label}</span>
                 </button>
@@ -157,8 +156,8 @@ export default function Qr() {
             {tab === 'manual' && (
               <Panel title="Manuel check-in">
                 <label className="block text-[12.5px] font-semibold text-[#3e5962]">Ism yoki chipta kodi</label>
-                <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Aliyeva Mohira yoki STH-2026-0001" className="mt-1.5 h-10 w-full rounded-xl border border-[#e4eeec] px-3 text-[13px] outline-none focus:border-[#0c8f86]" />
-                <button type="button" onClick={manual} className="mt-3 h-10 rounded-xl bg-[#0c8f86] px-4 text-[13px] font-semibold text-white">Check-in qilish</button>
+                <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Aliyeva Mohira yoki STH-2026-0001" className="mt-1.5 h-10 w-full rounded-xl border border-[#e4eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" />
+                <button type="button" onClick={manual} className="mt-3 h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Check-in qilish</button>
               </Panel>
             )}
             {tab === 'history' && (
@@ -182,7 +181,7 @@ export default function Qr() {
                   <span>Muvaffaqiyatli ovoz</span>
                   <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} />
                 </label>
-                <button type="button" onClick={() => notify('Sozlamalar saqlandi')} className="mt-3 h-10 rounded-xl bg-[#0c8f86] px-4 text-[13px] font-semibold text-white">Saqlash</button>
+                <button type="button" onClick={() => notify('Sozlamalar saqlandi')} className="mt-3 h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Saqlash</button>
               </Panel>
             )}
           </div>
@@ -190,7 +189,7 @@ export default function Qr() {
           <section className="flex h-[434px] flex-col overflow-hidden rounded-2xl border border-[#e7f2f0] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <header className="flex items-center justify-between px-3.5 pb-1 pt-3">
               <h2 className="text-[14.5px] font-bold text-[#163044]">So‘nggi check-inlar</h2>
-              <button type="button" onClick={() => setTab('history')} className="text-[12.5px] font-semibold text-[#0c8f86]">Barchasini ko‘rish</button>
+              <button type="button" onClick={() => setTab('history')} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</button>
             </header>
             <ul className="min-h-0 flex-1">
               {list.slice(0, 8).map((p) => <CheckRow key={p.id} p={p} />)}
@@ -200,40 +199,32 @@ export default function Qr() {
 
         <section className="grid grid-cols-4 gap-3">
           <Stat icon={UserRound} label="Jami ishtirokchilar" value="200" />
-          <Stat icon={Check} label="Check-in qilingan" value="150" bar={75} barClass="bg-[#14b8a6]" hint="75%" hintClass="text-[#0c8f86]" />
+          <Stat icon={Check} label="Check-in qilingan" value="150" bar={75} barClass="bg-[#14b8a6]" hint="75%" hintClass="text-[var(--color-org-teal)]" />
           <Stat icon={Clock} label="Kutilmoqda" value="50" bar={25} barClass="bg-[#f0b429]" hint="25%" hintClass="text-[#e09a12]" iconBg="bg-[#fff4e0] text-[#e09a12]" />
           <Stat icon={QrCode} label="QR kodlar" value="200" hint="Barchasi faol" hintClass="text-[#16a34a]" />
         </section>
       </div>
 
-      <div className="fixed inset-0 z-[70] flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#f4fbfa] text-[#143044] lg:hidden">
-        <StatusBar />
-        <header className="flex shrink-0 items-center justify-between gap-2 px-3.5 pb-1.5 pt-0.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <ToothIcon className="size-8 shrink-0 text-[#12a394]" strokeWidth={1.7} />
-            <div className="min-w-0 leading-tight">
-              <p className="text-[16px] font-extrabold leading-none tracking-tight text-[#123246]">StomaHub</p>
-              <p className="mt-0.5 text-[11px] text-[#7e9499]">Seminar tashkilotchisi</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#e7f6f3] px-2.5 py-1.5 text-[12.5px] font-semibold text-[#0c8f86]">
+      <div className="text-[#143044] lg:hidden">
+        <div className="mb-2 flex justify-end">
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#e7f6f3] px-2.5 py-1.5 text-[12.5px] font-semibold text-org-teal">
             <UserRound className="size-3.5" />
             Keldi
             <span className="font-bold">28 / 42</span>
           </div>
-        </header>
+        </div>
 
-        <section className="mx-3 flex shrink-0 items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white p-2 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+        <section className="flex items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white p-2 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
           <img src="/images/seminars/teeth.jpg" alt="" className="size-[52px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-[#0c8f86]">Implantologiya</p>
+            <p className="text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</p>
             <p className="truncate text-[14px] font-bold leading-tight text-[#16324a]">Implantologiya: amaliy kurs</p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6e868c]"><Calendar className="size-3 text-[#0c8f86]" /> 21 oktabr 2026, 09:00 – 18:00</p>
-            <p className="flex items-center gap-1 text-[11px] text-[#6e868c]"><MapPin className="size-3 text-[#0c8f86]" /> Toshkent City Kongress Markazi</p>
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6e868c]"><Calendar className="size-3 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 – 18:00</p>
+            <p className="flex items-center gap-1 text-[11px] text-[#6e868c]"><MapPin className="size-3 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi</p>
           </div>
         </section>
 
-        <div className="relative mx-3 mt-2 min-h-0 flex-1 overflow-hidden rounded-[26px] bg-[#0e242c]">
+        <div className="relative mt-2 h-[420px] overflow-hidden rounded-[26px] bg-[#0e242c]">
           <img src="/images/ishlar/ish-reception.jpg" alt="" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-[#062028]/45" />
           <img src="/images/qr-hand.png" alt="" className="absolute inset-0 size-full object-cover object-[center_42%]" style={{ maskImage: 'radial-gradient(ellipse 78% 72% at 50% 48%, #000 42%, transparent 74%)', WebkitMaskImage: 'radial-gradient(ellipse 78% 72% at 50% 48%, #000 42%, transparent 74%)' }} />
@@ -248,7 +239,7 @@ export default function Qr() {
           </div>
           <CornerFrame />
           <div className="absolute left-1/2 top-[54px] z-[2] w-[150px] -translate-x-1/2 rounded-[20px] border-[5px] border-[#141414] bg-white px-2 pb-2 pt-1.5 text-center shadow-2xl">
-            <p className="text-[10px] font-extrabold text-[#0c8f86]">StomaHub</p>
+            <p className="text-[10px] font-extrabold text-[var(--color-org-teal)]">StomaHub</p>
             <p className="text-[8px] leading-tight text-[#5c7278]">Implantologiya: amaliy kurs</p>
             <div className="mx-auto my-1 w-fit"><QrMark size={78} seed={9} /></div>
             <p className="text-[11px] font-bold leading-tight text-[#163044]">Aliyeva Mohira</p>
@@ -265,8 +256,8 @@ export default function Qr() {
               <p className="text-[14px] font-bold">Qo‘lda belgilash</p>
               <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ism yoki chipta kodi" className="mt-2 h-10 w-full rounded-xl border border-[#e4eeec] px-3 text-[13px] outline-none" />
               <div className="mt-2 flex gap-2">
-                <button type="button" onClick={() => setManualOpen(false)} className="h-10 flex-1 rounded-xl border border-[#d7ebe6] text-[13px] font-semibold text-[#0c8f86]">Bekor</button>
-                <button type="button" onClick={manual} className="h-10 flex-1 rounded-xl bg-[#0c8f86] text-[13px] font-semibold text-white">Saqlash</button>
+                <button type="button" onClick={() => setManualOpen(false)} className="h-10 flex-1 rounded-xl border border-[#d7ebe6] text-[13px] font-semibold text-[var(--color-org-teal)]">Bekor</button>
+                <button type="button" onClick={manual} className="h-10 flex-1 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white">Saqlash</button>
               </div>
             </div>
           ) : (
@@ -276,11 +267,11 @@ export default function Qr() {
                 <div className="min-w-0 flex-1">
                   <p className="text-[16px] font-bold leading-tight text-[#16324a]">Aliyeva Mohira</p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-[#5e787e]">
-                    <Phone className="size-3.5 text-[#0c8f86]" />
+                    <Phone className="size-3.5 text-[var(--color-org-teal)]" />
                     +998 90 123 45 67
                   </p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-[#5e787e]">
-                    <CreditCard className="size-3.5 text-[#0c8f86]" />
+                    <CreditCard className="size-3.5 text-[var(--color-org-teal)]" />
                     Standart chipta
                   </p>
                 </div>
@@ -299,9 +290,9 @@ export default function Qr() {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setManualOpen(true)} className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[#d5ebe6] bg-white text-[13px] font-semibold text-[#143044]">
-                  <UserRound className="size-4 text-[#0c8f86]" /> Qo‘lda belgilash
+                  <UserRound className="size-4 text-[var(--color-org-teal)]" /> Qo‘lda belgilash
                 </button>
-                <button type="button" onClick={rescan} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0c8f86] text-[13px] font-semibold text-white">
+                <button type="button" onClick={rescan} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white">
                   <QrCode className="size-4" /> Yana skaner qilish
                 </button>
               </div>
@@ -309,47 +300,8 @@ export default function Qr() {
           )}
         </div>
 
-        <nav className="mt-auto shrink-0 border-t border-[#eef3f2] bg-white">
-          <ul className="grid h-[54px] grid-cols-5 items-end">
-            <TabLink to="/tashkilotchi" icon={House} label="Panel" />
-            <TabLink to="/tashkilotchi/seminarlar" icon={CalendarDays} label="Seminarlar" />
-            <li className="flex flex-col items-center">
-              <span className="-mt-4 grid size-12 place-items-center rounded-full bg-[#0c8f86] text-white shadow-[0_8px_16px_rgb(12_143_134/0.35)]">
-                <QrCode className="size-5" />
-              </span>
-              <span className="mt-0.5 text-[10px] font-semibold text-[#0c8f86]">Check-in</span>
-            </li>
-            <TabLink to="/tashkilotchi/hamyon" icon={Wallet} label="Hamyon" />
-            <TabLink to="/tashkilotchi/sozlamalar" icon={MoreHorizontal} label="Yana" />
-          </ul>
-          <div className="mx-auto mb-1 h-1 w-28 rounded-full bg-[#111]" />
-        </nav>
       </div>
     </>
-  )
-}
-
-function TabLink({ to, icon: Icon, label }) {
-  return (
-    <li>
-      <Link to={to} className="flex h-full flex-col items-center justify-center gap-0.5 text-[10px] text-[#8aa0a4]">
-        <Icon className="size-[18px]" strokeWidth={1.8} />
-        {label}
-      </Link>
-    </li>
-  )
-}
-
-function StatusBar() {
-  return (
-    <div className="flex h-11 items-end justify-between px-5 pb-1.5 text-[14px] font-semibold text-[#111]">
-      <span>9:41</span>
-      <span className="flex items-center gap-1.5">
-        <svg width="17" height="12" viewBox="0 0 17 12" aria-hidden><rect x="0" y="7" width="3" height="5" rx="0.5" fill="#111" /><rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="#111" /><rect x="9" y="2.5" width="3" height="9.5" rx="0.5" fill="#111" /><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#111" /></svg>
-        <svg width="15" height="12" viewBox="0 0 15 12" aria-hidden><path d="M7.5 2.2c2.2 0 4.2.9 5.7 2.3l-1.2 1.2A6.2 6.2 0 0 0 7.5 4 6.2 6.2 0 0 0 3 5.7L1.8 4.5A8 8 0 0 1 7.5 2.2Z" fill="#111" /><path d="M7.5 5.6c1.2 0 2.3.5 3.1 1.3L9.4 8.1A2.7 2.7 0 0 0 7.5 7.2 2.7 2.7 0 0 0 5.6 8.1L4.4 6.9A4.4 4.4 0 0 1 7.5 5.6Z" fill="#111" /><circle cx="7.5" cy="10.2" r="1.3" fill="#111" /></svg>
-        <svg width="25" height="12" viewBox="0 0 25 12" aria-hidden><rect x="0.5" y="0.5" width="21" height="11" rx="2.5" stroke="#111" fill="none" /><rect x="2" y="2" width="16" height="8" rx="1" fill="#111" /><rect x="22.5" y="3.5" width="1.5" height="5" rx="0.5" fill="#111" /></svg>
-      </span>
-    </div>
   )
 }
 
@@ -386,7 +338,7 @@ function CheckRow({ p }) {
   )
 }
 
-function Stat({ icon: Icon, label, value, bar, barClass, hint, hintClass, iconBg = 'bg-[#e7f7f4] text-[#0c8f86]' }) {
+function Stat({ icon: Icon, label, value, bar, barClass, hint, hintClass, iconBg = 'bg-[#e7f7f4] text-[var(--color-org-teal)]' }) {
   return (
     <article className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-[#e7f2f0] bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
       <span className={`grid size-11 shrink-0 place-items-center rounded-2xl ${iconBg}`}><Icon className="size-5" strokeWidth={1.8} /></span>

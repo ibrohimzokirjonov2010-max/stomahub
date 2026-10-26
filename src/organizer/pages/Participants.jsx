@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Building2, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, CreditCard,
   Download, House, Mail, MapPin, MoreVertical, Plus, QrCode, SlidersHorizontal, Ticket,
@@ -12,7 +12,7 @@ import { useMobile } from '../../useMobile'
 import { FACE, MOBILE_PEOPLE, MOBILE_SEMINAR } from './participantsData'
 import './participants.css'
 
-const TEAL = '#038088'
+const TEAL = 'var(--color-org-teal)'
 const DASH = '\u2013'
 
 const TICKET_CLS = {
@@ -105,7 +105,7 @@ function Drop({ value, onChange, options, className = '' }) {
             <li key={String(o.value)}>
               <button
                 type="button"
-                className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[#038088]' : 'text-[#1c4a5a]'}`}
+                className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[var(--color-org-teal)]' : 'text-[#1c4a5a]'}`}
                 onClick={() => { onChange(o.value); setOpen(false) }}
               >
                 {o.label}
@@ -234,9 +234,9 @@ function DesktopParticipants() {
         </div>
         <div className="shrink-0">
           <p className="text-right text-[12px] leading-none text-[#8aa0a4]">
-            <Link to="/tashkilotchi" className="hover:text-[#038088]">Boshqaruv paneli</Link>
+            <Link to="/tashkilotchi" className="hover:text-[var(--color-org-teal)]">Boshqaruv paneli</Link>
             <span className="px-1.5 text-[#b7c6c8]">&gt;</span>
-            <Link to="/tashkilotchi/seminarlar" className="hover:text-[#038088]">Mening seminarlarim</Link>
+            <Link to="/tashkilotchi/seminarlar" className="hover:text-[var(--color-org-teal)]">Mening seminarlarim</Link>
             <span className="px-1.5 text-[#b7c6c8]">&gt;</span>
             Ishtirokchilar
           </p>
@@ -257,8 +257,8 @@ function DesktopParticipants() {
       </div>
 
       <section className="mt-3 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-        <KpiCard icon={Users} label="Jami ishtirokchilar" value="180 / 200" pct="90%" pctClass="text-[#16a34a]" bar={90} iconBg="bg-[#e7f7f4] text-[#0d8c86]" />
-        <KpiCard icon={Wallet} label="To‘lov qilingan" value="150" pct="83%" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[#0d8c86]" />
+        <KpiCard icon={Users} label="Jami ishtirokchilar" value="180 / 200" pct="90%" pctClass="text-[#16a34a]" bar={90} iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
+        <KpiCard icon={Wallet} label="To‘lov qilingan" value="150" pct="83%" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
         <KpiCard icon={Clock} label="Kutilmoqda" value="20" pct="11%" pctClass="text-[#e09a12]" iconBg="bg-[#fff6e8] text-[#e09a12]" />
         <KpiCard icon={XCircle} label="Bekor qilingan" value="10" pct="6%" pctClass="text-[#e11d48]" iconBg="bg-[#fdecef] text-[#e11d48]" />
       </section>
@@ -273,8 +273,8 @@ function DesktopParticipants() {
                 <ChevronDown className="size-4 shrink-0 text-[#8aa4a8]" />
               </span>
               <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-[#6e868c]">
-                <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#0d8c86]" /> {current.date}</span>
-                <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#0d8c86]" /> {current.city}</span>
+                <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {current.date}</span>
+                <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {current.city}</span>
                 <span>{current.sold} / {current.seats}</span>
               </span>
             </span>
@@ -285,7 +285,7 @@ function DesktopParticipants() {
                 <li key={s.id}>
                   <button
                     type="button"
-                    className={`block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa] ${s.id === seminar ? 'font-semibold text-[#038088]' : ''}`}
+                    className={`block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa] ${s.id === seminar ? 'font-semibold text-[var(--color-org-teal)]' : ''}`}
                     onClick={() => { setSeminar(s.id); setSemOpen(false) }}
                   >
                     {s.title}
@@ -296,14 +296,14 @@ function DesktopParticipants() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <Link to="/tashkilotchi/qr" className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#b7e3dc] bg-white px-2.5 text-[12.5px] font-semibold text-[#0d8c86]">
+          <Link to="/tashkilotchi/qr" className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#b7e3dc] bg-white px-2.5 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
             <QrCode className="size-4" /> QR check-in
           </Link>
           <button type="button" onClick={() => notify('Excel yuklab olindi')} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
             <Download className="size-4 text-[#1f9d55]" /> Excel yuklab olish
           </button>
           <button type="button" onClick={() => setMail(true)} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
-            <Mail className="size-4 text-[#0d8c86]" /> Email yuborish
+            <Mail className="size-4 text-[var(--color-org-teal)]" /> Email yuborish
           </button>
           <VertMenu
             bordered
@@ -328,7 +328,7 @@ function DesktopParticipants() {
             <Drop value={pay} onChange={setPay} className="w-[156px] shrink-0" options={[{ value: 'all', label: 'Barcha holatlar' }, ...Object.entries(PAY_LABEL).filter(([k]) => k !== 'refund').map(([value, label]) => ({ value, label }))]} />
             <Drop value={city} onChange={setCity} className="w-[150px] shrink-0" options={[{ value: 'all', label: 'Barcha shaharlar' }, { value: 'Toshkent', label: 'Toshkent' }, { value: 'Samarqand', label: 'Samarqand' }, { value: 'Buxoro', label: 'Buxoro' }]} />
             <button type="button" onClick={clearFilters} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-3 text-[12.5px] font-semibold text-[#1c4a5a]">
-              <SlidersHorizontal className="size-3.5 text-[#0d8c86]" /> Filtrlar
+              <SlidersHorizontal className="size-3.5 text-[var(--color-org-teal)]" /> Filtrlar
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -357,7 +357,7 @@ function DesktopParticipants() {
                       <td className="px-2"><Pill className={TICKET_CLS[p.ticket] || TICKET_CLS.Standart}>{p.ticket}</Pill></td>
                       <td className="px-2"><Pill className={PAY_CLS[p.pay] || PAY_CLS.paid} dot>{PAY_LABEL[p.pay]}</Pill></td>
                       <td className="px-2 leading-tight text-[#5e787e]"><span className="block text-[11.5px]">{when.date}</span>{when.time && <span className="block text-[11px] text-[#8aa0a4]">{when.time}</span>}</td>
-                      <td className="px-1.5"><span className="grid size-7 place-items-center rounded-lg border border-[#d7ebe7] text-[#0d8c86]"><MiniQr /></span></td>
+                      <td className="px-1.5"><span className="grid size-7 place-items-center rounded-lg border border-[#d7ebe7] text-[var(--color-org-teal)]"><MiniQr /></span></td>
                       <td className="px-1" onClick={(e) => e.stopPropagation()}>
                         <VertMenu
                           items={[
@@ -445,13 +445,13 @@ function DesktopParticipants() {
                   [Calendar, 'Ro‘yxatdan o‘tgan', person.registered],
                 ].map(([Icon, k, v]) => (
                   <div key={k} className="flex items-center gap-1.5 text-[12px]">
-                    <Icon className="size-3.5 shrink-0 text-[#0d8c86]" strokeWidth={1.8} />
+                    <Icon className="size-3.5 shrink-0 text-[var(--color-org-teal)]" strokeWidth={1.8} />
                     <dt className="text-[#7e9398]">{k}</dt>
                     <dd className="ml-auto truncate pl-2 text-right font-medium text-[#143044]">{v}</dd>
                   </div>
                 ))}
                 <div className="flex items-center gap-1.5 text-[12px]">
-                  <CreditCard className="size-3.5 shrink-0 text-[#0d8c86]" strokeWidth={1.8} />
+                  <CreditCard className="size-3.5 shrink-0 text-[var(--color-org-teal)]" strokeWidth={1.8} />
                   <dt className="text-[#7e9398]">To‘lov holati</dt>
                   <dd className="ml-auto"><Pill className={PAY_CLS[person.pay]} dot>{PAY_LABEL[person.pay]}</Pill></dd>
                 </div>
@@ -463,7 +463,7 @@ function DesktopParticipants() {
                 <p className="font-bold">{person.ticket}</p>
                 <p className="mt-2 text-[#7e9398]">Holat</p>
                 <p className="font-semibold">{PAY_LABEL[person.pay]}</p>
-                <Link to="/tashkilotchi/tolovlar" className="mt-2 inline-block text-[12.5px] font-semibold text-[#038088]">To‘lovlarga o‘tish</Link>
+                <Link to="/tashkilotchi/tolovlar" className="mt-2 inline-block text-[12.5px] font-semibold text-[var(--color-org-teal)]">To‘lovlarga o‘tish</Link>
               </div>
             )}
             {tab === 'cert' && (
@@ -471,7 +471,7 @@ function DesktopParticipants() {
                 {person.pay === 'paid'
                   ? <p>Sertifikat tayyor. Raqam: STH-2026-{String(person.id).padStart(4, '0')}</p>
                   : <p className="text-[#7e9398]">Sertifikat hali berilmagan.</p>}
-                <Link to="/tashkilotchi/sertifikatlar" className="mt-2 inline-flex h-8 items-center rounded-lg border border-[#d5ebe6] px-2.5 text-[12px] font-semibold text-[#0d8c86]">Sertifikatlarga o‘tish</Link>
+                <Link to="/tashkilotchi/sertifikatlar" className="mt-2 inline-flex h-8 items-center rounded-lg border border-[#d5ebe6] px-2.5 text-[12px] font-semibold text-[var(--color-org-teal)]">Sertifikatlarga o‘tish</Link>
               </div>
             )}
             <div className="mt-2 flex flex-col items-center rounded-xl bg-[#f7fbfa] px-2 py-1.5">
@@ -599,14 +599,10 @@ function MailForm({ onClose, onSend, to }) {
 const M_PAY = { paid: 'To‘langan', wait: 'Kutilmoqda', cancel: 'Bekor qilingan' }
 
 function MobileParticipants() {
-  const navigate = useNavigate()
   const { notify } = useOrg()
   const [tab, setTab] = useState('people')
-  const [q, setQ] = useState('')
   const [chip, setChip] = useState('all')
   const [sheet, setSheet] = useState(null)
-  const [more, setMore] = useState(false)
-  const [menu, setMenu] = useState(false)
 
   const counts = useMemo(() => ({
     all: MOBILE_PEOPLE.length,
@@ -615,16 +611,12 @@ function MobileParticipants() {
     cancel: MOBILE_PEOPLE.filter((p) => p.pay === 'cancel').length,
   }), [])
 
-  const list = useMemo(() => {
-    const s = q.trim().toLowerCase()
-    return MOBILE_PEOPLE.filter((p) => {
-      if (chip === 'paid' && p.pay !== 'paid') return false
-      if (chip === 'wait' && p.pay !== 'wait') return false
-      if (chip === 'cancel' && p.pay !== 'cancel') return false
-      if (s && !`${p.name} ${p.phone}`.toLowerCase().includes(s)) return false
-      return true
-    })
-  }, [q, chip])
+  const list = useMemo(() => MOBILE_PEOPLE.filter((p) => {
+    if (chip === 'paid' && p.pay !== 'paid') return false
+    if (chip === 'wait' && p.pay !== 'wait') return false
+    if (chip === 'cancel' && p.pay !== 'cancel') return false
+    return true
+  }), [chip])
 
   const chips = [
     ['all', 'Hammasi', counts.all],
@@ -634,35 +626,14 @@ function MobileParticipants() {
   ]
 
   return (
-    <div className="org-mobile-participants flex h-[calc(100dvh/var(--z))] flex-col bg-[#f7fbfb] text-[#143044]">
-      <header className="flex items-center gap-1 bg-white px-1.5 pb-1 pt-1.5">
-        <button type="button" aria-label="Orqaga" onClick={() => navigate('/tashkilotchi/seminarlar')} className="grid size-9 shrink-0 place-items-center text-[#143044]">
-          <ChevronLeft className="size-5" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <img src="/images/logo.png" alt="StomaHub" className="h-[22px] w-auto" />
-          <p className="text-[11px] leading-tight text-[#8aa0a4]">Seminar tashkilotchisi</p>
-        </div>
-        <div className="relative">
-          <button type="button" aria-label="Yana" onClick={() => setMenu((v) => !v)} className="grid size-9 place-items-center text-[#5e787e]">
-            <MoreVertical className="size-[18px]" />
-          </button>
-          {menu && (
-            <div className="absolute right-0 z-30 mt-1 w-44 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-              <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => { setMenu(false); notify('Havola nusxalandi') }}>Ulashish</button>
-              <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => { setMenu(false); navigate('/tashkilotchi/seminarlar/yangi') }}>Tahrirlash</button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <div className="flex gap-2.5 bg-white px-3 pb-2">
+    <div className="bg-white text-[#143044]">
+      <div className="flex gap-2.5 pb-2">
         <img src={MOBILE_SEMINAR.image} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
         <div className="min-w-0">
-          <span className="inline-flex rounded-full bg-[#e7f6f3] px-2 py-0.5 text-[10.5px] font-semibold text-[#0d8c86]">{MOBILE_SEMINAR.topic}</span>
+          <span className="inline-flex rounded-full bg-[#e7f6f3] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-org-teal)]">{MOBILE_SEMINAR.topic}</span>
           <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{MOBILE_SEMINAR.title}</p>
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[#0d8c86]" /> {MOBILE_SEMINAR.when}</p>
-          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[#0d8c86]" /> {MOBILE_SEMINAR.place}</p>
+          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {MOBILE_SEMINAR.when}</p>
+          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {MOBILE_SEMINAR.place}</p>
         </div>
       </div>
 
@@ -675,7 +646,7 @@ function MobileParticipants() {
         ].map(([id, label, Icon]) => {
           const on = tab === id
           return (
-            <button key={id} type="button" onClick={() => setTab(id)} className={`flex flex-col items-center gap-0.5 py-1.5 text-[11px] ${on ? 'font-semibold text-[#0d8c86]' : 'font-medium text-[#8aa0a4]'}`}>
+            <button key={id} type="button" onClick={() => setTab(id)} className={`flex flex-col items-center gap-0.5 py-1.5 text-[11px] ${on ? 'font-semibold text-[var(--color-org-teal)]' : 'font-medium text-[#8aa0a4]'}`}>
               <Icon className="size-[18px]" strokeWidth={on ? 2.2 : 1.7} />
               {label}
             </button>
@@ -683,21 +654,17 @@ function MobileParticipants() {
         })}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-white pb-2">
+      <div className="pb-2">
         {tab === 'people' && (
           <>
             <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
               <h2 className="text-[15px] font-bold">Ishtirokchilar ro‘yxati</h2>
-              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#0d8c86]">
+              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-org-teal)]">
                 <Users className="size-4" /> {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3">
-              <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#e6eeec] bg-white px-3">
-                <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#9aafb4]" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ism yoki telefon raqami bo‘yicha qidirish..." className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-[#9aafb4]" />
-              </label>
-              <button type="button" aria-label="Filtr" onClick={() => setChip(chip === 'all' ? 'paid' : 'all')} className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#e6eeec] text-[#0d8c86]">
+            <div className="flex items-center justify-end px-3">
+              <button type="button" aria-label="Filtr" onClick={() => setChip(chip === 'all' ? 'paid' : 'all')} className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#e6eeec] text-org-teal">
                 <SlidersHorizontal className="size-4" />
               </button>
             </div>
@@ -710,7 +677,7 @@ function MobileParticipants() {
                     key={id}
                     type="button"
                     onClick={() => setChip(id)}
-                    className={`h-7 shrink-0 rounded-full px-2.5 text-[12px] font-semibold ${on ? 'text-white' : soft ? 'bg-[#e7f6f3] text-[#0d8c86]' : 'border border-[#e6eeec] bg-white text-[#5e787e]'}`}
+                    className={`h-7 shrink-0 rounded-full px-2.5 text-[12px] font-semibold ${on ? 'text-white' : soft ? 'bg-[#e7f6f3] text-[var(--color-org-teal)]' : 'border border-[#e6eeec] bg-white text-[#5e787e]'}`}
                     style={on ? { background: TEAL } : undefined}
                   >
                     {label} ({n})
@@ -760,34 +727,19 @@ function MobileParticipants() {
           <ul className="space-y-2 px-3 py-3">
             {[['Standart', '1 200 000 so‘m'], ['VIP', '2 500 000 so‘m'], ['Student', '800 000 so‘m']].map(([n, p]) => (
               <li key={n} className="flex items-center justify-between rounded-xl border border-[#e6f1ef] px-3 py-2.5 text-[13px]">
-                <span className="font-semibold">{n}</span><span className="text-[#0d8c86]">{p}</span>
+                <span className="font-semibold">{n}</span><span className="text-[var(--color-org-teal)]">{p}</span>
               </li>
             ))}
           </ul>
         )}
         {tab === 'check' && (
           <div className="px-3 py-6 text-center">
-            <QrCode className="mx-auto size-10 text-[#0d8c86]" />
+            <QrCode className="mx-auto size-10 text-[var(--color-org-teal)]" />
             <p className="mt-2 text-[13px] text-[#5e787e]">QR kodni skanerlang va kirishni tasdiqlang.</p>
             <Link to="/tashkilotchi/qr" className="mt-3 inline-flex h-10 items-center rounded-xl px-4 text-[13px] font-semibold text-white" style={{ background: TEAL }}>Check-in ochish</Link>
           </div>
         )}
       </div>
-
-      <nav className="relative grid h-[62px] shrink-0 grid-cols-5 border-t border-[#e7f0ef] bg-white pb-1">
-        <TabLink to="/tashkilotchi" icon={House} label="Panel" />
-        <TabLink to="/tashkilotchi/seminarlar" icon={Calendar} label="Seminarlar" />
-        <Link to="/tashkilotchi/qr" className="flex flex-col items-center text-[10px] font-semibold text-[#0d8c86]">
-          <span className="-mt-5 grid size-12 place-items-center rounded-full text-white shadow-[0_6px_14px_rgb(3_128_136/0.35)]" style={{ background: TEAL }}>
-            <QrCode className="size-5" />
-          </span>
-          <span className="mt-0.5">Check-in</span>
-        </Link>
-        <TabLink to="/tashkilotchi/hamyon" icon={Wallet} label="Hamyon" />
-        <button type="button" onClick={() => setMore(true)} className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-[#8aa0a4]">
-          <MoreVertical className="size-[18px]" /> Yana
-        </button>
-      </nav>
 
       {sheet && (
         <div className="fixed inset-0 z-[60] flex items-end bg-[#0e2433]/40" onClick={() => setSheet(null)}>
@@ -808,30 +760,6 @@ function MobileParticipants() {
           </div>
         </div>
       )}
-      {more && (
-        <div className="fixed inset-0 z-[60] flex items-end bg-[#0e2433]/40" onClick={() => setMore(false)}>
-          <div className="w-full rounded-t-2xl bg-white p-3" onClick={(e) => e.stopPropagation()}>
-            {[
-              ['/tashkilotchi/chiptalar', 'Chiptalar'],
-              ['/tashkilotchi/tolovlar', 'To‘lovlar'],
-              ['/tashkilotchi/sertifikatlar', 'Sertifikatlar'],
-              ['/tashkilotchi/sozlamalar', 'Sozlamalar'],
-              ['/tashkilotchi/yordam', 'Yordam'],
-            ].map(([to, label]) => (
-              <Link key={to} to={to} className="block rounded-xl px-3 py-2.5 text-[14px] font-medium hover:bg-[#f4fbfa]" onClick={() => setMore(false)}>{label}</Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
-
-function TabLink({ to, icon: Icon, label }) {
-  return (
-    <Link to={to} className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-[#8aa0a4]">
-      <Icon className="size-[18px]" strokeWidth={1.7} />
-      {label}
-    </Link>
   )
 }

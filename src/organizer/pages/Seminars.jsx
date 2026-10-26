@@ -7,7 +7,7 @@ import {
 import { SEMINARS, som } from '../data'
 import { useOrg } from '../Shell'
 
-const BRAND = '#027d84'
+const BRAND = 'var(--color-org-teal)'
 const INK = '#10182a'
 const MUTED = '#8d93a3'
 const GREEN = '#16924e'
@@ -363,11 +363,12 @@ function Mobile() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('faol')
   const [menu, setMenu] = useState(null)
-  const rows = tab === 'faol'
-    ? MOBILE.slice(0, 4)
-    : tab === 'qoralama'
-      ? MOBILE.filter((s) => s.status === 'qoralama')
-      : MOBILE.filter((s) => s.status === 'otgan')
+  const counts = {
+    faol: MOBILE.filter((s) => s.status === 'faol').length,
+    qoralama: MOBILE.filter((s) => s.status === 'qoralama').length,
+    otgan: MOBILE.filter((s) => s.status === 'otgan').length,
+  }
+  const rows = MOBILE.filter((s) => s.status === tab)
 
   return (
     <div className="lg:hidden">
@@ -376,13 +377,13 @@ function Mobile() {
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[
-          ['faol', 'Faol (2)'],
-          ['qoralama', 'Qoralama (1)'],
-          ['otgan', 'O‘tgan (3)'],
+          ['faol', `Faol (${counts.faol})`],
+          ['qoralama', `Qoralama (${counts.qoralama})`],
+          ['otgan', `O‘tgan (${counts.otgan})`],
         ].map(([id, label]) => {
           const on = tab === id
           return (
-            <button key={id} type="button" onClick={() => setTab(id)} className="h-11 rounded-xl text-[13.5px] font-semibold" style={on ? { background: '#0a7c7e', color: '#fff' } : { background: '#fff', color: '#9aa3b2', boxShadow: '0 1px 2px rgb(16 40 60 / 0.04)' }}>
+            <button key={id} type="button" onClick={() => setTab(id)} className="h-11 rounded-xl text-[13.5px] font-semibold" style={on ? { background: BRAND, color: '#fff' } : { background: '#fff', color: '#9aa3b2', boxShadow: '0 1px 2px rgb(16 40 60 / 0.04)' }}>
               {label}
             </button>
           )
@@ -399,7 +400,7 @@ function Mobile() {
                 <img src={s.image} alt="" className="size-[72px] shrink-0 rounded-xl object-cover" style={{ objectPosition: s.pos }} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[#0a7c7e]">{s.cat}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-org-teal">{s.cat}</span>
                     <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold" style={{ color: st.text }}>
                       <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
                       {st.label}
@@ -435,7 +436,7 @@ function Mobile() {
               </div>
               <div className="relative z-20 mt-2 flex items-center gap-2 pointer-events-none">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#e7edf0]">
-                  <div className="h-full rounded-full bg-[#0a7c7e]" style={{ width: `${pct}%` }} />
+                  <div className="h-full rounded-full bg-org-teal" style={{ width: `${pct}%` }} />
                 </div>
                 <span className="w-10 text-right text-[13px] font-bold tabular-nums text-[#12163f]">{pct}%</span>
               </div>
@@ -444,7 +445,7 @@ function Mobile() {
         })}
       </div>
 
-      <Link to="/tashkilotchi/seminarlar/yangi" aria-label="Yangi seminar" className="fixed bottom-[92px] right-4 z-40 grid size-14 place-items-center rounded-full text-white shadow-[0_10px_22px_rgb(10_124_126/0.35)]" style={{ background: '#0a7c7e' }}>
+      <Link to="/tashkilotchi/seminarlar/yangi" aria-label="Yangi seminar" className="fixed bottom-[92px] right-4 z-40 grid size-14 place-items-center rounded-full text-white shadow-[0_10px_22px_rgb(12_143_134/0.35)]" style={{ background: BRAND }}>
         <Plus className="size-7" strokeWidth={2.2} />
       </Link>
     </div>

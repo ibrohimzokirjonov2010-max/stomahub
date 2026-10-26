@@ -121,7 +121,7 @@ export default function Confirm() {
         <p className="text-[13px] leading-relaxed text-[#3e5a62]">Zal rasmlari va ishtirokchilar ro‘yxati tekshiruvga yuboriladi.</p>
         <div className="mt-4 flex justify-end gap-2">
           <button type="button" onClick={() => setAskOpen(false)} className="inline-flex h-10 items-center rounded-xl border border-[#e4eeec] bg-white px-3.5 text-[13px] font-semibold text-[#1c4a5a]">Ortga</button>
-          <button type="button" onClick={ask} className="inline-flex h-10 items-center rounded-xl bg-[#0c8f86] px-3.5 text-[13px] font-semibold text-white">So‘rovni yuborish</button>
+          <button type="button" onClick={ask} className="inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">So‘rovni yuborish</button>
         </div>
       </Modal>
     </>
@@ -132,7 +132,7 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
   return (
     <div className="grid items-start gap-3.5" style={{ gridTemplateColumns: 'minmax(0,1fr) 308px' }}>
       <div className="min-w-0">
-        <Link to="/tashkilotchi/seminarlar" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-[#6d868c] hover:text-[#0c8f86]">
+        <Link to="/tashkilotchi/seminarlar" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-[#6d868c] hover:text-[var(--color-org-teal)]">
           <ChevronLeft className="size-4" strokeWidth={2} /> Seminarlar
         </Link>
         <h1 className="mt-1 text-[24px] font-bold leading-tight tracking-[-0.02em] text-[#123044]">O‘tkazilganini tasdiqlash</h1>
@@ -144,12 +144,12 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
           <section className={`${card} flex items-center gap-3.5 px-4 py-3.5`}>
             <img src={TEETH} alt="" className="h-[72px] w-[92px] shrink-0 rounded-xl object-cover" />
             <div className="min-w-0 flex-1">
-              <span className="inline-flex h-[22px] items-center rounded-full bg-[#e7f6f3] px-2 text-[11px] font-semibold text-[#0c8f86]">Implantologiya</span>
+              <span className="inline-flex h-[22px] items-center rounded-full bg-[#e7f6f3] px-2 text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
               <p className="mt-1 text-[15.5px] font-bold leading-tight text-[#123044]">Implantologiya: nazariya va amaliyot</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-[#6e868c]">
-                <span className="inline-flex items-center gap-1.5"><Calendar className="size-3.5 text-[#0c8f86]" /> 21 oktabr 2026</span>
-                <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-[#0c8f86]" /> Toshkent, O‘zbekiston</span>
-                <span className="inline-flex items-center gap-1.5"><Users className="size-3.5 text-[#0c8f86]" /> 50 ishtirokchi</span>
+                <span className="inline-flex items-center gap-1.5"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> 21 oktabr 2026</span>
+                <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> Toshkent, O‘zbekiston</span>
+                <span className="inline-flex items-center gap-1.5"><Users className="size-3.5 text-[var(--color-org-teal)]" /> 50 ishtirokchi</span>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2.5 rounded-2xl bg-[#fff7ea] px-3 py-2">
@@ -174,18 +174,18 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
                   <p className="mt-0.5 text-[12.5px] leading-snug text-[#7d9398]">Seminar o‘tkazilganini tasdiqlovchi zal rasmlarini yuklang (kamida 3-5 ta).</p>
                 </div>
               </div>
-              <p className="shrink-0 pt-0.5 text-[12.5px] font-semibold text-[#0c8f86]">{countLabel} / 10 rasm yuklandi</p>
+              <p className="shrink-0 pt-0.5 text-[12.5px] font-semibold text-[var(--color-org-teal)]">{countLabel} / 10 rasm yuklandi</p>
             </div>
             <div className="mt-3.5 flex h-[112px] gap-2">
               <label
-                className={`flex w-[156px] shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-2.5 text-center ${over ? 'border-[#0c8f86] bg-[#eef9f7]' : 'border-[#b7e3da] bg-[#f7fcfb]'}`}
+                className={`flex w-[156px] shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-2.5 text-center ${over ? 'border-[var(--color-org-teal)] bg-[#eef9f7]' : 'border-[#b7e3da] bg-[#f7fcfb]'}`}
                 onDragOver={(e) => { e.preventDefault(); setOver(true) }}
                 onDragLeave={() => setOver(false)}
                 onDrop={onDrop}
               >
                 <p className="text-[11.5px] font-medium leading-snug text-[#3d5962]">Rasmlarni shu yerga tashlang yoki tanlang</p>
                 <p className="mt-0.5 text-[10.5px] leading-snug text-[#8aa0a4]">JPG, PNG formatda. Har bir rasm 10 MB gacha.</p>
-                <span className="mt-2 inline-flex h-7 items-center gap-1 rounded-lg border border-[#cfe7e2] bg-white px-2 text-[12px] font-semibold text-[#0c8f86]">
+                <span className="mt-2 inline-flex h-7 items-center gap-1 rounded-lg border border-[#cfe7e2] bg-white px-2 text-[12px] font-semibold text-[var(--color-org-teal)]">
                   <Upload className="size-3.5" /> Rasm tanlash
                 </span>
                 <input ref={inputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => { add(e.target.files?.[0]); e.target.value = '' }} />
@@ -211,8 +211,8 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2.5 pt-0.5">
-                <span className="text-[13px] font-semibold text-[#0c8f86]">42 / 50 keldi</span>
-                <button type="button" onClick={() => setAll((v) => !v)} className="inline-flex h-8 items-center rounded-lg border border-[#d5ebe6] bg-white px-3 text-[12.5px] font-semibold text-[#0c8f86] hover:bg-[#f4fbfa]">
+                <span className="text-[13px] font-semibold text-[var(--color-org-teal)]">42 / 50 keldi</span>
+                <button type="button" onClick={() => setAll((v) => !v)} className="inline-flex h-8 items-center rounded-lg border border-[#d5ebe6] bg-white px-3 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]">
                   {all ? 'Yig‘ish' : 'Barchasini ko‘rish'}
                 </button>
               </div>
@@ -263,19 +263,19 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3 pt-0.5">
-                <span className="text-[12.5px] font-semibold text-[#0c8f86]">42 ta sertifikat berilgan</span>
-                <Link to="/tashkilotchi/sertifikatlar" className="text-[12.5px] font-semibold text-[#0c8f86] hover:underline">Sertifikatlar ro‘yxati</Link>
+                <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">42 ta sertifikat berilgan</span>
+                <Link to="/tashkilotchi/sertifikatlar" className="text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:underline">Sertifikatlar ro‘yxati</Link>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-5 gap-2.5">
               {PEOPLE.slice(0, 5).map((p) => <MiniCert key={p.name} name={p.name} />)}
             </div>
             <div className="mt-2.5 flex justify-end">
-              <Link to="/tashkilotchi/sertifikatlar" className="text-[12.5px] font-semibold text-[#0c8f86] hover:underline">Barchasini ko‘rish</Link>
+              <Link to="/tashkilotchi/sertifikatlar" className="text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:underline">Barchasini ko‘rish</Link>
             </div>
           </section>
 
-          <button type="button" onClick={onAsk} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#0c8f86] text-[15px] font-semibold text-white shadow-[0_8px_18px_rgb(12_143_134/0.28)] hover:bg-[#0a7e76]">
+          <button type="button" onClick={onAsk} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-org-teal)] text-[15px] font-semibold text-white shadow-[0_8px_18px_rgb(12_143_134/0.28)] hover:bg-[#0a7e76]">
             <Wallet className="size-[18px]" strokeWidth={2} />
             Pulni so‘rash
             <span aria-hidden>→</span>
@@ -287,21 +287,21 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
         <section className={`${card} p-4`}>
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[14.5px] font-bold text-[#123044]">Seminar ma’lumotlari</h3>
-            <Link to="/tashkilotchi/seminarlar/yangi?tahrir=implant" className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#0c8f86]">
+            <Link to="/tashkilotchi/seminarlar/yangi?tahrir=implant" className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
               <Pencil className="size-3.5" /> Tahrirlash
             </Link>
           </div>
           <div className="mt-3 flex items-center gap-2.5">
             <img src={TEETH} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
             <div className="min-w-0">
-              <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[#0c8f86]">Implantologiya</span>
+              <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
               <p className="mt-1 text-[13px] font-bold leading-snug text-[#123044]">Implantologiya: nazariya va amaliyot</p>
             </div>
           </div>
           <dl className="mt-3 space-y-2">
             {FACTS.map((f) => (
               <div key={f.k} className="flex items-start gap-2 text-[12.5px]">
-                <f.icon className="mt-0.5 size-4 shrink-0 text-[#0c8f86]" strokeWidth={1.8} />
+                <f.icon className="mt-0.5 size-4 shrink-0 text-[var(--color-org-teal)]" strokeWidth={1.8} />
                 <dt className="shrink-0 text-[#8aa0a4]">{f.k}</dt>
                 <dd className="ml-auto text-right font-medium leading-snug text-[#143044]">{f.v}</dd>
               </div>
@@ -322,14 +322,14 @@ function Desktop({ photos, countLabel, rows, all, setAll, over, setOver, onDrop,
             </div>
           </div>
           <div className="mt-2.5 flex items-center justify-between gap-2 rounded-xl bg-[#e7f7f4] px-2.5 py-2.5">
-            <span className="text-[12px] font-bold leading-tight text-[#0c8f86]">Sizga o‘tkaziladigan summa</span>
-            <span className="shrink-0 text-[12.5px] font-bold text-[#0c8f86]">{som(15400000)}</span>
+            <span className="text-[12px] font-bold leading-tight text-[var(--color-org-teal)]">Sizga o‘tkaziladigan summa</span>
+            <span className="shrink-0 text-[12.5px] font-bold text-[var(--color-org-teal)]">{som(15400000)}</span>
           </div>
         </section>
 
         <section className="rounded-2xl bg-[#f3fbf9] p-4">
           <p className="flex items-center gap-2 text-[13.5px] font-bold text-[#123044]">
-            <span className="grid size-5 place-items-center rounded-full text-[#0c8f86]"><Info className="size-4" /></span>
+            <span className="grid size-5 place-items-center rounded-full text-[var(--color-org-teal)]"><Info className="size-4" /></span>
             Muhim ma’lumotlar
           </p>
           <ul className="mt-2.5 space-y-2 text-[12px] leading-[1.45] text-[#3e5962]">
@@ -357,12 +357,12 @@ function DesktopSteps() {
     <section className={`${card} px-6 py-4`}>
       <ol className="relative grid grid-cols-4">
         <span className="absolute top-[13px] h-[2px] bg-[#e6eeed]" style={{ left: '12.5%', right: '12.5%' }} />
-        <span className="absolute top-[13px] h-[2px] bg-[#0c8f86]" style={{ left: '12.5%', width: '25%' }} />
+        <span className="absolute top-[13px] h-[2px] bg-[var(--color-org-teal)]" style={{ left: '12.5%', width: '25%' }} />
         {steps.map((s) => (
           <li key={s.n} className="relative flex flex-col items-center text-center">
-            <span className={`relative z-10 grid size-7 place-items-center rounded-full text-[13px] font-bold ${s.tone === 'wait' ? 'bg-[#eef2f3] text-[#9aadb2]' : 'bg-[#0c8f86] text-white'}`}>{s.n}</span>
+            <span className={`relative z-10 grid size-7 place-items-center rounded-full text-[13px] font-bold ${s.tone === 'wait' ? 'bg-[#eef2f3] text-[#9aadb2]' : 'bg-[var(--color-org-teal)] text-white'}`}>{s.n}</span>
             <p className="mt-2.5 whitespace-nowrap text-[12.5px] font-semibold text-[#143044]">{s.title}</p>
-            <p className={`mt-0.5 text-[11.5px] ${s.tone === 'now' ? 'font-medium text-[#0c8f86]' : 'text-[#8aa0a6]'}`}>{s.sub}</p>
+            <p className={`mt-0.5 text-[11.5px] ${s.tone === 'now' ? 'font-medium text-[var(--color-org-teal)]' : 'text-[#8aa0a6]'}`}>{s.sub}</p>
           </li>
         ))}
       </ol>
@@ -382,13 +382,13 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
       <section className={`${card} flex gap-3 p-3`}>
         <img src={TEETH} alt="" className="h-[76px] w-[76px] shrink-0 rounded-xl object-cover" />
         <div className="min-w-0">
-          <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[#0c8f86]">Implantologiya</span>
+          <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f3] px-2 text-[10.5px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
           <p className="mt-1 text-[14.5px] font-bold leading-tight text-[#123044]">Implantologiya: amaliy kurs</p>
           <p className="mt-1.5 flex items-start gap-1.5 text-[11.5px] leading-snug text-[#5e787e]">
-            <Calendar className="mt-0.5 size-3.5 shrink-0 text-[#0c8f86]" /> 21 oktabr 2026, 09:00 — 18:00
+            <Calendar className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 — 18:00
           </p>
           <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-[#5e787e]">
-            <MapPin className="mt-0.5 size-3.5 shrink-0 text-[#0c8f86]" /> Toshkent City Kongress Markazi
+            <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi
           </p>
         </div>
       </section>
@@ -413,11 +413,11 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
                 <Check className="size-3" strokeWidth={3} />
               </span>
             ) : s.key === 'now' ? (
-              <span className="relative z-10 size-[22px] rounded-full bg-[#0c8f86]" />
+              <span className="relative z-10 size-[22px] rounded-full bg-[var(--color-org-teal)]" />
             ) : (
               <span className="relative z-10 size-[22px] rounded-full border-2 border-[#d5e0e2] bg-white" />
             )}
-            <p className={`mt-2 text-[10.5px] font-semibold leading-tight ${s.key === 'wait' ? 'text-[#93a6ab]' : s.key === 'now' ? 'text-[#0c8f86]' : 'text-[#143044]'}`}>{s.title}</p>
+            <p className={`mt-2 text-[10.5px] font-semibold leading-tight ${s.key === 'wait' ? 'text-[#93a6ab]' : s.key === 'now' ? 'text-[var(--color-org-teal)]' : 'text-[#143044]'}`}>{s.title}</p>
             <p className="mt-0.5 text-[9.5px] leading-tight text-[#8aa0a6]">{s.sub}</p>
             {s.sub2 && <p className="text-[9.5px] leading-tight text-[#8aa0a6]">{s.sub2}</p>}
           </li>
@@ -427,7 +427,7 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
       <section>
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-[15px] font-bold text-[#123044]">Zal fotosuratlari</h3>
-          <button type="button" onClick={() => inputRef.current?.click()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#cfe7e2] bg-white px-2.5 text-[12px] font-semibold text-[#0c8f86]">
+          <button type="button" onClick={() => inputRef.current?.click()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#cfe7e2] bg-white px-2.5 text-[12px] font-semibold text-[var(--color-org-teal)]">
             <Camera className="size-3.5" /> Rasm yuklash
           </button>
         </div>
@@ -459,7 +459,7 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
 
       <section className={`${card} p-3`}>
         <p className="flex items-center gap-2 text-[13.5px] font-bold text-[#123044]">
-          <FileText className="size-4 text-[#0c8f86]" /> Qo‘shimcha ma’lumot
+          <FileText className="size-4 text-[var(--color-org-teal)]" /> Qo‘shimcha ma’lumot
         </p>
         <div className="mt-2 rounded-xl bg-[#f4f7f8] px-3 py-2.5 text-[12.5px] leading-relaxed text-[#3e5560]">
           Seminar reja bo‘yicha o‘tkazildi. Barcha ishtirokchilar qatnashdi.
@@ -468,7 +468,7 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
         </div>
       </section>
 
-      <button type="button" onClick={onAsk} className="flex w-full flex-col items-center justify-center rounded-2xl bg-[#0c8f86] px-4 py-3 text-white shadow-[0_8px_18px_rgb(12_143_134/0.28)]">
+      <button type="button" onClick={onAsk} className="flex w-full flex-col items-center justify-center rounded-2xl bg-[var(--color-org-teal)] px-4 py-3 text-white shadow-[0_8px_18px_rgb(12_143_134/0.28)]">
         <span className="flex items-center gap-2 text-[15.5px] font-semibold"><Send className="size-4" /> Pulni so‘rash</span>
         <span className="mt-0.5 text-[11px] font-medium text-white/85">Seminar o‘tkazilganini tasdiqlash va to‘lovni so‘rash</span>
       </button>
@@ -479,7 +479,7 @@ function Mobile({ photos, add, remove, inputRef, onAsk }) {
 function Stat({ icon: Icon, label, value, hint }) {
   return (
     <div className={`${card} p-2`}>
-      <span className="grid size-7 place-items-center rounded-lg bg-[#e7f6f3] text-[#0c8f86]"><Icon className="size-3.5" strokeWidth={1.8} /></span>
+      <span className="grid size-7 place-items-center rounded-lg bg-[#e7f6f3] text-[var(--color-org-teal)]"><Icon className="size-3.5" strokeWidth={1.8} /></span>
       <p className="mt-1 text-[10px] leading-tight text-[#7e9398]">{label}</p>
       <p className="text-[11.5px] font-bold leading-tight text-[#143044]">{value}</p>
       <p className="mt-0.5 text-[10px] leading-tight text-[#8aa0a4]">{hint}</p>
@@ -488,18 +488,18 @@ function Stat({ icon: Icon, label, value, hint }) {
 }
 
 function Num({ n }) {
-  return <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-[#0c8f86] text-[13px] font-bold text-white">{n}</span>
+  return <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-[var(--color-org-teal)] text-[13px] font-bold text-white">{n}</span>
 }
 
 function MiniCert({ name }) {
   return (
     <div className="relative flex h-[100px] flex-col items-center overflow-hidden rounded-xl border-2 border-[#7dcec4] bg-white text-center">
       <span className="pointer-events-none absolute inset-[3px] rounded-[8px] border border-[#d4f1eb]" />
-      <div className="relative mt-2.5 flex items-center gap-1 text-[#0c8f86]">
+      <div className="relative mt-2.5 flex items-center gap-1 text-[var(--color-org-teal)]">
         <ToothIcon className="size-3.5" />
         <span className="text-[9px] font-bold">StomaHub</span>
       </div>
-      <p className="relative mt-1 text-[8px] font-bold tracking-[0.16em] text-[#0c8f86]">SERTIFIKAT</p>
+      <p className="relative mt-1 text-[8px] font-bold tracking-[0.16em] text-[var(--color-org-teal)]">SERTIFIKAT</p>
       <p className="relative mt-1.5 px-1.5 text-[11.5px] font-semibold leading-tight text-[#163044]">{name}</p>
     </div>
   )

@@ -1,5 +1,5 @@
-export const TEAL = '#00828e'
-export const TEAL_MOBILE = '#027c77'
+export const TEAL = 'var(--color-org-teal)'
+export const TEAL_MOBILE = 'var(--color-org-teal)'
 
 export const STEPS = [
   { id: 'info', title: 'Asosiy ma’lumotlar' },
@@ -44,4 +44,4 @@ export function readImage(file, onOk, onBad) {
   onOk(URL.createObjectURL(file))
 }
 
-export const box = 'h-10 w-full rounded-xl border border-[#e3eeec] bg-white px-3 text-[13px] text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-[#00828e]'
+export const box = 'h-10 w-full rounded-xl border border-[#e3eeec] bg-white px-3 text-[13px] text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-org-teal'

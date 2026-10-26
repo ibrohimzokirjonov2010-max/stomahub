@@ -89,7 +89,7 @@ export function Reports() {
           </table>
         </div>
       </Card>
-      <Link to="/tashkilotchi/seminarlar/implant/tasdiqlash" className="mt-3 inline-block text-[13px] font-semibold text-[#0c8f86]">O‘tkazilganini tasdiqlash →</Link>
+      <Link to="/tashkilotchi/seminarlar/implant/tasdiqlash" className="mt-3 inline-block text-[13px] font-semibold text-[var(--color-org-teal)]">O‘tkazilganini tasdiqlash →</Link>
     </div>
   )
 }
@@ -156,7 +156,7 @@ export function HelpPage() {
       </div>
       <Card className="mt-3" title="Aloqa">
         <textarea className={`${inputCls()} h-24 py-2`} value={text} onChange={(e) => setText(e.target.value)} placeholder="Savolingizni yozing..." />
-        {sent && <p className="mt-2 text-[12.5px] text-[#0c8f86]">Xabar qabul qilindi.</p>}
+        {sent && <p className="mt-2 text-[12.5px] text-[var(--color-org-teal)]">Xabar qabul qilindi.</p>}
         <Btn className="mt-3" onClick={() => { if (text.trim().length < 5) return; setSent(true); setText(''); notify('Xabar yuborildi') }}>Yuborish</Btn>
       </Card>
     </div>

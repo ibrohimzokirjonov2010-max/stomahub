@@ -102,9 +102,9 @@ function DesktopTickets() {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <p className="whitespace-nowrap text-[12px] text-[#8aa0a4]">
-            <Link to="/tashkilotchi" className="text-[#0c8f86] hover:underline">Boshqaruv paneli</Link>
+            <Link to="/tashkilotchi" className="text-[var(--color-org-teal)] hover:underline">Boshqaruv paneli</Link>
             <span className="px-1.5 text-[#b7c6c8]">›</span>
-            <Link to="/tashkilotchi/seminarlar" className="text-[#0c8f86] hover:underline">Mening seminarlarim</Link>
+            <Link to="/tashkilotchi/seminarlar" className="text-[var(--color-org-teal)] hover:underline">Mening seminarlarim</Link>
             <span className="px-1.5 text-[#b7c6c8]">›</span>
             <span className="text-[#5e787e]">Chiptalar</span>
           </p>
@@ -118,9 +118,9 @@ function DesktopTickets() {
           <div className="min-w-0">
             <p className="truncate text-[15px] font-bold leading-tight text-[#143044]">Implantologiya: nazariya va amaliyot</p>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[#5e787e]">
-              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#0c8f86]" /> 24-noyabr 2026</span>
-              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#0c8f86]" /> Toshkent</span>
-              <span className="inline-flex h-5 items-center rounded-full border border-[#b7e3da] bg-[#f3fbfa] px-2 text-[11px] font-semibold text-[#0c8f86]">Offline</span>
+              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> 24-noyabr 2026</span>
+              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> Toshkent</span>
+              <span className="inline-flex h-5 items-center rounded-full border border-[#b7e3da] bg-[#f3fbfa] px-2 text-[11px] font-semibold text-[var(--color-org-teal)]">Offline</span>
             </p>
           </div>
         </div>
@@ -136,7 +136,7 @@ function DesktopTickets() {
 
       <div className="mt-3.5 flex flex-wrap gap-2">
         {PILL_TABS.map((t) => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)} className={cx('h-9 rounded-full px-3.5 text-[12.5px] font-semibold', tab === t.id ? 'bg-[#0c8f86] text-white' : 'border border-[#e4eeec] bg-white text-[#3e5a62] hover:bg-[#f6fbfa]')}>
+          <button key={t.id} type="button" onClick={() => setTab(t.id)} className={cx('h-9 rounded-full px-3.5 text-[12.5px] font-semibold', tab === t.id ? 'bg-[var(--color-org-teal)] text-white' : 'border border-[#e4eeec] bg-white text-[#3e5a62] hover:bg-[#f6fbfa]')}>
             {t.id === 'types' ? `Chipta turlari (${rows.length})` : t.label}
           </button>
         ))}
@@ -185,7 +185,7 @@ function DesktopTickets() {
                           </td>
                           <td className="px-2 py-3">
                             <span className="inline-flex items-center">
-                              <button type="button" aria-label="Tahrirlash" onClick={() => { setEditing(t); setOpen(true) }} className="grid size-8 place-items-center text-[#0c8f86]"><Pencil className="size-4" /></button>
+                              <button type="button" aria-label="Tahrirlash" onClick={() => { setEditing(t); setOpen(true) }} className="grid size-8 place-items-center text-[var(--color-org-teal)]"><Pencil className="size-4" /></button>
                               <MenuBtn items={[
                                 { label: t.active ? 'Nofaol qilish' : 'Faol qilish', onClick: () => setRows((list) => list.map((x) => x.id === t.id ? { ...x, active: !x.active } : x)) },
                                 { label: 'O‘chirish', danger: true, onClick: () => setRows((list) => list.filter((x) => x.id !== t.id)) },
@@ -214,7 +214,7 @@ function DesktopTickets() {
           </div>
 
           <div className="space-y-3">
-            <Panel title="Chipta ko‘rinishi (namuna)" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[#0c8f86]">Dizaynni sozlash</button>}>
+            <Panel title="Chipta ko‘rinishi (namuna)" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Dizaynni sozlash</button>}>
               <VipTicket />
               <Btn className="mt-3 w-full" onClick={() => notify('QR kod yuklab olindi')}><Download className="size-4" /> QR kodni yuklab olish</Btn>
             </Panel>
@@ -303,8 +303,8 @@ function MobileTickets() {
         <div className="min-w-0 py-0.5">
           <p className="text-[11.5px] text-[#8b93a7]">Implantologiya</p>
           <p className="text-[15px] font-bold leading-tight text-[#24185f]">Implantologiya: amaliy kurs</p>
-          <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[#0c8f86]" /> 21 oktabr 2026, 09:00 – 18:00</p>
-          <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[#0c8f86]" /> Toshkent City Kongress Markazi</p>
+          <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 – 18:00</p>
+          <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi</p>
         </div>
       </section>
 
@@ -332,9 +332,9 @@ function MobileTickets() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-[16px] font-bold leading-tight text-[#143044]">{t.name}</p>
-                    <p className="mt-0.5 text-[15px] font-bold leading-tight text-[#0c8f86]">{som(t.price)}</p>
+                    <p className="mt-0.5 text-[15px] font-bold leading-tight text-[var(--color-org-teal)]">{som(t.price)}</p>
                   </div>
-                  <button type="button" onClick={() => { setEditing(t); setOpen(true) }} className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-semibold text-[#0c8f86]">
+                  <button type="button" onClick={() => { setEditing(t); setOpen(true) }} className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
                     <Pencil className="size-3.5" /> Tahrirlash
                   </button>
                 </div>
@@ -363,7 +363,7 @@ function MobileTickets() {
         ))}
       </div>
 
-      <button type="button" onClick={() => { setEditing(null); setOpen(true) }} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#e5f7f4] text-[14.5px] font-semibold text-[#0c8f86]">
+      <button type="button" onClick={() => { setEditing(null); setOpen(true) }} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#e5f7f4] text-[14.5px] font-semibold text-[var(--color-org-teal)]">
         <Plus className="size-4" /> Chipta turi qo‘shish
       </button>
 
@@ -378,7 +378,7 @@ function MobileTickets() {
 }
 
 function MobileTab({ icon: Icon, label, active, to }) {
-  const cls = cx('inline-flex items-center gap-1 text-[11.5px] font-semibold', active ? 'text-[#0c8f86]' : 'text-[#8d95a8]')
+  const cls = cx('inline-flex items-center gap-1 text-[11.5px] font-semibold', active ? 'text-[var(--color-org-teal)]' : 'text-[#8d95a8]')
   const inner = (<><Icon className="size-4" strokeWidth={1.8} />{label}</>)
   if (to) return <Link to={to} className={cls}>{inner}</Link>
   return <span className={cls}>{inner}</span>
@@ -387,7 +387,7 @@ function MobileTab({ icon: Icon, label, active, to }) {
 function Kpi({ icon: Icon, label, value, delta, down }) {
   return (
     <article className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-3 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f6f3] text-[#0c8f86]">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f6f3] text-[var(--color-org-teal)]">
         <Icon className="size-[18px]" strokeWidth={1.75} />
       </span>
       <div className="min-w-0">
@@ -553,7 +553,7 @@ function QuickGrid({ notify, onQr, onPromo }) {
     <div className="grid grid-cols-2 gap-x-2 gap-y-3">
       {items.map((it) => (
         <button key={it.label} type="button" onClick={it.onClick} className="flex items-center gap-2 rounded-xl px-0.5 py-1 text-left hover:bg-[#f4fbfb]">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f6f3] text-[#0c8f86]">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e7f6f3] text-[var(--color-org-teal)]">
             <it.icon className="size-4" strokeWidth={1.8} />
           </span>
           <span className="text-[11.5px] font-medium leading-tight text-[#1c3d48]">{it.label}</span>

@@ -8,10 +8,10 @@ export const cx = (...a) => a.filter(Boolean).join(' ')
 export function Btn({ children, onClick, to, kind = 'primary', type = 'button', disabled, className, ariaLabel }) {
   const cls = cx(
     'inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
-    kind === 'primary' && 'bg-[#0c8f86] text-white shadow-[0_6px_14px_rgb(12_143_134/0.25)] hover:bg-[#0a7e76]',
-    kind === 'ghost' && 'border border-[#d5ebe6] bg-white text-[#0c8f86] hover:bg-[#f3fbfa]',
+    kind === 'primary' && 'bg-[var(--color-org-teal)] text-white shadow-[0_6px_14px_rgb(12_143_134/0.25)] hover:bg-[#0a7e76]',
+    kind === 'ghost' && 'border border-[#d5ebe6] bg-white text-[var(--color-org-teal)] hover:bg-[#f3fbfa]',
     kind === 'soft' && 'border border-[#e4eeec] bg-white text-[#1c4a5a] hover:bg-[#f7fbfb]',
-    kind === 'danger' && 'bg-[#0c8f86] text-white hover:bg-[#0a7e76]',
+    kind === 'danger' && 'bg-[var(--color-org-teal)] text-white hover:bg-[#0a7e76]',
     className,
   )
   if (to) return <Link to={to} className={cls} aria-label={ariaLabel}>{children}</Link>
@@ -24,7 +24,7 @@ export function Crumb({ items }) {
       {items.map((it, i) => (
         <span key={it.label} className="inline-flex items-center gap-1">
           {i > 0 && <ChevronRight className="size-3" />}
-          {it.to ? <Link to={it.to} className="hover:text-[#0c8f86]">{it.label}</Link> : <span className={i === items.length - 1 ? 'text-[#5e787e]' : ''}>{it.label}</span>}
+          {it.to ? <Link to={it.to} className="hover:text-[var(--color-org-teal)]">{it.label}</Link> : <span className={i === items.length - 1 ? 'text-[#5e787e]' : ''}>{it.label}</span>}
         </span>
       ))}
     </nav>
@@ -62,9 +62,9 @@ const TONE = {
   green: 'bg-[#e7f8ee] text-[#16a34a]',
   orange: 'bg-[#fff4e0] text-[#d0890b]',
   red: 'bg-[#fde8ee] text-[#e11d48]',
-  teal: 'bg-[#e7f6f3] text-[#0c8f86]',
+  teal: 'bg-[#e7f6f3] text-[var(--color-org-teal)]',
   slate: 'bg-[#eef2f3] text-[#5f7278]',
-  outline: 'border border-[#bfe3da] bg-[#f6fdfb] text-[#0c8f86]',
+  outline: 'border border-[#bfe3da] bg-[#f6fdfb] text-[var(--color-org-teal)]',
   pink: 'bg-[#fdecef] text-[#e11d48]',
 }
 
@@ -77,7 +77,7 @@ export function Badge({ tone = 'green', children, dot, className }) {
   )
 }
 
-export function Kpi({ icon: Icon, label, value, delta, hint, hintClass, down, foot, progress, iconBg = 'bg-[#e7f7f4] text-[#0c8f86]' }) {
+export function Kpi({ icon: Icon, label, value, delta, hint, hintClass, down, foot, progress, iconBg = 'bg-[#e7f7f4] text-[var(--color-org-teal)]' }) {
   return (
     <article className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e6f1ef] bg-white px-4 py-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
       <span className={cx('grid size-11 shrink-0 place-items-center rounded-2xl', iconBg)}><Icon className="size-5" strokeWidth={1.8} /></span>
@@ -150,7 +150,7 @@ export function Select({ value, onChange, options, className }) {
         <ul className="absolute left-0 z-30 mt-1 max-h-64 w-full min-w-[180px] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
           {options.map((o) => (
             <li key={o.value}>
-              <button type="button" className={cx('block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa]', o.value === value && 'font-semibold text-[#0c8f86]')} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
+              <button type="button" className={cx('block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa]', o.value === value && 'font-semibold text-[var(--color-org-teal)]')} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
             </li>
           ))}
         </ul>
@@ -172,7 +172,7 @@ export function Tabs({ tabs, value, onChange }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {tabs.map((t) => (
-        <button key={t.id} type="button" onClick={() => onChange(t.id)} className={cx('h-9 rounded-full px-3 text-[12.5px] font-semibold', value === t.id ? 'bg-[#0c8f86] text-white' : 'border border-[#e5eeec] bg-white text-[#3e5a62] hover:bg-[#f6fbfa]')}>
+        <button key={t.id} type="button" onClick={() => onChange(t.id)} className={cx('h-9 rounded-full px-3 text-[12.5px] font-semibold', value === t.id ? 'bg-[var(--color-org-teal)] text-white' : 'border border-[#e5eeec] bg-white text-[#3e5a62] hover:bg-[#f6fbfa]')}>
           {t.label}
         </button>
       ))}
@@ -190,7 +190,7 @@ export function Field({ label, req, error, children, hint }) {
   )
 }
 
-export const inputCls = (bad) => cx('h-10 w-full rounded-xl border bg-white px-3 text-[13px] text-[#143044] outline-none placeholder:text-[#9aafb4]', bad ? 'border-[#e11d48]' : 'border-[#e3eeec] focus:border-[#0c8f86]')
+export const inputCls = (bad) => cx('h-10 w-full rounded-xl border bg-white px-3 text-[13px] text-[#143044] outline-none placeholder:text-[#9aafb4]', bad ? 'border-[#e11d48]' : 'border-[#e3eeec] focus:border-[var(--color-org-teal)]')
 
 export function Modal({ open, title, sub, onClose, children, width = 440 }) {
   useEffect(() => {
@@ -241,7 +241,7 @@ export function Pager({ page, pages, from, to, total, per, onPage, onPer, perOpt
         <button type="button" aria-label="Oldingi" disabled={page <= 1} onClick={() => onPage(page - 1)} className="grid size-8 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronLeft className="size-4" /></button>
         {pageWindow(page, pages).map((n, i) => n === '…'
           ? <span key={`e${i}`} className="px-1 text-[12px] text-[#8aa0a4]">…</span>
-          : <button key={n} type="button" onClick={() => onPage(n)} className={cx('grid h-8 min-w-8 place-items-center rounded-lg px-2 text-[12.5px] font-semibold', n === page ? 'bg-[#0c8f86] text-white' : 'text-[#3e5a62] hover:bg-[#f4fbfa]')}>{n}</button>)}
+          : <button key={n} type="button" onClick={() => onPage(n)} className={cx('grid h-8 min-w-8 place-items-center rounded-lg px-2 text-[12.5px] font-semibold', n === page ? 'bg-[var(--color-org-teal)] text-white' : 'text-[#3e5a62] hover:bg-[#f4fbfa]')}>{n}</button>)}
         <button type="button" aria-label="Keyingi" disabled={page >= pages} onClick={() => onPage(page + 1)} className="grid size-8 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronRight className="size-4" /></button>
       </div>
     </div>
@@ -423,7 +423,7 @@ export function MenuBtn({ items }) {
 
 export function Toggle({ on, onChange, label }) {
   return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label || 'Holat'} onClick={() => onChange(!on)} className={cx('relative h-6 w-11 rounded-full transition', on ? 'bg-[#0c8f86]' : 'bg-[#d5e0e2]')}>
+    <button type="button" role="switch" aria-checked={on} aria-label={label || 'Holat'} onClick={() => onChange(!on)} className={cx('relative h-6 w-11 rounded-full transition', on ? 'bg-[var(--color-org-teal)]' : 'bg-[#d5e0e2]')}>
       <span className={cx('absolute top-0.5 size-5 rounded-full bg-white shadow transition', on ? 'left-[22px]' : 'left-0.5')} />
     </button>
   )
@@ -445,7 +445,7 @@ export function CertificateCard({ name, course, date = '24-noyabr 2026', templat
     <div className={cx('relative aspect-[1.35/1] overflow-hidden rounded-xl bg-gradient-to-br p-3 shadow-sm', skin, light ? 'border border-[#e6d7b0] text-[#143044]' : 'text-white')}>
       <div className={cx('flex h-full flex-col rounded-lg border p-4', light ? 'border-[#e4d3a4]' : 'border-[#f3e6c0]/80')}>
         <div className="flex items-center gap-1.5 text-[12px] font-semibold">
-          <span className={cx('grid size-5 place-items-center rounded-full text-[10px]', light ? 'bg-[#0c8f86] text-white' : 'bg-white/15')}>⌂</span>
+          <span className={cx('grid size-5 place-items-center rounded-full text-[10px]', light ? 'bg-[var(--color-org-teal)] text-white' : 'bg-white/15')}>⌂</span>
           StomaHub
         </div>
         <p className={cx('mt-3 text-center text-[18px] font-semibold tracking-[0.18em]', light ? 'text-[#0c6e72]' : 'text-[#f6e7c1]')}>SERTIFIKAT</p>

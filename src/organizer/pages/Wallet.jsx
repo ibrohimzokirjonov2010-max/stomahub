@@ -113,7 +113,7 @@ function DesktopWallet() {
 
           <section className="rounded-2xl border border-[#d7f0ea] bg-[#f4fbfa] px-4 py-3.5">
             <div className="flex items-center gap-2">
-              <span className="grid size-7 place-items-center rounded-lg bg-white text-[14px] font-bold text-[#0c8f86]">%</span>
+              <span className="grid size-7 place-items-center rounded-lg bg-white text-[14px] font-bold text-[var(--color-org-teal)]">%</span>
               <h2 className="text-[14px] font-bold">Komissiya hisoblash misoli</h2>
             </div>
             <p className="mt-1 text-[12.5px] text-[#5e787e]">Platforma komissiyasi har bir to‘lov summasidan 12% ni tashkil qiladi.</p>
@@ -141,7 +141,7 @@ function DesktopWallet() {
                 <ul className="absolute right-0 z-30 mt-1 w-40 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
                   {FILTERS.map((f) => (
                     <li key={f.value}>
-                      <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${f.value === filter ? 'font-semibold text-[#0c8f86]' : ''}`} onClick={() => { setFilter(f.value); setFilterOpen(false) }}>{f.label}</button>
+                      <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${f.value === filter ? 'font-semibold text-[var(--color-org-teal)]' : ''}`} onClick={() => { setFilter(f.value); setFilterOpen(false) }}>{f.label}</button>
                     </li>
                   ))}
                 </ul>
@@ -173,7 +173,7 @@ function DesktopWallet() {
                     <tr key={t.date + t.seminar} className="border-b border-[#f3f7f6] last:border-0">
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{t.date}</td>
                       <td className="px-2 py-2.5 align-middle text-[12px] font-medium leading-snug">
-                        <Link to="/tashkilotchi/seminarlar/implant" className="line-clamp-2 text-[#143044] hover:text-[#0c8f86]">{t.seminar}</Link>
+                        <Link to="/tashkilotchi/seminarlar/implant" className="line-clamp-2 text-[#143044] hover:text-[var(--color-org-teal)]">{t.seminar}</Link>
                       </td>
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px]">{som(t.sum)}</td>
                       <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{som(t.fee)}</td>
@@ -199,7 +199,7 @@ function DesktopWallet() {
         <div className="w-[240px] space-y-3">
           <section className="rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <h2 className="flex items-center gap-1.5 text-[13.5px] font-bold leading-tight">
-              <FileText className="size-4 shrink-0 text-[#0c8f86]" strokeWidth={1.8} />
+              <FileText className="size-4 shrink-0 text-[var(--color-org-teal)]" strokeWidth={1.8} />
               Pul yechish so‘rovi
             </h2>
             <p className="mt-2.5 text-[12px] text-[#6e868c]">Yechib olish mumkin bo‘lgan summa</p>
@@ -207,7 +207,7 @@ function DesktopWallet() {
 
             <label className="mt-3 block">
               <span className="mb-1.5 block text-[12.5px] font-medium text-[#1c4a5a]">Yechib olish summasi</span>
-              <span className={`flex h-10 items-center gap-2 rounded-xl border bg-white px-2.5 ${err ? 'border-[#e11d48]' : 'border-[#e3eeec] focus-within:border-[#0c8f86]'}`}>
+              <span className={`flex h-10 items-center gap-2 rounded-xl border bg-white px-2.5 ${err ? 'border-[#e11d48]' : 'border-[#e3eeec] focus-within:border-[var(--color-org-teal)]'}`}>
                 <input
                   value={amount}
                   onChange={(e) => { setAmount(moneyInput(e.target.value)); setErr(''); setSent(false) }}
@@ -227,7 +227,7 @@ function DesktopWallet() {
             <p className="mb-1.5 mt-3 text-[12.5px] font-semibold">Saqlangan rekvizitlar</p>
             <div className="relative">
               <button type="button" onClick={() => setCardOpen((v) => !v)} className={`flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === '4521' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]"><CreditCard className="size-3.5" strokeWidth={1.8} /></span>
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]"><CreditCard className="size-3.5" strokeWidth={1.8} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[12.5px] font-semibold leading-tight">Karta **** 4521</span>
                   <span className="mt-0.5 block text-[11px] text-[#7e9398]">Humo · 04/28</span>
@@ -243,26 +243,27 @@ function DesktopWallet() {
               )}
             </div>
             <button type="button" onClick={() => { setPicked('bank'); setMethod('bank'); setCardOpen(false) }} className={`mt-2 flex w-full items-start gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === 'bank' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]"><Landmark className="size-3.5" strokeWidth={1.8} /></span>
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]"><Landmark className="size-3.5" strokeWidth={1.8} /></span>
               <span className="min-w-0">
                 <span className="block text-[12.5px] font-semibold leading-tight">Aloqabank</span>
                 <span className="mt-0.5 block text-[11px] leading-snug text-[#7e9398]">MFO: 00487</span>
-                <span className="block text-[11px] leading-snug text-[#7e9398]">Hisob raqami: 2020 8000 1234 5678 9001</span>
+                <span className="mt-1 block text-[11px] leading-none text-[#7e9398]">Hisob raqami</span>
+                <span className="mt-0.5 block whitespace-nowrap text-[11px] font-semibold tracking-tight text-[#143044]">2020&nbsp;8000&nbsp;1234&nbsp;5678&nbsp;9001</span>
               </span>
             </button>
 
-            <button type="button" onClick={() => setAddOpen(true)} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[#0c8f86]">
+            <button type="button" onClick={() => setAddOpen(true)} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-org-teal)]">
               <Plus className="size-3.5" strokeWidth={2.4} /> Rekvizit qo‘shish
             </button>
             {sent && <p className="mt-2 rounded-lg bg-[#e7f8ee] px-2.5 py-1.5 text-[12px] text-[#15803d]">{som(n)} so‘rovi qabul qilindi. 1–3 ish kuni.</p>}
-            <button type="button" onClick={submit} className="mt-3 flex h-10 w-full items-center justify-center rounded-xl bg-[#0c8f86] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">
+            <button type="button" onClick={submit} className="mt-3 flex h-10 w-full items-center justify-center rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">
               So‘rov yuborish →
             </button>
           </section>
 
           <section className="rounded-2xl border border-[#e3f3ef] bg-[#f4fbfa] p-3.5">
             <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
-              <span className="grid size-5 place-items-center rounded-full bg-white text-[#0c8f86]"><Info className="size-3.5" strokeWidth={2.2} /></span>
+              <span className="grid size-5 place-items-center rounded-full bg-white text-[var(--color-org-teal)]"><Info className="size-3.5" strokeWidth={2.2} /></span>
               Muhim ma’lumotlar
             </h2>
             <ul className="mt-2 list-disc space-y-1.5 pl-4 text-[12px] leading-snug text-[#3e5a62]">
@@ -280,7 +281,7 @@ function DesktopWallet() {
 function Balance({ icon: Icon, title, value, text, info }) {
   return (
     <article className="rounded-2xl border border-[#e6f1ef] bg-white px-3.5 py-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-      <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+      <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
         <Icon className="size-4" strokeWidth={1.8} />
       </span>
       <p className="mt-2.5 flex items-center gap-1 text-[12.5px] text-[#6e868c]">
@@ -309,8 +310,8 @@ function Calc({ n, l, hi }) {
 function Radio({ checked, label, onChange }) {
   return (
     <button type="button" onClick={onChange} className="flex w-full items-center gap-2 py-1 text-left text-[12.5px] text-[#143044]">
-      <span className={`grid size-[18px] shrink-0 place-items-center rounded-full border-2 ${checked ? 'border-[#0c8f86]' : 'border-[#c9d6d8]'}`}>
-        {checked && <span className="size-2.5 rounded-full bg-[#0c8f86]" />}
+      <span className={`grid size-[18px] shrink-0 place-items-center rounded-full border-2 ${checked ? 'border-[var(--color-org-teal)]' : 'border-[#c9d6d8]'}`}>
+        {checked && <span className="size-2.5 rounded-full bg-[var(--color-org-teal)]" />}
       </span>
       {label}
     </button>
@@ -333,13 +334,13 @@ function AddRequisite({ onClose, onSave }) {
           <button type="button" aria-label="Yopish" onClick={onClose} className="grid size-8 place-items-center rounded-lg text-[#6e868c]"><X className="size-4" /></button>
         </div>
         <label className="mt-3 block text-[12.5px] font-medium">Nomi
-          <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[#0c8f86]" placeholder="Karta yoki bank" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" placeholder="Karta yoki bank" />
         </label>
         <label className="mt-3 block text-[12.5px] font-medium">Raqam
-          <input value={detail} onChange={(e) => setDetail(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[#0c8f86]" placeholder="Hisob yoki karta raqami" />
+          <input value={detail} onChange={(e) => setDetail(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" placeholder="Hisob yoki karta raqami" />
         </label>
         {bad && <p className="mt-2 text-[12px] text-[#e11d48]">Ikkala maydonni ham to‘ldiring</p>}
-        <button type="submit" className="mt-3 h-10 w-full rounded-xl bg-[#0c8f86] text-[13px] font-semibold text-white">Saqlash</button>
+        <button type="submit" className="mt-3 h-10 w-full rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white">Saqlash</button>
       </form>
     </div>
   )
@@ -375,7 +376,7 @@ function MobileWallet() {
           <Flow icon={WalletIcon} label="Sizga" value="8 800 000" />
         </div>
         <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-snug text-[#6e868c]">
-          <Info className="mt-0.5 size-3.5 shrink-0 text-[#0c8f86]" />
+          <Info className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
           Komissiya har bir muvaffaqiyatli to‘lovdan avtomatik hisoblanadi.
         </p>
       </section>
@@ -383,13 +384,13 @@ function MobileWallet() {
       <section className="relative mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-3 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-[15px] font-bold">Pul yechish</h2>
-          <button type="button" onClick={() => setCardOpen((v) => !v)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0c8f86]">
+          <button type="button" onClick={() => setCardOpen((v) => !v)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-org-teal)]">
             <CreditCard className="size-3.5" /> Karta o‘zgartirish
           </button>
         </div>
         <p className="mt-0.5 text-[12px] text-[#6e868c]">Mablag‘ni o‘z karta hisobingizga o‘tkazing.</p>
         <button type="button" onClick={() => setCardOpen((v) => !v)} className="mt-3 flex h-12 w-full items-center gap-2.5 rounded-xl bg-[#f4fbfa] px-3 text-left">
-          <span className="grid size-8 place-items-center rounded-lg bg-white text-[#0c8f86]"><CreditCard className="size-4" /></span>
+          <span className="grid size-8 place-items-center rounded-lg bg-white text-[var(--color-org-teal)]"><CreditCard className="size-4" /></span>
           <span className="flex-1 text-[14px] font-semibold tracking-wide">**** 4521</span>
           <ChevronDown className="size-4 text-[#8aa4a8]" />
         </button>
@@ -398,14 +399,14 @@ function MobileWallet() {
             <p className="px-2 py-1.5 text-[12.5px] font-semibold">Karta **** 4521 · Humo 04/28</p>
           </div>
         )}
-        <button type="button" onClick={() => notify('8 800 000 so‘m yechish so‘rovi yuborildi')} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0c8f86] text-[15px] font-semibold text-white">
+        <button type="button" onClick={() => notify('8 800 000 so‘m yechish so‘rovi yuborildi')} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-org-teal)] text-[15px] font-semibold text-white">
           <Upload className="size-4" strokeWidth={2.2} /> Pul yechish
         </button>
       </section>
 
       <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5">
         {MOBILE_FILTERS.map((f) => (
-          <button key={f.id} type="button" onClick={() => setFilter(f.id)} className={`h-8 shrink-0 rounded-full px-3 text-[12.5px] font-semibold ${filter === f.id ? 'bg-[#0c8f86] text-white' : 'border border-[#e5eeec] bg-white text-[#3e5a62]'}`}>
+          <button key={f.id} type="button" onClick={() => setFilter(f.id)} className={`h-8 shrink-0 rounded-full px-3 text-[12.5px] font-semibold ${filter === f.id ? 'bg-[var(--color-org-teal)] text-white' : 'border border-[#e5eeec] bg-white text-[#3e5a62]'}`}>
             {f.label}
           </button>
         ))}
@@ -451,7 +452,7 @@ function MiniStat({ icon: Icon, label, value, help }) {
       {help && (
         <CircleHelp className="absolute right-1.5 top-1.5 size-3.5 text-[#9bb0b6]" strokeWidth={1.8} aria-label={label} />
       )}
-      <span className="grid size-7 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]">
+      <span className="grid size-7 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]">
         <Icon className="size-3.5" strokeWidth={1.8} />
       </span>
       <p className="mt-2 min-h-[26px] pr-1 text-[10px] leading-tight text-[#6e868c]">{label}</p>
@@ -464,7 +465,7 @@ function MiniStat({ icon: Icon, label, value, help }) {
 function Flow({ icon: Icon, label, value }) {
   return (
     <div className="min-w-0 text-center">
-      <span className="mx-auto grid size-8 place-items-center rounded-xl bg-white text-[#0c8f86] shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+      <span className="mx-auto grid size-8 place-items-center rounded-xl bg-white text-[var(--color-org-teal)] shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
         <Icon className="size-4" strokeWidth={1.8} />
       </span>
       <p className="mt-1.5 text-[10px] leading-tight text-[#6e868c]">{label}</p>

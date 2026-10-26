@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Calendar, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, Download, Ellipsis,
-  Filter, House, Mail, MapPin, MessageSquare, MoreVertical, Pencil, QrCode, Search, Send, Shield, Users, Wallet,
+  Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, Download,
+  Filter, Mail, MapPin, MessageSquare, Pencil, QrCode, Search, Send, Shield, Users,
 } from 'lucide-react'
 import { CERTS } from '../data'
 import { useOrg } from '../Shell'
@@ -98,8 +98,6 @@ export default function Certificates() {
 
   const [mobile, setMobile] = useState(buildMobile)
   const [mTab, setMTab] = useState('all')
-  const [mSeek, setMSeek] = useState(false)
-  const [mq, setMq] = useState('')
 
   useEffect(() => { setPage(1) }, [q, tab, state, ticket, query, per])
 
@@ -164,8 +162,6 @@ export default function Certificates() {
   const mRows = mobile.filter((r) => {
     if (mTab === 'done' && r.state !== 'done') return false
     if (mTab === 'wait' && r.state !== 'wait') return false
-    const s = mq.trim().toLowerCase()
-    if (s && !`${r.name} ${r.phone}`.toLowerCase().includes(s)) return false
     return true
   })
 
@@ -177,14 +173,6 @@ export default function Certificates() {
   return (
     <>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" />
-      <style>{`
-        @media (max-width: 1023.98px) {
-          main:has(.cert-mobile) { padding: 0 !important; background: #fff; }
-          main:has(.cert-mobile) > .mb-3 { display: none !important; }
-          div:has(main .cert-mobile) > header { display: none !important; }
-        }
-      `}</style>
-
       <div className="hidden lg:block">
         <Desktop
           counts={counts}
@@ -231,10 +219,6 @@ export default function Certificates() {
           counts={mCounts}
           tab={mTab}
           setTab={setMTab}
-          seek={mSeek}
-          setSeek={setMSeek}
-          q={mq}
-          setQ={setMq}
           onSendAll={() => {
             setMobile((list) => list.map((r) => (r.state === 'wait' ? { ...r, state: 'done', date: '21.10.2026' } : r)))
             notify('Sertifikatlar yuborildi')
@@ -261,11 +245,11 @@ export default function Certificates() {
           </div>
           <div className="rounded-xl border border-[#e6f1ef] px-3 py-2">
             <p className="text-[#8aa0a4]">QR tekshirish</p>
-            <p className="font-semibold text-[#0c8f86]">Yoqilgan</p>
+            <p className="font-semibold text-[var(--color-org-teal)]">Yoqilgan</p>
           </div>
         </div>
         <div className="mt-4 flex justify-end">
-          <button type="button" onClick={() => { setTpl(false); notify('Shablon saqlandi') }} className="h-10 rounded-xl bg-[#0e8078] px-4 text-[13px] font-semibold text-white">Saqlash</button>
+          <button type="button" onClick={() => { setTpl(false); notify('Shablon saqlandi') }} className="h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Saqlash</button>
         </div>
       </Modal>
 
@@ -278,9 +262,9 @@ export default function Certificates() {
       </Modal>
 
       <Modal open={note} title="Izoh" onClose={() => setNote(false)} width={420}>
-        <textarea className="h-24 w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 text-[13px] outline-none focus:border-[#0c8f86]" placeholder="Sertifikat bo‘yicha izoh..." />
+        <textarea className="h-24 w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 text-[13px] outline-none focus:border-[var(--color-org-teal)]" placeholder="Sertifikat bo‘yicha izoh..." />
         <div className="mt-3 flex justify-end">
-          <button type="button" onClick={() => { setNote(false); notify('Izoh saqlandi') }} className="h-10 rounded-xl bg-[#0e8078] px-4 text-[13px] font-semibold text-white">Saqlash</button>
+          <button type="button" onClick={() => { setNote(false); notify('Izoh saqlandi') }} className="h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Saqlash</button>
         </div>
       </Modal>
     </>
@@ -302,11 +286,11 @@ function Desktop(p) {
           <p className="mt-0.5 text-[13px] text-[#8aa0a4]">Seminar ishtirokchilari uchun elektron sertifikatlarni boshqaring</p>
         </div>
         <nav className="flex shrink-0 items-center gap-1 pt-1 text-[12px] text-[#9aafb4]">
-          <Link to="/tashkilotchi" className="hover:text-[#0c8f86]">Boshqaruv paneli</Link>
+          <Link to="/tashkilotchi" className="hover:text-[var(--color-org-teal)]">Boshqaruv paneli</Link>
           <span>›</span>
-          <Link to="/tashkilotchi/seminarlar" className="hover:text-[#0c8f86]">Mening seminarlarim</Link>
+          <Link to="/tashkilotchi/seminarlar" className="hover:text-[var(--color-org-teal)]">Mening seminarlarim</Link>
           <span>›</span>
-          <Link to="/tashkilotchi/seminarlar/implant" className="hover:text-[#0c8f86]">Implantologiya</Link>
+          <Link to="/tashkilotchi/seminarlar/implant" className="hover:text-[var(--color-org-teal)]">Implantologiya</Link>
           <span>›</span>
           <span className="text-[#6e868c]">Sertifikatlar</span>
         </nav>
@@ -341,7 +325,7 @@ function Desktop(p) {
               type="button"
               onClick={() => p.setTab(t.id)}
               className={t.id === p.tab
-                ? 'h-9 shrink-0 rounded-full bg-[#0e8078] px-3.5 text-[12.5px] font-semibold text-white'
+                ? 'h-9 shrink-0 rounded-full bg-[var(--color-org-teal)] px-3.5 text-[12.5px] font-semibold text-white'
                 : 'h-9 shrink-0 rounded-full px-3 text-[12.5px] font-medium text-[#8aa0a4] hover:text-[#3e5a62]'}
             >
               {t.label}
@@ -349,7 +333,7 @@ function Desktop(p) {
           ))}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <button type="button" onClick={p.onTpl} className="h-9 rounded-xl border border-[#b7e4dc] bg-white px-3 text-[12.5px] font-semibold text-[#0c8f86] hover:bg-[#f4fbfa]">
+          <button type="button" onClick={p.onTpl} className="h-9 rounded-xl border border-[#b7e4dc] bg-white px-3 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]">
             Sertifikat shablonini sozlash
           </button>
           <button type="button" aria-label="Izoh" onClick={p.onNote} className="grid size-9 place-items-center rounded-xl border border-[#e4eeec] bg-white text-[#5e787e] hover:bg-[#f7fbfb]">
@@ -390,7 +374,7 @@ function Desktop(p) {
                 ]}
               />
               <button type="button" onClick={p.onReset} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-3 text-[12.5px] font-medium text-[#3e5a62] hover:bg-[#f7fbfb]">
-                <Filter className="size-4 text-[#0c8f86]" /> Filtrlar
+                <Filter className="size-4 text-[var(--color-org-teal)]" /> Filtrlar
               </button>
             </div>
 
@@ -432,7 +416,7 @@ function Desktop(p) {
                       <td className="px-2 text-[12.5px] text-[#3e5a62]">{c.code || '—'}</td>
                       <td className="px-2 text-[12.5px] text-[#3e5a62]">{c.date || '—'}</td>
                       <td className="px-2 pr-3" onClick={(e) => e.stopPropagation()}>
-                        <span className="inline-flex items-center gap-0.5 text-[#0c8f86]">
+                        <span className="inline-flex items-center gap-0.5 text-[var(--color-org-teal)]">
                           {c.state === 'done' ? (
                             <button type="button" aria-label="Yuklab olish" onClick={p.onDownload} className="grid size-7 place-items-center rounded-lg hover:bg-[#f3fbfa]"><Download className="size-4" /></button>
                           ) : (
@@ -460,7 +444,7 @@ function Desktop(p) {
                 {pageWindow(p.page, p.pages).map((n, i) => n === '…'
                   ? <span key={`e${i}`} className="px-1 text-[12px] text-[#9aafb4]">…</span>
                   : (
-                    <button key={n} type="button" onClick={() => p.setPage(n)} className={`grid h-8 min-w-8 place-items-center rounded-lg px-1.5 text-[12.5px] font-semibold ${n === p.page ? 'bg-[#0e8078] text-white' : 'text-[#5c7278] hover:bg-[#f4fbfa]'}`}>{n}</button>
+                    <button key={n} type="button" onClick={() => p.setPage(n)} className={`grid h-8 min-w-8 place-items-center rounded-lg px-1.5 text-[12.5px] font-semibold ${n === p.page ? 'bg-[var(--color-org-teal)] text-white' : 'text-[#5c7278] hover:bg-[#f4fbfa]'}`}>{n}</button>
                   ))}
                 <button type="button" aria-label="Keyingi" disabled={p.page >= p.pages} onClick={() => p.setPage(p.page + 1)} className="grid size-8 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronRight className="size-4" /></button>
               </div>
@@ -470,7 +454,7 @@ function Desktop(p) {
           {p.preview && p.cert && (
             <aside className="border-l border-[#eef3f2] px-3 pb-3 pt-3">
               <CertFrame width={268} name={p.cert.name} course={COURSE} date={p.cert.date ? CERT_DATE : CERT_DATE} />
-              <button type="button" onClick={p.onDownload} className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0e8078] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(14_128_120/0.22)] hover:bg-[#0c756e]">
+              <button type="button" onClick={p.onDownload} className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(14_128_120/0.22)] hover:bg-[#0c756e]">
                 <Download className="size-4" /> Sertifikatni yuklab olish
               </button>
               <div className="mt-2 grid grid-cols-3 gap-1.5">
@@ -528,7 +512,7 @@ function Ring({ value, color }) {
 
 function Box({ checked, onChange, label }) {
   return (
-    <button type="button" role="checkbox" aria-checked={checked} aria-label={label} onClick={onChange} className={`grid size-4 place-items-center rounded-[4px] border ${checked ? 'border-[#0e8078] bg-[#0e8078] text-white' : 'border-[#c9d6d3] bg-white'}`}>
+    <button type="button" role="checkbox" aria-checked={checked} aria-label={label} onClick={onChange} className={`grid size-4 place-items-center rounded-[4px] border ${checked ? 'border-[var(--color-org-teal)] bg-[var(--color-org-teal)] text-white' : 'border-[#c9d6d3] bg-white'}`}>
       {checked && <svg viewBox="0 0 12 12" className="size-2.5"><path d="M2 6.2 4.6 8.8 10 3.2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>}
     </button>
   )
@@ -536,7 +520,7 @@ function Box({ checked, onChange, label }) {
 
 function Act({ icon: Icon, label, onClick }) {
   return (
-    <button type="button" onClick={onClick} className="flex h-10 items-center justify-center gap-1 rounded-xl border border-[#b7e4dc] bg-white px-1 text-[10.5px] font-semibold leading-tight text-[#0c8f86] hover:bg-[#f4fbfa]">
+    <button type="button" onClick={onClick} className="flex h-10 items-center justify-center gap-1 rounded-xl border border-[#b7e4dc] bg-white px-1 text-[10.5px] font-semibold leading-tight text-[var(--color-org-teal)] hover:bg-[#f4fbfa]">
       <Icon className="size-3.5 shrink-0" />
       <span className="truncate">{label}</span>
     </button>
@@ -556,7 +540,7 @@ function MiniDrop({ value, onChange, options, className }) {
         <ul className="absolute left-0 z-30 mt-1 max-h-60 w-full min-w-[160px] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
           {options.map((o) => (
             <li key={o.value}>
-              <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[#0c8f86]' : ''}`} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
+              <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[var(--color-org-teal)]' : ''}`} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
             </li>
           ))}
         </ul>
@@ -595,34 +579,14 @@ const M_TABS = [
 ]
 
 function Mobile(p) {
-  const [more, setMore] = useState(false)
   const chips = [
     { id: 'all', label: `Barchasi (${p.counts.all})` },
     { id: 'done', label: `Berilgan (${p.counts.done})` },
     { id: 'wait', label: `Kutilmoqda (${p.counts.wait})` },
   ]
   return (
-    <div className="bg-white pb-20 text-[#143044]">
-      <header className="relative sticky top-0 z-20 flex items-center gap-1.5 bg-white px-2 py-1.5">
-        <Link to="/tashkilotchi/seminarlar" aria-label="Orqaga" className="grid size-9 place-items-center text-[#243044]">
-          <ChevronLeft className="size-5" />
-        </Link>
-        <div className="min-w-0 leading-none">
-          <img src="/images/logo.png" alt="StomaHub" className="h-[26px] w-auto" />
-          <p className="mt-0.5 text-[11px] text-[#8b90a8]">Seminar tashkilotchisi</p>
-        </div>
-        <button type="button" aria-label="Yana" onClick={() => setMore((v) => !v)} className="ml-auto grid size-9 place-items-center text-[#243044]">
-          <MoreVertical className="size-5" />
-        </button>
-        {more && (
-          <div className="absolute right-3 top-12 z-30 w-44 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-            <Link to="/tashkilotchi/sozlamalar" className="block px-3 py-2 text-[13px] hover:bg-[#f4fbfa]">Sozlamalar</Link>
-            <Link to="/tashkilotchi/yordam" className="block px-3 py-2 text-[13px] hover:bg-[#f4fbfa]">Yordam</Link>
-          </div>
-        )}
-      </header>
-
-      <div className="flex items-center gap-2.5 px-3.5 pt-0.5">
+    <div className="text-[#143044]">
+      <div className="flex items-center gap-2.5">
         <img src="/images/seminars/teeth.jpg" alt="" className="h-[60px] w-[72px] shrink-0 rounded-xl object-cover" />
         <div className="min-w-0">
           <p className="text-[11px] font-semibold leading-none text-[#6a5acd]">Implantologiya</p>
@@ -636,13 +600,13 @@ function Mobile(p) {
         {M_TABS.map((t) => t.to ? (
           <Link key={t.id} to={t.to} className="shrink-0 border-b-2 border-transparent pb-2 font-medium text-[#8b9aa0]">{t.label}</Link>
         ) : (
-          <span key={t.id} className="shrink-0 border-b-2 border-[#0e8078] pb-2 font-semibold text-[#0e8078]">{t.label}</span>
+          <span key={t.id} className="shrink-0 border-b-2 border-[var(--color-org-teal)] pb-2 font-semibold text-[var(--color-org-teal)]">{t.label}</span>
         ))}
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2 px-3.5">
         <h2 className="text-[18px] font-bold leading-none">Sertifikatlar</h2>
-        <button type="button" onClick={p.onSendAll} className="inline-flex h-8 items-center gap-1 rounded-xl bg-[#0e8078] px-2.5 text-[12px] font-semibold text-white">
+        <button type="button" onClick={p.onSendAll} className="inline-flex h-8 items-center gap-1 rounded-xl bg-[var(--color-org-teal)] px-2.5 text-[12px] font-semibold text-white">
           <Send className="size-3.5" /> Hammaga yuborish
         </button>
       </div>
@@ -655,18 +619,18 @@ function Mobile(p) {
           <p className="mt-0.5 text-[11px] leading-snug text-[#5e787e]">Barcha ishtirokchilarga shu shablon asosida sertifikat beriladi.</p>
           <div className="mt-1.5 grid grid-cols-2 gap-1">
             <div className="rounded-xl bg-white px-2 py-1.5">
-              <p className="flex items-center gap-1 text-[10px] text-[#8aa0a4]"><Clock className="size-3 text-[#0c8f86]" /> Kredit soati</p>
+              <p className="flex items-center gap-1 text-[10px] text-[#8aa0a4]"><Clock className="size-3 text-[var(--color-org-teal)]" /> Kredit soati</p>
               <p className="text-[16px] font-bold leading-tight">16</p>
             </div>
             <button type="button" onClick={p.onTpl} className="flex items-center justify-between rounded-xl bg-white px-2 py-1.5 text-left">
               <span>
-                <QrCode className="size-3.5 text-[#0c8f86]" />
+                <QrCode className="size-3.5 text-[var(--color-org-teal)]" />
                 <span className="mt-0.5 block text-[10.5px] font-semibold leading-tight text-[#143044]">QR tekshirish</span>
               </span>
               <ChevronRight className="size-3.5 text-[#9aa8ae]" />
             </button>
           </div>
-          <button type="button" onClick={p.onTpl} className="mt-1.5 flex h-7 w-full items-center justify-center gap-1 rounded-lg border border-[#b7e4dc] bg-white text-[11.5px] font-semibold text-[#0c8f86]">
+          <button type="button" onClick={p.onTpl} className="mt-1.5 flex h-7 w-full items-center justify-center gap-1 rounded-lg border border-[#b7e4dc] bg-white text-[11.5px] font-semibold text-[var(--color-org-teal)]">
             <Pencil className="size-3.5" /> Shablonni tahrirlash
           </button>
         </div>
@@ -674,24 +638,14 @@ function Mobile(p) {
 
       <div className="mt-2 flex items-center gap-1.5 px-3.5">
         {chips.map((c) => (
-          <button key={c.id} type="button" onClick={() => p.setTab(c.id)} className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold ${p.tab === c.id ? 'bg-[#0e8078] text-white' : 'bg-[#f2f4f5] text-[#6e8086]'}`}>
+          <button key={c.id} type="button" onClick={() => p.setTab(c.id)} className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold ${p.tab === c.id ? 'bg-[var(--color-org-teal)] text-white' : 'bg-[#f2f4f5] text-[#6e8086]'}`}>
             {c.label}
           </button>
         ))}
-        <button type="button" aria-label="Qidirish" onClick={() => p.setSeek((v) => !v)} className="ml-auto grid size-8 place-items-center rounded-full bg-[#f2f4f5] text-[#5e787e]">
-          <Search className="size-4" />
-        </button>
-        <button type="button" aria-label="Filtr" onClick={() => p.setTab('all')} className="grid size-8 place-items-center rounded-full bg-[#f2f4f5] text-[#5e787e]">
+        <button type="button" aria-label="Filtr" onClick={() => p.setTab('all')} className="ml-auto grid size-8 place-items-center rounded-full bg-[#f2f4f5] text-[#5e787e]">
           <Filter className="size-4" />
         </button>
       </div>
-      {p.seek && (
-        <label className="mx-3.5 mt-2 flex h-9 items-center gap-2 rounded-xl border border-[#e4eeec] px-3">
-          <Search className="size-4 text-[#8aa4a8]" />
-          <input value={p.q} onChange={(e) => p.setQ(e.target.value)} placeholder="Ism yoki telefon" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" />
-        </label>
-      )}
-
       <div className="mx-3.5 mt-2 overflow-hidden rounded-xl border border-[#eef2f2]">
         <div className="grid grid-cols-[16px_minmax(0,1.45fr)_42px_74px_58px] items-center gap-1 bg-[#f6f7fb] px-2 py-1.5 text-[11px] font-medium text-[#8b9aa3]">
           <span>#</span>
@@ -704,7 +658,7 @@ function Mobile(p) {
           <div key={r.id} className="grid grid-cols-[16px_minmax(0,1.45fr)_42px_74px_58px] items-center gap-1 border-t border-[#f2f5f6] px-2 py-1">
             <span className="text-[11px] text-[#9aa8ae]">{i + 1}</span>
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#d9f3ef] text-[10px] font-bold text-[#0c8f86]">{initials(r.name)}</span>
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#d9f3ef] text-[10px] font-bold text-[var(--color-org-teal)]">{initials(r.name)}</span>
               <span className="min-w-0">
                 <span className="block truncate text-[12.5px] font-semibold leading-tight">{r.name}</span>
                 <span className="block truncate text-[10.5px] text-[#9aa8ae]">{r.phone}</span>
@@ -723,9 +677,9 @@ function Mobile(p) {
             </span>
             <span className="flex items-center justify-end gap-0.5">
               {r.state === 'done' ? (
-                <button type="button" aria-label="QR" onClick={() => p.onQr(r)} className="grid size-7 place-items-center rounded-lg border border-[#b7e4dc] text-[#0c8f86]"><QrCode className="size-3.5" /></button>
+                <button type="button" aria-label="QR" onClick={() => p.onQr(r)} className="grid size-7 place-items-center rounded-lg border border-[#b7e4dc] text-[var(--color-org-teal)]"><QrCode className="size-3.5" /></button>
               ) : (
-                <button type="button" aria-label="Yuborish" onClick={() => p.onSend(r.id)} className="grid size-7 place-items-center rounded-lg border border-[#b7e4dc] text-[#0c8f86]"><Send className="size-3.5" /></button>
+                <button type="button" aria-label="Yuborish" onClick={() => p.onSend(r.id)} className="grid size-7 place-items-center rounded-lg border border-[#b7e4dc] text-[var(--color-org-teal)]"><Send className="size-3.5" /></button>
               )}
               <button type="button" aria-label="Ochish" onClick={() => p.onOpen(r)} className="grid size-6 place-items-center text-[#b0bec4]"><ChevronRight className="size-4" /></button>
             </span>
@@ -734,30 +688,7 @@ function Mobile(p) {
         {p.rows.length === 0 && <p className="py-8 text-center text-[13px] text-[#8aa0a4]">Sertifikat topilmadi</p>}
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#eef1f6] bg-white px-1 pb-1 pt-1">
-        <div className="grid grid-cols-5 items-end text-[10px] text-[#8a86b0]">
-          <TabLink to="/tashkilotchi" icon={House} label="Panel" />
-          <TabLink to="/tashkilotchi/seminarlar" icon={CalendarDays} label="Seminarlar" />
-          <Link to="/tashkilotchi/qr" className="flex flex-col items-center gap-0.5 font-semibold text-[#0e8078]">
-            <span className="-mt-5 grid size-[54px] place-items-center rounded-full bg-[#0e8078] text-white shadow-[0_8px_16px_rgb(14_128_120/0.35)]">
-              <QrCode className="size-6" />
-            </span>
-            Check-in
-          </Link>
-          <TabLink to="/tashkilotchi/hamyon" icon={Wallet} label="Hamyon" />
-          <TabLink to="/tashkilotchi/sozlamalar" icon={Ellipsis} label="Yana" />
-        </div>
-      </nav>
     </div>
-  )
-}
-
-function TabLink({ to, icon: Icon, label }) {
-  return (
-    <Link to={to} className="flex flex-col items-center gap-0.5 py-1 font-medium">
-      <Icon className="size-[22px]" strokeWidth={1.7} />
-      {label}
-    </Link>
   )
 }
 

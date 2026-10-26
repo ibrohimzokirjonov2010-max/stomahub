@@ -75,10 +75,10 @@ function isSeminarScreen(pathname) {
 
 function Item({ to, icon: Icon, label, end, onClick }) {
   return (
-    <NavLink to={to} end={end} onClick={onClick} className={({ isActive }) => `${ITEM} ${isActive ? 'bg-[#def6f6] font-semibold text-[#0c8f86]' : 'text-[#445066] hover:bg-white'}`}>
+    <NavLink to={to} end={end} onClick={onClick} className={({ isActive }) => `${ITEM} ${isActive ? 'bg-[#def6f6] font-semibold text-[var(--color-org-teal)]' : 'text-[#445066] hover:bg-white'}`}>
       {({ isActive }) => (
         <>
-          <Icon className={`size-[18px] shrink-0 ${isActive ? 'text-[#0c8f86]' : 'text-[#3a7a7e]'}`} strokeWidth={1.75} />
+          <Icon className={`size-[18px] shrink-0 ${isActive ? 'text-[var(--color-org-teal)]' : 'text-[#3a7a7e]'}`} strokeWidth={1.75} />
           <span className="truncate">{label}</span>
         </>
       )}
@@ -122,7 +122,7 @@ function BrandLockup({ to = '/tashkilotchi' }) {
 
 const TAB = 'flex h-full flex-col items-center justify-center gap-0.5 text-[10.5px] leading-none'
 const TAB_OFF = 'text-[#9aa3b5]'
-const TAB_ON = 'font-semibold text-[#0c8f86]'
+const TAB_ON = 'font-semibold text-[var(--color-org-teal)]'
 
 function TabLink({ to, label, icon: Icon, active, end, onClick }) {
   const cls = `${TAB} ${active ? TAB_ON : TAB_OFF}`
@@ -208,7 +208,7 @@ export default function Shell() {
     const Icon = it.icon
     const active = pathname === it.to || pathname.startsWith(`${it.to}/`)
     return (
-      <Link key={it.to} to={it.to} onClick={() => setMore(false)} className={`flex h-11 items-center gap-3 rounded-xl px-2 text-[14px] ${active ? 'bg-[#e7f6f3] font-semibold text-[#0c8f86]' : 'text-[#1c3d4a]'}`}>
+      <Link key={it.to} to={it.to} onClick={() => setMore(false)} className={`flex h-11 items-center gap-3 rounded-xl px-2 text-[14px] ${active ? 'bg-[#e7f6f3] font-semibold text-[var(--color-org-teal)]' : 'text-[#1c3d4a]'}`}>
         <Icon className="size-5 shrink-0" strokeWidth={1.75} />
         {it.label}
       </Link>
@@ -236,7 +236,7 @@ export default function Shell() {
           <div ref={pop} className="relative flex shrink-0 items-center gap-7 pr-4">
             <div className="relative">
               <button type="button" onClick={() => setPanel(panel === 'city' ? null : 'city')} className="flex h-8 items-center gap-1.5 rounded-full px-1 text-[13px] font-medium text-[#1c4a5a]">
-                <MapPin className="size-4 text-[#0c8f86]" strokeWidth={1.8} />
+                <MapPin className="size-4 text-[var(--color-org-teal)]" strokeWidth={1.8} />
                 <span className="hidden lg:inline">{city}</span>
                 <ChevronDown className="size-3.5 text-[#8aa4a8]" />
               </button>
@@ -250,10 +250,10 @@ export default function Shell() {
                 </ul>
               )}
             </div>
-            <button type="button" aria-label="Kalendar" onClick={() => setPanel(panel === 'cal' ? null : 'cal')} className="grid size-8 place-items-center rounded-full text-[#0c8f86] hover:bg-[#f3faf8]">
+            <button type="button" aria-label="Kalendar" onClick={() => setPanel(panel === 'cal' ? null : 'cal')} className="grid size-8 place-items-center rounded-full text-[var(--color-org-teal)] hover:bg-[#f3faf8]">
               <Calendar className="size-[18px]" strokeWidth={1.75} />
             </button>
-            <button type="button" aria-label="Bildirishnomalar" onClick={() => setPanel(panel === 'bell' ? null : 'bell')} className="relative grid size-8 place-items-center rounded-full text-[#0c8f86] hover:bg-[#f3faf8]">
+            <button type="button" aria-label="Bildirishnomalar" onClick={() => setPanel(panel === 'bell' ? null : 'bell')} className="relative grid size-8 place-items-center rounded-full text-[var(--color-org-teal)] hover:bg-[#f3faf8]">
               <Bell className="size-[18px]" strokeWidth={1.75} />
               <span className="absolute right-1.5 top-1.5 size-[7px] rounded-full bg-[#ef4444] ring-2 ring-white" />
             </button>
@@ -263,7 +263,7 @@ export default function Shell() {
                 <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[11px] text-[#8aa0a4]">
                   {['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].map((d) => <span key={d}>{d}</span>)}
                   {Array.from({ length: 30 }, (_, i) => (
-                    <button key={i} type="button" onClick={() => { notify(`${i + 1}-noyabr tanlandi`); setPanel(null) }} className={`grid h-7 place-items-center rounded-lg ${i + 1 === 24 ? 'bg-[#0c8f86] text-white' : 'hover:bg-[#f3faf8]'}`}>{i + 1}</button>
+                    <button key={i} type="button" onClick={() => { notify(`${i + 1}-noyabr tanlandi`); setPanel(null) }} className={`grid h-7 place-items-center rounded-lg ${i + 1 === 24 ? 'bg-[var(--color-org-teal)] text-white' : 'hover:bg-[#f3faf8]'}`}>{i + 1}</button>
                   ))}
                 </div>
               </div>
@@ -314,6 +314,21 @@ export default function Shell() {
                         {seminarId && seminarId !== 'yangi' && (
                           <Link to={`/tashkilotchi/seminarlar/yangi?tahrir=${seminarId}`} className="block px-3 py-2 text-[13px] hover:bg-[#f4fbfa]" onClick={() => setKebab(false)}>Tahrirlash</Link>
                         )}
+                        {seminarId && seminarId !== 'yangi' && /^\/tashkilotchi\/seminarlar\/[^/]+$/.test(pathname) && (
+                          <button
+                            type="button"
+                            className="block w-full px-3 py-2 text-left text-[13px] text-[#e11d48] hover:bg-[#f4fbfa]"
+                            onClick={() => {
+                              setKebab(false)
+                              const next = new URLSearchParams(window.location.search)
+                              next.set('bekor', '1')
+                              navigate(`${pathname}?${next.toString()}`, { replace: true })
+                              window.dispatchEvent(new Event('org-seminar-cancel'))
+                            }}
+                          >
+                            Bekor qilish
+                          </button>
+                        )}
                         <Link to="/tashkilotchi/ishtirokchilar" className="block px-3 py-2 text-[13px] hover:bg-[#f4fbfa]" onClick={() => setKebab(false)}>Ishtirokchilar</Link>
                         <Link to="/tashkilotchi/qr" className="block px-3 py-2 text-[13px] hover:bg-[#f4fbfa]" onClick={() => setKebab(false)}>QR check-in</Link>
                         <button
@@ -335,7 +350,7 @@ export default function Shell() {
                     <button type="button" aria-label="Bildirishnomalar" onClick={() => setPanel(panel === 'mbell' ? null : 'mbell')} className="relative grid size-10 place-items-center rounded-full text-[#243044]">
                       <Bell className="size-[22px]" strokeWidth={1.7} />
                     </button>
-                    <Link to="/tashkilotchi/sozlamalar" aria-label="Profil" className="grid size-9 place-items-center rounded-full bg-[#0c8f86] text-[15px] font-semibold text-white">S</Link>
+                    <Link to="/tashkilotchi/sozlamalar" aria-label="Profil" className="grid size-9 place-items-center rounded-full bg-[var(--color-org-teal)] text-[15px] font-semibold text-white">S</Link>
                   </>
                 )}
               </div>
@@ -368,10 +383,10 @@ export default function Shell() {
               <TabLink to="/tashkilotchi/seminarlar" label="Seminarlar" icon={CalendarDays} active={pathname === '/tashkilotchi/seminarlar'} />
             </li>
             <li className="relative">
-              <Link to="/tashkilotchi/qr" aria-label="Check-in" className="absolute left-1/2 top-0 grid size-[58px] -translate-x-1/2 -translate-y-[22px] place-items-center rounded-full bg-[#0c8f86] text-white shadow-[0_8px_18px_rgb(12_143_134/0.35)]">
+              <Link to="/tashkilotchi/qr" aria-label="Check-in" className="absolute left-1/2 top-0 grid size-[58px] -translate-x-1/2 -translate-y-[22px] place-items-center rounded-full bg-[var(--color-org-teal)] text-white shadow-[0_8px_18px_rgb(12_143_134/0.35)]">
                 <QrCode className="size-7" strokeWidth={1.8} />
               </Link>
-              <span className={`pointer-events-none absolute inset-x-0 bottom-1.5 text-center text-[10.5px] leading-none ${pathname.startsWith('/tashkilotchi/qr') ? 'font-semibold text-[#0c8f86]' : 'text-[#9aa3b5]'}`}>Check-in</span>
+              <span className={`pointer-events-none absolute inset-x-0 bottom-1.5 text-center text-[10.5px] leading-none ${pathname.startsWith('/tashkilotchi/qr') ? 'font-semibold text-[var(--color-org-teal)]' : 'text-[#9aa3b5]'}`}>Check-in</span>
             </li>
             <li>
               <TabLink to="/tashkilotchi/hamyon" label="Hamyon" icon={Wallet} active={pathname.startsWith('/tashkilotchi/hamyon')} />

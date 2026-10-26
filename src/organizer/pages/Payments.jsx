@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Award, Banknote, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, CreditCard,
-  Download, Eye, Filter, Home, Mail, MapPin, MoreHorizontal, Phone, QrCode, RefreshCw,
+  Download, Eye, Filter, Home, Mail, MapPin, MoreHorizontal, Phone, RefreshCw,
   Search, Ticket, UserRound, Users, Wallet, X, XCircle,
 } from 'lucide-react'
 import { FACES, num, som } from '../data'
 import { useOrg } from '../Shell'
 import { Modal } from '../ui'
 
-const TEAL = '#028089'
+const TEAL = 'var(--color-org-teal)'
 const INK = '#163044'
 const MUTED = '#7d939a'
 
@@ -102,7 +102,7 @@ function Drop({ value, onChange, options, className = '', icon }) {
         <ul className="absolute left-0 z-30 mt-1 max-h-56 w-full min-w-[160px] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
           {options.map((o) => (
             <li key={o.value}>
-              <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[#028089]' : ''}`} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
+              <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[var(--color-org-teal)]' : ''}`} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
             </li>
           ))}
         </ul>
@@ -251,7 +251,7 @@ export default function Payments() {
               value={range}
               onChange={setRange}
               className="w-[228px]"
-              icon={<Calendar className="size-3.5 text-[#028089]" />}
+              icon={<Calendar className="size-3.5 text-[var(--color-org-teal)]" />}
               options={[
                 { value: 'year', label: '1-yan, 2026 — 31-dek, 2026' },
                 { value: 'month', label: 'Shu oy' },
@@ -322,7 +322,7 @@ export default function Payments() {
                   </colgroup>
                   <thead>
                     <tr className="border-y border-[#eef3f2] text-[11px] font-medium text-[#8aa0a4]">
-                      <th className="px-2 py-1.5"><input type="checkbox" aria-label="Hammasini belgilash" checked={allChecked} className="accent-[#028089]" onChange={(e) => {
+                      <th className="px-2 py-1.5"><input type="checkbox" aria-label="Hammasini belgilash" checked={allChecked} className="accent-[var(--color-org-teal)]" onChange={(e) => {
                         const next = { ...checked }
                         shown.forEach((p) => { next[p.id] = e.target.checked })
                         setChecked(next)
@@ -333,7 +333,7 @@ export default function Payments() {
                   <tbody>
                     {shown.map((p) => (
                       <tr key={p.id} onClick={() => { setSelected(p.id); setPanel(true) }} className={`h-[30px] cursor-pointer border-b border-[#f3f7f6] ${pay?.id === p.id ? 'bg-[#f4fbfa]' : 'hover:bg-[#f8fcfb]'}`}>
-                        <td className="px-2 py-0" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="accent-[#028089]" checked={!!checked[p.id]} aria-label={p.id} onChange={() => setChecked((c) => ({ ...c, [p.id]: !c[p.id] }))} /></td>
+                        <td className="px-2 py-0" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="accent-[var(--color-org-teal)]" checked={!!checked[p.id]} aria-label={p.id} onChange={() => setChecked((c) => ({ ...c, [p.id]: !c[p.id] }))} /></td>
                         <td className="px-1.5 py-0 text-[11.5px] font-semibold leading-none" style={{ color: TEAL }}>#{p.id}</td>
                         <td className="px-1.5 py-0 text-[10.5px] leading-[1.15] text-[#5e787e]"><div>{p.when}</div><div className="text-[#8aa0a4]">{p.time}</div></td>
                         <td className="px-1.5 py-0">
@@ -475,42 +475,16 @@ function Row({ icon: Icon, label, children }) {
 }
 
 function MobilePay({ notify }) {
-  const navigate = useNavigate()
   const [tab, setTab] = useState('all')
   const [filter, setFilter] = useState(false)
-  const [more, setMore] = useState(false)
-  const [extra, setExtra] = useState(false)
   const [open, setOpen] = useState(null)
   const rows = MOBILE_ROWS.filter((r) => tab === 'all' || (tab === 'paid' ? r.state === 'paid' : tab === 'wait' ? r.state === 'wait' : r.state === 'refund'))
   const counts = { all: 42, paid: 40, wait: 2, refund: 0 }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#f5f7fb] text-[#1c2340] md:hidden">
-      <div className="flex h-9 shrink-0 items-center justify-between bg-white px-5 text-[14px] font-semibold">
-        <span>9:41</span>
-        <span className="flex items-center gap-1.5 text-black">
-          <Signal />
-          <Wifi />
-          <Battery />
-        </span>
-      </div>
-      <header className="flex shrink-0 items-center gap-2 bg-white px-2 pb-1">
-        <button type="button" aria-label="Orqaga" onClick={() => navigate('/tashkilotchi/seminarlar')} className="grid size-9 place-items-center text-[#1c2340]"><ChevronLeft className="size-6" /></button>
-        <div className="min-w-0 flex-1">
-          <img src="/images/logo.png" alt="StomaHub" className="h-[26px] w-auto" />
-          <p className="-mt-0.5 pl-[30px] text-[11px] leading-none text-[#8b95a7]">Seminar tashkilotchisi</p>
-        </div>
-        <button type="button" aria-label="Yana" onClick={() => setMore((v) => !v)} className="grid size-9 place-items-center text-[#1c2340]"><MoreHorizontal className="size-5" /></button>
-      </header>
-      {more && (
-        <div className="absolute right-3 top-[88px] z-10 w-44 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-          <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => { setMore(false); notify('Havola nusxalandi') }}>Ulashish</button>
-          <Link to="/tashkilotchi/seminarlar/yangi" className="block px-3 py-2 text-[13px]" onClick={() => setMore(false)}>Tahrirlash</Link>
-        </div>
-      )}
-
-      <div className="min-h-0 flex-1 overflow-y-auto bg-white">
-        <div className="flex gap-2 px-3 pb-1.5">
+    <div className="text-[#1c2340] md:hidden">
+      <div className="rounded-2xl bg-white">
+        <div className="flex gap-2 px-3 pb-1.5 pt-2">
           <img src="/images/seminars/teeth.jpg" alt="" className="h-14 w-[68px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0">
             <span className="inline-flex h-5 items-center rounded-full bg-[#e7f6f4] px-2 text-[10.5px] font-semibold" style={{ color: TEAL }}>Implantologiya</span>
@@ -603,22 +577,8 @@ function MobilePay({ notify }) {
         </div>
       </div>
 
-      <nav className="relative grid h-[64px] shrink-0 grid-cols-5 border-t border-[#eef1f6] bg-white pb-2">
-        <NavItem to="/tashkilotchi" icon={Home} label="Panel" />
-        <NavItem to="/tashkilotchi/seminarlar" icon={Calendar} label="Seminarlar" />
-        <Link to="/tashkilotchi/qr" className="flex flex-col items-center">
-          <span className="-mt-4 grid size-[52px] place-items-center rounded-full text-white shadow-[0_8px_16px_rgb(2_128_137/0.35)]" style={{ background: TEAL }}><QrCode className="size-6" /></span>
-          <span className="mt-0.5 text-[10px] text-[#8b95a7]">Check-in</span>
-        </Link>
-        <NavItem to="/tashkilotchi/hamyon" icon={CreditCard} label="Hamyon" />
-        <button type="button" onClick={() => setExtra(true)} className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-[#8b95a7]">
-          <MoreHorizontal className="size-[20px]" /> Yana
-        </button>
-        <span className="pointer-events-none absolute bottom-1 left-1/2 h-1 w-28 -translate-x-1/2 rounded-full bg-black" />
-      </nav>
-
       {filter && (
-        <div className="absolute inset-0 z-20 flex flex-col justify-end bg-[#0e2433]/40" onClick={() => setFilter(false)}>
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-[#0e2433]/40" onClick={() => setFilter(false)}>
           <div className="rounded-t-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between"><h3 className="font-bold">Filtr</h3><button type="button" aria-label="Yopish" onClick={() => setFilter(false)}><X className="size-4" /></button></div>
             {[['all', 'Barchasi'], ['paid', 'To‘langan'], ['wait', 'Kutilmoqda'], ['refund', 'Qaytarilgan']].map(([id, label]) => (
@@ -627,17 +587,8 @@ function MobilePay({ notify }) {
           </div>
         </div>
       )}
-      {extra && (
-        <div className="absolute inset-0 z-20 flex flex-col justify-end bg-[#0e2433]/40" onClick={() => setExtra(false)}>
-          <div className="rounded-t-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
-            {[['/tashkilotchi/marketing', 'Marketing'], ['/tashkilotchi/promo', 'Promo-kodlar'], ['/tashkilotchi/sozlamalar', 'Sozlamalar'], ['/tashkilotchi/yordam', 'Yordam']].map(([to, label]) => (
-              <Link key={to} to={to} className="flex h-11 items-center text-[14px] font-medium" onClick={() => setExtra(false)}>{label}</Link>
-            ))}
-          </div>
-        </div>
-      )}
       {open && (
-        <div className="absolute inset-0 z-20 flex flex-col justify-end bg-[#0e2433]/40" onClick={() => setOpen(null)}>
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-[#0e2433]/40" onClick={() => setOpen(null)}>
           <div className="rounded-t-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between"><h3 className="font-bold">{open.who}</h3><button type="button" aria-label="Yopish" onClick={() => setOpen(null)}><X className="size-4" /></button></div>
             <p className="text-[13px] text-[#6b728a]">{open.phone}</p>
@@ -651,20 +602,3 @@ function MobilePay({ notify }) {
   )
 }
 
-function NavItem({ to, icon: Icon, label }) {
-  return (
-    <Link to={to} className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-[#8b95a7]">
-      <Icon className="size-[20px]" strokeWidth={1.7} /> {label}
-    </Link>
-  )
-}
-
-function Signal() {
-  return <svg width="17" height="12" viewBox="0 0 17 12" aria-hidden><rect x="0" y="8" width="3" height="4" rx="0.5" fill="#111" /><rect x="4.5" y="5.5" width="3" height="6.5" rx="0.5" fill="#111" /><rect x="9" y="3" width="3" height="9" rx="0.5" fill="#111" /><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="#111" /></svg>
-}
-function Wifi() {
-  return <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden><path d="M8 10.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6Z" fill="#111" /><path d="M3.2 7.2a6.8 6.8 0 0 1 9.6 0" stroke="#111" strokeWidth="1.4" fill="none" strokeLinecap="round" /><path d="M1 4.6a10 10 0 0 1 14 0" stroke="#111" strokeWidth="1.4" fill="none" strokeLinecap="round" /></svg>
-}
-function Battery() {
-  return <svg width="25" height="12" viewBox="0 0 25 12" aria-hidden><rect x="0.6" y="0.6" width="21" height="10.8" rx="2.2" stroke="#111" strokeWidth="1.2" fill="none" /><rect x="2" y="2" width="16" height="8" rx="1" fill="#111" /><rect x="22.4" y="3.6" width="1.8" height="4.8" rx="0.6" fill="#111" /></svg>
-}

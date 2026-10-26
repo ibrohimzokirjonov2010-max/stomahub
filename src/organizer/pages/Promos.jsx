@@ -79,7 +79,7 @@ function Drop({ value, onChange, options, className }) {
         <ul className="absolute left-0 z-40 mt-1 max-h-56 w-full min-w-[168px] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
           {options.map((o) => (
             <li key={o.value}>
-              <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[#0c8f86]' : 'text-[#1c4a5a]'}`} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
+              <button type="button" className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[var(--color-org-teal)]' : 'text-[#1c4a5a]'}`} onClick={() => { onChange(o.value); setOpen(false) }}>{o.label}</button>
             </li>
           ))}
         </ul>
@@ -130,7 +130,7 @@ function MiniMenu({ items }) {
 
 function Toggle({ on, onChange, label }) {
   return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`relative h-[22px] w-10 shrink-0 rounded-full transition ${on ? 'bg-[#0c8f86]' : 'bg-[#d7e2e4]'}`}>
+    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`relative h-[22px] w-10 shrink-0 rounded-full transition ${on ? 'bg-[var(--color-org-teal)]' : 'bg-[#d7e2e4]'}`}>
       <span className={`absolute top-0.5 size-[18px] rounded-full bg-white shadow transition ${on ? 'left-[20px]' : 'left-0.5'}`} />
     </button>
   )
@@ -140,8 +140,8 @@ function Radio({ checked, onChange, children }) {
   return (
     <label className="inline-flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[#1c4a5a]">
       <input type="radio" className="sr-only" checked={checked} onChange={onChange} />
-      <span className={`grid size-[16px] place-items-center rounded-full border ${checked ? 'border-[#0c8f86]' : 'border-[#c5d4d6]'}`}>
-        {checked && <span className="size-[8px] rounded-full bg-[#0c8f86]" />}
+      <span className={`grid size-[16px] place-items-center rounded-full border ${checked ? 'border-[var(--color-org-teal)]' : 'border-[#c5d4d6]'}`}>
+        {checked && <span className="size-[8px] rounded-full bg-[var(--color-org-teal)]" />}
       </span>
       {children}
     </label>
@@ -160,7 +160,7 @@ function Field({ label, req, error, children }) {
   )
 }
 
-const fieldCls = (bad) => `h-8 w-full rounded-lg border bg-white px-2.5 text-[12.5px] text-[#143044] outline-none placeholder:text-[#a8b8bc] ${bad ? 'border-[#e11d48]' : 'border-[#e3eeec] focus:border-[#0c8f86]'}`
+const fieldCls = (bad) => `h-8 w-full rounded-lg border bg-white px-2.5 text-[12.5px] text-[#143044] outline-none placeholder:text-[#a8b8bc] ${bad ? 'border-[#e11d48]' : 'border-[#e3eeec] focus:border-[var(--color-org-teal)]'}`
 
 function DateField({ value, onChange, placeholder, bad }) {
   const shown = value
@@ -213,7 +213,7 @@ function TicketFace({ code, off, note }) {
 function Kpi({ icon: Icon, label, value, foot, ring, valueClass = 'text-[22px]' }) {
   return (
     <article className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#e7f2f0] bg-white px-3 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
         <Icon className="size-[18px]" strokeWidth={1.8} />
       </span>
       <div className="min-w-0 flex-1">
@@ -297,7 +297,7 @@ function CreateForm({ form, setForm, err, onSave, onClose, nameRef, compact }) {
           <span className="text-[12px] text-[#1c4a5a]">Faqat ma{'\u2019'}lum chipta turiga</span>
           <Toggle on={form.onlyTicket} onChange={(v) => set({ onlyTicket: v })} label="Chipta turi" />
         </div>
-        <button type="button" onClick={onSave} className="flex h-9 w-full items-center justify-center rounded-xl bg-[#0c8f86] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">Saqlash</button>
+        <button type="button" onClick={onSave} className="flex h-9 w-full items-center justify-center rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">Saqlash</button>
       </div>
       <div className="mt-2.5">
         <p className="mb-1.5 text-[12px] font-semibold leading-none text-[#143044]">Promo-kod ko{APOST}rinishi (oldindan)</p>
@@ -403,7 +403,7 @@ function Desktop() {
             <span className="min-w-0">
               <span className="block text-[12px] font-bold leading-[1.25]">{current.title}</span>
               <span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#8aa0a4]">
-                <Calendar className="size-3 text-[#0c8f86]" /> {current.id === 'implant-nov' ? '24-noyabr 2026, 10:00' : `${current.date}, 10:00`}
+                <Calendar className="size-3 text-[var(--color-org-teal)]" /> {current.id === 'implant-nov' ? '24-noyabr 2026, 10:00' : `${current.date}, 10:00`}
               </span>
             </span>
           </button>
@@ -435,10 +435,10 @@ function Desktop() {
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap gap-1.5">
           {tabs.map((t) => (
-            <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`h-8 whitespace-nowrap rounded-full px-3 text-[12.5px] font-semibold ${tab === t.id ? 'bg-[#0c8f86] text-white' : 'border border-[#e5eeec] bg-white text-[#3e5a62] hover:bg-[#f6fbfa]'}`}>{t.label}</button>
+            <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`h-8 whitespace-nowrap rounded-full px-3 text-[12.5px] font-semibold ${tab === t.id ? 'bg-[var(--color-org-teal)] text-white' : 'border border-[#e5eeec] bg-white text-[#3e5a62] hover:bg-[#f6fbfa]'}`}>{t.label}</button>
           ))}
         </div>
-        <button type="button" onClick={() => { setShowForm(true); setTimeout(() => nameRef.current?.focus(), 0) }} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#0c8f86] px-3 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">
+        <button type="button" onClick={() => { setShowForm(true); setTimeout(() => nameRef.current?.focus(), 0) }} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] px-3 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">
           <Plus className="size-4" strokeWidth={2.2} /> Yangi promo-kod yaratish
         </button>
       </div>
@@ -454,7 +454,7 @@ function Desktop() {
             <Drop className="w-[108px]" value={kind} onChange={setKind} options={[{ value: 'all', label: 'Barcha turlar' }, { value: 'foiz', label: 'Foiz' }, { value: 'summa', label: 'Summa' }]} />
             <Drop className="w-[124px]" value={status} onChange={setStatus} options={[{ value: 'all', label: 'Barcha holatlar' }, ...Object.entries(STATUS).map(([value, label]) => ({ value, label }))]} />
             <button type="button" onClick={() => { setQ(''); setKind('all'); setStatus('all'); setSeminar('all'); setTab('all') }} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#e4eeec] bg-white px-2 text-[11.5px] font-medium text-[#1c4a5a] hover:bg-[#f7fbfb]">
-              <SlidersHorizontal className="size-3.5 text-[#0c8f86]" /> Filtrlar
+              <SlidersHorizontal className="size-3.5 text-[var(--color-org-teal)]" /> Filtrlar
             </button>
           </div>
           <table className="w-full table-fixed text-left">
@@ -485,13 +485,13 @@ function Desktop() {
                     <td className="px-1.5 py-1">
                       <span className="inline-flex items-center gap-1 whitespace-nowrap">
                         <span className="text-[12.5px] font-bold tracking-wide">{p.code}</span>
-                        <button type="button" aria-label={`${p.code} nusxalash`} onClick={() => copy(p.code)} className="text-[#a8b6ba] hover:text-[#0c8f86]"><Copy className="size-3.5" strokeWidth={1.8} /></button>
+                        <button type="button" aria-label={`${p.code} nusxalash`} onClick={() => copy(p.code)} className="text-[#a8b6ba] hover:text-[var(--color-org-teal)]"><Copy className="size-3.5" strokeWidth={1.8} /></button>
                       </span>
                     </td>
                     <td className="px-1.5 py-1">
                       <span className="inline-flex h-5 items-center rounded-full bg-[#fde8ee] px-2 text-[11px] font-semibold text-[#e11d48]">{p.kind === 'foiz' ? 'Foiz' : 'Summa'}</span>
                     </td>
-                    <td className={`whitespace-nowrap px-1.5 py-1 text-[12.5px] font-bold ${p.kind === 'foiz' ? 'text-[#0c8f86]' : 'text-[#e11d48]'}`}>
+                    <td className={`whitespace-nowrap px-1.5 py-1 text-[12.5px] font-bold ${p.kind === 'foiz' ? 'text-[var(--color-org-teal)]' : 'text-[#e11d48]'}`}>
                       {p.kind === 'foiz' ? `${p.value}%` : som(p.value)}
                     </td>
                     <td className="px-1.5 py-1">
@@ -525,7 +525,7 @@ function Desktop() {
               <div className="flex items-center gap-0.5">
                 <button type="button" aria-label="Oldingi" disabled={safe <= 1} onClick={() => setPage(safe - 1)} className="grid size-7 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronLeft className="size-4" /></button>
                 {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-                  <button key={n} type="button" onClick={() => setPage(n)} className={`grid size-7 place-items-center rounded-lg text-[12.5px] font-semibold ${n === safe ? 'bg-[#0c8f86] text-white' : 'text-[#3e5a62] hover:bg-[#f4fbfa]'}`}>{n}</button>
+                  <button key={n} type="button" onClick={() => setPage(n)} className={`grid size-7 place-items-center rounded-lg text-[12.5px] font-semibold ${n === safe ? 'bg-[var(--color-org-teal)] text-white' : 'text-[#3e5a62] hover:bg-[#f4fbfa]'}`}>{n}</button>
                 ))}
                 <button type="button" aria-label="Keyingi" disabled={safe >= pages} onClick={() => setPage(safe + 1)} className="grid size-7 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronRight className="size-4" /></button>
               </div>
@@ -581,16 +581,16 @@ function Mobile() {
       <Link to="/tashkilotchi/seminarlar/implant-nov" className="flex items-center gap-3 rounded-2xl border border-[#eef0f5] bg-white p-2.5 shadow-[0_1px_3px_rgb(30_20_60/0.04)]">
         <img src="/images/seminars/teeth.jpg" alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold leading-none text-[#0c8f86]">Implantologiya</span>
+          <span className="block text-[11px] font-semibold leading-none text-[var(--color-org-teal)]">Implantologiya</span>
           <span className="mt-1 flex items-start justify-between gap-1">
             <span className="text-[14.5px] font-bold leading-tight text-[#3a2a86]">Implantologiya: amaliy kurs</span>
             <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#b0b4c4]" />
           </span>
           <span className="mt-1.5 flex items-center gap-1 text-[11px] text-[#6d7385]">
-            <Calendar className="size-3.5 shrink-0 text-[#0c8f86]" /> 21 oktabr 2026, 09:00 – 18:00
+            <Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> 21 oktabr 2026, 09:00 – 18:00
           </span>
           <span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#6d7385]">
-            <MapPin className="size-3.5 shrink-0 text-[#0c8f86]" /> Toshkent City Kongress Markazi
+            <MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> Toshkent City Kongress Markazi
           </span>
         </span>
       </Link>
