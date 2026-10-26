@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { initialCart } from './marketData'
+import { isUuid } from './buyerApi'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
 
 const CartContext = createContext(null)
@@ -16,7 +17,8 @@ export function CartProvider({ children }) {
       return
     }
     const payload = await loadBlob('cart')
-    if (Array.isArray(payload?.items)) setItems(payload.items)
+    // Eski demo (uuid bo‘lmagan) mahsulotlarni tashlab yuboramiz — ularni buyurtma qilib bo‘lmaydi
+    if (Array.isArray(payload?.items)) setItems(payload.items.filter((it) => isUuid(it.productId || it.id)))
     else if (isDemoUser()) setItems(initialCart)
     else setItems([])
     setCartReady(true)
