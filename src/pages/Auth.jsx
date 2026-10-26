@@ -498,7 +498,7 @@ function Auth({ mode }) {
           </svg>
           <div className={`relative px-6 pt-10 ${isLogin ? 'pb-16' : 'pb-8'}`}>
             <div className="flex items-start justify-between">
-              <Link to="/" aria-label="StomaHub"><img src="/images/landing/logo.png" alt="StomaHub" className="h-10 w-auto" /></Link>
+              <Link to="/" aria-label="StomaHub"><img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-11 w-auto" /></Link>
             </div>
             {isLogin ? (
               <>
@@ -523,15 +523,6 @@ function Auth({ mode }) {
               <h2 className={`pr-32 font-extrabold tracking-tight text-[#0f2438] ${isLogin ? 'mt-14 text-[40px]' : 'mt-8 text-[34px]'}`}>{isLogin ? t.login : t.reg}</h2>
               <p className="mt-2 max-w-[360px] text-[14.5px] leading-relaxed text-[#5c6e80]">{isLogin ? t.loginLead : t.regLead}</p>
             </div>
-            <div className="mt-4 lg:mt-4">
-              <span className="text-[12.5px] font-semibold text-[#5c6e80]">{t.kind}</span>
-              <div className="mt-1 grid grid-cols-2 gap-2">
-                {[['customer', t.customer], ['organizer', t.organizer]].map(([key, label]) => (
-                  <button key={key} type="button" onClick={() => setRoleIntent(key)} className={`h-9 rounded-lg border text-[13px] font-semibold ${roleIntent === key ? 'border-[#0F766E] bg-[#eaf6f4] text-[#0F766E]' : 'border-[#e3ecea] text-[#3d5168]'}`}>{label}</button>
-                ))}
-              </div>
-            </div>
-
             <form onSubmit={submit} className={`mt-5 ${isLogin ? 'space-y-5' : 'space-y-4'}`}>
               {!isLogin && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} />}
               {isLogin ? (
@@ -618,7 +609,13 @@ function Auth({ mode }) {
               {isLogin ? t.noAcc : t.hasAcc}
               <Link to={isLogin ? '/royxat' : '/kirish'} className="inline-flex items-center gap-1.5 font-semibold text-[#0F766E]">{isLogin ? t.toReg : t.login} <ArrowRight className="size-4" /></Link>
             </div>
-            <div className="mt-5 flex justify-center lg:hidden">{langBtn}</div>
+            {/* Hisob turi: kirishda rol profildan avtomatik aniqlanadi; bu faqat yangi hisob uchun */}
+            <p className="mt-4 text-center text-[12.5px] text-[#7d8f99]">
+              {t.kind}:{' '}
+              {[['customer', t.customer], ['organizer', t.organizer]].map(([key, label], k) => (
+                <span key={key}>{k ? ' · ' : ''}<button type="button" onClick={() => setRoleIntent(key)} aria-pressed={roleIntent === key} className={roleIntent === key ? 'font-semibold text-[#0F766E]' : 'underline-offset-2 hover:underline'}>{label}</button></span>
+              ))}
+            </p>
           </div>
         </div>
       </main>
@@ -636,7 +633,7 @@ export function AuthAside({ t }) {
       </svg>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white/40 to-transparent" />
       <div className="relative flex h-full flex-col px-10 py-12 text-white xl:px-14">
-        <Link to="/" aria-label="StomaHub" className="inline-flex"><img src="/images/landing/logo-white.png" alt="StomaHub" className="h-12 w-auto" /></Link>
+        <Link to="/" aria-label="StomaHub" className="inline-flex"><img src="/images/landing/logo-white-mark.png" alt="StomaHub" className="h-14 w-auto" /></Link>
         <h1 className="mt-14 max-w-[440px] text-[38px] font-extrabold leading-[1.15] tracking-tight xl:text-[44px]">{t.title}</h1>
         <p className="mt-5 max-w-[360px] text-[17px] leading-relaxed text-white/90">{t.lead}</p>
         <ul className="mt-9 space-y-6">

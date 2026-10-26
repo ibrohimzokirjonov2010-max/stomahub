@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
 import { useSession } from '../sessionStore'
+import { useCrmStats, mln } from '../crmStats'
+import { useClinicPayments } from '../tolovData'
 import {
   ArrowRight, BarChart3, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Globe, GraduationCap, Home, Mail, MapPin, Megaphone,
   Menu, MessageSquareMore, Phone, Search, ShoppingCart, Users, X, LayoutGrid, Bell, Wallet, FileText, Settings, Package, UserRound, Store,
@@ -54,7 +56,7 @@ const btn = 'inline-flex items-center justify-center gap-2 rounded-xl font-semib
 export default function Landing() {
   const session = useSession()
   const authed = session.status === 'authed'
-  const [open, setOpen] = useState(0)
+  const [open, setOpen] = useState(-1)
   const [menu, setMenu] = useState(false)
 
   return (
@@ -62,14 +64,14 @@ export default function Landing() {
       {/* HEADER */}
       <header className="sticky top-0 z-40 border-b border-[#edf2f4] bg-white/95 backdrop-blur">
         <div className={`${wrap} flex h-[64px] items-center gap-6 lg:h-[76px]`}>
-          <Link to="/" aria-label="StomaHub" className="shrink-0"><img src="/images/landing/logo.png" alt="StomaHub" className="h-8 w-auto lg:h-10" /></Link>
+          <Link to="/" aria-label="StomaHub" className="shrink-0"><img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-8 w-auto lg:h-[42px]" /></Link>
           <nav className="mx-auto hidden items-center gap-8 lg:flex">
             {NAV.map(([l, to]) => <Link key={to} to={to} className="text-[15px] font-medium text-[#24384d] hover:text-[#0F766E]">{l}</Link>)}
           </nav>
           <div className="ml-auto flex items-center gap-2 lg:ml-0 lg:gap-3">
             <Link to="/marketplace" aria-label="Qidirish" className="grid size-10 place-items-center rounded-full text-[#24384d] hover:bg-[#eef7f5] lg:size-11"><Search className="size-5" /></Link>
-            <Link to={authed ? '/klinika' : '/kirish'} className={`${btn} hidden h-11 border border-[#0F766E] px-6 text-[15px] text-[#0F766E] hover:bg-[#eef7f5] sm:inline-flex`}>{authed ? 'Kabinet' : 'Kirish'}</Link>
-            <Link to="/royxat" className={`${btn} hidden h-11 bg-[#0F766E] px-6 text-[15px] text-white hover:bg-[#0b5f59] sm:inline-flex`}>Ro‘yxatdan o‘tish</Link>
+            <Link to={authed ? '/klinika' : '/kirish'} className={`${btn} max-sm:hidden h-11 border border-[#0F766E] px-6 text-[15px] text-[#0F766E] hover:bg-[#eef7f5] sm:inline-flex`}>{authed ? 'Kabinet' : 'Kirish'}</Link>
+            <Link to="/royxat" className={`${btn} max-sm:hidden h-11 bg-[#0F766E] px-6 text-[15px] text-white hover:bg-[#0b5f59] sm:inline-flex`}>Ro‘yxatdan o‘tish</Link>
             <button type="button" aria-label="Menyu" onClick={() => setMenu(true)} className="grid size-10 place-items-center rounded-xl border border-[#e2ebee] lg:hidden"><Menu className="size-5" /></button>
           </div>
         </div>
@@ -77,7 +79,7 @@ export default function Landing() {
       {menu && (
         <div className="fixed inset-0 z-50 bg-black/30 lg:hidden" onClick={() => setMenu(false)}>
           <div className="ml-auto flex h-full w-[82%] max-w-[340px] flex-col bg-white p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between"><img src="/images/landing/logo.png" alt="StomaHub" className="h-8" /><button type="button" aria-label="Yopish" onClick={() => setMenu(false)} className="grid size-10 place-items-center rounded-xl border border-[#e2ebee]"><X className="size-5" /></button></div>
+            <div className="flex items-center justify-between"><img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-8" /><button type="button" aria-label="Yopish" onClick={() => setMenu(false)} className="grid size-10 place-items-center rounded-xl border border-[#e2ebee]"><X className="size-5" /></button></div>
             <nav className="mt-6 flex flex-col">
               {NAV.map(([l, to]) => <Link key={to} to={to} className="border-b border-[#eef3f5] py-3.5 text-[16px] font-medium">{l}</Link>)}
             </nav>
@@ -90,16 +92,17 @@ export default function Landing() {
       )}
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#f3faf9_0%,#ffffff_100%)]">
-        <img src="/images/landing/auth-clinic.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 size-full object-cover opacity-[0.16] blur-[2px]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#ffffff_0%,rgba(255,255,255,.85)_40%,rgba(255,255,255,.2)_100%)]" />
+      <section className="relative overflow-hidden bg-[#f3faf9]">
+        <img src="/images/landing/hero-clinic-bg.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 size-full object-cover object-[70%_50%] opacity-90" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.96)_0%,rgba(255,255,255,.85)_34%,rgba(255,255,255,.2)_62%,rgba(255,255,255,0)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,transparent,#fff)]" />
         <div className={`${wrap} relative grid items-center gap-6 pb-10 pt-8 lg:grid-cols-[1.05fr_1fr] lg:pb-0 lg:pt-10`}>
           <div className="lg:pb-14">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#d9ebe8] bg-white/90 px-3 py-1.5 text-[12.5px] font-medium text-[#24384d] sm:text-[13.5px]">
               <span className="grid size-6 place-items-center rounded-full bg-[#e3f3f0] text-[#0F766E]"><Tooth className="size-3.5" /></span>Stomatologlar uchun yagona platforma
             </span>
             <h1 className="mt-5 text-[36px] font-extrabold leading-[1.08] tracking-tight text-[#0f2438] sm:text-[48px] xl:text-[56px]">Stomatologlar uchun <span className="text-[#0F766E]">yagona platforma</span></h1>
-            <p className="mt-5 max-w-[500px] text-[16px] leading-relaxed text-[#3d5168] sm:text-[19px]">Do‘kon, ta’lim, seminarlar va klinika boshqaruvi bir joyda. Stomatologlar uchun zamonaviy ekotizim.</p>
+            <p className="mt-5 max-w-[440px] text-[16px] leading-relaxed text-[#3d5168] sm:text-[21px]">Do‘kon, ta’lim, seminarlar va klinika boshqaruvi bir joyda. Stomatologlar uchun zamonaviy ekotizim.</p>
             <div className="mt-7 grid grid-cols-1 gap-3 sm:flex">
               <Link to="/royxat" className={`${btn} h-14 bg-[#0F766E] px-9 text-[16px] text-white shadow-[0_10px_24px_rgb(15_118_110/0.25)] hover:bg-[#0b5f59]`}>Boshlash <ArrowRight className="size-5" /></Link>
               <Link to="/marketplace" className={`${btn} h-14 border border-[#0F766E] bg-white px-8 text-[16px] text-[#0F766E] hover:bg-[#eef7f5]`}><ShoppingCart className="size-5" /> Marketplace’ni ko‘rish</Link>
@@ -110,10 +113,10 @@ export default function Landing() {
               ))}
             </ul>
           </div>
-          <div className="relative mx-auto h-[400px] w-full max-w-[560px] sm:h-[520px] lg:h-[600px]">
-            <img src="/images/landing/hero-doctor.jpg" alt="Stomatolog" className="absolute bottom-0 left-0 h-[92%] w-[62%] rounded-t-[28px] object-cover object-[50%_20%] [mask-image:linear-gradient(180deg,#000_75%,transparent)]" />
-            <div className="absolute right-0 top-2 w-[47%] max-w-[260px] sm:top-6"><PhoneHome /></div>
-            <span className="absolute bottom-24 right-[-6px] hidden size-14 place-items-center rounded-2xl bg-[#0F766E] text-white shadow-lg sm:grid"><Tooth className="size-7" /></span>
+          <div className="relative mx-auto h-[440px] w-full max-w-[580px] sm:h-[580px] lg:h-[600px]">
+            <img src="/images/landing/hero-doctor-cut.webp" alt="Stomatolog" className="absolute bottom-0 left-[2%] h-[94%] w-auto max-w-none object-contain object-bottom [mask-image:linear-gradient(180deg,#000_88%,transparent)]" />
+            <div className="absolute right-[-2%] top-[3%] z-10 w-[190px] [zoom:1.15] sm:w-[220px] sm:[zoom:1.4] lg:right-[-6%]"><PhoneHome tall /></div>
+            <span className="absolute bottom-[8%] right-[-10px] z-20 hidden size-14 place-items-center rounded-2xl bg-[#0F766E] text-white shadow-lg sm:grid lg:right-[-36px]"><Tooth className="size-7" /></span>
           </div>
         </div>
       </section>
@@ -140,9 +143,9 @@ export default function Landing() {
         <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
           {ROLES.map(([img, t, d, to], i) => (
             <Link key={t} to={to} className={`overflow-hidden rounded-2xl border bg-white transition hover:border-[#0F766E] ${i === 0 ? 'border-[#0F766E]/60' : 'border-[#e8eff1]'} ${i === 4 ? 'col-span-2 sm:col-span-1' : ''}`}>
-              <div className="relative h-[150px] overflow-hidden bg-[#e9f5f2] sm:h-[170px]">
-                <span className="absolute left-1/2 top-[18%] size-[78%] -translate-x-1/2 rounded-full bg-white/60" />
-                <img src={`/images/landing/role-${img}.jpg`} alt={t} className="relative size-full object-cover object-top mix-blend-multiply" />
+              <div className="relative h-[150px] overflow-hidden bg-[linear-gradient(180deg,#eef8f6,#e2f2ee)] sm:h-[170px]">
+                <span className="absolute left-1/2 top-[14%] aspect-square w-[84%] -translate-x-1/2 rounded-full bg-white/70" />
+                <img src={`/images/landing/role-${img}.webp`} alt={t} className="absolute bottom-0 left-1/2 h-[94%] w-auto max-w-none -translate-x-1/2 object-contain object-bottom" />
               </div>
               <div className="flex items-center justify-between gap-2 px-4 py-3.5">
                 <div><b className="block text-[15px] text-[#0f2438] sm:text-[16px]">{t}</b><p className="mt-0.5 text-[12.5px] text-[#5c6e80]">{d}</p></div>
@@ -194,9 +197,9 @@ export default function Landing() {
               <StoreBadge kind="apple" /><StoreBadge kind="google" />
             </div>
           </div>
-          <div className="relative mx-auto flex h-[340px] w-full max-w-[420px] items-start justify-center sm:h-[400px]">
-            <div className="absolute left-[4%] top-0 w-[52%] rotate-[-4deg]"><PhoneHome compact /></div>
-            <div className="absolute right-[4%] top-4 w-[48%] rotate-[5deg]"><PhoneCats /></div>
+          <div className="relative mx-auto flex h-[360px] w-full max-w-[440px] items-start justify-center sm:h-[420px]">
+            <div className="absolute left-[2%] top-0 z-10 w-[54%] rotate-[-3deg]"><PhoneHome compact /></div>
+            <div className="absolute right-[2%] top-6 w-[50%] rotate-[3deg]"><PhoneCats /></div>
           </div>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">{APP.map((t) => <li key={t} className="flex items-center gap-3 text-[15px] text-[#24384d]"><CheckCircle2 className="size-5 shrink-0 fill-[#0F766E] text-white" /> {t}</li>)}</ul>
         </div>
@@ -237,12 +240,12 @@ export default function Landing() {
       <footer className="border-t border-[#edf2f4]">
         <div className={`${wrap} grid grid-cols-2 gap-8 py-10 md:grid-cols-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr_0.8fr]`}>
           <div className="col-span-2 md:col-span-3 lg:col-span-1">
-            <img src="/images/landing/logo.png" alt="StomaHub" className="h-10 w-auto" />
+            <img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-10 w-auto" />
             <p className="mt-3 max-w-[220px] text-[13px] leading-relaxed text-[#5c6e80]">O‘zbekiston stomatologlari uchun yagona platforma.</p>
             <div className="mt-5 flex gap-2.5">
               {[['Telegram', 'https://t.me/', 'M21.9 4.6 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3.1c.9-.3 1.6.2 1.4 1.5Z'], ['Instagram', 'https://instagram.com/', null], ['YouTube', 'https://youtube.com/', null], ['LinkedIn', 'https://linkedin.com/', null]].map(([n, href, d]) => (
                 <a key={n} href={href} target="_blank" rel="noreferrer" aria-label={n} className="grid size-10 place-items-center rounded-full bg-[#e6f4f1] text-[#0F766E] hover:bg-[#d4ece8]">
-                  {d ? <svg viewBox="0 0 24 24" className="size-[18px]" fill="currentColor"><path d={d} /></svg> : <span className="text-[12px] font-bold">{n === 'Instagram' ? 'IG' : n === 'YouTube' ? '▶' : 'in'}</span>}
+                  <Social n={n} d={d} />
                 </a>
               ))}
             </div>
@@ -264,11 +267,18 @@ export default function Landing() {
         </div>
         <div className={`${wrap} flex items-center justify-between border-t border-[#edf2f4] py-5 text-[13px] text-[#5c6e80]`}>
           <span>© 2026 StomaHub. Barcha huquqlar himoyalangan.</span>
-          <span className="flex items-center gap-2"><Globe className="size-4" /> O‘zbekcha</span>
+          <span className="flex items-center gap-2"><Globe className="size-4" /> O‘zbekcha <ChevronDown className="size-4" /></span>
         </div>
       </footer>
     </div>
   )
+}
+
+function Social({ n, d }) {
+  if (d) return <svg viewBox="0 0 24 24" className="size-[18px]" fill="currentColor"><path d={d} /></svg>
+  if (n === 'Instagram') return <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg>
+  if (n === 'YouTube') return <svg viewBox="0 0 24 24" className="size-[18px]" fill="currentColor"><path d="M22 8.2c-.2-1.6-1-2.6-2.6-2.8C17.2 5 12 5 12 5s-5.2 0-7.4.4C3 5.6 2.2 6.6 2 8.2 1.8 9.4 1.8 12 1.8 12s0 2.6.2 3.8c.2 1.6 1 2.6 2.6 2.8 2.2.4 7.4.4 7.4.4s5.2 0 7.4-.4c1.6-.2 2.4-1.2 2.6-2.8.2-1.2.2-3.8.2-3.8s0-2.6-.2-3.8ZM10 15V9l5.2 3L10 15Z" /></svg>
+  return <svg viewBox="0 0 24 24" className="size-[17px]" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.5h4V21H3V9.5Zm6.5 0h3.8v1.6h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.2c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8V21h-4V9.5Z" /></svg>
 }
 
 function Foot({ title, links }) {
@@ -283,7 +293,7 @@ function Foot({ title, links }) {
 function StoreBadge({ kind }) {
   const apple = kind === 'apple'
   return (
-    <a href={apple ? 'https://apps.apple.com/' : 'https://play.google.com/store'} target="_blank" rel="noreferrer" className="inline-flex h-14 items-center gap-3 rounded-xl bg-[#0b0f14] px-4 text-white sm:px-5">
+    <a href={apple ? 'https://apps.apple.com/' : 'https://play.google.com/store'} target="_blank" rel="noreferrer" className="inline-flex h-14 items-center gap-3 whitespace-nowrap rounded-xl bg-[#0b0f14] px-4 text-white sm:px-5">
       {apple ? <svg viewBox="0 0 24 24" className="size-7" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.6 1.3-.1 1.7-.8 3.3-.8 1.5 0 1.9.8 3.3.8 1.4 0 2.2-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.5-1-2.5-4.1ZM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5Z" /></svg>
         : <svg viewBox="0 0 24 24" className="size-7"><path fill="#00d7fe" d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z" /><path fill="#ffce00" d="m16.7 15.3-3.3-3.3 3.3-3.3 3.8 2.2c1 .6 1 1.6 0 2.2l-3.8 2.2Z" /><path fill="#ff3a44" d="M16.7 15.3 13.4 12l-9.8 9.7c.4.2.9.2 1.4-.1l11.7-6.3Z" /><path fill="#00f076" d="M16.7 8.7 5 2.4c-.5-.3-1-.3-1.4-.1L13.4 12l3.3-3.3Z" /></svg>}
       <span className="text-left text-[13px] font-semibold leading-tight sm:text-[14px]">{apple ? 'App Store’dan' : 'Google Play’dan'}<br />yuklab oling</span>
@@ -303,11 +313,14 @@ function Frame({ children }) {
   )
 }
 
-function PhoneHome({ compact = false }) {
+function PhoneHome({ compact = false, tall = false }) {
+  const session = useSession()
+  const firstName = session.status === 'authed' ? String(session.profile?.name || session.profile?.fullName || session.user?.user_metadata?.name || '').trim().split(/\s+/)[0] : ''
   return (
     <Frame>
       <div className="px-3 pb-2 pt-3">
-        <div className="flex items-center justify-between"><img src="/images/landing/logo.png" alt="" className="h-5" /><Bell className="size-3.5 text-[#24384d]" /></div>
+        <div className="flex items-center justify-between"><img src="/images/landing/logo-mark.png" alt="" className="h-5" /><Bell className="size-3.5 text-[#24384d]" /></div>
+        {firstName && <p className="mt-1.5 text-[10px] font-bold text-[#0f2438]">Salom, {firstName}</p>}
         <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-[#f1f5f6] px-2 py-1.5 text-[8.5px] text-[#8aa0a8]"><Search className="size-3" /> Nima qidiryapsiz?</div>
         <div className="mt-2.5 grid grid-cols-4 gap-1 text-center text-[7.5px] text-[#3d5168]">
           {[[Package, 'Materiallar'], [Tooth, 'Implantlar'], [Settings, 'Uchliklar'], [LayoutGrid, 'Jihozlar']].map(([I, t]) => <span key={t}><span className="mx-auto mb-1 grid size-7 place-items-center rounded-lg bg-[#e6f4f1] text-[#0F766E]"><I className="size-3.5" /></span>{t}</span>)}
@@ -317,6 +330,8 @@ function PhoneHome({ compact = false }) {
         <div className="mt-1.5 grid grid-cols-3 gap-1">
           {['/images/cat-1.jpg', '/images/cat-2.jpg', '/images/cat-3.jpg'].map((s, i) => <div key={s} className="overflow-hidden rounded-lg bg-[#f1f5f6]"><img src={s} alt="" className={`${compact ? 'h-9' : 'h-11'} w-full object-cover`} /><p className="px-1 py-0.5 text-[7px] font-semibold">{['Dental materiallar', 'Implantlar', 'Uchliklar'][i]}</p></div>)}
         </div>
+        {tall && <><div className="mt-2.5 flex justify-between text-[8.5px]"><b>Yaqin seminarlar</b><span className="text-[#0F766E]">Barchasi →</span></div>
+        <div className="mt-1.5 flex items-center gap-2 rounded-lg bg-[#f7fafa] p-1.5"><span className="grid size-8 place-items-center rounded-md bg-[#e6f4f1] text-[#0F766E]"><CalendarDays className="size-4" /></span><span className="text-[7.5px] leading-tight"><b className="block text-[8px]">Seminarlar va kurslar</b><span className="text-[#8aa0a8]">Taqvimni ko‘rish</span></span></div></>}
       </div>
       <div className="flex justify-around border-t border-[#eef3f5] py-1.5 text-[7px] text-[#5c6e80]">
         {[[Home, 'Bosh sahifa'], [Store, 'Do‘kon'], [CalendarDays, 'Seminarlar'], [Tooth, 'Ustalar'], [UserRound, 'Profil']].map(([I, t], i) => <span key={t} className={`flex flex-col items-center ${i === 0 ? 'text-[#0F766E]' : ''}`}><I className="size-3" />{t}</span>)}
@@ -338,16 +353,35 @@ function PhoneCats() {
   )
 }
 
+function isoDay(d) {
+  const s = String(d || '')
+  const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})/)
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : s.slice(0, 10)
+}
+
 function CrmDash() {
-  const pts = [18, 26, 34, 42, 44, 40, 52, 48, 56, 62, 58, 68, 74]
+  // Faqat haqiqiy ma’lumot (crmStats). Kirilmagan bo‘lsa — nollar va bo‘sh holat, hech qanday soxta raqam yo‘q.
+  const session = useSession()
+  const authed = session.status === 'authed'
+  const crm = useCrmStats()
+  const payments = useClinicPayments()
+  const months = []
+  const now = new Date(`${crm.today}T00:00:00`)
+  for (let k = 11; k >= 0; k -= 1) { const d = new Date(now.getFullYear(), now.getMonth() - k, 1); months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`) }
+  const sums = months.map((m) => (authed ? payments.filter((r) => r && r.status !== 'Qaytarilgan' && isoDay(r.date).slice(0, 7) === m).reduce((a, r) => a + (Number(r.amount) || 0), 0) : 0))
+  const max = Math.max(...sums, 1)
+  const pts = sums.map((v) => 8 + (v / max) * 64)
   const path = pts.map((v, i) => `${i ? 'L' : 'M'}${(i / (pts.length - 1)) * 100} ${80 - v}`).join(' ')
+  const visits = authed ? crm.todayVisits.slice(0, 4) : []
+  const stats = [[Users, 'Bugungi qabul', String(authed ? crm.todayAppointments : 0)], [Wallet, 'To‘lovlar', String(authed ? crm.paymentsCount : 0)], [CalendarDays, 'Oylik tushum', mln(authed ? crm.revenueMonth : 0)], [BarChart3, 'Jami tushum', mln(authed ? crm.revenueTotal : 0)]]
+  const MN = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
   return (
-    <div className="rounded-[24px] bg-[#e7f3f1]/70 p-2 sm:p-4">
+    <div className="relative rounded-[26px] bg-[#e4f2ef]/80 p-2 shadow-[0_30px_60px_rgb(16_40_50/0.08)] sm:p-4">
       <div className="overflow-hidden rounded-2xl border border-[#e3ecee] bg-white shadow-[0_20px_50px_rgb(16_40_50/0.10)]">
         <div className="flex items-center gap-3 border-b border-[#eef3f5] px-4 py-2.5">
-          <img src="/images/landing/logo.png" alt="" className="h-6" />
+          <img src="/images/landing/logo-mark.png" alt="" className="h-5" />
           <span className="mx-auto hidden w-[46%] items-center gap-1.5 rounded-lg bg-[#f3f6f7] px-2.5 py-1.5 text-[10px] text-[#8aa0a8] sm:flex"><Search className="size-3" /> Bemorlarni qidirish</span>
-          <span className="ml-auto flex items-center gap-2 text-[10px]"><Bell className="size-3.5" /><img src="/images/avatar.jpg" alt="" className="size-6 rounded-full object-cover" /></span>
+          <span className="ml-auto flex items-center gap-2 text-[10px] text-[#5c6e80]"><Bell className="size-3.5" /><span className="grid size-6 place-items-center rounded-full bg-[#e6f4f1] text-[#0F766E]"><UserRound className="size-3.5" /></span></span>
         </div>
         <div className="grid grid-cols-[auto_1fr]">
           <aside className="hidden w-[130px] space-y-0.5 border-r border-[#eef3f5] p-2 text-[10px] text-[#5c6e80] sm:block">
@@ -355,13 +389,14 @@ function CrmDash() {
           </aside>
           <div className="min-w-0 p-3">
             <b className="text-[12px]">Bosh sahifa</b>
-            <div className="mt-2 grid grid-cols-4 gap-1.5">
-              {[[Users, 'Bemorlar', '248'], [CalendarDays, 'Uchrashuvlar', '18'], [Wallet, 'To‘lovlar', '42'], [BarChart3, 'Daromad', '36,5 mln']].map(([I, t, v]) => <div key={t} className="rounded-lg border border-[#eef3f5] p-1.5"><I className="size-3.5 text-[#0F766E]" /><p className="mt-1 truncate text-[8.5px] text-[#5c6e80]">{t}</p><b className="text-[10.5px]">{v}</b></div>)}
+            <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              {stats.map(([I, t, v]) => <div key={t} className="flex items-center gap-2 rounded-lg border border-[#eef3f5] p-1.5"><span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#e6f4f1] text-[#0F766E]"><I className="size-3.5" /></span><span className="min-w-0"><p className="truncate text-[8.5px] text-[#5c6e80]">{t}</p><b className="text-[10.5px]">{v}</b></span></div>)}
             </div>
             <div className="mt-2 grid grid-cols-[1.6fr_1fr] gap-1.5">
               <div className="rounded-lg border border-[#eef3f5] p-2">
                 <p className="flex justify-between text-[9.5px] font-semibold">Bugungi uchrashuvlar<span className="text-[#0F766E]">Barchasi →</span></p>
-                {[['Aliyeva Mohira', 'Davolash'], ['Karimov Behzod', 'Konsultatsiya'], ['Rahimova Malika', 'Tozalash'], ['To‘rayev Sardor', 'Implant']].map(([n, s], i) => <p key={n} className="mt-1 flex items-center gap-1.5 rounded-md bg-[#f7fafa] px-1.5 py-1 text-[8.5px]"><img src={`/images/bemorlar/bemor-${['mohira', 'bobur', 'malika', 'sardor'][i]}.jpg`} alt="" className="size-4 rounded-full object-cover" /><span className="flex-1 truncate">{n}</span><span className="text-[#8aa0a8]">{s}</span></p>)}
+                {visits.length ? visits.map((v) => <p key={v.id} className="mt-1 flex items-center gap-1.5 rounded-md bg-[#f7fafa] px-1.5 py-1 text-[8.5px]">{v.photo ? <img src={v.photo} alt="" className="size-4 rounded-full object-cover" /> : <UserRound className="size-4 text-[#8aa0a8]" />}<span className="flex-1 truncate">{v.name}</span><span className="text-[#8aa0a8]">{v.service}</span></p>)
+                  : <p className="mt-3 flex flex-col items-center gap-1 py-3 text-center text-[9px] text-[#8aa0a8]"><CalendarDays className="size-5 text-[#b9cfd0]" />Bugun hali qabul yo‘q</p>}
               </div>
               <div className="rounded-lg border border-[#eef3f5] p-2 text-[8.5px]">
                 <p className="text-[9.5px] font-semibold">Amallar</p>
@@ -369,8 +404,12 @@ function CrmDash() {
               </div>
             </div>
             <div className="mt-2 rounded-lg border border-[#eef3f5] p-2">
-              <p className="flex justify-between text-[9.5px] font-semibold">Daromad dinamikasi<span className="text-[#0F766E]">Barchasi →</span></p>
-              <svg viewBox="0 0 100 82" preserveAspectRatio="none" className="mt-1 h-20 w-full"><defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#0F766E" stopOpacity=".25" /><stop offset="1" stopColor="#0F766E" stopOpacity="0" /></linearGradient></defs><path d={`${path} L100 82 L0 82Z`} fill="url(#g)" /><path d={path} fill="none" stroke="#0F766E" strokeWidth="1.2" vectorEffect="non-scaling-stroke" /></svg>
+              <p className="flex items-center justify-between text-[9.5px] font-semibold">Daromad dinamikasi<span className="flex items-center gap-2"><span className="rounded border border-[#e3ecee] px-1.5 py-0.5 font-normal text-[#5c6e80]">Oy / Yil</span><span className="text-[#0F766E]">Barchasi →</span></span></p>
+              <div className="mt-1 grid grid-cols-[auto_1fr] gap-1">
+                <div className="flex h-20 flex-col justify-between text-[7px] text-[#8aa0a8]">{[1, 0.66, 0.33, 0].map((f) => <span key={f}>{mln(authed ? max * f : 0).replace(' mln', '')}</span>)}</div>
+                <svg viewBox="0 0 100 82" preserveAspectRatio="none" className="h-20 w-full"><defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#0F766E" stopOpacity=".25" /><stop offset="1" stopColor="#0F766E" stopOpacity="0" /></linearGradient></defs>{[2, 28, 54, 80].map((y) => <line key={y} x1="0" x2="100" y1={y} y2={y} stroke="#eef3f5" strokeWidth=".6" vectorEffect="non-scaling-stroke" />)}<path d={`${path} L100 82 L0 82Z`} fill="url(#g)" /><path d={path} fill="none" stroke="#0F766E" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />{pts.map((v, i) => <circle key={i} cx={(i / (pts.length - 1)) * 100} cy={80 - v} r="1.1" fill="#0F766E" />)}</svg>
+              </div>
+              <div className="ml-5 flex justify-between text-[7px] text-[#8aa0a8]">{months.map((m) => <span key={m}>{MN[Number(m.slice(5)) - 1]}</span>)}</div>
             </div>
           </div>
         </div>
