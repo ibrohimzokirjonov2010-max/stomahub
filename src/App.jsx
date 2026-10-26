@@ -9,7 +9,20 @@ import SurplusItem from './pages/SurplusItem'
 import SeminarsPage from './pages/SeminarsPage'
 import Seminar from './pages/Seminar'
 import SeminarReg from './pages/SeminarReg'
-import Organizer from './pages/Organizer'
+import Shell from './organizer/Shell'
+import Dashboard from './organizer/pages/Dashboard'
+import Seminars from './organizer/pages/Seminars'
+import Participants from './organizer/pages/Participants'
+import Tickets from './organizer/pages/Tickets'
+import QrCheckin from './organizer/pages/Qr'
+import OrgPayments from './organizer/pages/Payments'
+import OrgCertificates from './organizer/pages/Certificates'
+import Promos from './organizer/pages/Promos'
+import Wizard from './organizer/pages/Wizard'
+import WalletPage from './organizer/pages/Wallet'
+import ConfirmHeld from './organizer/pages/Confirm'
+import SeminarDetail from './organizer/pages/Detail'
+import { Marketing, Speakers, Reports, Ratings, SettingsPage, HelpPage } from './organizer/pages/Extra'
 import ChannelsRoute from './pages/Channels'
 import EducationRoute from './pages/Education'
 import BooksRoute from './pages/Books'
@@ -115,7 +128,26 @@ export default function App() {
           />
           <Route path="/ortiqcha" element={<Responsive mobile={<MobileSurplus />}><ShopLayout active="surplus" search="icon" placeholder="Ortiqcha materiallar ichidan qidiring..."><Surplus /></ShopLayout></Responsive>} />
           <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
-          <Route path="/tashkilotchi" element={<Organizer />} />
+          <Route path="/tashkilotchi" element={<Shell />}>
+            <Route index element={<Dashboard />} />
+            <Route path="seminarlar" element={<Seminars />} />
+            <Route path="seminarlar/yangi" element={<Wizard />} />
+            <Route path="seminarlar/:id" element={<SeminarDetail />} />
+            <Route path="seminarlar/:id/tasdiqlash" element={<ConfirmHeld />} />
+            <Route path="ishtirokchilar" element={<Participants />} />
+            <Route path="chiptalar" element={<Tickets />} />
+            <Route path="qr" element={<QrCheckin />} />
+            <Route path="tolovlar" element={<OrgPayments />} />
+            <Route path="hamyon" element={<WalletPage />} />
+            <Route path="sertifikatlar" element={<OrgCertificates />} />
+            <Route path="promo" element={<Promos />} />
+            <Route path="marketing" element={<Marketing />} />
+            <Route path="maruzachilar" element={<Speakers />} />
+            <Route path="hisobotlar" element={<Reports />} />
+            <Route path="reyting" element={<Ratings />} />
+            <Route path="sozlamalar" element={<SettingsPage />} />
+            <Route path="yordam" element={<HelpPage />} />
+          </Route>
           <Route path="/seminarlar/:id/royxat" element={<Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive>} />
           <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminar />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />

@@ -1,0 +1,556 @@
+import { useId, useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Award, Calendar, ChevronDown, ChevronRight, GraduationCap, Info, MapPin, Megaphone, Plus, QrCode,
+  Send, Share2, Download, Users, Wallet, X, Check,
+} from 'lucide-react'
+import { ACTIVITY, MONTHS, SEAT, UPCOMING } from '../data'
+import { useOrg } from '../Shell'
+import { Badge, Btn, MiniSelect, Modal, cx } from '../ui'
+
+/** Bar heights traced from the 1280 design (0–200 scale). */
+const BARS = [36, 65, 65, 93, 101, 65, 84, 112, 131, 116, 143, 190]
+/** Line shape traced from the design. November (index 10) is the marked point. */
+const LINE = [5, 9, 20, 20, 25, 12, 17, 25, 34, 45, 52, 70]
+const LINE_MAX = 88
+const TICKETS = [
+  { label: 'Standart', pct: 56, n: 694, color: '#0a8a82' },
+  { label: 'VIP', pct: 24, n: 298, color: '#5ed0c6' },
+  { label: 'Student', pct: 12, n: 149, color: '#b7ebe4' },
+  { label: 'Bepul', pct: 8, n: 99, color: '#e5f7f4' },
+]
+
+const CHECKINS = [
+  { name: 'Aliyeva Mohira', phone: '+998 90 123 45 67', ticket: 'Standart', time: 'Bugun, 09:12', ok: true, avatar: '/images/seller-2.jpg' },
+  { name: 'Karimov Bekzod', phone: '+998 91 234 56 78', ticket: 'VIP', time: 'Bugun, 08:56', ok: true, avatar: '/images/seller-3.jpg' },
+  { name: 'Toirov Dilshod', phone: '+998 93 345 67 89', ticket: 'Standart', time: 'Bugun, 08:42', ok: false, avatar: '/images/forma/woman-navy.jpg' },
+  { name: 'Saydova Malika', phone: '+998 90 456 78 90', ticket: 'Standart', time: 'Bugun, 08:21', ok: true, avatar: '/images/forma/man-teal.jpg' },
+  { name: 'Usmonov Javohir', phone: '+998 91 567 89 01', ticket: 'VIP', time: 'Bugun, 08:10', ok: true, avatar: '/images/seller-1.jpg' },
+]
+
+const ICONS = { user: Users, pay: Wallet, cal: Calendar, award: Award, qr: QrCode }
+
+function smoothLine(pts) {
+  if (pts.length < 2) return ''
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[i + 2] || p2
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`
+  }
+  return d
+}
+
+function Panel({ title, extra, children, className, bodyClass }) {
+  return (
+    <section className={cx('rounded-2xl border border-[#e6f1ef] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.04)]', className)}>
+      {(title || extra) && (
+        <div className="flex items-center justify-between gap-2 px-3.5 pt-2.5">
+          {title ? <h2 className="min-w-0 text-[14.5px] font-bold leading-tight text-[#143044]">{title}</h2> : <span />}
+          {extra}
+        </div>
+      )}
+      <div className={bodyClass || 'px-3.5 pb-2.5 pt-1.5'}>{children}</div>
+    </section>
+  )
+}
+
+function DashKpi({ icon: Icon, label, value, delta, hint }) {
+  return (
+    <article className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
+        <Icon className="size-[18px]" strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[12px] leading-tight text-[#6e868c]">{label}</p>
+        <p className="mt-0.5 whitespace-nowrap text-[17px] font-bold leading-none tracking-tight text-[#143044]">{value}</p>
+        <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] leading-none text-[#8aa0a4]">
+          <span className="inline-flex items-center font-semibold text-[#16a34a]">
+            <svg viewBox="0 0 12 12" className="mr-0.5 size-2.5" aria-hidden><path d="M6 1.5 10 7H2L6 1.5Z" fill="currentColor" /></svg>
+            {delta}
+          </span>
+          <span>{hint}</span>
+        </p>
+      </div>
+    </article>
+  )
+}
+
+function Bars({ values }) {
+  const max = 200
+  const ticks = [200, 150, 100, 50, 0]
+  return (
+    <div>
+      <div className="flex h-[108px] gap-1.5">
+        <div className="flex h-full w-7 shrink-0 flex-col justify-between text-right text-[10px] leading-none text-[#9aafb4]">
+          {ticks.map((n) => <span key={n}>{n}</span>)}
+        </div>
+        <div className="relative min-w-0 flex-1">
+          {[0, 25, 50, 75].map((p) => (
+            <span key={p} className="absolute inset-x-0 border-t border-[#f0f5f4]" style={{ top: `${p}%` }} />
+          ))}
+          <div className="absolute inset-0 flex items-end gap-[6px] border-b border-[#e6eeec]">
+            {values.map((v, i) => {
+              const pct = Math.max(2, (v / max) * 100)
+              return (
+                <div key={MONTHS[i]} className="flex h-full min-w-0 flex-1 items-end">
+                  <div className="relative w-full overflow-hidden rounded-t-[5px]" style={{ height: `${pct}%` }}>
+                    <div
+                      className="absolute inset-x-0 bottom-0"
+                      style={{
+                        height: `${100 / (pct / 100)}%`,
+                        background: 'linear-gradient(to bottom, #06786f 0%, #2fafa4 36%, #8fdcd4 68%, #d9f5f1 100%)',
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="ml-8 mt-1.5 flex">
+        {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[10px] leading-none text-[#8aa4a8]">{m}</span>)}
+      </div>
+    </div>
+  )
+}
+
+function RevenueChart({ values }) {
+  const gid = useId().replace(/:/g, '')
+  const w = 360
+  const h = 108
+  const left = 4
+  const right = 10
+  const top = 8
+  const base = 98
+  const step = (w - left - right) / (values.length - 1)
+  const yOf = (v) => top + (1 - v / LINE_MAX) * (base - top)
+  const pts = values.map((v, i) => [left + i * step, yOf(v)])
+  const d = smoothLine(pts)
+  const area = `${d} L${pts[pts.length - 1][0].toFixed(1)},${base} L${pts[0][0].toFixed(1)},${base} Z`
+  const mark = pts[10]
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${w} ${h}`} className="h-[108px] w-full overflow-visible">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#14a394" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#14a394" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#${gid})`} />
+        <path d={d} fill="none" stroke="#12a394" strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
+        <line x1={mark[0]} x2={mark[0]} y1={mark[1] + 7} y2={base} stroke="#b7c9cc" strokeWidth="1.25" strokeDasharray="3 3" />
+        {pts.map((p, i) => (
+          i === 10 ? null : <circle key={i} cx={p[0]} cy={p[1]} r="3.1" fill="#fff" stroke="#12a394" strokeWidth="1.8" />
+        ))}
+        <circle cx={mark[0]} cy={mark[1]} r="7.5" fill="none" stroke="#12a394" strokeOpacity="0.28" strokeWidth="1.5" />
+        <circle cx={mark[0]} cy={mark[1]} r="4.6" fill="#fff" stroke="var(--color-org-teal)" strokeWidth="2.4" />
+      </svg>
+      <div
+        className="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg bg-[#16324a] px-2.5 py-1.5 text-white shadow-[0_8px_18px_rgb(16_32_48/0.18)]"
+        style={{ left: `${(mark[0] / w) * 100}%`, top: `${(mark[1] / h) * 100}%`, transform: 'translate(-92%, calc(-100% - 12px))' }}
+      >
+        <p className="text-[11px] font-semibold leading-none">Noyabr</p>
+        <p className="mt-1 text-[11px] font-medium leading-none">18 400 000 so‘m</p>
+      </div>
+      <div className="mt-1 flex">
+        {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[10px] leading-none text-[#8aa4a8]">{m}</span>)}
+      </div>
+    </div>
+  )
+}
+
+function TicketDonut() {
+  let acc = 0
+  const stops = TICKETS.map((p) => {
+    const next = acc + p.pct
+    const s = `${p.color} ${acc}% ${next}%`
+    acc = next
+    return s
+  }).join(',')
+  return (
+    <div className="flex items-center gap-2.5 py-1">
+      <div className="relative size-[108px] shrink-0">
+        <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(${stops})` }} />
+        <div className="absolute inset-[26%] grid place-items-center rounded-full bg-white text-center">
+          <div>
+            <div className="text-[15px] font-bold leading-none tracking-tight text-[#143044]">1 240</div>
+            <div className="mt-0.5 text-[10px] text-[#7e9398]">chipta</div>
+          </div>
+        </div>
+      </div>
+      <ul className="min-w-0 flex-1 space-y-[7px]">
+        {TICKETS.map((t) => (
+          <li key={t.label} className="grid grid-cols-[8px_minmax(0,1fr)_28px_26px] items-center gap-1.5 text-[12px] leading-none">
+            <span className="size-2 rounded-full" style={{ background: t.color }} />
+            <span className="whitespace-nowrap text-[#3e5a62]">{t.label}</span>
+            <span className="text-right font-semibold text-[#143044]">{t.pct}%</span>
+            <span className="text-right text-[#7e9398]">{t.n}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function Activity({ a }) {
+  const Icon = ICONS[a.icon]
+  return (
+    <li className="flex items-start gap-2">
+      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-[#e7f7f4] text-[var(--color-org-teal)]">
+        <Icon className="size-3.5" strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="whitespace-nowrap text-[12px] font-semibold leading-none text-[#143044]">{a.title}</p>
+          <span className="shrink-0 text-[10.5px] leading-none text-[#8aa4a8]">{a.time}</span>
+        </div>
+        <p className="mt-0.5 whitespace-nowrap text-[11px] leading-none text-[#7e9398]">{a.text}</p>
+      </div>
+    </li>
+  )
+}
+
+function Quick({ icon: Icon, label, onClick }) {
+  return (
+    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1 rounded-xl px-1 py-1 text-center hover:bg-[#f4fbfb]">
+      <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
+        <Icon className="size-4" strokeWidth={1.8} />
+      </span>
+      <span className="max-w-[88px] text-[11px] font-medium leading-[1.15] text-[#1c4a5a]">{label}</span>
+    </button>
+  )
+}
+
+function SeminarRow({ s, navigate }) {
+  const st = SEAT[s.seat]
+  const pct = Math.round((s.sold / s.seats) * 100)
+  return (
+    <li className="flex items-center gap-2.5 px-3 py-1.5">
+      <div className="relative h-[50px] w-[150px] shrink-0 overflow-hidden rounded-[10px]">
+        <img src={s.image} alt="" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/5" />
+        <p className="absolute inset-y-0 left-0 flex w-[78%] items-center px-2 text-[10.5px] font-semibold leading-[1.2] text-white drop-shadow-[0_1px_1px_rgb(0_0_0/0.45)]">
+          <span className="line-clamp-2">{s.title}</span>
+        </p>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="whitespace-nowrap text-[13px] font-semibold leading-tight text-[#143044]">{s.title}</p>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11.5px] text-[#7e9398]">
+          <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#8aa4a8]" /> {s.when}</span>
+          <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#8aa4a8]" /> {s.city}</span>
+        </p>
+      </div>
+      <div className="w-[76px] shrink-0">
+        <p className="text-right text-[11px] leading-none text-[#6e868c]">{s.sold} / {s.seats}</p>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#e8f1ef]">
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: st.bar }} />
+        </div>
+      </div>
+      <Badge tone={st.tone}>{st.label}</Badge>
+      <button
+        type="button"
+        onClick={() => navigate(`/tashkilotchi/seminarlar/${s.id}`)}
+        className="inline-flex h-8 shrink-0 items-center rounded-lg border border-[#d5ebe6] bg-white px-2.5 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]"
+      >
+        Tafsilotlar
+      </button>
+    </li>
+  )
+}
+
+function Desktop() {
+  const { query, notify } = useOrg()
+  const navigate = useNavigate()
+  const [banner, setBanner] = useState(true)
+  const [range, setRange] = useState('1-yan, 2026 — 31-dek, 2026')
+  const [rangeOpen, setRangeOpen] = useState(false)
+  const [metric, setMetric] = useState('Ishtirokchilar soni')
+  const [unit, setUnit] = useState('So‘mda')
+  const [activity, setActivity] = useState(false)
+  const [invite, setInvite] = useState(false)
+  const [email, setEmail] = useState('')
+  const [err, setErr] = useState('')
+
+  const list = useMemo(() => {
+    const s = query.trim().toLowerCase()
+    if (!s) return UPCOMING
+    return UPCOMING.filter((x) => `${x.title} ${x.city}`.toLowerCase().includes(s))
+  }, [query])
+
+  const bars = metric === 'Ishtirokchilar soni' ? BARS : BARS.map((n) => Math.max(8, Math.round(n * 0.55)))
+
+  const sendInvite = () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('Email noto‘g‘ri'); return }
+    setInvite(false); setEmail(''); setErr(''); notify('Taklifnoma yuborildi')
+  }
+
+  return (
+    <div className="-mt-1">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-[#143044]">Boshqaruv paneli</h1>
+          <p className="mt-0.5 text-[13px] text-[#6e868c]">Seminarlaringiz umumiy ko‘rinishi va asosiy ko‘rsatkichlar</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="relative">
+            <button type="button" onClick={() => setRangeOpen((v) => !v)} className="flex h-10 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 text-[12.5px] font-medium text-[#1c4a5a]">
+              <Calendar className="size-4 text-[var(--color-org-teal)]" /> {range} <ChevronDown className="size-3.5 text-[#8aa4a8]" />
+            </button>
+            {rangeOpen && (
+              <ul className="absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+                {['1-yan, 2026 — 31-dek, 2026', 'Shu oy', 'So‘nggi 90 kun', 'Shu yil'].map((o) => (
+                  <li key={o}><button type="button" className="block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa]" onClick={() => { setRange(o); setRangeOpen(false) }}>{o}</button></li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Btn to="/tashkilotchi/seminarlar/yangi"><Plus className="size-4" /> Yangi seminar yaratish</Btn>
+        </div>
+      </div>
+
+      <section className="grid grid-cols-2 gap-3 min-[1180px]:grid-cols-4">
+        <DashKpi icon={GraduationCap} label="Jami seminarlar" value="12" delta="+3" hint="o‘tgan oyga nisbatan" />
+        <DashKpi icon={Users} label="Jami ishtirokchilar" value="1 240" delta="+18%" hint="o‘tgan oyga nisbatan" />
+        <DashKpi icon={Wallet} label="Umumiy tushum" value="98 600 000 so‘m" delta="+28%" hint="o‘tgan oyga nisbatan" />
+        <DashKpi icon={Award} label="Berilgan sertifikatlar" value="987" delta="+22%" hint="o‘tgan oyga nisbatan" />
+      </section>
+
+      <section className="mt-2 grid gap-3 min-[1180px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_276px]">
+        <Panel title="Ishtirokchilar dinamikasi" extra={<MiniSelect label={metric} value={metric} options={['Ishtirokchilar soni', 'Yangi ro‘yxat', 'Qayta kelganlar']} onChange={setMetric} />}>
+          <Bars values={bars} />
+        </Panel>
+        <Panel title="Tushumlar" extra={<MiniSelect label={unit} value={unit} options={['So‘mda', 'Ming so‘m', 'Dollar']} onChange={setUnit} />}>
+          <p className="mb-1 text-[20px] font-bold leading-none tracking-tight text-[#143044]">
+            {unit === 'Dollar' ? '7 800 $' : unit === 'Ming so‘m' ? '98 600 ming' : '98 600 000 so‘m'}
+          </p>
+          <RevenueChart values={unit === 'Dollar' ? LINE.map((n) => Math.round(n * 0.7)) : LINE} />
+        </Panel>
+        <Panel title="Chipta turlari bo‘yicha sotuv" bodyClass="px-3 pb-3 pt-1">
+          <TicketDonut />
+        </Panel>
+      </section>
+
+      <section className="mt-2 grid items-start gap-3 min-[1180px]:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-2">
+          <Panel
+            title="Yaqinlashayotgan seminarlar"
+            extra={<Link to="/tashkilotchi/seminarlar" className="shrink-0 text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</Link>}
+            bodyClass="px-0 pb-1 pt-1"
+          >
+            <ul className="divide-y divide-[#eef4f3]">
+              {list.map((s) => <SeminarRow key={s.id} s={s} navigate={navigate} />)}
+              {list.length === 0 && <li className="py-8 text-center text-[13px] text-[#7e9398]">Seminar topilmadi</li>}
+            </ul>
+          </Panel>
+          {banner && (
+            <div className="flex items-center gap-3 rounded-2xl border border-[#d7f0ea] bg-[#eefaf6] px-3.5 py-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[var(--color-org-teal)] shadow-[0_1px_2px_rgb(12_143_134/0.08)]">
+                <Megaphone className="size-5" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-bold leading-tight text-[#143044]">Seminarlaringizni kengroq auditoriyaga yetkazing</p>
+                <p className="mt-0.5 text-[12px] leading-snug text-[#5f7c80]">Platforma orqali reklama qiling va ko‘proq ishtirokchilar jalb qiling.</p>
+              </div>
+              <Link to="/tashkilotchi/marketing" className="inline-flex h-9 shrink-0 items-center rounded-xl border border-[#b7e0d8] bg-white px-3 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f6fdfb]">
+                Marketing vositalari →
+              </Link>
+              <button type="button" onClick={() => setBanner(false)} aria-label="Yopish" className="grid size-8 shrink-0 place-items-center rounded-lg text-[#7e9398] hover:bg-white/70">
+                <X className="size-4" />
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 space-y-2">
+          <Panel title="So‘nggi faoliyatlar" extra={<button type="button" onClick={() => setActivity(true)} className="shrink-0 text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</button>}>
+            <ul className="space-y-1.5">
+              {ACTIVITY.map((a) => <Activity key={a.title} a={a} />)}
+            </ul>
+          </Panel>
+          <Panel title="Tezkor amallar" bodyClass="px-1.5 pb-2 pt-1">
+            <div className="grid grid-cols-3 gap-1">
+              <Quick icon={Send} label="Taklifnoma yuborish" onClick={() => setInvite(true)} />
+              <Quick icon={Download} label="QR tushirish" onClick={() => notify('QR kodlar yuklab olindi')} />
+              <Quick icon={Share2} label="Seminarni ulashish" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/tashkilotchi/seminarlar/implant-nov`).catch(() => {}); notify('Havola nusxalandi') }} />
+            </div>
+          </Panel>
+        </div>
+      </section>
+
+      <Modal open={activity} title="So‘nggi faoliyatlar" onClose={() => setActivity(false)} width={480}>
+        <ul className="space-y-3">{ACTIVITY.map((a) => <Activity key={a.title} a={a} />)}</ul>
+      </Modal>
+      <Modal open={invite} title="Taklifnoma yuborish" sub="Ishtirokchi emailini kiriting" onClose={() => setInvite(false)}>
+        <input value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} placeholder="email@mail.uz" className="h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" />
+        {err && <p className="mt-1 text-[12px] text-[#e11d48]">{err}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Btn kind="soft" onClick={() => setInvite(false)}>Bekor qilish</Btn>
+          <Btn onClick={sendInvite}>Yuborish</Btn>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+function Status({ ok }) {
+  if (ok) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#16a34a]">
+        <span className="grid size-[18px] place-items-center rounded-full bg-[#16a34a] text-white">
+          <Check className="size-3" strokeWidth={3} />
+        </span>
+        Keldi
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#9aa6aa]">
+      <span className="size-[18px] rounded-full border-2 border-[#d5dee0]" />
+      Kelmadi
+    </span>
+  )
+}
+
+function Mobile() {
+  const { query } = useOrg()
+  const [info, setInfo] = useState(false)
+  const q = query.trim().toLowerCase()
+  const rows = q ? CHECKINS.filter((r) => `${r.name} ${r.phone} ${r.ticket}`.toLowerCase().includes(q)) : CHECKINS
+
+  return (
+    <div className="-mt-1 pb-1">
+      <p className="text-[13px] leading-tight text-[#7e9398]">Assalomu alaykum,</p>
+      <h1 className="mt-0.5 text-[24px] font-bold leading-none tracking-tight text-[#143044]">Seminar Pro</h1>
+      <p className="mt-1 text-[12.5px] text-[#8aa0a4]">Bugun ham muvaffaqiyatli kun bo‘lsin!</p>
+
+      <Link to="/tashkilotchi/seminarlar/implant-nov" className="mt-3 block rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_8px_24px_rgb(20_60_60/0.04)]">
+        <div className="flex gap-2.5">
+          <img src="/images/hero-implant.jpg" alt="" className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">Implantologiya</span>
+            <p className="mt-1 flex items-start gap-1 text-[15px] font-bold leading-tight text-[#143044]">
+              <span className="min-w-0 flex-1">Implantologiya: amaliy kurs</span>
+              <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#9aafb4]" />
+            </p>
+            <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-snug text-[#6e868c]">
+              <Calendar className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
+              <span>21 oktabr 2026, 09:00 – 18:00</span>
+            </p>
+            <p className="mt-1 flex items-start gap-1.5 text-[12px] leading-snug text-[#6e868c]">
+              <MapPin className="mt-0.5 size-3.5 shrink-0 text-[var(--color-org-teal)]" />
+              <span>Toshkent City Kongress Markazi</span>
+            </p>
+          </div>
+        </div>
+        <div className="mt-2 border-t border-[#f0f5f4] pt-2">
+          <div className="flex items-center gap-2">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]">
+              <Users className="size-4" strokeWidth={1.8} />
+            </span>
+            <span className="text-[13px] font-medium text-[#1c4a5a]">Sotilgan chiptalar</span>
+            <span className="ml-auto text-[13.5px] font-bold text-[#143044]">42 / 50</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#e6f3f1]">
+              <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: '84%' }} />
+            </div>
+            <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">84%</span>
+          </div>
+        </div>
+      </Link>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <article className="rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
+          <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
+            <Users className="size-[18px]" strokeWidth={1.8} />
+          </span>
+          <p className="mt-2 text-[12px] text-[#6e868c]">Bugungi check-in</p>
+          <p className="mt-0.5 text-[18px] font-bold leading-none tracking-tight text-[#143044]">28 kishi</p>
+          <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Jami: 42 ishtirokchi</p>
+        </article>
+        <article className="relative rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
+          <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
+            <Wallet className="size-[18px]" strokeWidth={1.8} />
+          </span>
+          <p className="mt-2 flex items-center gap-1 text-[12px] text-[#6e868c]">
+            Daromad
+            <button type="button" aria-label="Daromad haqida" onClick={() => setInfo((v) => !v)} className="text-[#9aafb4]">
+              <Info className="size-3.5" />
+            </button>
+          </p>
+          {info && (
+            <p className="absolute left-3 right-3 top-16 z-10 rounded-lg bg-[#16324a] px-2 py-1.5 text-[11px] leading-snug text-white shadow-lg">
+              Ushlab turilgan summa to‘lov tasdiqlangach hamyonga o‘tadi.
+            </p>
+          )}
+          <p className="mt-0.5 text-[16px] font-bold leading-tight tracking-tight text-[#143044]">17 500 000 so‘m</p>
+          <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Ushlab turilgan summa</p>
+        </article>
+      </div>
+
+      <div className="mt-2 space-y-2">
+        <Link to="/tashkilotchi/seminarlar/yangi" className="flex items-center gap-3 rounded-2xl border border-[#e7f2f0] bg-white px-3 py-2 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
+            <Plus className="size-5" strokeWidth={1.8} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14.5px] font-bold leading-tight text-[#143044]">Yangi seminar</span>
+            <span className="mt-0.5 block text-[12px] text-[#8aa0a4]">Seminar qo‘shish</span>
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-[#9aafb4]" />
+        </Link>
+        <Link to="/tashkilotchi/qr" className="flex items-center gap-3 rounded-2xl border border-[#e7f2f0] bg-white px-3 py-2 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
+            <QrCode className="size-5" strokeWidth={1.8} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14.5px] font-bold leading-tight text-[#143044]">QR skaner</span>
+            <span className="mt-0.5 block text-[12px] text-[#8aa0a4]">Check-in qilish</span>
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-[#9aafb4]" />
+        </Link>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <h2 className="text-[16px] font-bold text-[#143044]">So‘nggi ro‘yxatdan o‘tishlar</h2>
+        <Link to="/tashkilotchi/ishtirokchilar" className="inline-flex shrink-0 items-center gap-0.5 text-[12.5px] font-semibold text-[var(--color-org-teal)]">
+          Barchasini ko‘rish <ChevronRight className="size-3.5" />
+        </Link>
+      </div>
+      <ul className="mt-2 divide-y divide-[#eef3f2] overflow-hidden rounded-2xl border border-[#e7f2f0] bg-white">
+        {rows.map((r) => (
+          <li key={r.phone} className="flex items-center gap-2 px-2.5 py-2">
+            <img src={r.avatar} alt="" className="size-9 shrink-0 rounded-full object-cover" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13.5px] font-semibold leading-tight text-[#143044]">{r.name}</p>
+              <p className="mt-0.5 truncate text-[11.5px] text-[#8aa0a4]">{r.phone}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[12.5px] font-medium leading-tight text-[#1c4a5a]">{r.ticket}</p>
+              <p className="mt-0.5 text-[11px] text-[#8aa0a4]">{r.time}</p>
+            </div>
+            <Status ok={r.ok} />
+          </li>
+        ))}
+        {rows.length === 0 && <li className="px-3 py-8 text-center text-[13px] text-[#7e9398]">Ro‘yxat topilmadi</li>}
+      </ul>
+    </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <>
+      <div className="md:hidden"><Mobile /></div>
+      <div className="hidden md:block"><Desktop /></div>
+    </>
+  )
+}

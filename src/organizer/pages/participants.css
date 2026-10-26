@@ -1,0 +1,6 @@
+/* Table cells keep a 24px strut from whitespace text nodes. Kill it. */
+.org-participants tbody td {
+  font-size: 12px;
+  line-height: 1.15;
+  vertical-align: middle;
+}
