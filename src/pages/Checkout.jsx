@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   House, ChevronRight, UserRound, MapPin, Truck, Store, Check, Lock, ShieldCheck,
@@ -7,9 +7,9 @@ import {
 import ShopLayout from '../components/market/ShopLayout'
 import { useCart } from '../cart'
 import { som } from '../marketData'
+import { profileStore, useProfile } from '../profileStore'
 import { receiveStock } from '../omborData'
 
-const ORDER = 'SH-10482'
 const SHIP_FEE = 25000
 
 const CITIES = {
@@ -21,12 +21,6 @@ const CITIES = {
   Namangan: ['Markaz', 'Chortoq tumani'],
   Nukus: ['Markaz'],
 }
-
-const SAVED = [
-  { id: 'uy', tag: 'Uy', line: 'Amir Temur ko‘chasi, 25-uy, 3-xonadon', city: 'Toshkent', district: 'Yunusobod tumani', address: 'Amir Temur ko‘chasi, 25-uy, 3-xonadon, 5-qavat' },
-  { id: 'klinika', tag: 'Klinika', line: 'Shota Rustaveli ko‘chasi, 15-uy', city: 'Toshkent', district: 'Yakkasaroy tumani', address: 'Shota Rustaveli ko‘chasi, 15-uy' },
-  { id: 'filial', tag: 'Filial', line: 'Navoi ko‘chasi, 12-uy', city: 'Toshkent', district: 'Mirobod tumani', address: 'Navoi ko‘chasi, 12-uy' },
-]
 
 const METHODS = [
   { id: 'click', title: 'Click', text: 'Click orqali to‘lov', hint: 'Tavsiya etiladi', pay: 'https://my.click.uz/services/pay' },
@@ -49,17 +43,18 @@ export default function Checkout() {
   const loc = useLocation()
   const origin = ORIGIN[loc.state?.from] || ORIGIN.market
   const { items, total, clear } = useCart()
+  const profile = useProfile()
   const [step, setStep] = useState(1)
   const [method, setMethod] = useState('click')
   const [shipMode, setShipMode] = useState('courier')
   const [form, setForm] = useState({
-    name: 'Ibrohim',
-    phone: '90 123 45 67',
+    name: '',
+    phone: '',
     city: 'Toshkent',
-    district: 'Yunusobod tumani',
-    address: 'Amir Temur ko‘chasi, 25-uy, 3-xonadon, 5-qavat',
+    district: '',
+    address: '',
     note: '',
-    saved: 'uy',
+    saved: '',
   })
   const [code, setCode] = useState('')
   const [promoOpen, setPromoOpen] = useState(false)
@@ -72,6 +67,29 @@ export default function Checkout() {
   const [allSaved, setAllSaved] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [placed, setPlaced] = useState(null)
+  const [orderId] = useState(() => `SH-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`)
+  const savedRows = (profile.accountLive ? profile.addresses : []).map((row) => ({
+    id: row.id,
+    tag: row.tag || 'Manzil',
+    line: row.address || row.street || '',
+    city: row.city,
+    district: row.district,
+    address: row.address || row.street || '',
+  }))
+
+  useEffect(() => {
+    if (!profile.accountLive) return
+    const addr = profile.addresses.find((row) => row.id === profile.defaultAddr) || profile.addresses[0]
+    setForm((current) => ({
+      ...current,
+      name: profile.name || '',
+      phone: profile.phone || '',
+      city: addr?.city || profile.city || current.city || 'Toshkent',
+      district: addr?.district || profile.district || '',
+      address: addr?.address || '',
+      saved: addr?.id || '',
+    }))
+  }, [profile.accountLive])
 
   const ship = shipMode === 'courier' ? SHIP_FEE : 0
   const goods = total
@@ -116,9 +134,30 @@ export default function Checkout() {
     }
     setError('')
     if (openLink && pay.pay) window.open(pay.pay, '_blank', 'noopener,noreferrer')
-    const snap = {
-      id: ORDER,
+    const id = orderId
+    const at = new Date()
+    const months = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
+    const order = {
+      id,
+      at: `${at.getDate()} ${months[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
       items: items.map((it) => ({ ...it })),
+      goods,
+      fee: ship,
+      discount,
+      total: grand,
+      method: pay.id,
+      months: 0,
+      mode: shipMode === 'courier' ? 'courier' : 'pickup',
+      eta: '1–2 kun',
+      days: '1–2 kun',
+      name: form.name.trim(),
+      phone: form.phone,
+      address: shipMode === 'courier' ? `${form.city}, ${form.address}` : 'Do‘kondan olib ketish',
+    }
+    profileStore.addOrder(order)
+    const snap = {
+      id,
+      items: order.items,
       goods,
       ship,
       discount,
@@ -191,6 +230,7 @@ export default function Checkout() {
                         setZoom={setZoom}
                         allSaved={allSaved}
                         setAllSaved={setAllSaved}
+                        savedRows={savedRows}
                       />
                     )}
                     {step === 2 && (
@@ -253,6 +293,7 @@ export default function Checkout() {
         <PayModal
           pay={pay}
           amount={grand}
+          orderId={orderId}
           onClose={() => setPayOpen(false)}
           onOther={() => { setPayOpen(false); setStep(2) }}
           onPay={() => finish(true)}
@@ -291,9 +332,9 @@ function Stepper({ step }) {
   )
 }
 
-function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoom, allSaved, setAllSaved }) {
+function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoom, allSaved, setAllSaved, savedRows }) {
   const districts = CITIES[form.city] || []
-  const saved = allSaved ? SAVED : SAVED.slice(0, 2)
+  const saved = allSaved ? savedRows : savedRows.slice(0, 2)
   return (
     <div className="space-y-4">
       <section className="rounded-2xl bg-white p-4 shadow-card">
@@ -343,6 +384,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
           <button type="button" onClick={() => setAllSaved((v) => !v)} className="text-[12px] font-semibold text-sea">{allSaved ? 'Yig‘ish' : 'Barchasini ko‘rish'}</button>
         </div>
         <div className="mt-2 space-y-2">
+          {!saved.length && <p className="rounded-xl border border-dashed border-[#d7e4ea] px-3 py-4 text-center text-[12.5px] text-muted">Saqlangan manzil yo‘q. Manzilni yuqorida kiriting.</p>}
           {saved.map((a) => (
             <button key={a.id} type="button" onClick={() => setForm((f) => ({ ...f, city: a.city, district: a.district, address: a.address, saved: a.id }))} className="flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left" style={{ borderColor: form.saved === a.id ? '#0b8a95' : '#e6ebf2' }}>
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sea-50 text-sea"><MapPin className="size-4" /></span>
@@ -592,7 +634,7 @@ function Done({ placed, origin }) {
   )
 }
 
-function PayModal({ pay, amount, onClose, onOther, onPay }) {
+function PayModal({ pay, amount, orderId, onClose, onOther, onPay }) {
   const clock = new Date().toTimeString().slice(0, 5)
   return (
     <div className="bemor-shade" onClick={onClose}>
@@ -605,9 +647,9 @@ function PayModal({ pay, amount, onClose, onOther, onPay }) {
           <button type="button" onClick={onPay} className="mx-auto"><Mark id={pay.id} large /></button>
           <p className="mt-3 text-[12px] text-muted">To‘lov summasi</p>
           <b className="block text-[26px]">{som(amount)}</b>
-          <p className="text-[12px] text-muted">Buyurtma raqami: #{ORDER}</p>
+          <p className="text-[12px] text-muted">Buyurtma raqami: #{orderId}</p>
           <button type="button" onClick={onPay} className="mx-auto mt-3 grid size-40 place-items-center rounded-xl border border-line" aria-label={`${pay.title} to‘lov havolasi`}>
-            <Qr seed={`${ORDER}-${pay.pay}`} />
+            <Qr seed={`${orderId}-${pay.pay}`} />
           </button>
           <p className="mx-auto mt-3 max-w-[340px] text-[12.5px] text-ink-2">Telefoningiz kamerasi yoki {pay.title} ilovasi bilan QR kodni skanerlang — to‘lov summasi avtomatik to‘ldiriladi.</p>
           <button type="button" onClick={onPay} className="mt-1 text-[12px] font-semibold text-sea">{pay.pay}</button>

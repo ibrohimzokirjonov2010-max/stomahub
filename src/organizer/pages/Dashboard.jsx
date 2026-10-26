@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Award, Calendar, ChevronDown, ChevronRight, GraduationCap, Info, MapPin, Megaphone, Plus, QrCode,
@@ -9,36 +9,28 @@ import { useOrg } from '../Shell'
 import { moneyOf, useHub, walletOf } from '../../hubStore'
 import { Badge, Btn, MiniSelect, Modal, cx } from '../ui'
 
-/** Bar heights traced from the 1280 design (0–200 scale). */
-const BARS = [36, 65, 65, 93, 101, 65, 84, 112, 131, 116, 143, 190]
-/** Line shape traced from the design. November (index 10) is the marked point. */
-const LINE = [5, 9, 20, 20, 25, 12, 17, 25, 34, 45, 52, 70]
-const LINE_MAX = 88
-const TICKETS = [
-  { label: 'Standart', pct: 56, n: 694, color: '#0a8a82' },
-  { label: 'VIP', pct: 24, n: 298, color: '#5ed0c6' },
-  { label: 'Student', pct: 12, n: 149, color: '#b7ebe4' },
-  { label: 'Bepul', pct: 8, n: 99, color: '#e5f7f4' },
-]
+const TICKET_COLORS = ['#0a8a82', '#5ed0c6', '#b7ebe4', '#7ec8c0', '#e5f7f4']
+
+function ticketSplit(participants) {
+  const map = new Map()
+  participants.forEach((person) => {
+    const label = person.ticket || 'Boshqa'
+    map.set(label, (map.get(label) || 0) + 1)
+  })
+  const total = participants.length || 1
+  return [...map.entries()].map(([label, n], index) => ({
+    label,
+    n,
+    pct: Math.round((n / total) * 100),
+    color: TICKET_COLORS[index % TICKET_COLORS.length],
+  }))
+}
+
+function EmptyNote({ children }) {
+  return <p className="px-2 py-8 text-center text-[13px] leading-snug text-[#7e9398]">{children}</p>
+}
 
 const ICONS = { user: Users, pay: Wallet, cal: Calendar, award: Award, qr: QrCode }
-
-function smoothLine(pts) {
-  if (pts.length < 2) return ''
-  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] || pts[i]
-    const p1 = pts[i]
-    const p2 = pts[i + 1]
-    const p3 = pts[i + 2] || p2
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6
-    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`
-  }
-  return d
-}
 
 function Panel({ title, extra, children, className, bodyClass }) {
   return (
@@ -64,10 +56,12 @@ function DashKpi({ icon: Icon, label, value, delta, hint }) {
         <p className="text-[12px] leading-tight text-[#6e868c]">{label}</p>
         <p className="mt-0.5 whitespace-nowrap text-[17px] font-bold leading-none tracking-tight text-[#143044]">{value}</p>
         <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] leading-none text-[#8aa0a4]">
-          <span className="inline-flex items-center font-semibold text-[#16a34a]">
-            <svg viewBox="0 0 12 12" className="mr-0.5 size-2.5" aria-hidden><path d="M6 1.5 10 7H2L6 1.5Z" fill="currentColor" /></svg>
-            {delta}
-          </span>
+          {delta ? (
+            <span className="inline-flex items-center font-semibold text-[#16a34a]">
+              <svg viewBox="0 0 12 12" className="mr-0.5 size-2.5" aria-hidden><path d="M6 1.5 10 7H2L6 1.5Z" fill="currentColor" /></svg>
+              {delta}
+            </span>
+          ) : null}
           <span>{hint}</span>
         </p>
       </div>
@@ -75,9 +69,9 @@ function DashKpi({ icon: Icon, label, value, delta, hint }) {
   )
 }
 
-function Bars({ values }) {
-  const max = 200
-  const ticks = [200, 150, 100, 50, 0]
+function Bars({ values, labels = MONTHS }) {
+  const max = Math.max(1, ...values)
+  const ticks = [max, Math.round(max * 0.75), Math.round(max * 0.5), Math.round(max * 0.25), 0]
   return (
     <div>
       <div className="flex h-[108px] gap-1.5">
@@ -92,7 +86,7 @@ function Bars({ values }) {
             {values.map((v, i) => {
               const pct = Math.max(2, (v / max) * 100)
               return (
-                <div key={MONTHS[i]} className="flex h-full min-w-0 flex-1 items-end">
+                <div key={labels[i] || i} className="flex h-full min-w-0 flex-1 items-end">
                   <div className="relative w-full overflow-hidden rounded-t-[5px]" style={{ height: `${pct}%` }}>
                     <div
                       className="absolute inset-x-0 bottom-0"
@@ -109,82 +103,38 @@ function Bars({ values }) {
         </div>
       </div>
       <div className="ml-8 mt-1.5 flex">
-        {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[10px] leading-none text-[#8aa4a8]">{m}</span>)}
+        {labels.map((m, i) => <span key={`${m}-${i}`} className="flex-1 truncate text-center text-[10px] leading-none text-[#8aa4a8]">{m}</span>)}
       </div>
     </div>
   )
 }
 
-function RevenueChart({ values }) {
-  const gid = useId().replace(/:/g, '')
-  const w = 360
-  const h = 108
-  const left = 4
-  const right = 10
-  const top = 8
-  const base = 98
-  const step = (w - left - right) / (values.length - 1)
-  const yOf = (v) => top + (1 - v / LINE_MAX) * (base - top)
-  const pts = values.map((v, i) => [left + i * step, yOf(v)])
-  const d = smoothLine(pts)
-  const area = `${d} L${pts[pts.length - 1][0].toFixed(1)},${base} L${pts[0][0].toFixed(1)},${base} Z`
-  const mark = pts[10]
-  return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${w} ${h}`} className="h-[108px] w-full overflow-visible">
-        <defs>
-          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#14a394" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#14a394" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill={`url(#${gid})`} />
-        <path d={d} fill="none" stroke="#12a394" strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
-        <line x1={mark[0]} x2={mark[0]} y1={mark[1] + 7} y2={base} stroke="#b7c9cc" strokeWidth="1.25" strokeDasharray="3 3" />
-        {pts.map((p, i) => (
-          i === 10 ? null : <circle key={i} cx={p[0]} cy={p[1]} r="3.1" fill="#fff" stroke="#12a394" strokeWidth="1.8" />
-        ))}
-        <circle cx={mark[0]} cy={mark[1]} r="7.5" fill="none" stroke="#12a394" strokeOpacity="0.28" strokeWidth="1.5" />
-        <circle cx={mark[0]} cy={mark[1]} r="4.6" fill="#fff" stroke="var(--color-org-teal)" strokeWidth="2.4" />
-      </svg>
-      <div
-        className="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg bg-[#16324a] px-2.5 py-1.5 text-white shadow-[0_8px_18px_rgb(16_32_48/0.18)]"
-        style={{ left: `${(mark[0] / w) * 100}%`, top: `${(mark[1] / h) * 100}%`, transform: 'translate(-92%, calc(-100% - 12px))' }}
-      >
-        <p className="text-[11px] font-semibold leading-none">Noyabr</p>
-        <p className="mt-1 text-[11px] font-medium leading-none">18 400 000 so‘m</p>
-      </div>
-      <div className="mt-1 flex">
-        {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[10px] leading-none text-[#8aa4a8]">{m}</span>)}
-      </div>
-    </div>
-  )
-}
-
-function TicketDonut() {
+function TicketDonut({ tickets }) {
+  if (!tickets.length) return <EmptyNote>Hali chipta sotilmagan.</EmptyNote>
   let acc = 0
-  const stops = TICKETS.map((p) => {
+  const stops = tickets.map((p) => {
     const next = acc + p.pct
     const s = `${p.color} ${acc}% ${next}%`
     acc = next
     return s
   }).join(',')
+  const total = tickets.reduce((sum, row) => sum + row.n, 0)
   return (
     <div className="flex items-center gap-2.5 py-1">
       <div className="relative size-[108px] shrink-0">
         <div className="absolute inset-0 rounded-full" style={{ background: `conic-gradient(${stops})` }} />
         <div className="absolute inset-[26%] grid place-items-center rounded-full bg-white text-center">
           <div>
-            <div className="text-[15px] font-bold leading-none tracking-tight text-[#143044]">1 240</div>
+            <div className="text-[15px] font-bold leading-none tracking-tight text-[#143044]">{total}</div>
             <div className="mt-0.5 text-[10px] text-[#7e9398]">chipta</div>
           </div>
         </div>
       </div>
       <ul className="min-w-0 flex-1 space-y-[7px]">
-        {TICKETS.map((t) => (
+        {tickets.map((t) => (
           <li key={t.label} className="grid grid-cols-[8px_minmax(0,1fr)_28px_26px] items-center gap-1.5 text-[12px] leading-none">
             <span className="size-2 rounded-full" style={{ background: t.color }} />
-            <span className="whitespace-nowrap text-[#3e5a62]">{t.label}</span>
+            <span className="truncate text-[#3e5a62]">{t.label}</span>
             <span className="text-right font-semibold text-[#143044]">{t.pct}%</span>
             <span className="text-right text-[#7e9398]">{t.n}</span>
           </li>
@@ -297,9 +247,13 @@ function Desktop() {
   }, [query, hub.seminars])
   const totals = moneyOf(hub)
   const revenue = totals.gross
-  const feed = hub.activity?.length ? hub.activity : []
-
-  const bars = metric === 'Ishtirokchilar soni' ? BARS : BARS.map((n) => Math.max(8, Math.round(n * 0.55)))
+  const feed = hub.activity || []
+  const tickets = ticketSplit(hub.participants)
+  const seminarBars = hub.seminars.slice(0, 12).map((seminar) => (
+    metric === 'Ishtirokchilar soni'
+      ? hub.participants.filter((person) => person.seminarId === seminar.id).length
+      : seminar.sold || 0
+  ))
 
   const sendInvite = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('Email noto‘g‘ri'); return }
@@ -338,17 +292,26 @@ function Desktop() {
       </section>
 
       <section className="mt-2 grid gap-3 min-[1180px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_276px]">
-        <Panel title="Ishtirokchilar dinamikasi" extra={<MiniSelect label={metric} value={metric} options={['Ishtirokchilar soni', 'Yangi ro‘yxat', 'Qayta kelganlar']} onChange={setMetric} />}>
-          <Bars values={bars} />
+        <Panel title="Ishtirokchilar dinamikasi" extra={<MiniSelect label={metric} value={metric} options={['Ishtirokchilar soni', 'Sotilgan chipta']} onChange={setMetric} />}>
+          {seminarBars.some((value) => value > 0) ? <Bars values={seminarBars} labels={hub.seminars.slice(0, 12).map((seminar) => seminar.title.slice(0, 3))} /> : <EmptyNote>Hali ishtirokchi yo‘q. Birinchi seminaringizni yarating.</EmptyNote>}
         </Panel>
         <Panel title="Tushumlar" extra={<MiniSelect label={unit} value={unit} options={['So‘mda', 'Ming so‘m', 'Dollar']} onChange={setUnit} />}>
           <p className="mb-1 text-[20px] font-bold leading-none tracking-tight text-[#143044]">
             {unit === 'Dollar' ? `${Math.round(revenue / 12500).toLocaleString('ru-RU')} $` : unit === 'Ming so‘m' ? `${Math.round(revenue / 1000).toLocaleString('ru-RU')} ming` : som(revenue)}
           </p>
-          <RevenueChart values={unit === 'Dollar' ? LINE.map((n) => Math.round(n * 0.7)) : LINE} />
+          {revenue > 0 ? (
+            <ul className="max-h-[120px] space-y-1 overflow-auto">
+              {hub.seminars.filter((seminar) => seminar.revenue).map((seminar) => (
+                <li key={seminar.id} className="flex items-center justify-between gap-2 text-[12px]">
+                  <span className="truncate text-[#3e5a62]">{seminar.title}</span>
+                  <b className="shrink-0 text-[#143044]">{som(seminar.revenue)}</b>
+                </li>
+              ))}
+            </ul>
+          ) : <EmptyNote>Hali tushum yo‘q. To‘lovlar shu hisobga yoziladi.</EmptyNote>}
         </Panel>
         <Panel title="Chipta turlari bo‘yicha sotuv" bodyClass="px-3 pb-3 pt-1">
-          <TicketDonut />
+          <TicketDonut tickets={tickets} />
         </Panel>
       </section>
 
@@ -386,20 +349,21 @@ function Desktop() {
           <Panel title="So‘nggi faoliyatlar" extra={<button type="button" onClick={() => setActivity(true)} className="shrink-0 text-[12.5px] font-semibold text-[var(--color-org-teal)]">Barchasini ko‘rish</button>}>
             <ul className="space-y-1.5">
               {feed.map((a) => <Activity key={a.title + a.time} a={a} />)}
+              {feed.length === 0 && <EmptyNote>Hali faoliyat yo‘q.</EmptyNote>}
             </ul>
           </Panel>
           <Panel title="Tezkor amallar" bodyClass="px-1.5 pb-2 pt-1">
             <div className="grid grid-cols-3 gap-1">
               <Quick icon={Send} label="Taklifnoma yuborish" onClick={() => setInvite(true)} />
               <Quick icon={Download} label="QR tushirish" onClick={() => { const lines = hub.participants.slice(0, 40).map((p) => `${p.code},${p.name},${p.phone}`).join('\n'); const blob = new Blob([`kod,ism,telefon\n${lines}`], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'qr-kodlar.csv'; a.click(); notify('QR kodlar yuklab olindi') }} />
-              <Quick icon={Share2} label="Seminarni ulashish" onClick={() => { const id = list[0]?.id || 'implant-nov'; navigator.clipboard?.writeText(`${window.location.origin}/seminarlar/${id}`).catch(() => {}); notify('Havola nusxalandi') }} />
+              <Quick icon={Share2} label="Seminarni ulashish" onClick={() => { const id = list[0]?.id; if (!id) { notify('Avval seminar yarating'); return } navigator.clipboard?.writeText(`${window.location.origin}/seminarlar/${id}`).catch(() => {}); notify('Havola nusxalandi') }} />
             </div>
           </Panel>
         </div>
       </section>
 
       <Modal open={activity} title="So‘nggi faoliyatlar" onClose={() => setActivity(false)} width={480}>
-        <ul className="space-y-3">{feed.map((a) => <Activity key={a.title + a.time} a={a} />)}</ul>
+        <ul className="space-y-3">{feed.map((a) => <Activity key={a.title + a.time} a={a} />)}{feed.length === 0 && <EmptyNote>Hali faoliyat yo‘q.</EmptyNote>}</ul>
       </Modal>
       <Modal open={invite} title="Taklifnoma yuborish" sub="Ishtirokchi emailini kiriting" onClose={() => setInvite(false)}>
         <input value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} placeholder="email@mail.uz" className="h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" />
@@ -444,15 +408,23 @@ function Mobile() {
   const rows = hub.participants
     .filter((p) => !q || `${p.name} ${p.phone} ${p.ticket}`.toLowerCase().includes(q))
     .slice(0, 8)
-    .map((p) => ({ name: p.name, phone: p.phone, ticket: p.ticket, time: String(p.registered || '').split(', ')[1] || p.registered, ok: !!p.arrived, avatar: p.avatar }))
+    .map((p) => ({
+      name: p.name,
+      phone: p.phone,
+      ticket: p.ticket,
+      time: String(p.registered || '').split(', ')[1] || p.registered,
+      ok: !!p.arrived,
+      avatar: p.avatar || '/images/avatar.jpg',
+    }))
+  const hello = hub.settings?.name || 'Tashkilotchi'
 
   return (
     <div className="-mt-1 pb-1">
       <p className="text-[13px] leading-tight text-[#7e9398]">Assalomu alaykum,</p>
-      <h1 className="mt-0.5 text-[24px] font-bold leading-none tracking-tight text-[#143044]">Seminar Pro</h1>
+      <h1 className="mt-0.5 text-[24px] font-bold leading-none tracking-tight text-[#143044]">{hello}</h1>
       <p className="mt-1 text-[12.5px] text-[#8aa0a4]">Bugun ham muvaffaqiyatli kun bo‘lsin!</p>
 
-      <Link to={`/tashkilotchi/seminarlar/${next?.id || 'implant-nov'}`} className="mt-3 block rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_8px_24px_rgb(20_60_60/0.04)]">
+      {next ? <Link to={`/tashkilotchi/seminarlar/${next.id}`} className="mt-3 block rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_8px_24px_rgb(20_60_60/0.04)]">
         <div className="flex gap-2.5">
           <img src={next?.image || '/images/hero-implant.jpg'} alt="" className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
@@ -486,7 +458,13 @@ function Mobile() {
             <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">{pct}%</span>
           </div>
         </div>
-      </Link>
+      </Link> : (
+        <div className="mt-3 rounded-2xl border border-dashed border-[#d5ebe6] bg-white px-4 py-8 text-center">
+          <p className="text-[15px] font-bold text-[#143044]">Hali seminar yo‘q</p>
+          <p className="mt-1 text-[12.5px] text-[#6e868c]">Birinchi seminaringizni yarating — statistika shu yerda paydo bo‘ladi.</p>
+          <Link to="/tashkilotchi/seminarlar/yangi" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Seminar yaratish</Link>
+        </div>
+      )}
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <article className="rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
@@ -561,7 +539,7 @@ function Mobile() {
             <Status ok={r.ok} />
           </li>
         ))}
-        {rows.length === 0 && <li className="px-3 py-8 text-center text-[13px] text-[#7e9398]">Ro‘yxat topilmadi</li>}
+        {rows.length === 0 && <li className="px-3 py-8 text-center text-[13px] text-[#7e9398]">{q ? 'Ro‘yxat topilmadi' : 'Hali ishtirokchi yo‘q'}</li>}
       </ul>
     </div>
   )

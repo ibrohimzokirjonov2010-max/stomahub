@@ -9,6 +9,7 @@ import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { ADS, adPrice } from '../../elonlarData'
 import { COURSES, allOrders, profileStore, useProfile } from '../../profileStore'
+import { signOut } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -79,11 +80,14 @@ export default function MobileProfil() {
   const fileRef = useRef(null)
 
   const orders = allOrders(profile)
-  const myAds = [...added, ...ADS.filter((a) => a.seller === 'smile')]
-  const favCount = profile.favProducts.length + seminars.saved.length + profile.favCourses.length + savedAds.size
+  const notes = profile.accountLive ? [] : NOTIFS
+  const myAds = profile.accountLive ? added : [...added, ...ADS.filter((a) => a.seller === 'smile')]
+  const favCount = profile.favProducts.length + seminars.saved.length + profile.favCourses.length + (profile.accountLive ? 0 : savedAds.size)
   const mySem = useMySeminars()
   const semCount = mySem.upcoming.length + mySem.past.length
-  const unread = NOTIFS.filter((n) => !profile.readNotifs.includes(n.id)).length
+  const myCourseCount = profile.accountLive ? new Set([...(profile.favCourses || []), ...Object.keys(profile.courseDone || {})]).size : COURSES.length
+  const unread = notes.filter((n) => !profile.readNotifs.includes(n.id)).length
+  const displayName = profile.name || (profile.accountLive ? 'Ism kiritilmagan' : 'Mehmon')
   const close = () => setSheet(null)
 
   const pickAvatar = async (e) => {
@@ -104,7 +108,7 @@ export default function MobileProfil() {
     [
       { id: 'orders', icon: ClipboardList, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Mening buyurtmalarim', text: 'Buyurtmalar tarixi va holati', count: orders.length, go: () => navigate('/profil/buyurtmalar') },
       { id: 'favs', icon: Heart, tone: 'bg-[#fde8ef] text-[#e04f7d]', title: 'Sevimlilar', text: 'Mahsulotlar, seminarlar va e’lonlar', count: favCount, go: () => navigate('/profil/sevimlilar') },
-      { id: 'courses', icon: GraduationCap, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Kurslarim', text: 'Onlayn kurslar va sertifikatlar', count: COURSES.length, go: () => navigate('/profil/kurslar') },
+      { id: 'courses', icon: GraduationCap, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Kurslarim', text: 'Onlayn kurslar va sertifikatlar', count: myCourseCount, go: () => navigate('/profil/kurslar') },
       { id: 'seminars', icon: CalendarDays, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Seminarlarim', text: 'Ro‘yxatdan o‘tgan seminarlar', count: semCount, go: () => navigate('/profil/seminarlar') },
       { id: 'ads', icon: Megaphone, tone: 'bg-[#e3f5f3] text-sea', title: 'E’lonlarim', text: 'Ish va xizmat e’lonlarim', count: myAds.length },
     ],
@@ -142,6 +146,7 @@ export default function MobileProfil() {
             </button>
           </div>
         </header>
+        {profile.syncError && <p className="mt-2 rounded-xl bg-[#fff4f4] px-3 py-2 text-[12.5px] text-[#b42318]">{profile.syncError}</p>}
 
         <section className="relative mt-2 overflow-hidden rounded-2xl border border-[#dcefed] bg-[linear-gradient(105deg,#f4fbfb_0%,#e9f6f5_55%,#e2f2f1_100%)] p-3.5">
           <img src="/images/ishlar/ish-chair.jpg" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[50%] object-cover object-[28%_50%] opacity-70 [mask-image:linear-gradient(90deg,transparent_0%,rgb(0_0_0/0.5)_45%,#000_80%)]" />
@@ -155,7 +160,7 @@ export default function MobileProfil() {
             </div>
             <div className="min-w-0 flex-1">
               <p className={`flex items-center gap-1 text-[17px] font-bold leading-tight ${navy}`}>
-                <span className="truncate">{profile.name}</span>
+                <span className="truncate">{displayName}</span>
                 {profile.plus ? <Crown className="size-[18px] shrink-0 fill-[#f5b301] text-[#f5b301]" /> : <BadgeCheck className="size-[18px] shrink-0 fill-[#1f6fd1] text-white" />}
               </p>
               <p className="mt-0.5 text-[12.5px] text-ink-2">{profile.role}</p>
@@ -212,10 +217,10 @@ export default function MobileProfil() {
 
       {sheet === 'edit' && <EditSheet profile={profile} onPick={() => fileRef.current?.click()} onClose={close} onSaved={() => { close(); setToast('Profil ma’lumotlari saqlandi') }} />}
       {sheet === 'ads' && <AdsSheet ads={myAds} onClose={close} />}
-      {sheet === 'bonus' && <BonusSheet bonus={profile.bonus} onClose={close} />}
+      {sheet === 'bonus' && <BonusSheet bonus={profile.bonus} log={profile.accountLive ? [] : BONUS_LOG} onClose={close} />}
       {sheet === 'plus' && <PlusSheet plus={profile.plus} onClose={close} onToast={setToast} />}
       {sheet === 'notif' && <NotifSheet notif={profile.notif} onClose={close} />}
-      {sheet === 'inbox' && <InboxSheet read={profile.readNotifs} onClose={close} onOpen={(n) => (n.to ? navigate(n.to) : setSheet(n.open))} />}
+      {sheet === 'inbox' && <InboxSheet items={notes} read={profile.readNotifs} onClose={close} onOpen={(n) => (n.to ? navigate(n.to) : setSheet(n.open))} />}
       {sheet === 'lang' && <LangSheet lang={profile.lang} onClose={close} onToast={setToast} />}
       {sheet === 'help' && <HelpSheet onClose={close} />}
       {sheet === 'clinic' && (
@@ -237,7 +242,7 @@ export default function MobileProfil() {
           footer={
             <>
               <button type="button" onClick={close} className="h-12 flex-1 rounded-xl border border-line text-[14px] font-semibold text-ink">Bekor qilish</button>
-              <button type="button" onClick={() => { close(); profileStore.update({ loggedOut: true }); window.scrollTo(0, 0) }} className="h-12 flex-1 rounded-xl bg-sale text-[14px] font-semibold text-white">Chiqish</button>
+              <button type="button" onClick={() => { close(); signOut(); profileStore.update({ loggedOut: true }); window.scrollTo(0, 0) }} className="h-12 flex-1 rounded-xl bg-sale text-[14px] font-semibold text-white">Chiqish</button>
             </>
           }
         >
@@ -389,7 +394,7 @@ function AdsSheet({ ads, onClose }) {
   )
 }
 
-function BonusSheet({ bonus, onClose }) {
+function BonusSheet({ bonus, log, onClose }) {
   return (
     <BottomSheet title="Bonus balans" onClose={onClose} footer={<Link to="/marketplace" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white"><ShoppingBag className="size-[18px]" /> Xarid qilish</Link>}>
       <div className="mt-3 rounded-2xl bg-[linear-gradient(110deg,#0b8a7a,#14a394)] p-4 text-white">
@@ -399,7 +404,7 @@ function BonusSheet({ bonus, onClose }) {
       </div>
       <p className={`mt-4 text-[13px] font-semibold ${navy}`}>Tarix</p>
       <ul className="mt-1 divide-y divide-[#eef2f4]">
-        {BONUS_LOG.map(([text, amount, date]) => (
+        {(log || []).map(([text, amount, date]) => (
           <li key={text} className="flex items-center gap-3 py-2.5">
             <span className={`grid size-9 shrink-0 place-items-center rounded-full ${amount > 0 ? 'bg-[#e5f6ec] text-[#16a34a]' : 'bg-[#fdecec] text-sale'}`}>{amount > 0 ? <Gift className="size-4" /> : <Wallet className="size-4" />}</span>
             <span className="min-w-0 flex-1">
@@ -410,6 +415,7 @@ function BonusSheet({ bonus, onClose }) {
           </li>
         ))}
       </ul>
+      {!log?.length && <p className="py-6 text-center text-[13px] text-muted">Bonus tarixi yo‘q. Xarid va seminarlardan keyin shu yerda ko‘rinadi.</p>}
     </BottomSheet>
   )
 }
@@ -485,16 +491,16 @@ function NotifSheet({ notif, onClose }) {
   )
 }
 
-function InboxSheet({ read, onClose, onOpen }) {
-  const unread = NOTIFS.filter((n) => !read.includes(n.id))
+function InboxSheet({ items, read, onClose, onOpen }) {
+  const unread = items.filter((n) => !read.includes(n.id))
   return (
     <BottomSheet title="Bildirishnomalar" onClose={onClose}>
       <div className="flex items-center justify-between">
         <p className="text-[12px] text-muted">{unread.length ? `${unread.length} ta o‘qilmagan` : 'Hammasi o‘qilgan'}</p>
-        {unread.length > 0 && <button type="button" onClick={() => profileStore.update({ readNotifs: NOTIFS.map((n) => n.id) })} className="text-[12px] font-semibold text-sea">Barchasini o‘qildi deb belgilash</button>}
+        {unread.length > 0 && <button type="button" onClick={() => profileStore.update({ readNotifs: items.map((n) => n.id) })} className="text-[12px] font-semibold text-sea">Barchasini o‘qildi deb belgilash</button>}
       </div>
       <ul className="mt-2 flex flex-col gap-1.5">
-        {NOTIFS.map((n) => {
+        {items.map((n) => {
           const isNew = !read.includes(n.id)
           return (
             <li key={n.id}>
@@ -510,6 +516,7 @@ function InboxSheet({ read, onClose, onOpen }) {
           )
         })}
       </ul>
+      {!items.length && <p className="py-8 text-center text-[13px] text-muted">Bildirishnomalar yo‘q. Yangi buyurtma yoki seminar bo‘lsa, shu yerda chiqadi.</p>}
     </BottomSheet>
   )
 }

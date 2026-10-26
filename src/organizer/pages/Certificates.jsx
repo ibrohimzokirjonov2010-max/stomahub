@@ -60,11 +60,10 @@ function buildMobile() {
 }
 
 function decorate(list) {
-  return list.map((c, i) => ({
+  return list.map((c) => ({
     ...c,
-    clinic: c.name === 'Yusupova Sevinch' ? 'Stomatolog+' : c.clinic,
-    ticket: TICKETS[i % TICKETS.length],
-    phone: `+998 9${i % 10} ${String(100 + ((i * 17) % 900)).padStart(3, '0')} ${String(10 + ((i * 3) % 90)).padStart(2, '0')} ${String(10 + ((i * 5) % 90)).padStart(2, '0')}`,
+    ticket: c.ticket || '—',
+    phone: c.phone || '',
   }))
 }
 
@@ -210,7 +209,7 @@ export default function Certificates() {
           setPreview={setPreview}
           onTpl={() => setTpl(true)}
           onNote={() => setNote(true)}
-          onDownload={() => { if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${COURSE}\n${cert.code || 'berilmagan'}\n${cert.date || ''}`); notify('Sertifikat yuklab olindi') }}
+          onDownload={() => { if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${cert.seminar || cert.course || 'Seminar'}\n${cert.code || 'berilmagan'}\n${cert.date || ''}`); notify('Sertifikat yuklab olindi') }}
           onMail={() => notify('Email yuborildi')}
           onQr={() => setQr(cert)}
           onResend={() => notify('Sertifikat qayta yuborildi')}
@@ -242,12 +241,12 @@ export default function Certificates() {
 
       <Modal open={tpl} title="Sertifikat shablonini sozlash" sub="Barcha ishtirokchilarga shu shablon asosida sertifikat beriladi." onClose={() => setTpl(false)} width={520}>
         <div className="flex justify-center rounded-2xl bg-[#e7f6f3] p-4">
-          <CertFrame width={220} name="Aliyeva Mohira" course={COURSE} date={CERT_DATE} />
+          <CertFrame width={220} name="Ism familiya" course={hub.seminars[0]?.title || 'Seminar nomi'} date={hub.seminars[0]?.date || '—'} />
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-[12.5px]">
           <div className="rounded-xl border border-[#e6f1ef] px-3 py-2">
             <p className="text-[#8aa0a4]">Kredit soati</p>
-            <p className="text-[18px] font-bold">16</p>
+            <p className="text-[18px] font-bold">—</p>
           </div>
           <div className="rounded-xl border border-[#e6f1ef] px-3 py-2">
             <p className="text-[#8aa0a4]">QR tekshirish</p>
@@ -296,7 +295,7 @@ function Desktop(p) {
           <span>›</span>
           <Link to="/tashkilotchi/seminarlar" className="hover:text-[var(--color-org-teal)]">Mening seminarlarim</Link>
           <span>›</span>
-          <Link to="/tashkilotchi/seminarlar/implant-nov" className="hover:text-[var(--color-org-teal)]">Implantologiya</Link>
+          <Link to="/tashkilotchi/seminarlar" className="hover:text-[var(--color-org-teal)]">Seminarlar</Link>
           <span>›</span>
           <span className="text-[#6e868c]">Sertifikatlar</span>
         </nav>
@@ -459,7 +458,7 @@ function Desktop(p) {
 
           {p.preview && p.cert && (
             <aside className="border-l border-[#eef3f2] px-3 pb-3 pt-3">
-              <CertFrame width={268} name={p.cert.name} course={COURSE} date={p.cert.date ? CERT_DATE : CERT_DATE} />
+              <CertFrame width={268} name={p.cert.name} course={p.cert.seminar || p.cert.course || 'Seminar'} date={p.cert.date || '—'} />
               <button type="button" onClick={p.onDownload} className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(14_128_120/0.22)] hover:bg-[#0c756e]">
                 <Download className="size-4" /> Sertifikatni yuklab olish
               </button>
@@ -577,7 +576,7 @@ function PerSelect({ value, onChange }) {
 }
 
 const M_TABS = [
-  { id: 'umumiy', label: 'Umumiy', to: '/tashkilotchi/seminarlar/implant-nov' },
+  { id: 'umumiy', label: 'Umumiy', to: '/tashkilotchi/seminarlar' },
   { id: 'people', label: 'Ishtirokchilar', to: '/tashkilotchi/ishtirokchilar' },
   { id: 'tickets', label: 'Chiptalar', to: '/tashkilotchi/chiptalar' },
   { id: 'pay', label: 'To‘lovlar', to: '/tashkilotchi/tolovlar' },
@@ -585,6 +584,8 @@ const M_TABS = [
 ]
 
 function Mobile(p) {
+  const hub = useHub()
+  const sem = hub.seminars[0]
   const chips = [
     { id: 'all', label: `Barchasi (${p.counts.all})` },
     { id: 'done', label: `Berilgan (${p.counts.done})` },
@@ -592,15 +593,17 @@ function Mobile(p) {
   ]
   return (
     <div className="text-[#143044]">
-      <div className="flex items-center gap-2.5">
-        <img src="/images/seminars/teeth.jpg" alt="" className="h-[60px] w-[72px] shrink-0 rounded-xl object-cover" />
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold leading-none text-[#6a5acd]">Implantologiya</p>
-          <p className="mt-0.5 text-[15px] font-bold leading-tight">Implantologiya: amaliy kurs</p>
-          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#7d8f96]"><Calendar className="size-3 shrink-0 text-[#12a394]" /> 21 oktabr 2026, 09:00 – 18:00</p>
-          <p className="flex items-center gap-1 text-[11px] text-[#7d8f96]"><MapPin className="size-3 shrink-0 text-[#12a394]" /> Toshkent City Kongress Markazi</p>
+      {sem ? (
+        <div className="flex items-center gap-2.5">
+          <img src={sem.image || '/images/seminars/teeth.jpg'} alt="" className="h-[60px] w-[72px] shrink-0 rounded-xl object-cover" />
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold leading-none text-[#6a5acd]">{sem.topic || 'Seminar'}</p>
+            <p className="mt-0.5 text-[15px] font-bold leading-tight">{sem.title}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#7d8f96]"><Calendar className="size-3 shrink-0 text-[#12a394]" /> {sem.date || 'Sana yo‘q'}{sem.startTime ? `, ${sem.startTime}` : ''}</p>
+            <p className="flex items-center gap-1 text-[11px] text-[#7d8f96]"><MapPin className="size-3 shrink-0 text-[#12a394]" /> {sem.place || sem.city || 'Manzil yo‘q'}</p>
+          </div>
         </div>
-      </div>
+      ) : <p className="rounded-2xl bg-[#f4fbfa] px-4 py-6 text-center text-[13px] text-[#7e9398]">Hali seminar yo‘q. Sertifikatlar seminar yaratilgach shu yerda chiqadi.</p>}
 
       <div className="mx-3.5 mt-2 flex gap-2.5 overflow-x-auto border-b border-[#eef2f2] text-[12px]">
         {M_TABS.map((t) => t.to ? (
@@ -619,14 +622,14 @@ function Mobile(p) {
       <p className="mt-0.5 px-3.5 text-[12px] text-[#8aa0a4]">Ishtirokchilarga sertifikat berish va yuborish</p>
 
       <div className="mx-3.5 mt-2 grid grid-cols-[92px_minmax(0,1fr)] items-start gap-2 rounded-2xl bg-[#e7f6f3] p-2">
-        <CertFrame width={92} qr name="Aliyeva Mohira" course="Implantologiya: amaliy kurs" date="21 oktabr 2026" />
+        <CertFrame width={92} qr name="Ism familiya" course={sem?.title || 'Seminar nomi'} date={sem?.date || '—'} />
         <div className="min-w-0">
           <p className="text-[13px] font-bold leading-tight">Sertifikat shabloni</p>
           <p className="mt-0.5 text-[11px] leading-snug text-[#5e787e]">Barcha ishtirokchilarga shu shablon asosida sertifikat beriladi.</p>
           <div className="mt-1.5 grid grid-cols-2 gap-1">
             <div className="rounded-xl bg-white px-2 py-1.5">
               <p className="flex items-center gap-1 text-[10px] text-[#8aa0a4]"><Clock className="size-3 text-[var(--color-org-teal)]" /> Kredit soati</p>
-              <p className="text-[16px] font-bold leading-tight">16</p>
+              <p className="text-[16px] font-bold leading-tight">{sem?.form?.hours || '—'}</p>
             </div>
             <button type="button" onClick={p.onTpl} className="flex items-center justify-between rounded-xl bg-white px-2 py-1.5 text-left">
               <span>

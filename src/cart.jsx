@@ -1,11 +1,31 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { initialCart } from './marketData'
+import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
 
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(initialCart)
   const [reviewing, setReviewing] = useState(false)
+  const [cartReady, setCartReady] = useState(false)
+
+  useEffect(() => onAccount(async (id) => {
+    if (!id) {
+      setItems(initialCart)
+      setCartReady(false)
+      return
+    }
+    const payload = await loadBlob('cart')
+    if (Array.isArray(payload?.items)) setItems(payload.items)
+    else if (isDemoUser()) setItems(initialCart)
+    else setItems([])
+    setCartReady(true)
+  }), [])
+
+  useEffect(() => {
+    if (!cartReady || !currentUid()) return
+    saveBlob('cart', { items })
+  }, [items, cartReady])
 
   const setQty = (id, qty) =>
     setItems((list) => list.map((it) => (it.id === id ? { ...it, qty: Math.max(1, qty) } : it)))

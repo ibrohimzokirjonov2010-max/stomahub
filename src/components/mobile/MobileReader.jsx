@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Bookmark, List, ChevronDown, ChevronLeft, ChevronRight, Moon, Sun, Trash2 } from 'lucide-react'
 import { getBook, readerOf, flatReader } from '../../booksData'
+import { loadBlob, saveBlob, currentUid } from '../../recordSync'
 import { MobileToast } from './parts'
 import { BottomSheet } from './MobileSeminars'
 
@@ -9,7 +10,10 @@ const MIN = 13
 const MAX = 20
 const keyOf = (id) => `stomahub-read-${id}`
 
+const readerState = {}
+
 function load(id) {
+  if (readerState[id]) return readerState[id]
   try {
     return JSON.parse(localStorage.getItem(keyOf(id))) || {}
   } catch {
@@ -33,7 +37,8 @@ function ReaderView({ id }) {
   const [page, setPage] = useState(() => Number(params.get('page')) || saved.page || doc?.start || 1)
   const [size, setSize] = useState(saved.size || 15)
   const [night, setNight] = useState(!!saved.night)
-  const [marks, setMarks] = useState(() => saved.marks || doc?.marks.map((m) => m.page) || [])
+  const [marks, setMarks] = useState(() => (currentUid() ? [] : (saved.marks || doc?.marks.map((m) => m.page) || [])))
+  const [readerReady, setReaderReady] = useState(() => !currentUid())
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
@@ -45,10 +50,31 @@ function ReaderView({ id }) {
   const marked = marks.includes(page)
 
   useEffect(() => {
+    let stop = false
+    if (!currentUid()) return undefined
+    loadBlob('reader').then((payload) => {
+      if (stop) return
+      const savedRemote = payload?.[id]
+      if (savedRemote) {
+        readerState[id] = savedRemote
+        if (savedRemote.page) setPage(savedRemote.page)
+        if (savedRemote.size) setSize(savedRemote.size)
+        if (savedRemote.night != null) setNight(!!savedRemote.night)
+        if (savedRemote.marks) setMarks(savedRemote.marks)
+      }
+      setReaderReady(true)
+    })
+    return () => { stop = true }
+  }, [id])
+
+  useEffect(() => {
+    const next = { page, size, night, marks }
+    readerState[id] = next
     try {
-      localStorage.setItem(keyOf(id), JSON.stringify({ page, size, night, marks }))
+      localStorage.setItem(keyOf(id), JSON.stringify(next))
     } catch { /* xotira yopiq */ }
-  }, [id, page, size, night, marks])
+    if (readerReady && currentUid()) saveBlob('reader', { ...readerState })
+  }, [id, page, size, night, marks, readerReady])
 
   const asked = Number(params.get('page'))
   useEffect(() => {

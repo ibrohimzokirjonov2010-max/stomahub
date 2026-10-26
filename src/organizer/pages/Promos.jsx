@@ -323,13 +323,14 @@ function Desktop() {
   const [showForm, setShowForm] = useState(true)
   const [page, setPage] = useState(1)
   const [per, setPer] = useState(10)
-  const [picked, setPicked] = useState(SEMINARS[0].id)
+  const [picked, setPicked] = useState(SEMINARS[0]?.id || '')
   const [pickOpen, setPickOpen] = useState(false)
   const nameRef = useRef(null)
   const pickRef = useRef(null)
   useOutside(pickRef, () => setPickOpen(false))
 
   useEffect(() => { setPage(1) }, [tab, q, seminar, kind, status, query, per])
+  useEffect(() => { if (!picked && SEMINARS[0]) setPicked(SEMINARS[0].id) }, [picked, SEMINARS])
 
   const filtered = useMemo(() => {
     const s = `${query || ''} ${q}`.trim().toLowerCase()
@@ -355,7 +356,7 @@ function Desktop() {
     reja: rows.filter((p) => p.status === 'reja').length,
     nofaol: rows.filter((p) => p.status === 'nofaol').length,
   }
-  const current = SEMINARS.find((s) => s.id === picked) || SEMINARS[0]
+  const current = SEMINARS.find((s) => s.id === picked) || SEMINARS[0] || { id: '', title: 'Seminar yo‘q', image: '/images/seminar-1.jpg', date: '' }
 
   const copy = (code) => {
     navigator.clipboard?.writeText(code).catch(() => {})
@@ -406,7 +407,7 @@ function Desktop() {
             <span className="min-w-0">
               <span className="block text-[12px] font-bold leading-[1.25]">{current.title}</span>
               <span className="mt-0.5 flex items-center gap-1 text-[11px] text-[#8aa0a4]">
-                <Calendar className="size-3 text-[var(--color-org-teal)]" /> {current.id === 'implant-nov' ? '24-noyabr 2026, 10:00' : `${current.date}, 10:00`}
+                <Calendar className="size-3 text-[var(--color-org-teal)]" /> {current.date ? `${current.date}${current.startTime ? `, ${current.startTime}` : ''}` : 'Sana kiritilmagan'}
               </span>
             </span>
           </button>
@@ -542,7 +543,7 @@ function Desktop() {
 }
 
 const M_TABS = [
-  { to: '/tashkilotchi/seminarlar/implant-nov', label: 'Umumiy', icon: Home },
+  { to: '/tashkilotchi/seminarlar', label: 'Umumiy', icon: Home },
   { to: '/tashkilotchi/ishtirokchilar', label: 'Ishtirokchilar', icon: Users },
   { to: '/tashkilotchi/chiptalar', label: 'Chiptalar', icon: Ticket },
   { to: '/tashkilotchi/tolovlar', label: `To${APOST}lovlar`, icon: Wallet },
@@ -552,7 +553,7 @@ const M_TABS = [
 function Mobile() {
   const { notify } = useOrg()
   const hub = useHub()
-  const sem = hub.seminars.find((s) => s.id === 'implant-nov') || hub.seminars.find((s) => s.published) || hub.seminars[0]
+  const sem = hub.seminars[0]
   const rows = hub.promos.map((p) => ({
     ...p,
     off: p.kind === 'summa' ? `${som(p.value)} chegirma` : `${p.value}% chegirma`,
@@ -590,7 +591,7 @@ function Mobile() {
 
   return (
     <div className="-mx-3 -mb-4 min-h-[calc(100dvh-8.5rem)] bg-[#f6f7fb] px-4 pb-8 pt-1 text-[#24185a]">
-      <Link to={`/tashkilotchi/seminarlar/${sem?.id || 'implant-nov'}`} className="flex items-center gap-3 rounded-2xl border border-[#eef0f5] bg-white p-2.5 shadow-[0_1px_3px_rgb(30_20_60/0.04)]">
+      <Link to={sem ? `/tashkilotchi/seminarlar/${sem.id}` : '/tashkilotchi/seminarlar'} className="flex items-center gap-3 rounded-2xl border border-[#eef0f5] bg-white p-2.5 shadow-[0_1px_3px_rgb(30_20_60/0.04)]">
         <img src={sem?.image || '/images/seminars/teeth.jpg'} alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-semibold leading-none text-[var(--color-org-teal)]">{sem?.topic || 'Seminar'}</span>

@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, UserPlus, UserRound, Users } from 'lucide-react'
 import { profileStore, useProfile } from '../profileStore'
+import { supabase } from '../supabaseClient'
+import { setIntendedRole, useSession } from '../sessionStore'
 
 const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Sotuvchi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
 
@@ -18,9 +20,23 @@ const COPY = {
     pass: 'Parol',
     passPh: 'Parolingizni kiriting',
     forgot: 'Parolni unutdingizmi?',
-    forgotNote: 'Sinov rejimida kamida 6 belgili istalgan parol bilan kirishingiz mumkin.',
+    forgotNote: 'Email kiritsangiz, tiklash havolasini yuboramiz. Telefon orqali kirishda parol yo‘q — kod Telegram botga keladi.',
+    forgotSent: 'Agar hisob bo‘lsa, tiklash havolasi emailga yuborildi.',
     or: 'yoki',
     googleIn: 'Google orqali kirish',
+    kind: 'Hisob turi',
+    customer: 'Mijoz',
+    organizer: 'Tashkilotchi',
+    telegram: 'Telegram orqali kirish',
+    phoneLead: 'Telefon orqali kirish',
+    sendCode: 'Kod yuborish',
+    code: 'Tasdiqlash kodi',
+    codePh: '6 xonali kod',
+    confirmEmail: 'Hisob ochildi. Emailingizdagi tasdiqlash havolasini bosing, so‘ng kiring.',
+    errCode: '6 xonali kodni kiriting',
+    errSupabase: 'Supabase sozlanmagan',
+    botMissing: 'Telegram bot nomi sozlanmagan (VITE_TELEGRAM_BOT_USERNAME).',
+    linkBot: 'Avval botda telefon raqamingizni ulang',
     noAcc: 'Hisobingiz yo‘qmi?',
     toReg: 'Ro‘yxatdan o‘tish',
     reg: 'Ro‘yxatdan o‘tish',
@@ -59,9 +75,23 @@ const COPY = {
     pass: 'Пароль',
     passPh: 'Введите пароль',
     forgot: 'Забыли пароль?',
-    forgotNote: 'В пробном режиме подойдёт любой пароль от 6 символов.',
+    forgotNote: 'Для email отправим ссылку сброса. Для телефона пароль не нужен — код придёт в Telegram-бот.',
+    forgotSent: 'Если аккаунт есть, ссылка отправлена на email.',
     or: 'или',
     googleIn: 'Войти через Google',
+    kind: 'Тип аккаунта',
+    customer: 'Клиент',
+    organizer: 'Организатор',
+    telegram: 'Войти через Telegram',
+    phoneLead: 'Вход по телефону',
+    sendCode: 'Отправить код',
+    code: 'Код подтверждения',
+    codePh: '6 цифр',
+    confirmEmail: 'Аккаунт создан. Подтвердите email, затем войдите.',
+    errCode: 'Введите 6-значный код',
+    errSupabase: 'Supabase не настроен',
+    botMissing: 'Имя Telegram-бота не задано (VITE_TELEGRAM_BOT_USERNAME).',
+    linkBot: 'Сначала привяжите номер в боте',
     noAcc: 'Нет аккаунта?',
     toReg: 'Регистрация',
     reg: 'Регистрация',
@@ -100,9 +130,23 @@ const COPY = {
     pass: 'Password',
     passPh: 'Enter your password',
     forgot: 'Forgot password?',
-    forgotNote: 'In this demo, any password of 6 or more characters works.',
+    forgotNote: 'For email we send a reset link. Phone login has no password — the code arrives in the Telegram bot.',
+    forgotSent: 'If the account exists, a reset link was sent.',
     or: 'or',
     googleIn: 'Continue with Google',
+    kind: 'Account type',
+    customer: 'Customer',
+    organizer: 'Organizer',
+    telegram: 'Continue with Telegram',
+    phoneLead: 'Sign in with phone',
+    sendCode: 'Send code',
+    code: 'Confirmation code',
+    codePh: '6-digit code',
+    confirmEmail: 'Account created. Confirm the email, then sign in.',
+    errCode: 'Enter the 6-digit code',
+    errSupabase: 'Supabase is not configured',
+    botMissing: 'Telegram bot username is not set (VITE_TELEGRAM_BOT_USERNAME).',
+    linkBot: 'Link your phone in the bot first',
     noAcc: 'No account yet?',
     toReg: 'Create one',
     reg: 'Create account',
@@ -142,9 +186,23 @@ export function Register() {
   return <Auth mode="register" />
 }
 
+function safeNext(value) {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/kirish')) return ''
+  return value
+}
+
+function toLocalPhone(value) {
+  const raw = digits(String(value || ''))
+  const local = raw.startsWith('998') ? raw.slice(3) : raw
+  return local.length === 9 ? local : ''
+}
+
 function Auth({ mode }) {
   const navigate = useNavigate()
   const profile = useProfile()
+  const session = useSession()
+  const [params] = useSearchParams()
+  const next = safeNext(params.get('next') || '')
   const [lang, setLang] = useState(profile.lang === 'ru' || profile.lang === 'en' ? profile.lang : 'uz')
   const [openLang, setOpenLang] = useState(false)
   const t = COPY[lang]
@@ -160,26 +218,135 @@ function Auth({ mode }) {
   const [terms, setTerms] = useState(false)
   const [forgot, setForgot] = useState(false)
   const [err, setErr] = useState('')
+  const [info, setInfo] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [roleIntent, setRoleIntent] = useState(params.get('role') === 'organizer' ? 'organizer' : 'customer')
+  const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
 
-  const enter = (patch) => {
-    profileStore.update({ loggedOut: false, lang, ...patch })
-    navigate('/klinika')
+  useEffect(() => { setIntendedRole(roleIntent) }, [roleIntent])
+
+  useEffect(() => {
+    if (session.status !== 'authed' || !session.user) return
+    const localPhone = toLocalPhone(session.profile?.phone || session.user.user_metadata?.phone)
+    profileStore.update({
+      loggedOut: false,
+      lang,
+      name: session.profile?.name || session.user.user_metadata?.name || profile.name,
+      email: session.profile?.email || session.user.email || profile.email,
+      phone: localPhone || profile.phone,
+      role: session.profile?.specialty || profile.role,
+    })
+    navigate(next || (session.profile?.role === 'organizer' ? '/tashkilotchi' : '/klinika'), { replace: true })
+  }, [session.status, session.user, session.profile, lang, navigate, next, profile.name, profile.email, profile.phone, profile.role])
+
+  const applySession = async (payload) => {
+    if (!supabase) throw new Error(t.errSupabase)
+    const { error } = await supabase.auth.setSession({
+      access_token: payload.access_token,
+      refresh_token: payload.refresh_token,
+    })
+    if (error) throw error
   }
 
-  const submit = (e) => {
+  const startPhone = async (rawPhone) => {
+    setBusy(true)
+    setErr('')
+    setInfo('')
+    try {
+      const res = await fetch('/api/auth/phone/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: rawPhone }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) throw new Error(json.error || 'Kod yuborilmadi')
+      setOtpSent(true)
+      setInfo(t.phoneLead)
+    } catch (error) {
+      setErr(error.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const verifyPhone = async (rawPhone) => {
+    if (otp.replace(/\D/g, '').length !== 6) return setErr(t.errCode)
+    setBusy(true)
+    setErr('')
+    try {
+      const res = await fetch('/api/auth/phone/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: rawPhone, code: otp, role: roleIntent, name: name.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.access_token) throw new Error(json.error || 'Kirib bo‘lmadi')
+      await applySession(json)
+    } catch (error) {
+      setErr(error.message)
+      setBusy(false)
+    }
+  }
+
+  const google = async () => {
+    if (!supabase) return setErr(t.errSupabase)
+    setBusy(true)
+    setErr('')
+    setIntendedRole(roleIntent)
+    const redirect = new URL('/kirish', window.location.origin)
+    if (next) redirect.searchParams.set('next', next)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirect.toString(),
+        queryParams: { prompt: 'select_account' },
+        data: { role: roleIntent, name: name.trim() },
+      },
+    })
+    if (error) {
+      setErr(error.message)
+      setBusy(false)
+    }
+  }
+
+  const resetPassword = async () => {
+    const raw = id.trim()
+    if (!emailOk(raw)) {
+      setForgot(true)
+      setInfo(t.forgotNote)
+      return
+    }
+    if (!supabase) return setErr(t.errSupabase)
+    setBusy(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(raw, { redirectTo: `${window.location.origin}/kirish` })
+    setBusy(false)
+    if (error) setErr(error.message)
+    else setInfo(t.forgotSent)
+  }
+
+  const submit = async (e) => {
     e.preventDefault()
+    setErr('')
+    setInfo('')
+    if (!supabase) return setErr(t.errSupabase)
     if (mode === 'login') {
       const raw = id.trim()
+      if (emailOk(raw)) {
+        if (pass.length < 6) return setErr(t.errPass)
+        setBusy(true)
+        const { error } = await supabase.auth.signInWithPassword({ email: raw, password: pass })
+        if (error) {
+          setErr(error.message)
+          setBusy(false)
+        }
+        return
+      }
       const phoneDigits = digits(raw).replace(/^998/, '').slice(-9)
-      const okId = emailOk(raw) || phoneDigits.length === 9
-      if (!okId) return setErr(t.errId)
-      if (pass.length < 6) return setErr(t.errPass)
-      setErr('')
-      enter({
-        phone: phoneDigits.length === 9 ? phoneDigits : profile.phone,
-        email: emailOk(raw) ? raw : profile.email,
-      })
-      return
+      if (phoneDigits.length !== 9) return setErr(t.errId)
+      if (!otpSent) return startPhone(raw)
+      return verifyPhone(raw)
     }
     const phoneDigits = digits(phone).replace(/^998/, '').slice(-9)
     if (name.trim().length < 3) return setErr(t.errName)
@@ -189,8 +356,23 @@ function Auth({ mode }) {
     if (pass.length < 6) return setErr(t.errPass)
     if (pass !== pass2) return setErr(t.errMatch)
     if (!terms) return setErr(t.errTerms)
-    setErr('')
-    enter({ name: name.trim(), phone: phoneDigits, email: email.trim(), role: spec })
+    setBusy(true)
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: pass,
+      options: {
+        data: { name: name.trim(), phone: `+998${phoneDigits}`, specialty: spec, role: roleIntent },
+      },
+    })
+    if (error) {
+      setErr(error.message)
+      setBusy(false)
+      return
+    }
+    if (!data.session) {
+      setBusy(false)
+      setInfo(t.confirmEmail)
+    }
   }
 
   return (
@@ -236,6 +418,14 @@ function Auth({ mode }) {
 
           <h2 className="pr-28 text-[32px] font-extrabold tracking-tight text-[#10283f]">{mode === 'login' ? t.login : t.reg}</h2>
           <p className="mt-2 text-[14px] leading-relaxed text-[#5c6e80]">{mode === 'login' ? t.loginLead : t.regLead}</p>
+          <div className="mt-4">
+            <span className="text-[13px] font-semibold text-[#17324d]">{t.kind}</span>
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
+              {[['customer', t.customer], ['organizer', t.organizer]].map(([key, label]) => (
+                <button key={key} type="button" onClick={() => setRoleIntent(key)} className={`h-10 rounded-xl border text-[13.5px] font-semibold ${roleIntent === key ? 'border-[#0d8a84] bg-[#e8f7f5] text-[#0b8a84]' : 'border-[#e3ecea] text-[#3d5168]'}`}>{label}</button>
+              ))}
+            </div>
+          </div>
 
           <form onSubmit={submit} className="mt-6 space-y-3.5">
             {mode === 'register' && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} />}
@@ -263,7 +453,7 @@ function Auth({ mode }) {
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-[13px] font-semibold text-[#17324d]">{t.pass}</span>
-                  <button type="button" onClick={() => setForgot((v) => !v)} className="text-[12.5px] font-semibold text-[#0b8a84]">{t.forgot}</button>
+                  <button type="button" onClick={resetPassword} className="text-[12.5px] font-semibold text-[#0b8a84]">{t.forgot}</button>
                 </div>
                 <Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} />
                 {forgot && <p className="mt-1.5 text-[12.5px] leading-snug text-[#5c6e80]">{t.forgotNote}</p>}
@@ -286,19 +476,31 @@ function Auth({ mode }) {
                 {t.terms}
               </label>
             )}
-            {err && <p className="text-[13px] font-medium text-[#d14343]">{err}</p>}
-            <button type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d8a84] text-[15px] font-semibold text-white hover:bg-[#08756f]">
+                {otpSent && mode === 'login' && (
+                  <Field label={t.code} icon={Lock} value={otp} onChange={setOtp} placeholder={t.codePh} />
+                )}
+                {err && <p className="text-[13px] font-medium text-[#d14343]">{err}</p>}
+                {info && <p className="text-[13px] font-medium text-[#0b8a84]">{info}</p>}
+                <button type="submit" disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d8a84] text-[15px] font-semibold text-white hover:bg-[#08756f] disabled:opacity-60">
               {mode === 'login' ? <LogIn className="size-[18px]" /> : <UserPlus className="size-[18px]" />}
-              {mode === 'login' ? t.login : t.reg}
+              {mode === 'login' ? (emailOk(id.trim()) || digits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
             </button>
           </form>
 
           <div className="my-4 flex items-center gap-3 text-[12.5px] text-[#8aa0a8]">
             <span className="h-px flex-1 bg-[#e6eeec]" /> {t.or} <span className="h-px flex-1 bg-[#e6eeec]" />
           </div>
-          <button type="button" onClick={() => enter({})} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#dbe6e4] text-[14.5px] font-semibold text-[#17324d] hover:bg-[#f7fbfa]">
+          <button type="button" onClick={google} disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#dbe6e4] text-[14.5px] font-semibold text-[#17324d] hover:bg-[#f7fbfa] disabled:opacity-60">
             <GoogleMark /> {mode === 'login' ? t.googleIn : t.googleUp}
           </button>
+          <div className="mt-3">
+            <TelegramButton bot={bot} role={roleIntent} label={t.telegram} missing={t.botMissing} onError={setErr} onBusy={setBusy} />
+          </div>
+          {bot && (
+            <p className="mt-3 text-center text-[12.5px] text-[#5c6e80]">
+              <a className="font-semibold text-[#0b8a84]" href={`https://t.me/${bot}?start=link`} target="_blank" rel="noreferrer">{t.linkBot}</a>
+            </p>
+          )}
           <p className="mt-5 text-center text-[13.5px] text-[#5c6e80]">
             {mode === 'login' ? t.noAcc : t.hasAcc}{' '}
             <Link to={mode === 'login' ? '/royxat' : '/kirish'} className="font-semibold text-[#0b8a84]">{mode === 'login' ? t.toReg : t.login}</Link>
@@ -331,6 +533,53 @@ function Pass({ value, onChange, placeholder, show, onToggle }) {
         {show ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
       </button>
     </span>
+  )
+}
+
+function TelegramButton({ bot, role, label, missing, onError, onBusy }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!bot || !ref.current || !supabase) return undefined
+    const host = ref.current
+    host.innerHTML = ''
+    window.onTelegramAuth = async (user) => {
+      onBusy(true)
+      onError('')
+      try {
+        const res = await fetch('/api/auth/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user, role }),
+        })
+        const json = await res.json()
+        if (!res.ok || !json.access_token) throw new Error(json.error || 'Telegram orqali kirib bo‘lmadi')
+        const { error } = await supabase.auth.setSession({
+          access_token: json.access_token,
+          refresh_token: json.refresh_token,
+        })
+        if (error) throw error
+      } catch (error) {
+        onError(error.message)
+        onBusy(false)
+      }
+    }
+    const script = document.createElement('script')
+    script.async = true
+    script.src = 'https://telegram.org/js/telegram-widget.js?22'
+    script.setAttribute('data-telegram-login', bot)
+    script.setAttribute('data-size', 'large')
+    script.setAttribute('data-radius', '12')
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)')
+    script.setAttribute('data-request-access', 'write')
+    host.appendChild(script)
+    return () => { delete window.onTelegramAuth }
+  }, [bot, role, onError, onBusy])
+  if (!bot) return <p className="text-center text-[12.5px] text-[#8aa0a8]">{missing}</p>
+  return (
+    <div>
+      <p className="mb-2 text-center text-[12.5px] font-semibold text-[#5c6e80]">{label}</p>
+      <div ref={ref} className="flex min-h-10 justify-center" />
+    </div>
   )
 }
 

@@ -30,7 +30,7 @@ export default function Qr() {
   const hub = useHub()
   const SEMINARS = hub.seminars
   const [tab, setTab] = useState('scan')
-  const [seminar, setSeminar] = useState(hub.seminars[0]?.id || 'implant-nov')
+  const [seminar, setSeminar] = useState(hub.seminars[0]?.id || '')
   const [open, setOpen] = useState(false)
   const [code, setCode] = useState('')
   const [sound, setSound] = useState(hub.qrSound !== false)
@@ -44,6 +44,10 @@ export default function Qr() {
   }))
   const arrived = list.filter((p) => p.ok).length
   const pct = sem?.seats ? Math.round((sem.sold / sem.seats) * 100) : 0
+
+  useEffect(() => {
+    if (!seminar && hub.seminars[0]?.id) setSeminar(hub.seminars[0].id)
+  }, [hub.seminars, seminar])
 
   useEffect(() => {
     const fn = (e) => { if (!pop.current?.contains(e.target)) setOpen(false) }
@@ -67,6 +71,17 @@ export default function Qr() {
     setCode('')
     setManualOpen(false)
     applyCode(name)
+  }
+
+  if (!sem) {
+    return (
+      <div className="rounded-2xl border border-dashed border-[#d5ebe6] bg-white px-6 py-14 text-center">
+        <QrCode className="mx-auto size-8 text-[var(--color-org-teal)]" />
+        <p className="mt-3 text-[16px] font-bold text-[#143044]">Hali seminar yo‘q</p>
+        <p className="mt-1 text-[13px] text-[#6e868c]">Check-in uchun avval o‘z seminaringizni yarating.</p>
+        <Link to="/tashkilotchi/seminarlar/yangi" className="mt-4 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Seminar yaratish</Link>
+      </div>
+    )
   }
 
   return (
@@ -107,8 +122,8 @@ export default function Qr() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-[15px] font-bold leading-tight text-[#163044]">{sem.title}</p>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#6e868c]">
-              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {sem.date}, 10:00</span>
-              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {sem.city}, Congress Hall</span>
+              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {sem.date}{sem.startTime ? `, ${sem.startTime}` : ''}</span>
+              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {sem.place || sem.city}</span>
               <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-[#e7f8ee] px-2 text-[11.5px] font-semibold text-[#16a34a]">
                 <span className="size-1.5 rounded-full bg-[#16a34a]" /> Faol
               </span>

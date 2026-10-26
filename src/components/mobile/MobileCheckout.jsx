@@ -72,9 +72,22 @@ export default function MobileCheckout() {
   const [step, setStep] = useState(1)
   const profile = useProfile()
   const SAVED = profile.addresses.map((a) => ({ ...a, icon: ADDRESS_ICONS[a.kind] || MapPin }))
+  useEffect(() => {
+    if (!profile.accountLive) return
+    const picked = profile.addresses.find((row) => row.id === profile.defaultAddr) || profile.addresses[0]
+    setForm((current) => ({
+      ...current,
+      name: profile.name || '',
+      phone: profile.phone || '',
+      city: picked?.city || profile.city || current.city,
+      district: picked?.district || current.district,
+      address: picked?.address || '',
+      saved: picked?.id || '',
+    }))
+  }, [profile.accountLive])
   const [form, setForm] = useState(() => {
-    const me = { name: profile.name, phone: profile.phone }
-    const s = SAVED.find((a) => a.id === profile.defaultAddr) || SAVED[0]
+    const me = profile.accountLive ? { name: profile.name, phone: profile.phone } : { name: '', phone: '' }
+    const s = profile.accountLive ? (SAVED.find((a) => a.id === profile.defaultAddr) || SAVED[0]) : null
     return loc.state?.ship === 'region' || !s
       ? { ...me, city: 'Samarqand', district: 'Markaz', address: '', note: '', saved: '' }
       : { ...me, city: s.city, district: s.district, address: s.address, note: '', saved: s.id }
@@ -155,8 +168,7 @@ export default function MobileCheckout() {
   }
 
   const place = () => {
-    const count = Number(localStorage.getItem('stomahub-order-seq') || 10250) + 1
-    localStorage.setItem('stomahub-order-seq', String(count))
+    const count = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
     const at = new Date()
     const order = {
       id: `SH-${count}`,

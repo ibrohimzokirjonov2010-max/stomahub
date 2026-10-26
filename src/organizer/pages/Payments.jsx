@@ -15,14 +15,13 @@ const INK = '#163044'
 const MUTED = '#7d939a'
 
 const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
-const BARS = [9, 13, 16, 17, 18, 20, 22, 26, 28, 31, 35, 38]
-const METHODS = [
-  { label: 'Payme', pct: 40, n: '39.4M', color: '#008089' },
-  { label: 'Click', pct: 32, n: '31.6M', color: '#5caafd' },
-  { label: 'Uzum', pct: 18, n: '17.7M', color: '#963beb' },
-  { label: 'Paynet', pct: 6, n: '5.9M', color: '#ffaf42' },
-  { label: 'Boshqa', pct: 4, n: '3.9M', color: '#d5dde6' },
-]
+const METHOD_COLORS = {
+  Payme: '#008089',
+  Click: '#5caafd',
+  Uzum: '#963beb',
+  Paynet: '#ffaf42',
+  Boshqa: '#d5dde6',
+}
 
 const STATE_META = {
   ok: { label: 'Muvaffaqiyatli', pill: 'bg-[#e8f8ef] text-[#16a34a]', dot: '#22c55e' },
@@ -112,42 +111,67 @@ function Drop({ value, onChange, options, className = '', icon }) {
   )
 }
 
-function Bars() {
+function Bars({ payments }) {
   const [tip, setTip] = useState(null)
+  const grouped = new Map()
+  payments.filter((payment) => payment.state === 'ok').forEach((payment) => {
+    const label = payment.seminar || 'Boshqa'
+    grouped.set(label, (grouped.get(label) || 0) + (Number(payment.sum) || 0))
+  })
+  const buckets = [...grouped.entries()].slice(0, 12).map(([label, value]) => ({ label, value }))
+  const max = Math.max(...buckets.map((item) => item.value), 1)
+  if (!buckets.length) {
+    return <p className="py-8 text-center text-[13px] text-[#7e9398]">Hali muvaffaqiyatli to‘lov yo‘q.</p>
+  }
   return (
     <div className="mt-2">
       <div className="flex gap-1" style={{ height: 78 }}>
         <div className="flex w-7 shrink-0 flex-col justify-between pb-px text-[10px] leading-none text-[#9aafb4]">
-          {['40M', '30M', '20M', '10M'].map((t) => <span key={t}>{t}</span>)}
+          <span>{Math.round(max / 1e6) || 0}M</span>
+          <span>0</span>
         </div>
         <div className="relative flex min-w-0 flex-1 items-end gap-[9px] border-b border-[#e7eef0]" style={{ height: 78 }}>
           {[0, 1, 2, 3].map((i) => <span key={i} className="pointer-events-none absolute left-0 right-0 border-t border-[#f3f6f7]" style={{ bottom: `${(i + 1) * 25}%` }} />)}
-          {BARS.map((v, i) => (
-            <button key={MONTHS[i]} type="button" className="relative z-[1] flex min-w-0 flex-1 items-end" style={{ height: 78 }} onMouseEnter={() => setTip(i)} onMouseLeave={() => setTip(null)}>
-              {tip === i && <span className="absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#12324a] px-1.5 py-0.5 text-[10px] text-white">{MONTHS[i]} · {v}M</span>}
-              <span className="block w-full rounded-t-[3px]" style={{ height: Math.round((v / 40) * 78), background: 'linear-gradient(180deg,#067e86 0%,#c5ebe6 100%)' }} />
+          {buckets.map((item, i) => (
+            <button key={item.label} type="button" className="relative z-[1] flex min-w-0 flex-1 items-end" style={{ height: 78 }} onMouseEnter={() => setTip(i)} onMouseLeave={() => setTip(null)}>
+              {tip === i && <span className="absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#12324a] px-1.5 py-0.5 text-[10px] text-white">{item.label} · {som(item.value)}</span>}
+              <span className="block w-full rounded-t-[3px]" style={{ height: Math.round((item.value / max) * 78), background: 'linear-gradient(180deg,#067e86 0%,#c5ebe6 100%)' }} />
             </button>
           ))}
         </div>
       </div>
       <div className="ml-8 mt-1.5 flex gap-[9px]">
-        {MONTHS.map((m) => <span key={m} className="flex-1 text-center text-[10px] leading-none text-[#8aa4a8]">{m}</span>)}
+        {buckets.map((item) => <span key={item.label} className="flex-1 truncate text-center text-[10px] leading-none text-[#8aa4a8]">{item.label}</span>)}
       </div>
     </div>
   )
 }
 
-function Donut() {
+function Donut({ payments }) {
+  const ok = payments.filter((payment) => payment.state === 'ok')
+  const grouped = new Map()
+  ok.forEach((payment) => {
+    const label = payment.method || 'Boshqa'
+    grouped.set(label, (grouped.get(label) || 0) + (Number(payment.sum) || 0))
+  })
+  const total = [...grouped.values()].reduce((sum, value) => sum + value, 0)
+  const slices = [...grouped.entries()].map(([label, sum]) => ({
+    label,
+    pct: total ? Math.round((sum / total) * 100) : 0,
+    n: som(sum),
+    color: METHOD_COLORS[label] || METHOD_COLORS.Boshqa,
+  }))
   const r = 32
   const c = 2 * Math.PI * r
   let acc = 0
   const gap = 1.4
+  if (!slices.length) return <p className="py-8 text-center text-[13px] text-[#7e9398]">Hali muvaffaqiyatli to‘lov yo‘q.</p>
   return (
     <div className="flex min-w-0 items-center gap-2">
       <div className="relative size-[118px] shrink-0">
         <svg viewBox="0 0 100 100" className="size-full">
           <g transform="rotate(-90 50 50)">
-            {METHODS.map((p) => {
+            {slices.map((p) => {
               const len = Math.max(0, (p.pct / 100) * c - gap)
               const el = <circle key={p.label} cx="50" cy="50" r={r} fill="none" stroke={p.color} strokeWidth="16" strokeDasharray={`${len} ${c - len}`} strokeDashoffset={-acc} strokeLinecap="butt" />
               acc += (p.pct / 100) * c
@@ -157,13 +181,13 @@ function Donut() {
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center">
           <div>
-            <div className="text-[16px] font-bold leading-none tracking-tight" style={{ color: INK }}>98,6M</div>
+            <div className="text-[13px] font-bold leading-none tracking-tight" style={{ color: INK }}>{som(total).replace(' so‘m', '')}</div>
             <div className="mt-0.5 text-[11px] text-[#7d939a]">so‘m</div>
           </div>
         </div>
       </div>
       <ul className="min-w-0 flex-1 space-y-[6px]">
-        {METHODS.map((t) => (
+        {slices.map((t) => (
           <li key={t.label} className="grid grid-cols-[8px_minmax(0,1fr)_28px_36px] items-center gap-1.5 text-[12px]">
             <span className="size-2 rounded-full" style={{ background: t.color }} />
             <span className="truncate text-[#3e5960]">{t.label}</span>
@@ -299,11 +323,11 @@ export default function Payments() {
                   <h2 className="text-[13.5px] font-bold" style={{ color: INK }}>Tushumlar dinamikasi</h2>
                   <Drop value={unit} onChange={setUnit} className="w-[92px]" options={[{ value: 'som', label: 'So‘mda' }, { value: 'ming', label: 'Ming' }, { value: 'usd', label: 'Dollar' }]} />
                 </div>
-                <Bars />
+                <Bars payments={rows} />
               </section>
               <section className="rounded-2xl border border-[#e7f1ef] bg-white px-3 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
                 <h2 className="mb-0.5 text-[13.5px] font-bold" style={{ color: INK }}>To‘lov usullari bo‘yicha</h2>
-                <Donut />
+                <Donut payments={rows} />
               </section>
             </div>
 
@@ -527,7 +551,7 @@ function MobilePay({ notify }) {
         </div>
         <div className="grid grid-cols-5 border-b border-[#eef1f6] px-1">
           {[
-            [Home, 'Umumiy', `/tashkilotchi/seminarlar/${sem?.id || 'implant-nov'}`],
+            [Home, 'Umumiy', sem ? `/tashkilotchi/seminarlar/${sem.id}` : '/tashkilotchi/seminarlar'],
             [Users, 'Ishtirokchilar', '/tashkilotchi/ishtirokchilar'],
             [Ticket, 'Chiptalar', '/tashkilotchi/chiptalar'],
             [Wallet, 'To‘lovlar', null],
@@ -555,9 +579,9 @@ function MobilePay({ notify }) {
 
           <div className="mt-2 grid grid-cols-3 rounded-2xl bg-white px-1 py-1.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             {[
-              [Banknote, 'Jami tushum', Math.round(totals.gross).toLocaleString('ru-RU')],
-              [CreditCard, 'Komissiya (12%)', Math.round(totals.fee).toLocaleString('ru-RU')],
-              [Wallet, 'Sizga', Math.round(totals.net).toLocaleString('ru-RU')],
+              [Banknote, 'Jami tushum', num(totals.gross)],
+              [CreditCard, 'Komissiya (12%)', num(totals.fee)],
+              [Wallet, 'Sizga', num(totals.net)],
             ].map(([Icon, label, value]) => (
               <div key={label} className="px-1 text-center">
                 <span className="mx-auto grid size-7 place-items-center rounded-full bg-[#e7f6f4]" style={{ color: TEAL }}><Icon className="size-3.5" /></span>

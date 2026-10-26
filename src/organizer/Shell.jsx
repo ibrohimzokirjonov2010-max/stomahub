@@ -5,8 +5,10 @@ import {
   Store, Wrench, Shirt, BookOpen, Settings, CircleQuestionMark, Search, MapPin, Calendar, Bell,
   ChevronDown, ChevronLeft, Star, Landmark, Ellipsis, MoreVertical,
 } from 'lucide-react'
-import { ACTIVITY, CITIES, ORG } from './data'
+import { CITIES } from './data'
 import { useHub } from '../hubStore'
+import { useSession } from '../sessionStore'
+import HubNotice from '../components/HubNotice'
 
 const Ctx = createContext(null)
 export const useOrg = () => useContext(Ctx)
@@ -152,7 +154,8 @@ export default function Shell() {
   const navigate = useNavigate()
   const hub = useHub()
   const [query, setQuery] = useState('')
-  const [city, setCity] = useState(ORG.city)
+  const session = useSession()
+  const [city, setCity] = useState('Toshkent')
   const [cityOn, setCityOn] = useState(false)
   const [panel, setPanel] = useState(null)
   const [more, setMore] = useState(false)
@@ -246,7 +249,7 @@ export default function Shell() {
               {panel === 'city' && (
                 <ul className="absolute right-0 z-40 mt-1 w-40 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
                   <li>
-                    <button type="button" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-[#f4fbfa]" onClick={() => { setCity(ORG.city); setCityOn(false); setPanel(null) }}>Barcha shaharlar</button>
+                    <button type="button" className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-[#f4fbfa]" onClick={() => { setCity('Toshkent'); setCityOn(false); setPanel(null) }}>Barcha shaharlar</button>
                   </li>
                   {CITIES.map((c) => (
                     <li key={c}>
@@ -261,7 +264,7 @@ export default function Shell() {
             </button>
             <button type="button" aria-label="Bildirishnomalar" onClick={() => setPanel(panel === 'bell' ? null : 'bell')} className="relative grid size-8 place-items-center rounded-full text-[var(--color-org-teal)] hover:bg-[#f3faf8]">
               <Bell className="size-[18px]" strokeWidth={1.75} />
-              <span className="absolute right-1.5 top-1.5 size-[7px] rounded-full bg-[#ef4444] ring-2 ring-white" />
+              {hub.activity?.length > 0 && <span className="absolute right-1.5 top-1.5 size-[7px] rounded-full bg-[#ef4444] ring-2 ring-white" />}
             </button>
             {panel === 'cal' && (
               <div className="absolute right-16 top-10 z-40 w-64 rounded-2xl border border-[#e6eeec] bg-white p-3 shadow-xl">
@@ -278,20 +281,25 @@ export default function Shell() {
               <div className="absolute right-8 top-10 z-40 w-[320px] rounded-2xl border border-[#e6eeec] bg-white p-3 shadow-xl">
                 <p className="mb-2 text-[13px] font-bold">Bildirishnomalar</p>
                 <ul className="space-y-2">
-                  {(hub.activity?.length ? hub.activity : ACTIVITY).map((a) => (
+                  {(hub.activity || []).map((a) => (
                     <li key={a.title} className="rounded-xl px-1 py-1 hover:bg-[#f6fbfa]">
                       <p className="text-[12.5px] font-semibold">{a.title}</p>
                       <p className="text-[11.5px] text-[#7e9398]">{a.text} · {a.time}</p>
                     </li>
                   ))}
+                  {!hub.activity?.length && <li className="px-1 py-3 text-[12.5px] text-[#7e9398]">Bildirishnomalar yo‘q</li>}
                 </ul>
               </div>
             )}
             <div className="flex items-center gap-2.5">
-              <img src={ORG.avatar} alt="" className="size-8 rounded-full object-cover" />
+              {session.profile?.avatar_url ? (
+                <img src={session.profile.avatar_url} alt="" className="size-8 rounded-full object-cover" />
+              ) : (
+                <span className="grid size-8 place-items-center rounded-full bg-[#e7f7f4] text-[12px] font-bold text-[var(--color-org-teal)]">{(hub.settings?.name || session.profile?.name || 'T').slice(0, 1)}</span>
+              )}
               <div className="hidden leading-tight lg:block">
-                <p className="text-[13px] font-semibold text-[#143044]">{hub.settings?.name || ORG.name}</p>
-                <p className="text-[11px] text-[#8aa0a6]">{ORG.role}</p>
+                <p className="text-[13px] font-semibold text-[#143044]">{hub.settings?.name || session.profile?.name || 'Tashkilotchi'}</p>
+                <p className="text-[11px] text-[#8aa0a6]">{session.profile?.specialty || 'Tashkilotchi'}</p>
               </div>
             </div>
           </div>
@@ -364,17 +372,19 @@ export default function Shell() {
                 <div className="absolute inset-x-3 top-16 z-40 rounded-2xl border border-[#e6eeec] bg-white p-3 shadow-xl">
                   <p className="mb-2 text-[13px] font-bold">Bildirishnomalar</p>
                   <ul className="space-y-2">
-                    {(hub.activity?.length ? hub.activity : ACTIVITY).map((a) => (
+                    {(hub.activity || []).map((a) => (
                       <li key={a.title}>
                         <p className="text-[12.5px] font-semibold">{a.title}</p>
                         <p className="text-[11.5px] text-[#7e9398]">{a.text} · {a.time}</p>
                       </li>
                     ))}
+                    {!hub.activity?.length && <li className="text-[12.5px] text-[#7e9398]">Bildirishnomalar yo‘q</li>}
                   </ul>
                 </div>
               )}
             </header>
             <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-[calc(96px+env(safe-area-inset-bottom))] md:py-4 md:pb-4 md:pl-0 md:pr-4">
+              <HubNotice hub={hub} />
               <Outlet />
             </main>
           </div>

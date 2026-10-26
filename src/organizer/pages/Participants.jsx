@@ -5,7 +5,7 @@ import {
   Download, House, Mail, MapPin, MoreVertical, Plus, QrCode, SlidersHorizontal, Ticket,
   UserRound, Users, Wallet, X, XCircle,
 } from 'lucide-react'
-import { PAY_LABEL } from '../data'
+import { PAY_LABEL, som } from '../data'
 import { useOrg } from '../Shell'
 import { addParticipant, checkIn, downloadText, newestSeminar, removeParticipant, useHub } from '../../hubStore'
 import { Btn, Field, Modal, inputCls } from '../ui'
@@ -652,6 +652,9 @@ function MobileParticipants() {
     }))
   }, [hub.participants, seminar])
 
+  const ticketRows = seminar === 'all'
+    ? hub.seminars.flatMap((s) => (s.tickets || []).map((t) => ({ ...t, id: `${s.id}-${t.id}`, name: `${t.name}${s.title ? ` · ${s.title}` : ''}` })))
+    : (head?.tickets || [])
   const counts = useMemo(() => ({
     all: people.length,
     paid: people.filter((p) => p.pay === 'paid').length,
@@ -676,16 +679,20 @@ function MobileParticipants() {
   return (
     <div className="bg-white text-[#143044]">
       <div className="flex gap-2.5 pb-2">
-        <img src={head?.image || '/images/seminars/teeth.jpg'} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
-        <div className="min-w-0">
-          <select value={seminar} onChange={(e) => setSeminar(e.target.value)} className="max-w-full bg-transparent text-[10.5px] font-semibold text-[var(--color-org-teal)]" aria-label="Seminar">
-            <option value="all">Barcha seminarlar</option>
-            {hub.seminars.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-          </select>
-          <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{seminar === 'all' ? 'Barcha seminarlar' : head?.title}</p>
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {seminar === 'all' ? `${hub.seminars.length} ta seminar` : `${head?.date || ''}${head?.startTime ? `, ${head.startTime}` : ''}`}</p>
-          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {seminar === 'all' ? 'Barcha shaharlar' : (head?.place || head?.city)}</p>
-        </div>
+        {hub.seminars.length ? (
+          <>
+            <img src={head?.image || '/images/seminars/teeth.jpg'} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
+            <div className="min-w-0">
+              <select value={seminar} onChange={(e) => setSeminar(e.target.value)} className="max-w-full bg-transparent text-[10.5px] font-semibold text-[var(--color-org-teal)]" aria-label="Seminar">
+                <option value="all">Barcha seminarlar</option>
+                {hub.seminars.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+              </select>
+              <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{seminar === 'all' ? 'Barcha seminarlar' : head?.title}</p>
+              <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {seminar === 'all' ? `${hub.seminars.length} ta seminar` : `${head?.date || ''}${head?.startTime ? `, ${head.startTime}` : ''}`}</p>
+              <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {seminar === 'all' ? 'Barcha shaharlar' : (head?.place || head?.city || 'Manzil yo‘q')}</p>
+            </div>
+          </>
+        ) : <p className="py-4 text-[13px] text-[#7e9398]">Hali seminar yo‘q. Ishtirokchilar birinchi seminaringizdan keyin shu yerda chiqadi.</p>}
       </div>
 
       <div className="grid grid-cols-4 border-b border-[#e8f1f0] bg-white">
@@ -768,17 +775,18 @@ function MobileParticipants() {
         )}
         {tab === 'umumiy' && (
           <div className="space-y-2 px-3 py-3 text-[13px]">
-            <p className="font-bold">{seminar === 'all' ? 'Barcha seminarlar' : head?.title}</p>
-            <p className="text-[#5e787e]">{seminar === 'all' ? `${hub.seminars.length} ta seminar` : head?.date}</p>
-            <p className="text-[#5e787e]">{seminar === 'all' ? 'Barcha shaharlar' : (head?.place || head?.city)}</p>
+            <p className="font-bold">{hub.seminars.length ? (seminar === 'all' ? 'Barcha seminarlar' : head?.title) : 'Hali seminar yo‘q'}</p>
+            <p className="text-[#5e787e]">{seminar === 'all' ? `${hub.seminars.length} ta seminar` : (head?.date || 'Seminar yarating')}</p>
+            <p className="text-[#5e787e]">{seminar === 'all' ? 'Barcha shaharlar' : (head?.place || head?.city || '')}</p>
             <p className="rounded-xl bg-[#f4fbfa] p-3 text-[12.5px] text-[#3e5a62]">Ro‘yxatdan o‘tganlar: {people.length} / {seats || people.length}. To‘langan: {counts.paid}. Kutilmoqda: {counts.wait}.</p>
           </div>
         )}
         {tab === 'tickets' && (
           <ul className="space-y-2 px-3 py-3">
-            {[['Standart', '1 200 000 so‘m'], ['VIP', '2 500 000 so‘m'], ['Student', '800 000 so‘m']].map(([n, p]) => (
-              <li key={n} className="flex items-center justify-between rounded-xl border border-[#e6f1ef] px-3 py-2.5 text-[13px]">
-                <span className="font-semibold">{n}</span><span className="text-[var(--color-org-teal)]">{p}</span>
+            {ticketRows.length === 0 && <li className="rounded-xl border border-dashed border-[#e6f1ef] px-3 py-6 text-center text-[13px] text-[#7e9398]">Hali chipta turi yo‘q.</li>}
+            {ticketRows.map((t) => (
+              <li key={t.id} className="flex items-center justify-between rounded-xl border border-[#e6f1ef] px-3 py-2.5 text-[13px]">
+                <span className="font-semibold">{t.name}</span><span className="text-[var(--color-org-teal)]">{som(t.price)}</span>
               </li>
             ))}
           </ul>
@@ -805,7 +813,7 @@ function MobileParticipants() {
             </div>
             <p className="text-[13px]">Chipta: <b>{sheet.ticket}</b></p>
             <p className="mt-1 text-[13px]">To‘lov: <b>{M_PAY[sheet.pay]}</b></p>
-            <button type="button" onClick={() => { const hit = hub.participants.find((p) => p.name === sheet.name); if (hit) checkIn(hit.id); else { const person = addParticipant({ name: sheet.name, phone: sheet.phone || '', seminarId: hub.seminars[0]?.id, ticket: 'Standart', pay: 'paid', clinic: '—', email: '', city: 'Toshkent', role: 'Stomatolog' }); checkIn(person.id) } notify(`${sheet.name} — Keldi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
+            <button type="button" onClick={() => { checkIn(sheet.id); notify(`${sheet.name} — Keldi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
               <Check className="size-4" /> QR check-in qilish
             </button>
           </div>

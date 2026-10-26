@@ -5,6 +5,7 @@ import {
   FlaskConical, ArrowRight, ChevronRight, MapPin, Clock, FileText, Heart, Star, MoreVertical, X,
 } from 'lucide-react'
 import { useCart } from '../../cart'
+import { useProfile } from '../../profileStore'
 import { productDetail, marketProducts, som } from '../../marketData'
 import { seminars } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
@@ -60,6 +61,8 @@ const SECTIONS = [
 
 export default function MobileHome() {
   const { add } = useCart()
+  const profile = useProfile()
+  const hello = profile.accountLive ? (profile.name?.split(' ')[0] || 'shifokor') : 'mehmon'
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
@@ -101,7 +104,7 @@ export default function MobileHome() {
         <div className="mt-3 flex items-center gap-3">
           <img src="/images/avatar.jpg" alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
           <div className="min-w-0">
-            <p className="text-[18px] font-bold leading-tight text-ink">Salom, Ibrohim!</p>
+            <p className="text-[18px] font-bold leading-tight text-ink">Salom, {hello}!</p>
             <p className="mt-0.5 text-[12.5px] text-muted">Stomatologlar uchun barcha narsa bir joyda</p>
           </div>
         </div>

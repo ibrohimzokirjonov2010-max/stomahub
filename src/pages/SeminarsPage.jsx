@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { seminarChips, mySeminars, whyAttend } from '../seminarsData'
 import { publicRecords, useHub } from '../hubStore'
+import HubNotice from '../components/HubNotice'
 import { som } from '../marketData'
 
 const UZ = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
@@ -76,6 +77,7 @@ export default function SeminarsPage() {
           <div>
             <h1 className="text-[24px] font-extrabold tracking-tight text-ink">Seminarlar</h1>
             <p className="mt-0.5 text-[12px] text-ink-2">Bilimingizni oshiring, tajribali mutaxassislardan o‘rganing</p>
+            <HubNotice hub={hub} />
           </div>
           <button onClick={() => { setAsk(true); setSent(false) }} className="flex h-[34px] items-center gap-1.5 rounded-full bg-sea px-4 text-[12px] font-semibold text-white shadow-[0_6px_16px_-6px_rgb(11_138_149/0.7)] transition hover:bg-sea-600">
             <Plus className="size-4" strokeWidth={2.4} /> Seminar qo‘shish

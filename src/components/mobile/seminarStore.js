@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { registerSale } from '../../hubStore'
+import { bindBlob, touchBlob } from '../../recordSync'
 
 const KEY = 'stomahub-seminars'
 const SEED_SAVED = ['mikroskop-endo', 'aligner']
@@ -20,7 +21,21 @@ function write(next) {
   state = next
   localStorage.setItem(KEY, JSON.stringify(next))
   listeners.forEach((l) => l())
+  touchBlob('saved_seminars')
 }
+bindBlob('saved_seminars', {
+  get: () => ({ saved: state.saved, registered: state.registered }),
+  empty: () => ({ saved: [], registered: {} }),
+  set: (payload) => {
+    if (!payload) return
+    state = {
+      saved: Array.isArray(payload.saved) ? payload.saved : [],
+      registered: payload.registered && typeof payload.registered === 'object' ? payload.registered : {},
+    }
+    localStorage.setItem(KEY, JSON.stringify(state))
+    listeners.forEach((l) => l())
+  },
+})
 
 const subscribe = (l) => {
   listeners.add(l)
@@ -33,10 +48,10 @@ export function toggleSaved(id) {
   return !on
 }
 
-export function register(id, info) {
+export async function register(id, info) {
   let next = info
   if (info?.name && info.gross != null && !info.synced) {
-    const res = registerSale({
+    const res = await registerSale({
       seminarId: id,
       name: info.name,
       phone: info.phone,
@@ -57,12 +72,41 @@ export function register(id, info) {
       price: res.paid,
       synced: true,
       order: res.payment?.id || info.order,
+      personId: res.person?.id,
       code,
       checkin: code ? `STH:${code}|${res.payment?.id || ''}` : '',
     }
   }
   write({ ...state, registered: { ...state.registered, [id]: next } })
   return { ok: true, info: next }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('stomahub-registrations', (event) => {
+    const rows = Array.isArray(event.detail) ? event.detail : []
+    if (!rows.length) return
+    const registered = { ...state.registered }
+    let changed = false
+    rows.forEach((row) => {
+      const sid = row.seminar_id || row.seminarId
+      if (!sid) return
+      const prev = registered[sid] || {}
+      registered[sid] = {
+        ...prev,
+        name: row.name || prev.name,
+        phone: row.phone || prev.phone,
+        email: row.email || prev.email,
+        clinic: row.clinic || prev.clinic,
+        city: row.city || prev.city,
+        spec: row.role || prev.spec,
+        ticketName: row.ticket || prev.ticketName,
+        order: prev.order || row.id,
+        synced: true,
+      }
+      changed = true
+    })
+    if (changed) write({ ...state, registered })
+  })
 }
 
 export function useSeminarStore() {

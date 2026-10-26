@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { bindBlob, touchBlob } from './recordSync'
 
 export const CATS = [
   { key: 'profilaktika', label: 'Profilaktika', bg: '#e3f4f5', color: '#0b8a95' },
@@ -72,7 +73,18 @@ function seed() {
 
 let rows = seed()
 const listeners = new Set()
-const emit = () => listeners.forEach((fn) => fn())
+const emit = () => {
+  listeners.forEach((fn) => fn())
+  touchBlob('services')
+}
+bindBlob('services', {
+  get: () => rows,
+  empty: () => [],
+  set: (next) => {
+    rows = Array.isArray(next) ? next : rows
+    listeners.forEach((fn) => fn())
+  },
+})
 
 export function useXizmatlar() {
   return useSyncExternalStore(

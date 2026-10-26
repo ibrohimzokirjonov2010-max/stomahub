@@ -5,7 +5,7 @@ import {
   CreditCard, FileText, House, LayoutGrid, MapPin, MessageSquare, MoreVertical, Pencil,
   Plus, Ticket, Trash2, Users, Wallet, X,
 } from 'lucide-react'
-import { CHECKINS, PAYMENTS, num, som } from '../data'
+import { num, som } from '../data'
 import { useOrg } from '../Shell'
 import { cancelSeminar, duplicateSeminar, useHub } from '../../hubStore'
 
@@ -63,12 +63,8 @@ const IMPLANT = {
 const cx = (...a) => a.filter(Boolean).join(' ')
 
 function modelFor(id, seminars = []) {
-  const real = id === 'implant' ? (seminars.find((s) => s.id === 'implant-nov') ? 'implant-nov' : id) : id
-  const sem = seminars.find((s) => s.id === real) || (id === 'implant' ? null : null)
-  if (!sem) {
-    if (id === 'implant') return IMPLANT
-    return null
-  }
+  const sem = seminars.find((s) => s.id === id)
+  if (!sem) return null
   return {
     id: sem.id,
     topic: sem.topic,
@@ -89,13 +85,13 @@ function modelFor(id, seminars = []) {
     revenue: sem.revenue,
     mobileRevenue: sem.revenue,
     checked: sem.checked || 0,
-    hours: 8,
-    minPeople: 15,
+    hours: Number(sem.form?.hours) || 0,
+    minPeople: Number(sem.form?.min) || 0,
     description: sem.about || `${sem.title} — ${sem.days}. ${sem.speaker} ishtirokida.`,
     mobileDescription: sem.about || `${sem.title}. ${sem.days}.`,
     bring: ['Noutbuk', 'Shaxsiy asboblar', 'Qulay kiyim'],
     refundPeople: sem.sold,
-    refundSum: Math.round(sem.revenue * 0.48),
+    refundSum: sem.revenue || 0,
     speakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '/images/bemorlar/bemor-sardor.jpg' }]).map((sp) => ({
       name: sp.name, specialty: sp.role || sem.topic, bio: sp.bio || sem.days, avatar: sp.avatar || '/images/bemorlar/bemor-sardor.jpg',
     })),
@@ -376,7 +372,7 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
                     <IconBox icon={Clock} />
                     <div>
                       <p className="text-[12px] text-[#7e9398]">Kredit soati</p>
-                      <p className="text-[20px] font-bold leading-tight text-[#143044]">{m.hours} soat</p>
+                      <p className="text-[20px] font-bold leading-tight text-[#143044]">{m.hours ? `${m.hours} soat` : '—'}</p>
                       <p className="text-[11.5px] text-[#8aa0a4]">Davomiy ta’lim uchun</p>
                     </div>
                   </div>
@@ -386,7 +382,7 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
                     <IconBox icon={Users} />
                     <div>
                       <p className="text-[12px] text-[#7e9398]">Minimal ishtirokchi soni</p>
-                      <p className="text-[20px] font-bold leading-tight text-[#143044]">{m.minPeople} kishi</p>
+                      <p className="text-[20px] font-bold leading-tight text-[#143044]">{m.minPeople ? `${m.minPeople} kishi` : '—'}</p>
                       <p className="text-[11.5px] text-[#8aa0a4]">Seminar o‘tkazilishi uchun</p>
                     </div>
                   </div>
@@ -525,8 +521,8 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
           <section className="mt-3 grid grid-cols-2 gap-2.5">
             <MobileKpi icon={Ticket} label="Jami chipta" value={`${m.sold} / ${m.seats}`} progress={Math.round((m.sold / m.seats) * 100)} foot="chipta sotildi" />
             <MobileKpi icon={Coins} label="Jami daromad" value={num(m.mobileRevenue)} unit="so‘m" />
-            <MobileKpi icon={FileText} label="Kredit soati" value={String(m.hours)} unit="soat" />
-            <MobileKpi icon={Users} label="Minimal ishtirokchi soni" value={String(m.minPeople)} unit="kishi" />
+            <MobileKpi icon={FileText} label="Kredit soati" value={m.hours ? String(m.hours) : '—'} unit={m.hours ? 'soat' : ''} />
+            <MobileKpi icon={Users} label="Minimal ishtirokchi soni" value={m.minPeople ? String(m.minPeople) : '—'} unit={m.minPeople ? 'kishi' : ''} />
           </section>
 
           <div className="mt-4">
@@ -615,6 +611,9 @@ function MobileKpi({ icon: Icon, label, value, unit, progress, foot }) {
 }
 
 function SidePanels({ tab, m, msg, setMsg, notify }) {
+  const hub = useHub()
+  const checkins = hub.participants.filter((person) => person.seminarId === m.id && person.arrived).slice(0, 5)
+  const pays = hub.payments.filter((payment) => payment.seminarId === m.id).slice(0, 4)
   if (tab === 'people') {
     return (
       <Panel className="mt-3">
@@ -638,12 +637,13 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
       <Panel className="mt-3">
         <h2 className="mb-2 text-[15px] font-bold text-[#143044]">So‘nggi check-inlar</h2>
         <ul className="space-y-2">
-          {CHECKINS.slice(0, 5).map((c) => (
+          {checkins.map((c) => (
             <li key={c.id} className="flex items-center justify-between text-[13px]">
               <span>{c.name}</span>
-              <span className={cx('rounded-full px-2 py-0.5 text-[11px] font-semibold', c.ok ? 'bg-[#e7f8ee] text-[#16a34a]' : 'bg-[#fde8ee] text-[#e11d48]')}>{c.ok ? 'Kirish qildi' : 'Bekor'}</span>
+              <span className="rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[11px] font-semibold text-[#16a34a]">Kirish qildi</span>
             </li>
           ))}
+          {checkins.length === 0 && <li className="py-4 text-center text-[13px] text-[#7e9398]">Hali check-in yo‘q.</li>}
         </ul>
         <Link to="/tashkilotchi/qr" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">QR Check-in</Link>
       </Panel>
@@ -654,9 +654,10 @@ function SidePanels({ tab, m, msg, setMsg, notify }) {
       <Panel className="mt-3">
         <h2 className="mb-2 text-[15px] font-bold text-[#143044]">To‘lovlar</h2>
         <ul className="space-y-2 text-[13px]">
-          {PAYMENTS.slice(0, 4).map((p) => (
+          {pays.map((p) => (
             <li key={p.id} className="flex justify-between"><span>{p.who}</span><b>{som(p.sum)}</b></li>
           ))}
+          {pays.length === 0 && <li className="py-4 text-center text-[13px] text-[#7e9398]">Hali to‘lov yo‘q.</li>}
         </ul>
         <Link to="/tashkilotchi/tolovlar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-[var(--color-org-teal)] px-3.5 text-[13px] font-semibold text-white">Barcha to‘lovlar</Link>
       </Panel>

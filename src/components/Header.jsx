@@ -3,12 +3,16 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, X } from 'lucide-react'
 import { Logo } from './icons'
 import { useCart } from '../cart'
+import { useProfile } from '../profileStore'
 
 // variant="home" — bosh sahifa dizayni, variant="shop" — marketplace sahifalari
 // search (faqat shop): "image" — "Rasm orqali qidirish" tugmasi, "icon" — faqat kamera ikonkasi, "plain" — oddiy qidiruv
 export default function Header({ onMenu, variant = 'home', search = 'image', placeholder = 'Mahsulot, brend yoki kategoriya qidiring...', onQuery }) {
   const shop = variant === 'shop'
-  const { items } = useCart()
+  const { items, count } = useCart()
+  const profile = useProfile()
+  const who = profile.accountLive ? (profile.name || 'Shifokor') : 'Mehmon'
+  const role = profile.accountLive ? (profile.role || 'Stomatolog') : 'Hisobga kiring'
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const cartFrom = pathname.startsWith('/forma') ? 'forma' : pathname.startsWith('/jihoz') ? 'jihoz' : 'market'
@@ -82,7 +86,6 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
           <>
             <IconBtn label="Bildirishnomalar">
               <Bell className="size-[17px]" />
-              <Badge className="bg-sale">1</Badge>
             </IconBtn>
             <IconBtn label="Sevimlilar" className="hidden sm:grid"><Heart className="size-[17px]" /></IconBtn>
             <IconBtn label="Savat" onClick={() => navigate('/buyurtma', { state: { from: cartFrom } })}>
@@ -93,23 +96,22 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
         ) : (
           <>
             <IconBtn label="Sevimlilar" className="hidden sm:grid"><Heart className="size-[17px]" /></IconBtn>
-            <IconBtn label="Savat">
+            <IconBtn label="Savat" onClick={() => navigate('/buyurtma')}>
               <ShoppingCart className="size-[17px]" />
-              <Badge className="bg-brand">3</Badge>
+              {count > 0 && <Badge className="bg-brand">{count}</Badge>}
             </IconBtn>
             <IconBtn label="Bildirishnomalar">
               <Bell className="size-[17px]" />
-              <span className="absolute right-[7px] top-[5px] size-[6px] rounded-full bg-danger ring-2 ring-white" />
             </IconBtn>
           </>
         )}
 
         <div className="ml-1 hidden h-8 w-px bg-line sm:block" />
         <button className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-1.5 hover:bg-page">
-          <img src={shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg'} alt="" className="size-[26px] rounded-full object-cover" />
+          <img src={profile.avatar || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
           <span className="hidden text-left leading-tight xl:block">
-            <span className="block text-[10.5px] font-semibold text-ink">{shop ? 'Dr. Ibrohim' : 'Dr. Shahobiddin'}</span>
-            <span className="block text-[9.5px] text-muted">Stomatolog</span>
+            <span className="block text-[10.5px] font-semibold text-ink">{who}</span>
+            <span className="block text-[9.5px] text-muted">{role}</span>
           </span>
           <ChevronDown className="hidden size-4 text-ink-2 xl:block" />
         </button>

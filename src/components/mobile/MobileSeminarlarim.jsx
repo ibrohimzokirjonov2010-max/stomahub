@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarCheck, CalendarDays, CircleCheck, Download, MapPin, QrCode, Ticket, UserRound, Video } from 'lucide-react'
 import { seminarView, som } from '../../seminarsData'
-import { publicRecord } from '../../hubStore'
+import { publicRecord, useHub } from '../../hubStore'
 import { useProfile } from '../../profileStore'
+import { currentUid } from '../../recordSync'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -68,8 +69,25 @@ function fromStore(id, reg) {
 
 export function useMySeminars() {
   const store = useSeminarStore()
-  const own = Object.entries(store.registered).filter(([, r]) => r?.order).map(([id, r]) => fromStore(id, r)).filter(Boolean)
-  const all = [...own, ...SEED]
+  const hub = useHub()
+  const server = {}
+  ;(hub.myRegistrations || []).forEach((row) => {
+    const id = row.seminar_id
+    if (!id) return
+    server[id] = {
+      order: row.code || row.id,
+      plan: row.ticket || 'Standart',
+      price: store.registered[id]?.price,
+      method: store.registered[id]?.method || 'click',
+      format: /onlayn/i.test(row.ticket || '') ? 'online' : 'offline',
+    }
+  })
+  const merged = { ...server, ...store.registered }
+  const profile = useProfile()
+  const own = Object.entries(merged).filter(([, r]) => r?.order).map(([id, r]) => fromStore(id, r)).filter(Boolean)
+  const seen = new Set(own.map((s) => s.key))
+  const samples = profile.accountLive || currentUid() ? [] : SEED
+  const all = [...own, ...samples.filter((s) => !seen.has(s.key))]
   const now = Date.now()
   return {
     upcoming: all.filter((s) => atOf(s) >= now).sort((a, b) => atOf(a) - atOf(b)),
