@@ -2,7 +2,9 @@ import {
   House, Store, BadgePercent, Shield, CalendarDays, UserRound, MonitorPlay,
   LayoutGrid, Monitor, FlaskConical, Activity, Shirt, Images, Star, CircleHelp, X,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { profileStore } from '../profileStore'
+import { signOut, useSession } from '../sessionStore'
 import { ToothIcon } from './icons'
 
 const groups = [
@@ -44,6 +46,8 @@ const groups = [
 ]
 
 export default function Sidebar({ open, onClose }) {
+  const session = useSession()
+  const navigate = useNavigate()
   return (
     <>
       {open && <div className="fixed inset-0 z-40 bg-ink/30 lg:hidden" onClick={onClose} />}
@@ -59,6 +63,14 @@ export default function Sidebar({ open, onClose }) {
         <Link to="/" className="flex h-[30px] items-center gap-2.5 rounded-md border-l-2 border-brand bg-brand-50 px-2.5 text-[11.5px] font-semibold text-brand-600">
           <House className="size-4" strokeWidth={1.8} /> Bosh sahifa
         </Link>
+        <Link to="/profil" onClick={onClose} className="mt-1 flex h-[30px] items-center gap-2.5 rounded-md px-2.5 text-[11.5px] font-semibold text-ink-2 hover:bg-white">
+          <UserRound className="size-4" strokeWidth={1.8} /> Profil
+        </Link>
+        {session.status === 'authed' && (
+          <button type="button" onClick={async () => { onClose?.(); await signOut(); profileStore.update({ loggedOut: true, accountLive: false }); navigate('/kirish') }} className="mt-1 flex h-[30px] w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[11.5px] font-semibold text-[#d14343] hover:bg-white">
+            Chiqish
+          </button>
+        )}
 
         {groups.map((g) => (
           <div key={g.title} className="mt-2.5 border-t border-line pt-3.5">

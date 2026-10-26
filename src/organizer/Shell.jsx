@@ -230,15 +230,20 @@ export default function Shell() {
               <img src="/images/logo.png" alt="" className="h-[30px] w-auto" />
             </Link>
           </div>
-          <label className="mr-2 flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full bg-[#e8f4f3] px-3.5">
-            <Search className="size-4 shrink-0 text-[#8aa4a8]" strokeWidth={1.8} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={ph}
-              className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#9aafb4]"
-            />
-          </label>
+          {pathname.startsWith('/tashkilotchi/sozlamalar') ? <div className="min-w-0 flex-1" /> : (
+            <div className="mr-2 flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full bg-[#e8f4f3] px-3.5">
+              <Search className="size-4 shrink-0 text-[#8aa4a8]" strokeWidth={1.8} />
+              <input
+                name="org-search"
+                type="search"
+                autoComplete="off"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={ph}
+                className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#9aafb4]"
+              />
+            </div>
+          )}
           <div ref={pop} className="relative flex shrink-0 items-center gap-7 pr-4">
             <div className="relative">
               <button type="button" onClick={() => setPanel(panel === 'city' ? null : 'city')} className="flex h-8 items-center gap-1.5 rounded-full px-1 text-[13px] font-medium text-[#1c4a5a]">

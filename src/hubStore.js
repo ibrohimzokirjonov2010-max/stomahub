@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { FACES, IMG } from './organizer/data'
 import { seminars as CATALOG } from './seminarsData'
 import { friendlySupabaseError, supabase } from './supabaseClient'
+import { tashkentClock, tashkentDate } from './time'
 import {
   pullHub, pushCancel, pushCert, pushCheckIn, pushConfirm, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
@@ -113,7 +114,7 @@ export function retryHub() {
 
 async function hydrate() {
   const seen = epoch
-  if (!state.ready) commit({ ...state, loading: true, error: '' })
+  commit({ ...state, loading: true, error: '' })
   try {
     const next = await pullHub()
     if (seen !== epoch) return
@@ -165,8 +166,7 @@ export function useHub() {
 }
 
 function nowLabel() {
-  const d = new Date()
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return tashkentClock()
 }
 
 function pushActivity(list, item) {
@@ -511,9 +511,11 @@ export async function withdraw(amount, requisite) {
   const n = Number(amount) || 0
   if (n < 1000) return { ok: false, error: 'Kamida 1 000 so‘m kiriting' }
   if (n > w.available) return { ok: false, error: 'Yechib olish mumkin bo‘lgan summadan oshmasin' }
-  const res = await pushWithdraw(n, requisite)
+  const saved = state.requisites.find((item) => String(item.id) === String(requisite))
+  if (!saved) return { ok: false, error: 'Avval rekvizit qo‘shing' }
+  const res = await pushWithdraw(n, saved.label || saved.detail || requisite)
   if (!res?.ok) return res || { ok: false, error: 'So‘rov yuborilmadi' }
-  const row = { id: res.id || `w-${Date.now()}`, amount: n, card: requisite || '4521', date: new Date().toLocaleDateString('ru-RU'), method: 'card' }
+  const row = { id: res.id || `w-${Date.now()}`, amount: n, card: saved.label || requisite, date: tashkentDate(), method: 'card' }
   patch((s) => ({
     ...s,
     withdrawals: [row, ...s.withdrawals],

@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { Award, GraduationCap, Clock, Star, Calendar, Eye, Download, Share2, Copy, Building2, UserRound, CircleCheck, MapPin, Monitor } from 'lucide-react'
 import { certs } from '../../sertifikatData'
 import { useProfile } from '../../profileStore'
+import { currentUid } from '../../recordSync'
+import { useSession } from '../../sessionStore'
 import { Certificate, Qr, printCert } from '../../pages/Sertifikatlar'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -27,14 +29,16 @@ const linkOf = (c) => `${window.location.origin}/sertifikatlar?cert=${c.id}`
 
 export default function MobileSertifikatlar() {
   const profile = useProfile()
-  const owner = profile.accountLive ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
+  const session = useSession()
+  const live = profile.accountLive || !!currentUid() || session.status === 'authed'
+  const owner = live ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
   const [params, setParams] = useSearchParams()
   const [tab, setTab] = useState('all')
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
-  const open = certs.find((c) => c.id === params.get('cert')) || null
+  const open = live ? null : (certs.find((c) => c.id === params.get('cert')) || null)
 
-  const source = profile.accountLive ? [] : certs
+  const source = live ? [] : certs
   const list = useMemo(() => source.filter((c) => tab === 'all' || c.type === tab).sort((a, b) => b.iso.localeCompare(a.iso)), [tab, source])
   const countOf = (k) => (k === 'all' ? source.length : source.filter((c) => c.type === k).length)
   const cme = source.reduce((sum, row) => sum + row.cme, 0)

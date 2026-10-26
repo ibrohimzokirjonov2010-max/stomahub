@@ -31,9 +31,13 @@ export default function OrganizerGate({ children }) {
               setBusy(true)
               setErr('')
               const res = await becomeOrganizer()
+              if (!res.ok) {
+                setBusy(false)
+                setErr(res.error || 'Huquq berilmadi')
+                return
+              }
+              await retryHub()
               setBusy(false)
-              if (!res.ok) setErr(res.error || 'Huquq berilmadi')
-              else retryHub()
             }}
             className="mt-5 h-12 w-full rounded-xl bg-[#0d8a84] text-[15px] font-semibold text-white hover:bg-[#08756f] disabled:opacity-60"
           >
@@ -43,7 +47,7 @@ export default function OrganizerGate({ children }) {
       </div>
     )
   }
-  if (!hub.ready) return <GateNote>Kabinet yuklanmoqda…</GateNote>
+  if (!hub.ready || hub.loading) return <GateNote>Kabinet yuklanmoqda…</GateNote>
   return children
 }
 

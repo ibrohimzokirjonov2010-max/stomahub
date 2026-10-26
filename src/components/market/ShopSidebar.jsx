@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   House, ShoppingCart, BookOpen, FolderOpen, Handshake, Users, UserRound, Settings,
   Store, LayoutGrid, BadgeCheck, Tag, Shirt, Monitor, Recycle,
   Presentation, MonitorPlay, IdCard,
   CalendarDays, CalendarCheck, ClipboardList, Wallet, HeartPulse, Warehouse, ChartPie,
   Wrench, MessagesSquare, Newspaper, Rss, Briefcase,
-  ChevronDown, X,
+  ChevronDown, LogOut, X,
 } from 'lucide-react'
+import { profileStore } from '../../profileStore'
+import { signOut, useSession } from '../../sessionStore'
 import { todayIso, useVisits } from '../../uchrashuvData'
 
 const GROUPS = [
@@ -114,11 +116,12 @@ export default function ShopSidebar({ active = 'all', open, onClose, flush = fal
               onNavigate={onClose}
             />
           ))}
-          <Item to="/klinika" icon={UserRound} label="Profil" onClick={onClose} />
+          <Item to="/profil" icon={UserRound} label="Profil" onClick={onClose} />
         </nav>
 
         <div className="border-t border-[#e7eef3] px-3 py-3">
-          <Item to="/klinika" state={{ settings: true }} icon={Settings} label="Sozlamalar" onClick={onClose} />
+          <Item to="/sozlamalar" icon={Settings} label="Sozlamalar" onClick={onClose} />
+          <SignOutRow onClick={onClose} />
         </div>
       </aside>
     </>
@@ -154,6 +157,26 @@ function Group({ group, open, onToggle, active, todayCount, onNavigate }) {
         </div>
       )}
     </div>
+  )
+}
+
+function SignOutRow({ onClick }) {
+  const navigate = useNavigate()
+  const session = useSession()
+  if (session.status !== 'authed') return null
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        onClick?.()
+        await signOut()
+        profileStore.update({ loggedOut: true, accountLive: false })
+        navigate('/kirish')
+      }}
+      className="mt-1 flex h-11 w-full items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-[#d14343] hover:bg-[#fff5f5]"
+    >
+      <LogOut className="size-5 shrink-0" strokeWidth={1.8} /> Chiqish
+    </button>
   )
 }
 

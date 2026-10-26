@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, UserPlus, UserRound, Users } from 'lucide-react'
 import { profileStore, useProfile } from '../profileStore'
+import { retryHub } from '../hubStore'
 import { supabase } from '../supabaseClient'
-import { setIntendedRole, useSession } from '../sessionStore'
+import { ensureProfile, intendedRole, setIntendedRole, useSession } from '../sessionStore'
 
 const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Sotuvchi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
 
@@ -35,7 +36,6 @@ const COPY = {
     confirmEmail: 'Hisob ochildi. Emailingizdagi tasdiqlash havolasini bosing, so‘ng kiring.',
     errCode: '6 xonali kodni kiriting',
     errSupabase: 'Supabase sozlanmagan',
-    botMissing: 'Telegram bot nomi sozlanmagan (VITE_TELEGRAM_BOT_USERNAME).',
     linkBot: 'Avval botda telefon raqamingizni ulang',
     noAcc: 'Hisobingiz yo‘qmi?',
     toReg: 'Ro‘yxatdan o‘tish',
@@ -90,7 +90,6 @@ const COPY = {
     confirmEmail: 'Аккаунт создан. Подтвердите email, затем войдите.',
     errCode: 'Введите 6-значный код',
     errSupabase: 'Supabase не настроен',
-    botMissing: 'Имя Telegram-бота не задано (VITE_TELEGRAM_BOT_USERNAME).',
     linkBot: 'Сначала привяжите номер в боте',
     noAcc: 'Нет аккаунта?',
     toReg: 'Регистрация',
@@ -145,7 +144,6 @@ const COPY = {
     confirmEmail: 'Account created. Confirm the email, then sign in.',
     errCode: 'Enter the 6-digit code',
     errSupabase: 'Supabase is not configured',
-    botMissing: 'Telegram bot username is not set (VITE_TELEGRAM_BOT_USERNAME).',
     linkBot: 'Link your phone in the bot first',
     noAcc: 'No account yet?',
     toReg: 'Create one',
@@ -222,24 +220,67 @@ function Auth({ mode }) {
   const [busy, setBusy] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState('')
-  const [roleIntent, setRoleIntent] = useState(params.get('role') === 'organizer' ? 'organizer' : 'customer')
+  const [roleIntent, setRoleIntent] = useState(params.get('role') === 'organizer' || intendedRole() === 'organizer' ? 'organizer' : 'customer')
   const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
+  const finishing = useRef(false)
 
   useEffect(() => { setIntendedRole(roleIntent) }, [roleIntent])
 
+  const destination = (role) => next || (role === 'organizer' ? '/tashkilotchi' : '/klinika')
+
+  const applyAccount = async ({ forceRole } = {}) => {
+    const phoneDigits = digits(phone).replace(/^998/, '').slice(-9)
+    const res = await ensureProfile({
+      role: roleIntent,
+      forceRole,
+      name: name.trim() || undefined,
+      specialty: spec || undefined,
+      email: emailOk(email) ? email.trim() : undefined,
+      phone: phoneDigits.length === 9 ? `+998${phoneDigits}` : undefined,
+    })
+    if (!res.ok) throw new Error(res.error || 'Profil saqlanmadi')
+    const localPhone = toLocalPhone(res.profile?.phone)
+    profileStore.update({
+      loggedOut: false,
+      accountLive: true,
+      lang,
+      name: res.profile?.name || '',
+      email: res.profile?.email || session.user?.email || '',
+      phone: localPhone,
+      role: res.profile?.specialty || '',
+    })
+    await retryHub()
+    return res.profile?.role === 'organizer' ? 'organizer' : 'customer'
+  }
+
   useEffect(() => {
-    if (session.status !== 'authed' || !session.user) return
-    const localPhone = toLocalPhone(session.profile?.phone || session.user.user_metadata?.phone)
+    if (session.status !== 'authed' || !session.user || finishing.current) return undefined
+    if (!session.profile) {
+      finishing.current = true
+      let cancel = false
+      ;(async () => {
+        try {
+          const role = await applyAccount({ forceRole: true })
+          if (!cancel) navigate(destination(role), { replace: true })
+        } catch (error) {
+          finishing.current = false
+          if (!cancel) setErr(error.message)
+        }
+      })()
+      return () => { cancel = true }
+    }
+    const localPhone = toLocalPhone(session.profile.phone || session.user.user_metadata?.phone)
     profileStore.update({
       loggedOut: false,
       lang,
-      name: session.profile?.name || session.user.user_metadata?.name || profile.name,
-      email: session.profile?.email || session.user.email || profile.email,
-      phone: localPhone || profile.phone,
-      role: session.profile?.specialty || profile.role,
+      name: session.profile.name || session.user.user_metadata?.name || '',
+      email: session.profile.email || session.user.email || '',
+      phone: localPhone,
+      role: session.profile.specialty || '',
     })
-    navigate(next || (session.profile?.role === 'organizer' ? '/tashkilotchi' : '/klinika'), { replace: true })
-  }, [session.status, session.user, session.profile, lang, navigate, next, profile.name, profile.email, profile.phone, profile.role])
+    navigate(destination(session.profile.role), { replace: true })
+    return undefined
+  }, [session.status, session.user, session.profile])
 
   const applySession = async (payload) => {
     if (!supabase) throw new Error(t.errSupabase)
@@ -283,8 +324,12 @@ function Auth({ mode }) {
       })
       const json = await res.json()
       if (!res.ok || !json.access_token) throw new Error(json.error || 'Kirib bo‘lmadi')
+      finishing.current = true
       await applySession(json)
+      const role = await applyAccount({ forceRole: true })
+      navigate(destination(role), { replace: true })
     } catch (error) {
+      finishing.current = false
       setErr(error.message)
       setBusy(false)
     }
@@ -296,6 +341,7 @@ function Auth({ mode }) {
     setErr('')
     setIntendedRole(roleIntent)
     const redirect = new URL('/kirish', window.location.origin)
+    redirect.searchParams.set('role', roleIntent)
     if (next) redirect.searchParams.set('next', next)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -336,8 +382,19 @@ function Auth({ mode }) {
       if (emailOk(raw)) {
         if (pass.length < 6) return setErr(t.errPass)
         setBusy(true)
+        finishing.current = true
         const { error } = await supabase.auth.signInWithPassword({ email: raw, password: pass })
         if (error) {
+          finishing.current = false
+          setErr(error.message)
+          setBusy(false)
+          return
+        }
+        try {
+          const role = await applyAccount({ forceRole: true })
+          navigate(destination(role), { replace: true })
+        } catch (error) {
+          finishing.current = false
           setErr(error.message)
           setBusy(false)
         }
@@ -357,6 +414,7 @@ function Auth({ mode }) {
     if (pass !== pass2) return setErr(t.errMatch)
     if (!terms) return setErr(t.errTerms)
     setBusy(true)
+    finishing.current = true
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: pass,
@@ -365,13 +423,24 @@ function Auth({ mode }) {
       },
     })
     if (error) {
+      finishing.current = false
       setErr(error.message)
       setBusy(false)
       return
     }
     if (!data.session) {
+      finishing.current = false
       setBusy(false)
       setInfo(t.confirmEmail)
+      return
+    }
+    try {
+      const role = await applyAccount({ forceRole: true })
+      navigate(destination(role), { replace: true })
+    } catch (signError) {
+      finishing.current = false
+      setErr(signError.message)
+      setBusy(false)
     }
   }
 
@@ -493,9 +562,11 @@ function Auth({ mode }) {
           <button type="button" onClick={google} disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#dbe6e4] text-[14.5px] font-semibold text-[#17324d] hover:bg-[#f7fbfa] disabled:opacity-60">
             <GoogleMark /> {mode === 'login' ? t.googleIn : t.googleUp}
           </button>
-          <div className="mt-3">
-            <TelegramButton bot={bot} role={roleIntent} label={t.telegram} missing={t.botMissing} onError={setErr} onBusy={setBusy} />
-          </div>
+          {bot ? (
+            <div className="mt-3">
+              <TelegramButton bot={bot} role={roleIntent} label={t.telegram} onError={setErr} onBusy={setBusy} />
+            </div>
+          ) : null}
           {bot && (
             <p className="mt-3 text-center text-[12.5px] text-[#5c6e80]">
               <a className="font-semibold text-[#0b8a84]" href={`https://t.me/${bot}?start=link`} target="_blank" rel="noreferrer">{t.linkBot}</a>
@@ -536,7 +607,7 @@ function Pass({ value, onChange, placeholder, show, onToggle }) {
   )
 }
 
-function TelegramButton({ bot, role, label, missing, onError, onBusy }) {
+function TelegramButton({ bot, role, label, onError, onBusy }) {
   const ref = useRef(null)
   useEffect(() => {
     if (!bot || !ref.current || !supabase) return undefined
@@ -574,7 +645,7 @@ function TelegramButton({ bot, role, label, missing, onError, onBusy }) {
     host.appendChild(script)
     return () => { delete window.onTelegramAuth }
   }, [bot, role, onError, onBusy])
-  if (!bot) return <p className="text-center text-[12.5px] text-[#8aa0a8]">{missing}</p>
+  if (!bot) return null
   return (
     <div>
       <p className="mb-2 text-center text-[12.5px] font-semibold text-[#5c6e80]">{label}</p>

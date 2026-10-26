@@ -87,17 +87,17 @@ function SocialGlyph({ kind }) {
 }
 
 export function TicketModal({ open, onClose, onSave }) {
-  const [name, setName] = useState('VIP')
-  const [price, setPrice] = useState('850000')
-  const [seats, setSeats] = useState('30')
-  const [note, setNote] = useState(PERKS.map((p) => `• ${p}`).join('\n'))
+  const [name, setName] = useState('')
+  const [price, setPrice] = useState('')
+  const [seats, setSeats] = useState('')
+  const [note, setNote] = useState('')
   const [color, setColor] = useState(TICKET_COLORS[0])
   const [icon, setIcon] = useState('ticket')
   const [active, setActive] = useState(true)
   const [err, setErr] = useState('')
   useEffect(() => {
     if (!open) return
-    setName('VIP'); setPrice('850000'); setSeats('30'); setNote(PERKS.map((p) => `• ${p}`).join('\n')); setColor(TICKET_COLORS[0]); setIcon('ticket'); setActive(true); setErr('')
+    setName(''); setPrice(''); setSeats(''); setNote(''); setColor(TICKET_COLORS[0]); setIcon('ticket'); setActive(true); setErr('')
   }, [open])
   if (!open) return null
   const save = () => {
@@ -117,7 +117,7 @@ export function TicketModal({ open, onClose, onSave }) {
           <label className="block">
             <Lab req>Narx</Lab>
             <span className="flex h-10 items-center rounded-xl border border-[#e3eeec] bg-white pr-3 focus-within:border-[var(--color-org-teal)]">
-              <input className="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none" value={Number(price || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))} />
+              <input className="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none" value={price ? Number(price).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') : ''} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))} placeholder="0" />
               <span className="text-[12.5px] text-[#6e868c]">so‘m</span>
             </span>
           </label>

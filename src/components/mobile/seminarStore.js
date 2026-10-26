@@ -4,14 +4,15 @@ import { bindBlob, touchBlob } from '../../recordSync'
 
 const KEY = 'stomahub-seminars'
 const SEED_SAVED = ['mikroskop-endo', 'aligner']
+export const SHOWCASE_SAVED = SEED_SAVED
 const listeners = new Set()
 
 function read() {
   try {
     const v = JSON.parse(localStorage.getItem(KEY))
-    return { saved: v?.saved || SEED_SAVED, registered: v?.registered || {} }
+    return { saved: Array.isArray(v?.saved) ? v.saved : [], registered: v?.registered || {} }
   } catch {
-    return { saved: SEED_SAVED, registered: {} }
+    return { saved: [], registered: {} }
   }
 }
 

@@ -10,6 +10,7 @@ import { som } from '../marketData'
 import { cardBrand, cvvRequired, validateCard } from '../cardCheck'
 import { useCountdown } from '../payBits'
 import LiveQr from '../components/LiveQr'
+import { tashkentWhen } from '../time'
 
 const PAY = {
   click: 'https://my.click.uz/services/pay',
@@ -110,11 +111,7 @@ export default function SeminarReg() {
     if (!res?.ok) { setError(res?.error || 'To‘lov amalga oshmadi'); return }
     setPass(res.info || null)
     if (!opts.demo && PAY[payId]) window.open(PAY[payId], '_blank', 'noopener,noreferrer')
-    const now = new Date()
-    const months = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
-    const hh = String(now.getHours()).padStart(2, '0')
-    const mm = String(now.getMinutes()).padStart(2, '0')
-    setPaidAt(`${now.getDate()}-${months[now.getMonth()]} ${now.getFullYear()}, ${hh}:${mm}`)
+    setPaidAt(tashkentWhen(new Date()))
     setMethod(payId)
     setStep(3)
   }
