@@ -97,13 +97,10 @@ export default function FilterPanel({ filters, setFilters }) {
       </Box>
 
       <Box title="Mavjudligi">
-        <CheckRow label="Omborda bor" count={986} checked={filters.inStock} onChange={() => setFilters((f) => ({ ...f, inStock: !f.inStock }))} />
-        <CheckRow label="Buyurtma asosida" count={262} checked={false} onChange={() => {}} />
+        <CheckRow label="Omborda bor" count={marketProducts.filter((p) => Number(p.stock) > 0).length} checked={filters.inStock} onChange={() => setFilters((f) => ({ ...f, inStock: !f.inStock }))} />
+        <CheckRow label="Buyurtma asosida" count={marketProducts.filter((p) => !(Number(p.stock) > 0)).length} checked={false} onChange={() => {}} />
       </Box>
 
-      <Box title="Rasmiy distribyutor">
-        <CheckRow label="Faqat rasmiy" count={427} checked={filters.official} onChange={() => setFilters((f) => ({ ...f, official: !f.official }))} />
-      </Box>
     </aside>
   )
 }

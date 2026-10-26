@@ -19,10 +19,10 @@ export function QtyStepper({ value, onChange, size = 'sm' }) {
 }
 
 const perks = [
-  { icon: Truck, title: 'Bepul yetkazib berish', text: '500 000 so‘m dan yuqori buyurtmalarda' },
-  { icon: ShieldCheck, title: 'Rasmiy distribyutor mahsulotlari', text: '100% original mahsulotlar' },
-  { icon: CreditCard, title: 'Xavfsiz to‘lov', text: 'Click, Payme, Uzum, Paynet' },
-  { icon: Clock, title: '7 kun ichida qaytarish', text: 'Sifat kafolati' },
+  { icon: Truck, title: 'Yetkazib berish', text: 'Narx va muddat sotuvchi bilan kelishiladi' },
+  { icon: ShieldCheck, title: 'Tekshirilgan mahsulotlar', text: 'Har bir mahsulot admin tasdig‘idan o‘tadi' },
+  { icon: CreditCard, title: 'Naqd to‘lov', text: 'Mahsulotni olganingizda to‘laysiz' },
+  { icon: Clock, title: 'Buyurtma holati', text: 'Profilingizda kuzatib boring' },
 ]
 
 export default function CartPanel() {
