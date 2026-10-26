@@ -7,6 +7,7 @@ import MahsulotDetail from './pages/MahsulotDetail'
 import Buyurtmalar from './pages/Buyurtmalar'
 import BuyurtmaDetail from './pages/BuyurtmaDetail'
 import Mijozlar from './pages/Mijozlar'
+import MijozDetail from './pages/MijozDetail'
 import Sharhlar from './pages/Sharhlar'
 import Chegirmalar from './pages/Chegirmalar'
 import Reklama from './pages/Reklama'
@@ -24,6 +25,7 @@ export const sellerRoutes = (
     <Route path="buyurtmalar" element={<Buyurtmalar />} />
     <Route path="buyurtmalar/:id" element={<BuyurtmaDetail />} />
     <Route path="mijozlar" element={<Mijozlar />} />
+    <Route path="mijozlar/:id" element={<MijozDetail />} />
     <Route path="sharhlar" element={<Sharhlar />} />
     <Route path="chegirmalar" element={<Chegirmalar />} />
     <Route path="reklama" element={<Reklama />} />

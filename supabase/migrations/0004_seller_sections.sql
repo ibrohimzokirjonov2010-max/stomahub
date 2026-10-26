@@ -203,6 +203,9 @@ begin
     if v_sub < v_d.min_order then raise exception 'Chegirma uchun minimal buyurtma: %', v_d.min_order; end if;
     v_disc := case v_d.kind when 'summa' then least(v_d.value, v_sub) when 'bir_bepul' then 0 else round(v_sub * coalesce(nullif(v_d.value, 0), v_d.percent) / 100.0) end;
     update public.seller_orders set discount_id = v_d.id, discount_amount = v_disc where id = v_order.id;
+  elsif v_c.personal_discount is not null then
+    -- mijozning shaxsiy chegirmasi (boshqa chegirma tanlanmagan bo'lsa)
+    update public.seller_orders set discount_amount = round(v_sub * v_c.personal_discount / 100.0) where id = v_order.id;
   end if;
   select * into v_order from public.seller_orders where id = v_order.id;
   return jsonb_build_object('id', v_order.id, 'code', v_order.code);

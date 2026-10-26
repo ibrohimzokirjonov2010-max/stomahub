@@ -164,11 +164,12 @@ export async function becomeSeller(shopName) {
 export function useAsync() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const go = useCallback(async (fn) => {
+  const go = useCallback(async (fn, onOk) => {
     setBusy(true); setError('')
     const res = await fn()
     setBusy(false)
     if (!res?.ok) setError(res?.error || 'Xatolik yuz berdi')
+    else onOk?.(res)
     return res
   }, [])
   return { busy, error, setError, go }
