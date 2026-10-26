@@ -241,7 +241,7 @@ function Auth({ mode }) {
 
   useEffect(() => { setIntendedRole(roleIntent) }, [roleIntent])
 
-  const destination = (role) => next || (role === 'organizer' ? '/tashkilotchi' : '/klinika')
+  const destination = (role) => next || (role === 'organizer' ? '/tashkilotchi' : role === 'seller' ? '/sotuvchi' : '/klinika')
 
   const applyAccount = async ({ forceRole } = {}) => {
     const phoneDigits = digits(phone).replace(/^998/, '').slice(-9)

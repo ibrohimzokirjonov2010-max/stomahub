@@ -65,7 +65,7 @@ export async function signOut() {
 }
 
 function cleanRole(role) {
-  return role === 'organizer' ? 'organizer' : 'customer'
+  return role === 'organizer' || role === 'seller' ? role : 'customer'
 }
 
 export async function ensureProfile({ role, name, phone, specialty, email, forceRole = false } = {}) {
@@ -74,7 +74,7 @@ export async function ensureProfile({ role, name, phone, specialty, email, force
   if (!state.user) return { ok: false, error: 'Avval kiring' }
   const uid = state.user.id
   const meta = state.user.user_metadata || {}
-  const chosen = role === 'organizer' || role === 'customer' ? role : (meta.role === 'organizer' ? 'organizer' : 'customer')
+  const chosen = role === 'organizer' || role === 'customer' || role === 'seller' ? role : (meta.role === 'organizer' ? 'organizer' : 'customer')
   const { data: existing, error: readError } = await supabase.from('profiles').select('id,role').eq('id', uid).maybeSingle()
   if (readError) return { ok: false, error: readError.message }
   const patch = {
@@ -101,7 +101,8 @@ export async function ensureProfile({ role, name, phone, specialty, email, force
       ;({ error } = await supabase.from('profiles').insert(row))
     }
     if (error && error.code !== '23505') return { ok: false, error: error.message }
-  } else if (forceRole || !existing.role) {
+  } else if ((forceRole && existing.role !== 'seller') || !existing.role) {
+    // a seller account is never silently demoted by a customer/organizer login form
     const nextRole = cleanRole(chosen)
     if (existing.role !== nextRole) {
       const { error } = await supabase.from('profiles').update({ role: nextRole, ...patch }).eq('id', uid)
