@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Bell, Calendar, Check, ChevronLeft, ChevronRight, Clock, Plus, Search, Users, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import { tashkentToday } from '../tashkentDate'
 import { useBemorlar } from '../bemorData'
 import {
-  ANCHOR, FOCUS, MONTHS, WDS, alignWeek, clockRange, doctors, isoOf, labelRange, longDate, minutes, parts, rooms, services, setVisits, useVisits, shift, tones, weekDays, weekdayIndex,
+  MONTHS, WDS, alignWeek, clockRange, doctors, isoOf, labelRange, longDate, minutes, parts, rooms, services, setVisits, useVisits, shift, tones, weekDays, weekdayIndex,
 } from '../uchrashuvData'
 
 const HOUR = 44
@@ -14,8 +15,8 @@ export default function Uchrashuvlar() {
   const patients = useBemorlar()
   const rows = useVisits()
   const setRows = setVisits
-  const [anchor, setAnchor] = useState(ANCHOR)
-  const [focus, setFocus] = useState(FOCUS)
+  const [anchor, setAnchor] = useState(() => alignWeek(tashkentToday()))
+  const [focus, setFocus] = useState(tashkentToday)
   const [mode, setMode] = useState('hafta')
   const [doc, setDoc] = useState('all')
   const [room, setRoom] = useState('all')
@@ -37,9 +38,7 @@ export default function Uchrashuvlar() {
     .sort((a, b) => a.date.localeCompare(b.date) || minutes(a.start) - minutes(b.start))
 
   const filtered = doc !== 'all' || room !== 'all' || q
-  const stats = focus === FOCUS && !filtered && dayRows.length === 5
-    ? { n: 5, neu: 3, done: 1, cancel: 1, avg: 45, load: 80 }
-    : {
+  const stats = {
         n: dayRows.length,
         neu: dayRows.filter((r) => r.isNew).length,
         done: dayRows.filter((r) => r.status === 'yakun').length,
@@ -274,8 +273,8 @@ function VisitModal({ patients, draft, onClose, onSave }) {
   const [doctor, setDoctor] = useState('ibrohim')
   const [room, setRoom] = useState('Kreslo 1')
   const [service, setService] = useState('Konsultatsiya')
-  const [date, setDate] = useState(draft?.date || FOCUS)
-  const [cursor, setCursor] = useState(draft?.date || FOCUS)
+  const [date, setDate] = useState(draft?.date || tashkentToday())
+  const [cursor, setCursor] = useState(draft?.date || tashkentToday())
   const [time, setTime] = useState(draft?.start || '10:30')
   const [dur, setDur] = useState(30)
   const [sms, setSms] = useState(true)

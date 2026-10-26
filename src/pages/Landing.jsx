@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CONTACT_PHONE } from '../config/contact'
+import { useSession } from '../sessionStore'
+import { useCrmStats, mln } from '../crmStats'
 import {
   ArrowRight, BookOpen, Building, CalendarDays, Check, ChevronDown, FolderOpen, GraduationCap,
   Mail, MapPin, Megaphone, MessagesSquare, MonitorPlay, Phone, Presentation, ShoppingBag, Store, Users, Wallet, Wrench,
@@ -54,12 +57,14 @@ const FAQ = [
   ['StomaHub’dan foydalanish pullikmi?', 'Asosiy bo‘limlar bepul. Marketplace, seminarlar va ayrim kurslar alohida narxlanadi. Yashirin to‘lov yo‘q.'],
   ['Kimlar CRM’dan foydalana oladi?', 'Klinika egasi, shifokor va administrator. Bemorlar, qabul, to‘lov va ombor shu yerda yuritiladi.'],
   ['To‘lovni qanday amalga oshiraman?', 'Click, Payme, Uzum va naqd to‘lov qo‘llab-quvvatlanadi. Chek va qarzdorlik CRM ichida saqlanadi.'],
-  ['Semingarga qanday qatnashish mumkin?', 'Seminar sahifasidan joy tanlab, ro‘yxatdan o‘tasiz. Elektron chipta va kalendar eslatmasi beriladi.'],
+  ['Seminarga qanday qatnashish mumkin?', 'Seminar sahifasidan joy tanlab, ro‘yxatdan o‘tasiz. Elektron chipta va kalendar eslatmasi beriladi.'],
   ['Mahsulotni qanday xarid qilaman?', 'Marketplace’da mahsulotni savatga qo‘shing, manzil va to‘lov usulini tanlang. Buyurtmani kuzatish mumkin.'],
-  ['Texnik yordam qayerda?', 'Savol bo‘lsa, +998 90 123 45 67 raqamiga yoki info@stomahub.uz manziliga yozing. Ish vaqti 09:00–21:00.'],
+  ['Texnik yordam qayerda?', `Savol bo‘lsa, ${CONTACT_PHONE} raqamiga yoki info@stomahub.uz manziliga yozing. Ish vaqti 09:00–21:00.`],
 ]
 
 export default function Landing() {
+  const session = useSession()
+  const firstName = session.status === 'authed' ? String(session.profile?.name || session.user?.user_metadata?.name || '').trim().split(/\s+/)[0] : ''
   const [open, setOpen] = useState(0)
 
   return (
@@ -177,7 +182,7 @@ export default function Landing() {
             <Handset>
               <div className="bg-[#f4fbfa] p-3">
                 <p className="text-[11px] font-extrabold text-[#0b8a84]">StomaHub</p>
-                <p className="mt-2 text-[12px] font-bold">Salom, Ibrohim</p>
+                <p className="mt-2 text-[12px] font-bold">{firstName ? `Salom, ${firstName}` : 'Xush kelibsiz'}</p>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
                   {['Seminar', 'Do‘kon', 'Kurs', 'CRM'].map((t) => <span key={t} className="rounded-lg bg-white px-2 py-2 text-[10px] font-semibold text-[#17324d]">{t}</span>)}
                 </div>
@@ -229,7 +234,7 @@ export default function Landing() {
           <Foot title="Aloqa" links={[['Yangiliklar', '/yangiliklar'], ['Hamjamiyat', '/community'], ['Ustalar', '/ustalar'], ['Ishlar', '/ishlar']]} />
           <div>
             <p className="text-[13px] font-bold">Bog‘lanish</p>
-            <p className="mt-3 flex items-center gap-2 text-[13px] text-[#3d5168]"><Phone className="size-3.5 text-[#0b8a84]" /> +998 90 123 45 67</p>
+            <p className="mt-3 flex items-center gap-2 text-[13px] text-[#3d5168]"><Phone className="size-3.5 text-[#0b8a84]" /> {CONTACT_PHONE}</p>
             <p className="mt-2 flex items-center gap-2 text-[13px] text-[#3d5168]"><Mail className="size-3.5 text-[#0b8a84]" /> info@stomahub.uz</p>
             <p className="mt-2 flex items-center gap-2 text-[13px] text-[#3d5168]"><MapPin className="size-3.5 text-[#0b8a84]" /> Toshkent, O‘zbekiston</p>
             <p className="mt-3 text-[12px] font-semibold text-[#5c6e80]">Click · Payme</p>
@@ -285,6 +290,10 @@ function Handset({ className = '', children }) {
 }
 
 function CrmBoard() {
+  // Haqiqiy ma’lumotdan (crmStats) — kirilmagan bo‘lsa nollar
+  const crm = useCrmStats()
+  const session = useSession()
+  const authed = session.status === 'authed'
   const bars = [28, 40, 36, 52, 48, 64, 58, 72, 66, 80, 74, 88]
   return (
     <div className="overflow-hidden rounded-3xl border border-[#e6eef2] bg-white shadow-[0_18px_50px_rgb(16_40_50/0.08)]">
@@ -300,7 +309,7 @@ function CrmBoard() {
         </div>
         <div>
           <div className="grid grid-cols-3 gap-2">
-            {[['Bemorlar', '128'], ['Qabul', '24'], ['Tushum', '12.4 mln']].map(([l, v]) => (
+            {[['To‘lovlar', String(authed ? crm.paymentsCount : 0)], ['Bugungi qabul', String(authed ? crm.todayAppointments : 0)], ['Tushum', mln(authed ? crm.revenueTotal : 0)]].map(([l, v]) => (
               <div key={l} className="rounded-xl bg-[#f6fbfa] px-2.5 py-2">
                 <p className="text-[10px] text-[#5c6e80]">{l}</p>
                 <b className="text-[14px]">{v}</b>
@@ -310,8 +319,8 @@ function CrmBoard() {
           <div className="mt-3 flex h-28 items-end gap-1.5 rounded-xl bg-[#f8fbfb] px-3 py-3">
             {bars.map((h, i) => <span key={i} className="flex-1 rounded-t bg-[#0b8a84]" style={{ height: `${h}%`, opacity: 0.45 + (i / bars.length) * 0.55 }} />)}
           </div>
-          <div className="mt-3 flex items-center gap-2 text-[12px] text-[#5c6e80]"><Building className="size-3.5 text-[#0b8a84]" /> Klinika bandligi 78% · 3 ta bo‘sh kreslo</div>
-          <div className="mt-2 flex items-center gap-2 text-[12px] text-[#5c6e80]"><Users className="size-3.5 text-[#0b8a84]" /> Keyingi bemor: Aliyeva Mohira, 15:30</div>
+          <div className="mt-3 flex items-center gap-2 text-[12px] text-[#5c6e80]"><Building className="size-3.5 text-[#0b8a84]" /> {authed && crm.todayAppointments ? `Bugun ${crm.todayAppointments} ta qabul` : 'Bugun hali qabul yo‘q'}</div>
+          <div className="mt-2 flex items-center gap-2 text-[12px] text-[#5c6e80]"><Users className="size-3.5 text-[#0b8a84]" /> {authed && crm.todayVisits[0] ? `Keyingi bemor: ${crm.todayVisits[0].name || '—'}` : 'Bemorlar ro‘yxati bo‘sh'}</div>
         </div>
       </div>
     </div>

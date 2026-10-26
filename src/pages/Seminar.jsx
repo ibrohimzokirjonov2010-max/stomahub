@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
 import {
   ChevronRight, ChevronDown, CalendarDays, MapPin, Users, Award, Hand, Video, MessagesSquare, BookOpen, UsersRound,
   Play, Check, ArrowRight, CalendarPlus, Phone, Send, ShieldCheck, RotateCcw, FileText, Building2, Star,
@@ -362,7 +363,7 @@ export default function Seminar() {
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sea-50 text-sea"><Phone className="size-4" /></span>
             <span>
               <b className="block text-[13px]">Savollar bormi?</b>
-              <a href="tel:+998901234567" className="block text-[12px] text-ink-2">+998 90 123 45 67</a>
+              <a href={CONTACT_PHONE_TEL} className="block text-[12px] text-ink-2">{CONTACT_PHONE}</a>
               <a href="https://t.me/stomahub" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-sea"><Send className="size-3.5" /> Telegram orqali yozish</a>
             </span>
           </div>

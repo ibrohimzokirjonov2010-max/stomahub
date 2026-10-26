@@ -4,6 +4,7 @@ import {
   Banknote, Building2, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Download, Info, MoreHorizontal, Pencil, Plus, Printer, Search, SlidersHorizontal, Wallet, X,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import { computeCrmStats } from '../crmStats'
 import { useBemorlar } from '../bemorData'
 import {
   METHODS, STATUSES, detailOf, methodOf, planFor, replaceClinicPayments, som, useClinicPayments,
@@ -89,7 +90,8 @@ export default function Tolovlar() {
     const total = arr.reduce((s, x) => s + x.raw, 0) || 1
     return { ...m, pct: Math.round((m.raw / total) * 100) }
   })
-  const liveTotal = filtered.filter((r) => r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
+  // Umumiy crmStats funksiyasi — /klinika va bosh sahifa bilan bir xil hisob
+  const liveTotal = computeCrmStats({ payments: filtered }).revenueTotal
   const cashTotal = filtered.filter((r) => r.method === 'Naqd' && r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
   const cardTotal = filtered.filter((r) => r.method === 'Karta' && r.status !== 'Qaytarilgan').reduce((s, r) => s + r.amount, 0)
   const debtTotal = filtered.filter((r) => r.status === 'Qisman').reduce((s, r) => s + Math.round(r.amount * 0.35), 0)

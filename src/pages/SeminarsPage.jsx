@@ -250,7 +250,7 @@ function SeminarRow({ item: s, liked, onLike }) {
 
 function Select({ label, value, onChange, options, noAll }) {
   const opts = options.map((o) => (Array.isArray(o) ? o : [o, o]))
-  const current = opts.find(([v]) => v === value)?.[1] ?? 'Barchasi'
+  const current = opts.find(([v]) => v === value)?.[1] ?? 'Istalgan'
   return (
     <label className="relative flex h-[42px] cursor-pointer items-center gap-2 rounded-lg bg-white px-3 shadow-card">
       <span className="min-w-0 flex-1 leading-tight">
@@ -259,7 +259,7 @@ function Select({ label, value, onChange, options, noAll }) {
       </span>
       <ChevronDown className="size-3.5 text-ink-2" />
       <select value={value} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0">
-        {!noAll && <option value="">Barchasi</option>}
+        {!noAll && <option value="">Istalgan</option>}
         {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
     </label>

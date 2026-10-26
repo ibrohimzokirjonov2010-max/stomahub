@@ -2,7 +2,10 @@ const face = (n) => `/images/bemorlar/bemor-${n}.jpg`
 const FEMALE = ['malika', 'mohira', 'dilnoza', 'sevara', 'madina', 'aziza'].map(face)
 const MALE = ['aziz', 'bobur', 'sardor', 'anvar', 'davron'].map(face)
 
-export const TODAY = '2026-10-23'
+import { tashkentToday } from './tashkentDate'
+
+// Joriy sana Asia/Tashkent bo‘yicha (avval qotib qolgan '2026-10-23' edi)
+export const TODAY = tashkentToday()
 export const CHAIRS = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3']
 export const SLOTS = ['09:00', '10:00', '13:00', '14:00', '15:30', '17:00']
 export const LUNCH = '11:30'
@@ -70,7 +73,7 @@ function generated(iso) {
   return out
 }
 
-export function seedVisits(from = '2026-09-28', days = 70) {
+export function seedVisits(from = shiftIso(TODAY, -25), days = 70) {
   const out = [...todayVisits]
   for (let i = 0; i < days; i++) {
     const iso = shiftIso(from, i)
@@ -91,8 +94,8 @@ export const WD = ['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha', 'Ya']
 export const WD_LONG = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
 
 export function label(iso) {
-  const [, m, d] = iso.split('-').map(Number)
-  return `${d}-${MONTHS[m - 1]} 2026`
+  const [y, m, d] = iso.split('-').map(Number)
+  return `${d}-${MONTHS[m - 1]} ${y}`
 }
 
 export const seedPatients = [
