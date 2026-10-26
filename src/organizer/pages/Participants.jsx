@@ -1,26 +1,200 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Calendar, Download, Mail, MapPin, Plus, QrCode, Users, Wallet, Clock, XCircle } from 'lucide-react'
-import { PARTICIPANTS, PAY_LABEL, SEMINARS, som } from '../data'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Building2, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, CreditCard,
+  Download, House, Mail, MapPin, MoreVertical, Plus, QrCode, SlidersHorizontal, Ticket,
+  UserRound, Users, Wallet, X, XCircle,
+} from 'lucide-react'
+import { PARTICIPANTS, PAY_LABEL, SEMINARS } from '../data'
 import { useOrg } from '../Shell'
-import { Badge, Btn, Card, Empty, Field, Kpi, MenuBtn, Modal, Pager, Person, QrMark, SearchBox, Select, Tabs, inputCls, usePager } from '../ui'
+import { Btn, Field, Modal, inputCls } from '../ui'
+import { useMobile } from '../../useMobile'
+import { FACE, MOBILE_PEOPLE, MOBILE_SEMINAR } from './participantsData'
+import './participants.css'
 
-const TONE = { paid: 'green', wait: 'orange', unpaid: 'red', cancel: 'red' }
+const TEAL = '#038088'
+const DASH = '\u2013'
+
+const TICKET_CLS = {
+  Standart: 'bg-[#e7f8ef] text-[#16a34a]',
+  VIP: 'bg-[#f3e8ff] text-[#7c3aed]',
+  Student: 'bg-[#e7f0ff] text-[#2563eb]',
+  Guruh: 'bg-[#fff4e5] text-[#d0890b]',
+}
+
+const PAY_CLS = {
+  paid: 'bg-[#e7f8ef] text-[#16a34a]',
+  wait: 'bg-[#fff4e0] text-[#d0890b]',
+  unpaid: 'bg-[#fde8ee] text-[#e11d48]',
+  cancel: 'bg-[#fde8ee] text-[#e11d48]',
+  refund: 'bg-[#eef2f3] text-[#5f7278]',
+}
+
+const faceOf = (p) => FACE[p.id] || p.avatar
+
+function splitWhen(value) {
+  const [date, time] = String(value || '').split(', ')
+  return { date, time }
+}
+
+function pageItems(page, pages) {
+  if (pages <= 6) return Array.from({ length: pages }, (_, i) => i + 1)
+  if (page <= 5) return [1, 2, 3, 4, 5, '\u2026', pages]
+  const out = [1, '\u2026']
+  for (let n = Math.max(2, page - 1); n <= Math.min(pages - 1, page + 1); n += 1) out.push(n)
+  if (page + 1 < pages - 1) out.push('\u2026')
+  out.push(pages)
+  return out
+}
+
+function useDismiss(ref, onClose) {
+  useEffect(() => {
+    const fn = (e) => { if (!ref.current?.contains(e.target)) onClose() }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [ref, onClose])
+}
+
+function VertMenu({ items, bordered, label = 'Amallar' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useDismiss(ref, () => setOpen(false))
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`grid place-items-center text-[#8aa4a8] hover:bg-[#f4fbfa] ${bordered ? 'size-9 rounded-xl border border-[#e4eeec] bg-white' : 'size-8 rounded-lg'}`}
+      >
+        <MoreVertical className="size-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+          {items.map((it) => (
+            <button
+              key={it.label}
+              type="button"
+              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa] ${it.danger ? 'text-[#e11d48]' : 'text-[#1c4a5a]'}`}
+              onClick={() => { setOpen(false); it.onClick?.() }}
+            >
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Drop({ value, onChange, options, className = '' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useDismiss(ref, () => setOpen(false))
+  const current = options.find((o) => o.value === value) || options[0]
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex h-9 w-full items-center justify-between gap-2 rounded-xl border border-[#e4eeec] bg-white px-3 text-[12.5px] text-[#3e5a62]">
+        <span className="truncate">{current?.label}</span>
+        <ChevronDown className="size-3.5 shrink-0 text-[#8aa4a8]" />
+      </button>
+      {open && (
+        <ul className="absolute left-0 z-30 mt-1 max-h-64 w-full min-w-[168px] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+          {options.map((o) => (
+            <li key={String(o.value)}>
+              <button
+                type="button"
+                className={`block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa] ${o.value === value ? 'font-semibold text-[#038088]' : 'text-[#1c4a5a]'}`}
+                onClick={() => { onChange(o.value); setOpen(false) }}
+              >
+                {o.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function Pill({ className, children, dot }) {
+  return (
+    <span className={`inline-flex h-[22px] max-w-full items-center gap-1 whitespace-nowrap rounded-full px-2 text-[11px] font-semibold ${className}`}>
+      {dot && <span className="size-1.5 shrink-0 rounded-full bg-current" />}
+      <span className="truncate">{children}</span>
+    </span>
+  )
+}
+
+function MiniQr({ className = 'size-4' }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden>
+      <rect x="0.8" y="0.8" width="5.2" height="5.2" rx="0.7" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      <rect x="2.3" y="2.3" width="2.2" height="2.2" fill="currentColor" />
+      <rect x="10" y="0.8" width="5.2" height="5.2" rx="0.7" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      <rect x="11.5" y="2.3" width="2.2" height="2.2" fill="currentColor" />
+      <rect x="0.8" y="10" width="5.2" height="5.2" rx="0.7" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      <rect x="2.3" y="11.5" width="2.2" height="2.2" fill="currentColor" />
+      <rect x="10" y="10" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="12.4" y="10" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="14.2" y="11.6" width="1.2" height="1.2" fill="currentColor" />
+      <rect x="10" y="12.6" width="1.5" height="1.5" fill="currentColor" />
+      <rect x="12.5" y="14" width="1.4" height="1.2" fill="currentColor" />
+    </svg>
+  )
+}
+
+function KpiCard({ icon: Icon, label, value, pct, pctClass, bar, iconBg }) {
+  return (
+    <article className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+      <span className={`grid size-10 shrink-0 place-items-center rounded-2xl ${iconBg}`}>
+        <Icon className="size-[18px]" strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[12px] leading-tight text-[#6e868c]">{label}</p>
+        <p className="truncate text-[20px] font-bold leading-tight tracking-tight text-[#143044]">{value}</p>
+        {bar != null && (
+          <div className="mt-1.5 h-[5px] overflow-hidden rounded-full bg-[#e6f2f0]">
+            <div className="h-full rounded-full bg-[#12a394]" style={{ width: `${bar}%` }} />
+          </div>
+        )}
+        <p className={`mt-0.5 flex items-center gap-1 text-[12px] font-semibold leading-none ${pctClass}`}>
+          <span className="size-1.5 rounded-full bg-current" />
+          {pct}
+        </p>
+      </div>
+    </article>
+  )
+}
 
 export default function Participants() {
+  const mobile = useMobile()
+  return mobile ? <MobileParticipants /> : <DesktopParticipants />
+}
+
+function DesktopParticipants() {
   const { query, notify } = useOrg()
   const [seminar, setSeminar] = useState('endo')
+  const [semOpen, setSemOpen] = useState(false)
+  const semRef = useRef(null)
+  useDismiss(semRef, () => setSemOpen(false))
   const [q, setQ] = useState('')
   const [ticket, setTicket] = useState('all')
   const [pay, setPay] = useState('all')
   const [city, setCity] = useState('all')
   const [rows, setRows] = useState(PARTICIPANTS)
   const [selected, setSelected] = useState(PARTICIPANTS[0].id)
+  const [panel, setPanel] = useState(true)
   const [tab, setTab] = useState('info')
   const [add, setAdd] = useState(false)
   const [mail, setMail] = useState(false)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', ticket: 'Standart', city: 'Toshkent' })
-  const [errors, setErrors] = useState({})
+  const [page, setPage] = useState(1)
+  const [per, setPer] = useState(8)
+  const [pagerFree, setPagerFree] = useState(false)
+  const [perOpen, setPerOpen] = useState(false)
+  const perRef = useRef(null)
+  useDismiss(perRef, () => setPerOpen(false))
 
   const current = SEMINARS.find((s) => s.id === seminar) || SEMINARS[1]
   const filtered = useMemo(() => {
@@ -33,9 +207,341 @@ export default function Participants() {
       return true
     })
   }, [rows, query, q, ticket, pay, city])
-  const pager = usePager(filtered, 10)
-  const person = rows.find((p) => p.id === selected) || null
 
+  const designLock = !pagerFree && per === 8 && filtered.length === 180 && !`${query} ${q}`.trim() && ticket === 'all' && pay === 'all' && city === 'all'
+  const pages = designLock ? 18 : Math.max(1, Math.ceil(filtered.length / per) || 1)
+  const safe = Math.min(page, pages)
+  const slice = filtered.slice((safe - 1) * per, safe * per)
+  const from = filtered.length ? (safe - 1) * per + 1 : 0
+  const to = Math.min(safe * per, filtered.length)
+  const person = panel ? rows.find((p) => p.id === selected) || null : null
+
+  useEffect(() => { setPage(1) }, [q, query, ticket, pay, city, per])
+
+  const clearFilters = () => {
+    setQ('')
+    setTicket('all')
+    setPay('all')
+    setCity('all')
+  }
+
+  return (
+    <div className="org-participants -mt-1 -mb-4 text-[#143044]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-bold leading-none tracking-tight">Ishtirokchilar</h1>
+          <p className="mt-1.5 text-[13px] leading-snug text-[#6e868c]">Seminar ishtirokchilarini boshqaring, to‘lovlar, QR check-in va sertifikatlar</p>
+        </div>
+        <div className="shrink-0">
+          <p className="text-right text-[12px] leading-none text-[#8aa0a4]">
+            <Link to="/tashkilotchi" className="hover:text-[#038088]">Boshqaruv paneli</Link>
+            <span className="px-1.5 text-[#b7c6c8]">&gt;</span>
+            <Link to="/tashkilotchi/seminarlar" className="hover:text-[#038088]">Mening seminarlarim</Link>
+            <span className="px-1.5 text-[#b7c6c8]">&gt;</span>
+            Ishtirokchilar
+          </p>
+          <div className="mt-2.5 flex justify-end gap-2">
+            <button type="button" onClick={() => setAdd(true)} className="inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(3_128_136/0.22)]" style={{ background: TEAL }}>
+              <Plus className="size-4" strokeWidth={2.4} /> Ishtirokchi qo‘shish
+            </button>
+            <VertMenu
+              bordered
+              label="Yana"
+              items={[
+                { label: 'Excel yuklab olish', onClick: () => notify('Excel yuklab olindi') },
+                { label: 'Email yuborish', onClick: () => setMail(true) },
+              ]}
+            />
+          </div>
+        </div>
+      </div>
+
+      <section className="mt-3 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+        <KpiCard icon={Users} label="Jami ishtirokchilar" value="180 / 200" pct="90%" pctClass="text-[#16a34a]" bar={90} iconBg="bg-[#e7f7f4] text-[#0d8c86]" />
+        <KpiCard icon={Wallet} label="To‘lov qilingan" value="150" pct="83%" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[#0d8c86]" />
+        <KpiCard icon={Clock} label="Kutilmoqda" value="20" pct="11%" pctClass="text-[#e09a12]" iconBg="bg-[#fff6e8] text-[#e09a12]" />
+        <KpiCard icon={XCircle} label="Bekor qilingan" value="10" pct="6%" pctClass="text-[#e11d48]" iconBg="bg-[#fdecef] text-[#e11d48]" />
+      </section>
+
+      <div className="mt-2.5 flex items-center gap-2 rounded-2xl border border-[#e6f1ef] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
+        <div ref={semRef} className="relative min-w-0 flex-1">
+          <button type="button" onClick={() => setSemOpen((v) => !v)} className="flex w-full min-w-0 items-center gap-2.5 text-left">
+            <img src={current.id === 'endo' ? '/images/bemorlar/bemor-intra.jpg' : current.image} alt="" className="h-9 w-[84px] shrink-0 rounded-lg object-cover object-center" />
+            <span className="min-w-0">
+              <span className="flex items-center gap-1">
+                <span className="truncate text-[13.5px] font-bold leading-tight">{current.title}</span>
+                <ChevronDown className="size-4 shrink-0 text-[#8aa4a8]" />
+              </span>
+              <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-[#6e868c]">
+                <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#0d8c86]" /> {current.date}</span>
+                <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#0d8c86]" /> {current.city}</span>
+                <span>{current.sold} / {current.seats}</span>
+              </span>
+            </span>
+          </button>
+          {semOpen && (
+            <ul className="absolute left-0 top-full z-30 mt-2 max-h-72 w-[min(420px,80vw)] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+              {SEMINARS.map((s) => (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    className={`block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa] ${s.id === seminar ? 'font-semibold text-[#038088]' : ''}`}
+                    onClick={() => { setSeminar(s.id); setSemOpen(false) }}
+                  >
+                    {s.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Link to="/tashkilotchi/qr" className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#b7e3dc] bg-white px-2.5 text-[12.5px] font-semibold text-[#0d8c86]">
+            <QrCode className="size-4" /> QR check-in
+          </Link>
+          <button type="button" onClick={() => notify('Excel yuklab olindi')} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
+            <Download className="size-4 text-[#1f9d55]" /> Excel yuklab olish
+          </button>
+          <button type="button" onClick={() => setMail(true)} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-2.5 text-[12.5px] font-semibold text-[#1c4a5a]">
+            <Mail className="size-4 text-[#0d8c86]" /> Email yuborish
+          </button>
+          <VertMenu
+            bordered
+            label="Seminar amallari"
+            items={[
+              { label: 'Excel yuklab olish', onClick: () => notify('Excel yuklab olindi') },
+              { label: 'Email yuborish', onClick: () => setMail(true) },
+              { label: 'QR check-in', onClick: () => notify('QR check-in ochildi') },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className={`mt-2.5 grid items-start gap-2.5 ${person ? 'min-[1180px]:grid-cols-[minmax(0,1fr)_272px]' : ''}`}>
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e6f1ef] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <div className="flex items-center gap-2 px-2.5 py-2">
+            <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#e4eeec] bg-white px-3">
+              <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#8aa4a8]" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ishtirokchi nomi, telefon yoki email bo‘yicha qidirish..." className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-[#9aafb4]" />
+            </label>
+            <Drop value={ticket} onChange={setTicket} className="w-[148px] shrink-0" options={[{ value: 'all', label: 'Barcha chiptalar' }, { value: 'Standart', label: 'Standart' }, { value: 'VIP', label: 'VIP' }, { value: 'Student', label: 'Student' }, { value: 'Guruh', label: 'Guruh' }]} />
+            <Drop value={pay} onChange={setPay} className="w-[156px] shrink-0" options={[{ value: 'all', label: 'Barcha holatlar' }, ...Object.entries(PAY_LABEL).filter(([k]) => k !== 'refund').map(([value, label]) => ({ value, label }))]} />
+            <Drop value={city} onChange={setCity} className="w-[150px] shrink-0" options={[{ value: 'all', label: 'Barcha shaharlar' }, { value: 'Toshkent', label: 'Toshkent' }, { value: 'Samarqand', label: 'Samarqand' }, { value: 'Buxoro', label: 'Buxoro' }]} />
+            <button type="button" onClick={clearFilters} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[#e4eeec] bg-white px-3 text-[12.5px] font-semibold text-[#1c4a5a]">
+              <SlidersHorizontal className="size-3.5 text-[#0d8c86]" /> Filtrlar
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="border-y border-[#eef3f2] text-[12px] text-[#8aa0a4]">
+                  {['#', 'Ishtirokchi', 'Telefon', 'Email', 'Chipta turi', 'To‘lov holati', 'Ro‘yxatdan o‘tgan', 'QR', 'Amallar'].map((h) => (
+                    <th key={h} className={`px-2.5 py-1.5 font-medium ${h === '#' ? 'w-11' : ''} ${h === 'QR' || h === 'Amallar' ? 'w-10' : ''}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {slice.map((p, i) => {
+                  const when = splitWhen(p.registered)
+                  const on = person?.id === p.id
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => { setSelected(p.id); setPanel(true); setTab('info') }}
+                      className={`h-9 cursor-pointer border-b border-[#f3f7f6] ${on ? 'bg-[#f3fbf9]' : 'hover:bg-[#f8fcfb]'}`}
+                    >
+                      <td className="px-2.5"><span className="grid size-[22px] place-items-center rounded-full text-[11px] font-semibold leading-none text-white" style={{ background: TEAL }}>{from + i}</span></td>
+                      <td className="px-2"><span className="flex min-w-0 items-center gap-2"><img src={faceOf(p)} alt="" className="size-7 shrink-0 rounded-full object-cover" /><span className="min-w-0 leading-tight"><span className="block truncate text-[12.5px] font-semibold">{p.name}</span><span className="block truncate text-[11px] text-[#8aa0a4]">{p.clinic}</span></span></span></td>
+                      <td className="px-2 text-[12px] leading-none text-[#1c4a5a]">{p.phone}</td>
+                      <td className="max-w-[140px] truncate px-2 text-[12px] leading-none text-[#4e6a72]">{p.email}</td>
+                      <td className="px-2"><Pill className={TICKET_CLS[p.ticket] || TICKET_CLS.Standart}>{p.ticket}</Pill></td>
+                      <td className="px-2"><Pill className={PAY_CLS[p.pay] || PAY_CLS.paid} dot>{PAY_LABEL[p.pay]}</Pill></td>
+                      <td className="px-2 leading-tight text-[#5e787e]"><span className="block text-[11.5px]">{when.date}</span>{when.time && <span className="block text-[11px] text-[#8aa0a4]">{when.time}</span>}</td>
+                      <td className="px-1.5"><span className="grid size-7 place-items-center rounded-lg border border-[#d7ebe7] text-[#0d8c86]"><MiniQr /></span></td>
+                      <td className="px-1" onClick={(e) => e.stopPropagation()}>
+                        <VertMenu
+                          items={[
+                            { label: 'Email', onClick: () => { setSelected(p.id); setMail(true) } },
+                            { label: 'O‘chirish', danger: true, onClick: () => { setRows((list) => list.filter((x) => x.id !== p.id)); notify('O‘chirildi') } },
+                          ]}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {filtered.length === 0 && <p className="py-8 text-center text-[13px] text-[#7e9398]">Ishtirokchi topilmadi</p>}
+          </div>
+          {filtered.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#f0f5f4] px-3 py-1">
+              <div className="flex items-center gap-2 text-[12.5px] text-[#6e868c]">
+                <div ref={perRef} className="relative">
+                  <button type="button" onClick={() => setPerOpen((v) => !v)} className="flex h-8 items-center gap-1 rounded-lg border border-[#e4eeec] bg-white px-2 text-[12.5px] text-[#3e5a62]">
+                    {designLock ? 10 : per}
+                    <ChevronDown className="size-3.5 text-[#8aa4a8]" />
+                  </button>
+                  {perOpen && (
+                    <ul className="absolute bottom-full left-0 z-30 mb-1 w-16 overflow-hidden rounded-lg border border-[#e6eeec] bg-white py-1 shadow-lg">
+                      {[8, 10, 20].map((n) => (
+                        <li key={n}>
+                          <button type="button" className="block w-full px-2 py-1 text-left text-[12.5px] hover:bg-[#f4fbfa]" onClick={() => { setPagerFree(true); setPer(n); setPerOpen(false); setPage(1) }}>{n}</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <span>dan {from}{DASH}{to} gacha, jami {filtered.length} ta</span>
+              </div>
+              <div className="flex items-center gap-0.5">
+                <button type="button" aria-label="Oldingi" disabled={safe <= 1} onClick={() => setPage(safe - 1)} className="grid size-8 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronLeft className="size-4" /></button>
+                {pageItems(safe, pages).map((n, i) => n === '\u2026'
+                  ? <span key={`e${i}`} className="px-1 text-[12px] text-[#8aa0a4]">…</span>
+                  : (
+                    <button key={n} type="button" onClick={() => setPage(n)} className={`grid h-8 min-w-8 place-items-center rounded-lg px-1.5 text-[12.5px] font-semibold ${n === safe ? 'text-white' : 'text-[#3e5a62] hover:bg-[#f4fbfa]'}`} style={n === safe ? { background: TEAL } : undefined}>{n}</button>
+                  ))}
+                <button type="button" aria-label="Keyingi" disabled={safe >= pages} onClick={() => setPage(safe + 1)} className="grid size-8 place-items-center rounded-lg text-[#5e787e] disabled:opacity-40"><ChevronRight className="size-4" /></button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {person && (
+          <aside className="rounded-2xl border border-[#e6f1ef] bg-white p-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+            <div className="flex items-center gap-2">
+              <img src={faceOf(person)} alt="" className="size-10 rounded-full object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13.5px] font-bold leading-tight">{person.name}</p>
+                <p className="truncate text-[11.5px] text-[#8aa0a4]">{person.clinic}</p>
+              </div>
+              <button type="button" aria-label="Yopish" onClick={() => setPanel(false)} className="grid size-7 place-items-center rounded-lg text-[#8aa4a8] hover:bg-[#f4fbfa]"><X className="size-4" /></button>
+            </div>
+            <div className="mt-2 flex items-center gap-1">
+              {[
+                ['info', 'Ma’lumotlar'],
+                ['pay', 'To‘lovlar'],
+                ['cert', 'Sertifikat'],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTab(id)}
+                  className={`h-7 rounded-full px-2.5 text-[12px] font-semibold ${tab === id ? 'text-white' : 'text-[#5e787e] hover:bg-[#f4fbfa]'}`}
+                  style={tab === id ? { background: TEAL } : undefined}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {tab === 'info' && (
+              <dl className="mt-1.5 space-y-0.5">
+                {[
+                  [Phone, 'Telefon', person.phone],
+                  [Mail, 'Email', person.email],
+                  [MapPin, 'Shahar', person.city],
+                  [Building2, 'Klinika', person.clinic],
+                  [UserRound, 'Lavozim', person.role || 'Stomatolog'],
+                  [Ticket, 'Chipta turi', person.ticket],
+                  [Calendar, 'Ro‘yxatdan o‘tgan', person.registered],
+                ].map(([Icon, k, v]) => (
+                  <div key={k} className="flex items-center gap-1.5 text-[12px]">
+                    <Icon className="size-3.5 shrink-0 text-[#0d8c86]" strokeWidth={1.8} />
+                    <dt className="text-[#7e9398]">{k}</dt>
+                    <dd className="ml-auto truncate pl-2 text-right font-medium text-[#143044]">{v}</dd>
+                  </div>
+                ))}
+                <div className="flex items-center gap-1.5 text-[12px]">
+                  <CreditCard className="size-3.5 shrink-0 text-[#0d8c86]" strokeWidth={1.8} />
+                  <dt className="text-[#7e9398]">To‘lov holati</dt>
+                  <dd className="ml-auto"><Pill className={PAY_CLS[person.pay]} dot>{PAY_LABEL[person.pay]}</Pill></dd>
+                </div>
+              </dl>
+            )}
+            {tab === 'pay' && (
+              <div className="mt-3 rounded-xl bg-[#f6fbfa] p-3 text-[12.5px]">
+                <p className="text-[#7e9398]">Chipta</p>
+                <p className="font-bold">{person.ticket}</p>
+                <p className="mt-2 text-[#7e9398]">Holat</p>
+                <p className="font-semibold">{PAY_LABEL[person.pay]}</p>
+                <Link to="/tashkilotchi/tolovlar" className="mt-2 inline-block text-[12.5px] font-semibold text-[#038088]">To‘lovlarga o‘tish</Link>
+              </div>
+            )}
+            {tab === 'cert' && (
+              <div className="mt-3 text-[12.5px]">
+                {person.pay === 'paid'
+                  ? <p>Sertifikat tayyor. Raqam: STH-2026-{String(person.id).padStart(4, '0')}</p>
+                  : <p className="text-[#7e9398]">Sertifikat hali berilmagan.</p>}
+                <Link to="/tashkilotchi/sertifikatlar" className="mt-2 inline-flex h-8 items-center rounded-lg border border-[#d5ebe6] px-2.5 text-[12px] font-semibold text-[#0d8c86]">Sertifikatlarga o‘tish</Link>
+              </div>
+            )}
+            <div className="mt-2 flex flex-col items-center rounded-xl bg-[#f7fbfa] px-2 py-1.5">
+              <QrMark size={78} seed={person.id} />
+              <p className="mt-1 text-[12px] font-semibold leading-tight">Ishtirokchi QR-kodi</p>
+              <p className="text-[10.5px] leading-tight text-[#8aa0a4]">Kirish paytida skanerlang</p>
+            </div>
+            <button type="button" onClick={() => notify(`${person.name} check-in qilindi`)} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-xl text-[12.5px] font-semibold text-white" style={{ background: TEAL }}>
+              <Check className="size-4" strokeWidth={2.6} /> QR check-in qilish
+            </button>
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              <Link to="/tashkilotchi/sertifikatlar" className="inline-flex h-9 items-center justify-center rounded-xl border border-[#d7ebe6] text-[12px] font-semibold text-[#1c4a5a]">Sertifikat berish</Link>
+              <button type="button" onClick={() => setMail(true)} className="inline-flex h-9 items-center justify-center rounded-xl border border-[#d7ebe6] text-[12px] font-semibold text-[#1c4a5a]">Email yuborish</button>
+            </div>
+          </aside>
+        )}
+      </div>
+
+      <AddModal open={add} onClose={() => setAdd(false)} onSave={(row) => {
+        setRows((list) => [row, ...list])
+        setSelected(row.id)
+        setPanel(true)
+        setPagerFree(true)
+        setAdd(false)
+        notify('Ishtirokchi qo‘shildi')
+      }} />
+      <Modal open={mail} title="Email yuborish" onClose={() => setMail(false)}>
+        <MailForm onClose={() => setMail(false)} onSend={() => { setMail(false); notify('Email yuborildi') }} to={person?.email} />
+      </Modal>
+    </div>
+  )
+}
+
+function QrMark({ size = 96, seed = 1 }) {
+  const n = 25
+  const cells = []
+  const on = (x, y) => {
+    const finder = (fx, fy) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7
+    if (finder(0, 0) || finder(n - 7, 0) || finder(0, n - 7)) {
+      const lx = x < 8 ? x : x >= n - 7 ? x - (n - 7) : x
+      const ly = y < 8 ? y : y >= n - 7 ? y - (n - 7) : y
+      const edge = lx === 0 || ly === 0 || lx === 6 || ly === 6
+      const core = lx >= 2 && lx <= 4 && ly >= 2 && ly <= 4
+      return edge || core
+    }
+    return ((x * 17 + y * 13 + seed * 31) % 7) > 2
+  }
+  for (let y = 0; y < n; y += 1) for (let x = 0; x < n; x += 1) if (on(x, y)) cells.push(`${x},${y}`)
+  return (
+    <svg viewBox={`0 0 ${n} ${n}`} width={size} height={size} className="rounded bg-white" aria-hidden>
+      <rect width={n} height={n} fill="#fff" />
+      {cells.map((k) => {
+        const [x, y] = k.split(',')
+        return <rect key={k} x={x} y={y} width="1" height="1" fill="#143044" />
+      })}
+    </svg>
+  )
+}
+
+function Phone(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6.5 3.5h3l1.2 3-2 1.2a12 12 0 0 0 5.6 5.6l1.2-2 3 1.2v3A2 2 0 0 1 16.6 17 14.5 14.5 0 0 1 5 5.4a2 2 0 0 1 1.5-1.9Z" />
+    </svg>
+  )
+}
+
+function AddModal({ open, onClose, onSave }) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', ticket: 'Standart', city: 'Toshkent' })
+  const [errors, setErrors] = useState({})
   const save = () => {
     const e = {}
     if (form.name.trim().length < 3) e.name = 'Ism-familiyani kiriting'
@@ -43,158 +549,35 @@ export default function Participants() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email noto‘g‘ri'
     setErrors(e)
     if (Object.keys(e).length) return
-    const row = { id: Date.now(), ...form, clinic: 'Yangi klinika', pay: 'wait', registered: 'Bugun', role: 'Stomatolog', avatar: '/images/avatar.jpg' }
-    setRows((list) => [row, ...list])
-    setSelected(row.id)
-    setAdd(false)
+    onSave({
+      id: Date.now(),
+      ...form,
+      clinic: 'Yangi klinika',
+      pay: 'wait',
+      registered: 'Bugun',
+      role: 'Stomatolog',
+      avatar: '/images/seller-2.jpg',
+    })
     setForm({ name: '', phone: '', email: '', ticket: 'Standart', city: 'Toshkent' })
-    notify('Ishtirokchi qo‘shildi')
+    setErrors({})
   }
-
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 text-[12px] text-[#8aa0a4]">
-            <Link to="/tashkilotchi" className="hover:text-[#0c8f86]">Boshqaruv paneli</Link> <span className="px-1">›</span>
-            <Link to="/tashkilotchi/seminarlar" className="hover:text-[#0c8f86]">Mening seminarlarim</Link> <span className="px-1">›</span> Ishtirokchilar
-          </p>
-          <h1 className="text-[22px] font-bold">Ishtirokchilar</h1>
-          <p className="mt-0.5 text-[13px] text-[#6e868c]">Seminar ishtirokchilarini boshqaring, to‘lovlar, QR check-in va sertifikatlar</p>
-        </div>
-        <div className="flex gap-2">
-          <Btn onClick={() => setAdd(true)}><Plus className="size-4" /> Ishtirokchi qo‘shish</Btn>
-          <MenuBtn items={[{ label: 'Excel', onClick: () => notify('Excel yuklab olindi') }, { label: 'Email', onClick: () => setMail(true) }]} />
+    <Modal open={open} title="Ishtirokchi qo‘shish" onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="Ism-familiya" req error={errors.name}><input className={inputCls(errors.name)} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Aliyeva Mohira" /></Field>
+        <Field label="Telefon" req error={errors.phone}><input className={inputCls(errors.phone)} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+998 90 123 45 67" /></Field>
+        <Field label="Email" req error={errors.email}><input className={inputCls(errors.email)} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="m.aliyeva@mail.uz" /></Field>
+        <Field label="Chipta turi">
+          <select className={inputCls()} value={form.ticket} onChange={(e) => setForm({ ...form, ticket: e.target.value })}>
+            <option>Standart</option><option>VIP</option><option>Student</option><option>Guruh</option>
+          </select>
+        </Field>
+        <div className="flex justify-end gap-2 pt-2">
+          <Btn kind="soft" onClick={onClose}>Bekor qilish</Btn>
+          <Btn onClick={save}>Saqlash</Btn>
         </div>
       </div>
-
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi icon={Users} label="Jami ishtirokchilar" value="180 / 200" progress={90} foot="90%" />
-        <Kpi icon={Wallet} label="To‘lov qilingan" value="150" foot="83%" />
-        <Kpi icon={Clock} label="Kutilmoqda" value="20" hint="11%" hintClass="font-semibold text-[#d0890b]" />
-        <Kpi icon={XCircle} label="Bekor qilingan" value="10" hint="6%" hintClass="font-semibold text-[#e11d48]" />
-      </section>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <div className="flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-2">
-          <img src={current.image} alt="" className="h-10 w-16 rounded-lg object-cover" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold">{current.title}</p>
-            <p className="flex flex-wrap gap-2 text-[11px] text-[#7e9398]"><span className="inline-flex items-center gap-1"><Calendar className="size-3" /> {current.date}</span><span className="inline-flex items-center gap-1"><MapPin className="size-3" /> {current.city}</span><span>{current.sold} / {current.seats}</span></p>
-          </div>
-          <Select value={seminar} onChange={setSeminar} className="w-[180px]" options={SEMINARS.map((s) => ({ value: s.id, label: s.title }))} />
-        </div>
-        <Btn kind="ghost" to="/tashkilotchi/qr"><QrCode className="size-4" /> QR check-in</Btn>
-        <Btn kind="soft" onClick={() => notify('Excel yuklab olindi')}><Download className="size-4" /> Excel yuklab olish</Btn>
-        <Btn kind="soft" onClick={() => setMail(true)}><Mail className="size-4" /> Email yuborish</Btn>
-      </div>
-
-      <Card className="mt-3" pad={false}>
-        <div className="flex flex-wrap items-center gap-2 p-3">
-          <SearchBox value={q} onChange={setQ} placeholder="Ishtirokchi nomi, telefon yoki email bo‘yicha qidirish..." className="min-w-[220px] flex-1" />
-          <Select value={ticket} onChange={setTicket} className="w-[150px]" options={[{ value: 'all', label: 'Barcha chiptalar' }, { value: 'Standart', label: 'Standart' }, { value: 'VIP', label: 'VIP' }, { value: 'Student', label: 'Student' }, { value: 'Guruh', label: 'Guruh' }]} />
-          <Select value={pay} onChange={setPay} className="w-[170px]" options={[{ value: 'all', label: 'Barcha holatlar' }, ...Object.entries(PAY_LABEL).map(([value, label]) => ({ value, label }))]} />
-          <Select value={city} onChange={setCity} className="w-[150px]" options={[{ value: 'all', label: 'Barcha shaharlar' }, { value: 'Toshkent', label: 'Toshkent' }, { value: 'Samarqand', label: 'Samarqand' }, { value: 'Buxoro', label: 'Buxoro' }]} />
-          <Btn kind="soft" onClick={() => { setQ(''); setTicket('all'); setPay('all'); setCity('all') }}>Filtrlar</Btn>
-        </div>
-        <div className="org-with-side">
-          <div className="min-w-0 overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left">
-              <thead>
-                <tr className="border-y border-[#eef3f2] text-[12px] text-[#8aa0a4]">
-                  {['#', 'Ishtirokchi', 'Telefon', 'Email', 'Chipta turi', 'To‘lov holati', 'Ro‘yxatdan o‘tgan', 'QR', 'Amallar'].map((h) => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {pager.slice.map((p, i) => (
-                  <tr key={p.id} onClick={() => { setSelected(p.id); setTab('info') }} className={`cursor-pointer border-b border-[#f3f7f6] ${person?.id === p.id ? 'bg-[#f4fbfa]' : 'hover:bg-[#f8fcfb]'}`}>
-                    <td className="px-3 py-2.5 text-[12.5px] text-[#6e868c]">{pager.from + i}</td>
-                    <td className="px-3 py-2.5"><Person name={p.name} sub={p.clinic} avatar={p.avatar} /></td>
-                    <td className="px-3 py-2.5 text-[12.5px]">{p.phone}</td>
-                    <td className="px-3 py-2.5 text-[12.5px] text-[#3e5a62]">{p.email}</td>
-                    <td className="px-3 py-2.5"><Badge tone={p.ticket === 'VIP' ? 'teal' : p.ticket === 'Student' ? 'orange' : 'outline'}>{p.ticket}</Badge></td>
-                    <td className="px-3 py-2.5"><Badge tone={TONE[p.pay]} dot>{PAY_LABEL[p.pay]}</Badge></td>
-                    <td className="px-3 py-2.5 text-[12px] text-[#5e787e]">{p.registered}</td>
-                    <td className="px-3 py-2.5"><QrCode className="size-4 text-[#0c8f86]" /></td>
-                    <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}><MenuBtn items={[{ label: 'Email', onClick: () => setMail(true) }, { label: 'O‘chirish', danger: true, onClick: () => { setRows((list) => list.filter((x) => x.id !== p.id)); notify('O‘chirildi') } }]} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {pager.total === 0 && <Empty text="Ishtirokchi topilmadi" />}
-            <Pager {...pager} onPage={pager.setPage} onPer={pager.setPer} />
-          </div>
-          {person && (
-            <aside className="border-t border-[#eef3f2] p-4 lg:border-l lg:border-t-0">
-              <div className="mb-3 flex items-start gap-2">
-                <img src={person.avatar} alt="" className="size-12 rounded-full object-cover" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold">{person.name}</p>
-                  <p className="text-[12px] text-[#7e9398]">{person.clinic}</p>
-                </div>
-                <button type="button" aria-label="Yopish" onClick={() => setSelected(null)} className="text-[#8aa0a4]"><XCircle className="size-4" /></button>
-              </div>
-              <Tabs tabs={[{ id: 'info', label: 'Ma’lumotlar' }, { id: 'pay', label: 'To‘lovlar' }, { id: 'cert', label: 'Sertifikat' }]} value={tab} onChange={setTab} />
-              {tab === 'info' && (
-                <dl className="mt-3 space-y-2 text-[12.5px]">
-                  {[
-                    ['Telefon', person.phone],
-                    ['Email', person.email],
-                    ['Shahar', person.city],
-                    ['Klinika', person.clinic],
-                    ['Lavozim', person.role],
-                    ['Chipta turi', person.ticket],
-                    ['Ro‘yxatdan o‘tgan', person.registered],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex justify-between gap-3"><dt className="text-[#7e9398]">{k}</dt><dd className="text-right font-medium">{v}</dd></div>
-                  ))}
-                  <div className="flex justify-between gap-3"><dt className="text-[#7e9398]">To‘lov holati</dt><dd><Badge tone={TONE[person.pay]}>{PAY_LABEL[person.pay]}</Badge></dd></div>
-                </dl>
-              )}
-              {tab === 'pay' && (
-                <div className="mt-3 rounded-xl bg-[#f6fbfa] p-3 text-[13px]">
-                  <p className="text-[#7e9398]">Chipta</p>
-                  <p className="font-bold">{person.ticket}</p>
-                  <p className="mt-2 text-[#7e9398]">Holat</p>
-                  <p className="font-semibold">{PAY_LABEL[person.pay]}</p>
-                  <Link to="/tashkilotchi/tolovlar" className="mt-2 inline-block text-[12.5px] font-semibold text-[#0c8f86]">To‘lovlarga o‘tish</Link>
-                </div>
-              )}
-              {tab === 'cert' && (
-                <div className="mt-3 text-[13px]">
-                  {person.pay === 'paid' ? <p>Sertifikat tayyor. Raqam: STH-2026-{String(person.id).padStart(4, '0')}</p> : <p className="text-[#7e9398]">Sertifikat hali berilmagan.</p>}
-                  <Btn kind="ghost" className="mt-3" to="/tashkilotchi/sertifikatlar">Sertifikatlarga o‘tish</Btn>
-                </div>
-              )}
-              <div className="mt-4 grid place-items-center rounded-xl bg-[#f6fbfa] py-3">
-                <QrMark size={120} seed={person.id} />
-                <p className="mt-2 text-[12.5px] font-semibold">Ishtirokchi QR-kodi</p>
-                <p className="text-[11px] text-[#8aa0a4]">Kirish paytida skanerlang</p>
-              </div>
-              <div className="mt-3 space-y-2">
-                <Btn className="w-full" onClick={() => notify(`${person.name} check-in qilindi`)}><QrCode className="size-4" /> QR check-in qilish</Btn>
-                <Btn kind="ghost" className="w-full" to="/tashkilotchi/sertifikatlar">Sertifikat berish</Btn>
-                <Btn kind="ghost" className="w-full" onClick={() => setMail(true)}><Mail className="size-4" /> Email yuborish</Btn>
-              </div>
-            </aside>
-          )}
-        </div>
-      </Card>
-
-      <Modal open={add} title="Ishtirokchi qo‘shish" onClose={() => setAdd(false)}>
-        <div className="space-y-3">
-          <Field label="Ism-familiya" req error={errors.name}><input className={inputCls(errors.name)} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Aliyeva Mohira" /></Field>
-          <Field label="Telefon" req error={errors.phone}><input className={inputCls(errors.phone)} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+998 90 123 45 67" /></Field>
-          <Field label="Email" req error={errors.email}><input className={inputCls(errors.email)} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="m.aliyeva@mail.uz" /></Field>
-          <Field label="Chipta turi"><select className={inputCls()} value={form.ticket} onChange={(e) => setForm({ ...form, ticket: e.target.value })}><option>Standart</option><option>VIP</option><option>Student</option><option>Guruh</option></select></Field>
-          <div className="flex justify-end gap-2 pt-2"><Btn kind="soft" onClick={() => setAdd(false)}>Bekor qilish</Btn><Btn onClick={save}>Saqlash</Btn></div>
-        </div>
-      </Modal>
-      <Modal open={mail} title="Email yuborish" onClose={() => setMail(false)}>
-        <MailForm onClose={() => setMail(false)} onSend={() => { setMail(false); notify('Email yuborildi') }} to={person?.email} />
-      </Modal>
-      <p className="sr-only">{som(0)}</p>
-    </div>
+    </Modal>
   )
 }
 
@@ -205,7 +588,250 @@ function MailForm({ onClose, onSend, to }) {
     <div className="space-y-3">
       <Field label="Qabul qiluvchi"><input className={inputCls()} defaultValue={to || ''} /></Field>
       <Field label="Xabar" error={bad ? 'Xabar bo‘sh bo‘lmasin' : ''}><textarea className={`${inputCls()} h-24 py-2`} value={text} onChange={(e) => setText(e.target.value)} /></Field>
-      <div className="flex justify-end gap-2"><Btn kind="soft" onClick={onClose}>Bekor qilish</Btn><Btn onClick={() => { if (!text.trim()) { setBad(true); return } onSend() }}>Yuborish</Btn></div>
+      <div className="flex justify-end gap-2">
+        <Btn kind="soft" onClick={onClose}>Bekor qilish</Btn>
+        <Btn onClick={() => { if (!text.trim()) { setBad(true); return } onSend() }}>Yuborish</Btn>
+      </div>
     </div>
+  )
+}
+
+const M_PAY = { paid: 'To‘langan', wait: 'Kutilmoqda', cancel: 'Bekor qilingan' }
+
+function MobileParticipants() {
+  const navigate = useNavigate()
+  const { notify } = useOrg()
+  const [tab, setTab] = useState('people')
+  const [q, setQ] = useState('')
+  const [chip, setChip] = useState('all')
+  const [sheet, setSheet] = useState(null)
+  const [more, setMore] = useState(false)
+  const [menu, setMenu] = useState(false)
+
+  const counts = useMemo(() => ({
+    all: MOBILE_PEOPLE.length,
+    paid: MOBILE_PEOPLE.filter((p) => p.pay === 'paid').length,
+    wait: MOBILE_PEOPLE.filter((p) => p.pay === 'wait').length,
+    cancel: MOBILE_PEOPLE.filter((p) => p.pay === 'cancel').length,
+  }), [])
+
+  const list = useMemo(() => {
+    const s = q.trim().toLowerCase()
+    return MOBILE_PEOPLE.filter((p) => {
+      if (chip === 'paid' && p.pay !== 'paid') return false
+      if (chip === 'wait' && p.pay !== 'wait') return false
+      if (chip === 'cancel' && p.pay !== 'cancel') return false
+      if (s && !`${p.name} ${p.phone}`.toLowerCase().includes(s)) return false
+      return true
+    })
+  }, [q, chip])
+
+  const chips = [
+    ['all', 'Hammasi', counts.all],
+    ['paid', 'To‘langan', counts.paid],
+    ['wait', 'Kutilmoqda', counts.wait],
+    ['cancel', 'Bekor qilingan', counts.cancel],
+  ]
+
+  return (
+    <div className="org-mobile-participants flex h-[calc(100dvh/var(--z))] flex-col bg-[#f7fbfb] text-[#143044]">
+      <header className="flex items-center gap-1 bg-white px-1.5 pb-1 pt-1.5">
+        <button type="button" aria-label="Orqaga" onClick={() => navigate('/tashkilotchi/seminarlar')} className="grid size-9 shrink-0 place-items-center text-[#143044]">
+          <ChevronLeft className="size-5" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <img src="/images/logo.png" alt="StomaHub" className="h-[22px] w-auto" />
+          <p className="text-[11px] leading-tight text-[#8aa0a4]">Seminar tashkilotchisi</p>
+        </div>
+        <div className="relative">
+          <button type="button" aria-label="Yana" onClick={() => setMenu((v) => !v)} className="grid size-9 place-items-center text-[#5e787e]">
+            <MoreVertical className="size-[18px]" />
+          </button>
+          {menu && (
+            <div className="absolute right-0 z-30 mt-1 w-44 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+              <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => { setMenu(false); notify('Havola nusxalandi') }}>Ulashish</button>
+              <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => { setMenu(false); navigate('/tashkilotchi/seminarlar/yangi') }}>Tahrirlash</button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <div className="flex gap-2.5 bg-white px-3 pb-2">
+        <img src={MOBILE_SEMINAR.image} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
+        <div className="min-w-0">
+          <span className="inline-flex rounded-full bg-[#e7f6f3] px-2 py-0.5 text-[10.5px] font-semibold text-[#0d8c86]">{MOBILE_SEMINAR.topic}</span>
+          <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{MOBILE_SEMINAR.title}</p>
+          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[#0d8c86]" /> {MOBILE_SEMINAR.when}</p>
+          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[#0d8c86]" /> {MOBILE_SEMINAR.place}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 border-b border-[#e8f1f0] bg-white">
+        {[
+          ['umumiy', 'Umumiy', House],
+          ['people', 'Ishtirokchilar', Users],
+          ['tickets', 'Chiptalar', Ticket],
+          ['check', 'Check-in', QrCode],
+        ].map(([id, label, Icon]) => {
+          const on = tab === id
+          return (
+            <button key={id} type="button" onClick={() => setTab(id)} className={`flex flex-col items-center gap-0.5 py-1.5 text-[11px] ${on ? 'font-semibold text-[#0d8c86]' : 'font-medium text-[#8aa0a4]'}`}>
+              <Icon className="size-[18px]" strokeWidth={on ? 2.2 : 1.7} />
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto bg-white pb-2">
+        {tab === 'people' && (
+          <>
+            <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
+              <h2 className="text-[15px] font-bold">Ishtirokchilar ro‘yxati</h2>
+              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#0d8c86]">
+                <Users className="size-4" /> {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-3">
+              <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#e6eeec] bg-white px-3">
+                <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-[#9aafb4]" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3-3" /></svg>
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ism yoki telefon raqami bo‘yicha qidirish..." className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-[#9aafb4]" />
+              </label>
+              <button type="button" aria-label="Filtr" onClick={() => setChip(chip === 'all' ? 'paid' : 'all')} className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#e6eeec] text-[#0d8c86]">
+                <SlidersHorizontal className="size-4" />
+              </button>
+            </div>
+            <div className="no-scrollbar mt-1.5 flex gap-1.5 overflow-x-auto px-3">
+              {chips.map(([id, label, n]) => {
+                const on = chip === id
+                const soft = !on && id === 'paid'
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setChip(id)}
+                    className={`h-7 shrink-0 rounded-full px-2.5 text-[12px] font-semibold ${on ? 'text-white' : soft ? 'bg-[#e7f6f3] text-[#0d8c86]' : 'border border-[#e6eeec] bg-white text-[#5e787e]'}`}
+                    style={on ? { background: TEAL } : undefined}
+                  >
+                    {label} ({n})
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-2.5 px-1.5">
+              <div className="grid grid-cols-[22px_minmax(0,1.15fr)_minmax(0,1fr)_58px_78px_14px] items-center gap-1 rounded-lg bg-[#f4f8f8] px-1.5 py-2 text-[10px] font-medium text-[#8aa0a4]">
+                <span>#</span>
+                <span>Ism familiya</span>
+                <span>Telefon raqam</span>
+                <span>Chipta turi</span>
+                <span>To‘lov holati</span>
+                <span />
+              </div>
+              {list.length === 0 && <p className="py-8 text-center text-[13px] text-[#7e9398]">Ishtirokchi topilmadi</p>}
+              <ul className="mt-1">
+                {list.map((p, i) => (
+                  <li key={p.id}>
+                    <button type="button" onClick={() => setSheet(p)} className="grid w-full grid-cols-[22px_minmax(0,1.15fr)_minmax(0,1fr)_58px_78px_14px] items-center gap-1 border-b border-[#f2f6f6] px-1.5 py-[6px] text-left">
+                      <span className="text-[11px] text-[#8aa0a4]">{i + 1}</span>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span className="grid size-6 shrink-0 place-items-center rounded-full text-[8.5px] font-bold" style={{ background: p.tint[0], color: p.tint[1] }}>{p.initials}</span>
+                        <span className="truncate text-[11.5px] font-semibold text-[#143044]">{p.name}</span>
+                      </span>
+                      <span className="truncate text-[10.5px] text-[#3e5a62]">{p.phone}</span>
+                      <span className={`truncate text-[11px] font-semibold ${p.ticket === 'VIP' ? 'text-[#7c3aed]' : 'text-[#5e787e]'}`}>{p.ticket}</span>
+                      <span className={`inline-flex h-[18px] w-fit items-center rounded-full px-1.5 text-[10px] font-semibold ${p.pay === 'paid' ? 'bg-[#e7f8ef] text-[#16a34a]' : p.pay === 'wait' ? 'bg-[#eef1f3] text-[#64748b]' : 'bg-[#fde8ee] text-[#e11d48]'}`}>{M_PAY[p.pay]}</span>
+                      <ChevronRight className="size-3.5 text-[#c5d0d4]" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+        {tab === 'umumiy' && (
+          <div className="space-y-2 px-3 py-3 text-[13px]">
+            <p className="font-bold">{MOBILE_SEMINAR.title}</p>
+            <p className="text-[#5e787e]">{MOBILE_SEMINAR.when}</p>
+            <p className="text-[#5e787e]">{MOBILE_SEMINAR.place}</p>
+            <p className="rounded-xl bg-[#f4fbfa] p-3 text-[12.5px] text-[#3e5a62]">Ro‘yxatdan o‘tganlar: {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}. To‘langan: {counts.paid}. Kutilmoqda: {counts.wait}.</p>
+          </div>
+        )}
+        {tab === 'tickets' && (
+          <ul className="space-y-2 px-3 py-3">
+            {[['Standart', '1 200 000 so‘m'], ['VIP', '2 500 000 so‘m'], ['Student', '800 000 so‘m']].map(([n, p]) => (
+              <li key={n} className="flex items-center justify-between rounded-xl border border-[#e6f1ef] px-3 py-2.5 text-[13px]">
+                <span className="font-semibold">{n}</span><span className="text-[#0d8c86]">{p}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {tab === 'check' && (
+          <div className="px-3 py-6 text-center">
+            <QrCode className="mx-auto size-10 text-[#0d8c86]" />
+            <p className="mt-2 text-[13px] text-[#5e787e]">QR kodni skanerlang va kirishni tasdiqlang.</p>
+            <Link to="/tashkilotchi/qr" className="mt-3 inline-flex h-10 items-center rounded-xl px-4 text-[13px] font-semibold text-white" style={{ background: TEAL }}>Check-in ochish</Link>
+          </div>
+        )}
+      </div>
+
+      <nav className="relative grid h-[62px] shrink-0 grid-cols-5 border-t border-[#e7f0ef] bg-white pb-1">
+        <TabLink to="/tashkilotchi" icon={House} label="Panel" />
+        <TabLink to="/tashkilotchi/seminarlar" icon={Calendar} label="Seminarlar" />
+        <Link to="/tashkilotchi/qr" className="flex flex-col items-center text-[10px] font-semibold text-[#0d8c86]">
+          <span className="-mt-5 grid size-12 place-items-center rounded-full text-white shadow-[0_6px_14px_rgb(3_128_136/0.35)]" style={{ background: TEAL }}>
+            <QrCode className="size-5" />
+          </span>
+          <span className="mt-0.5">Check-in</span>
+        </Link>
+        <TabLink to="/tashkilotchi/hamyon" icon={Wallet} label="Hamyon" />
+        <button type="button" onClick={() => setMore(true)} className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-[#8aa0a4]">
+          <MoreVertical className="size-[18px]" /> Yana
+        </button>
+      </nav>
+
+      {sheet && (
+        <div className="fixed inset-0 z-[60] flex items-end bg-[#0e2433]/40" onClick={() => setSheet(null)}>
+          <div className="w-full rounded-t-2xl bg-white p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="grid size-10 place-items-center rounded-full text-[12px] font-bold" style={{ background: sheet.tint[0], color: sheet.tint[1] }}>{sheet.initials}</span>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{sheet.name}</p>
+                <p className="text-[12px] text-[#7e9398]">{sheet.phone}</p>
+              </div>
+              <button type="button" aria-label="Yopish" onClick={() => setSheet(null)} className="grid size-8 place-items-center"><X className="size-4" /></button>
+            </div>
+            <p className="text-[13px]">Chipta: <b>{sheet.ticket}</b></p>
+            <p className="mt-1 text-[13px]">To‘lov: <b>{M_PAY[sheet.pay]}</b></p>
+            <button type="button" onClick={() => { notify(`${sheet.name} check-in qilindi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
+              <Check className="size-4" /> QR check-in qilish
+            </button>
+          </div>
+        </div>
+      )}
+      {more && (
+        <div className="fixed inset-0 z-[60] flex items-end bg-[#0e2433]/40" onClick={() => setMore(false)}>
+          <div className="w-full rounded-t-2xl bg-white p-3" onClick={(e) => e.stopPropagation()}>
+            {[
+              ['/tashkilotchi/chiptalar', 'Chiptalar'],
+              ['/tashkilotchi/tolovlar', 'To‘lovlar'],
+              ['/tashkilotchi/sertifikatlar', 'Sertifikatlar'],
+              ['/tashkilotchi/sozlamalar', 'Sozlamalar'],
+              ['/tashkilotchi/yordam', 'Yordam'],
+            ].map(([to, label]) => (
+              <Link key={to} to={to} className="block rounded-xl px-3 py-2.5 text-[14px] font-medium hover:bg-[#f4fbfa]" onClick={() => setMore(false)}>{label}</Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TabLink({ to, icon: Icon, label }) {
+  return (
+    <Link to={to} className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-[#8aa0a4]">
+      <Icon className="size-[18px]" strokeWidth={1.7} />
+      {label}
+    </Link>
   )
 }
