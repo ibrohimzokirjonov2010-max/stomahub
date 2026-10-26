@@ -95,6 +95,7 @@ export default function Landing() {
       <section className="relative overflow-hidden bg-[#f3faf9]">
         <img src="/images/landing/hero-clinic-bg.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 size-full object-cover object-[70%_50%] opacity-90" />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.96)_0%,rgba(255,255,255,.85)_34%,rgba(255,255,255,.2)_62%,rgba(255,255,255,0)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-white/75 lg:hidden" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,transparent,#fff)]" />
         <div className={`${wrap} relative grid items-center gap-6 pb-10 pt-8 lg:grid-cols-[1.05fr_1fr] lg:pb-0 lg:pt-10`}>
           <div className="lg:pb-14">
@@ -113,22 +114,22 @@ export default function Landing() {
               ))}
             </ul>
           </div>
-          <div className="relative mx-auto h-[440px] w-full max-w-[580px] sm:h-[580px] lg:h-[600px]">
-            <img src="/images/landing/hero-doctor-cut.webp" alt="Stomatolog" className="absolute bottom-0 left-[2%] h-[94%] w-auto max-w-none object-contain object-bottom [mask-image:linear-gradient(180deg,#000_88%,transparent)]" />
-            <div className="absolute right-[-2%] top-[3%] z-10 w-[190px] [zoom:1.15] sm:w-[220px] sm:[zoom:1.4] lg:right-[-6%]"><PhoneHome tall /></div>
-            <span className="absolute bottom-[8%] right-[-10px] z-20 hidden size-14 place-items-center rounded-2xl bg-[#0F766E] text-white shadow-lg sm:grid lg:right-[-36px]"><Tooth className="size-7" /></span>
+          <div className="relative mx-auto h-[470px] w-full max-w-[580px] sm:h-[580px] lg:h-[600px]">
+            <img src="/images/landing/hero-doctor-cut.webp" alt="Stomatolog" className="absolute bottom-0 left-[-4%] h-[86%] w-auto sm:left-[2%] sm:h-[94%] max-w-none object-contain object-bottom [mask-image:linear-gradient(180deg,#000_88%,transparent)]" />
+            <div className="absolute right-[-2%] top-[3%] z-10 w-[165px] [zoom:1.1] sm:w-[220px] sm:[zoom:1.4] lg:right-[-6%]"><PhoneHome tall /></div>
+            <span className="absolute bottom-[4%] right-[-10px] z-20 hidden size-14 place-items-center rounded-2xl bg-[#0F766E] text-white shadow-lg sm:grid lg:right-[-36px]"><Tooth className="size-7" /></span>
           </div>
         </div>
       </section>
 
       {/* NIMALAR BOR */}
-      <section className={`${wrap} py-12 lg:py-16`}>
+      <section className={`${wrap} py-10 lg:py-12`}>
         <h2 className={h2}>Nimalar bor?</h2>
         <p className="mt-2 text-[15px] text-[#5c6e80] sm:text-[16px]">Stomatologlar uchun kerakli barcha imkoniyatlar bir joyda</p>
         <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
           {FEATURES.map(([I, t, d, to]) => (
             <Link key={t} to={to} className="group rounded-2xl border border-[#e8eff1] bg-white p-4 shadow-[0_6px_20px_rgb(16_40_50/0.04)] transition hover:-translate-y-0.5 hover:border-[#b9dfd9] sm:p-5">
-              <span className="grid size-12 place-items-center rounded-2xl bg-[#e6f4f1] text-[#0F766E] sm:size-14"><I className="size-6 sm:size-7" strokeWidth={1.8} /></span>
+              <span className="grid size-12 place-items-center rounded-2xl bg-[#e6f4f1] text-[#0F766E] sm:size-14"><I className="size-7 sm:size-8" strokeWidth={2} /></span>
               <b className="mt-4 block text-[15px] text-[#0f2438] sm:text-[17px]">{t}</b>
               <p className="mt-1.5 text-[12.5px] leading-snug text-[#5c6e80] sm:text-[14.5px]">{d}</p>
             </Link>
@@ -137,7 +138,7 @@ export default function Landing() {
       </section>
 
       {/* KIMLAR UCHUN */}
-      <section className={`${wrap} pb-12 lg:pb-16`}>
+      <section className={`${wrap} pb-10 lg:pb-10`}>
         <h2 className={h2}>Kimlar uchun?</h2>
         <p className="mt-2 text-[15px] text-[#5c6e80] sm:text-[16px]">StomaHub barcha stomatologiya sohasidagi mutaxassislar uchun</p>
         <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
@@ -157,7 +158,7 @@ export default function Landing() {
       </section>
 
       {/* CRM */}
-      <section className="bg-[linear-gradient(180deg,#ffffff_0%,#f2faf8_100%)] py-12 lg:py-16">
+      <section className="bg-[linear-gradient(180deg,#ffffff_0%,#f2faf8_100%)] py-10 lg:py-12">
         <div className={`${wrap} grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]`}>
           <div>
             <h2 className={h2}>Klinika CRM</h2>
@@ -171,7 +172,7 @@ export default function Landing() {
       </section>
 
       {/* QANDAY ISHLAYDI */}
-      <section className={`${wrap} py-12 lg:py-16`}>
+      <section className={`${wrap} py-10 lg:py-12`}>
         <h2 className={h2}>Qanday ishlaydi?</h2>
         <p className="mt-2 text-[15px] text-[#5c6e80] sm:text-[16px]">StomaHub’da boshlash juda oson</p>
         <div className="mt-7 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center md:gap-4">
@@ -188,7 +189,7 @@ export default function Landing() {
       </section>
 
       {/* MOBILE APP */}
-      <section className="bg-[linear-gradient(180deg,#ffffff_0%,#eef8f6_100%)] py-12 lg:py-14">
+      <section className="bg-[linear-gradient(180deg,#ffffff_0%,#eef8f6_100%)] py-8 lg:py-10">
         <div className={`${wrap} grid items-center gap-8 lg:grid-cols-[1fr_1.05fr_0.8fr]`}>
           <div>
             <h2 className={h2}>Har doim yoningizda</h2>
@@ -197,9 +198,9 @@ export default function Landing() {
               <StoreBadge kind="apple" /><StoreBadge kind="google" />
             </div>
           </div>
-          <div className="relative mx-auto flex h-[360px] w-full max-w-[440px] items-start justify-center sm:h-[420px]">
-            <div className="absolute left-[2%] top-0 z-10 w-[54%] rotate-[-3deg]"><PhoneHome compact /></div>
-            <div className="absolute right-[2%] top-6 w-[50%] rotate-[3deg]"><PhoneCats /></div>
+          <div className="relative mx-auto flex h-[380px] w-full max-w-[460px] items-start justify-center sm:h-[430px]">
+            <div className="absolute left-[4%] top-0 z-10 w-[50%]"><PhoneHome compact /></div>
+            <div className="absolute right-[4%] top-2 w-[46%]"><PhoneCats /></div>
           </div>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">{APP.map((t) => <li key={t} className="flex items-center gap-3 text-[15px] text-[#24384d]"><CheckCircle2 className="size-5 shrink-0 fill-[#0F766E] text-white" /> {t}</li>)}</ul>
         </div>

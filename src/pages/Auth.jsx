@@ -489,16 +489,17 @@ function Auth({ mode }) {
       <main className="overflow-y-auto">
         {/* Mobil sarlavha: logo, sarlavha, kreslo surati to‘lqin bilan */}
         <div className="relative overflow-hidden lg:hidden">
-          <div className="absolute right-0 top-0 h-full w-[58%]">
+          <div className={`absolute right-0 top-0 ${isLogin ? 'h-full w-[60%]' : 'h-[82%] w-[55%]'}`}>
             <img src="/images/landing/auth-clinic.jpg" alt="" className="size-full object-cover object-[60%_45%]" />
           </div>
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
-            <path d="M0 0 H50 C40 30 46 62 70 78 C82 86 92 90 100 92 V100 H0 Z" fill="#fff" />
-            <path d="M50 0 C40 30 46 62 70 78 C82 86 92 90 100 92" fill="none" stroke="#e3f3f0" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+            {isLogin
+              ? <path d="M-1 -1 H46 C36 30 40 62 62 80 C76 92 90 97 101 98 V101 H-1 Z" fill="#fff" />
+              : <path d="M-1 -1 H48 C40 28 46 52 64 64 C78 74 92 76 101 76 V101 H-1 Z" fill="#fff" />}
           </svg>
           <div className={`relative px-6 pt-10 ${isLogin ? 'pb-16' : 'pb-8'}`}>
             <div className="flex items-start justify-between">
-              <Link to="/" aria-label="StomaHub"><img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-11 w-auto" /></Link>
+              <Link to="/" aria-label="StomaHub"><img src="/images/landing/logo-mark.png" alt="StomaHub" className={isLogin ? 'h-11 w-auto' : 'h-9 w-auto'} /></Link>
             </div>
             {isLogin ? (
               <>
@@ -507,7 +508,7 @@ function Auth({ mode }) {
               </>
             ) : (
               <>
-                <h1 className="mt-6 text-[28px] font-extrabold leading-tight tracking-tight text-[#0f2438]">{t.reg}</h1>
+                <h1 className="relative mt-6 text-[26px] font-extrabold leading-tight tracking-tight text-[#0f2438]">{t.reg}</h1>
                 <p className="mt-1.5 max-w-[230px] text-[13px] text-[#5c6e80]">{t.title}.</p>
               </>
             )}
@@ -634,7 +635,7 @@ export function AuthAside({ t }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white/40 to-transparent" />
       <div className="relative flex h-full flex-col px-10 py-12 text-white xl:px-14">
         <Link to="/" aria-label="StomaHub" className="inline-flex"><img src="/images/landing/logo-white-mark.png" alt="StomaHub" className="h-14 w-auto" /></Link>
-        <h1 className="mt-14 max-w-[440px] text-[38px] font-extrabold leading-[1.15] tracking-tight xl:text-[44px]">{t.title}</h1>
+        <h1 className="mt-14 max-w-[440px] text-[34px] font-extrabold leading-[1.2] tracking-tight xl:text-[38px]">{t.title}</h1>
         <p className="mt-5 max-w-[360px] text-[17px] leading-relaxed text-white/90">{t.lead}</p>
         <ul className="mt-9 space-y-6">
           {t.feats.map((label, i) => {
