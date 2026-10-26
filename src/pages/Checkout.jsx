@@ -10,7 +10,6 @@ import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
 
-const SHIP_FEE = 25000
 
 const CITIES = {
   Toshkent: ['Yunusobod tumani', 'Chilonzor tumani', 'Mirzo Ulug‘bek tumani', 'Yakkasaroy tumani', 'Mirobod tumani', 'Shayxontohur tumani', 'Sergeli tumani', 'Uchtepa tumani', 'Yashnobod tumani', 'Bektemir tumani', 'Olmazor tumani'],
@@ -46,7 +45,7 @@ export default function Checkout() {
     name: '',
     phone: '',
     city: 'Toshkent',
-    district: '',
+    district: CITIES.Toshkent?.[0] || '',
     address: '',
     note: '',
     saved: '',
@@ -79,12 +78,17 @@ export default function Checkout() {
       ...current,
       name: profile.name || '',
       phone: profile.phone || '',
-      city: addr?.city || profile.city || current.city || 'Toshkent',
+      city: CITIES[addr?.city || profile.city] ? (addr?.city || profile.city) : (current.city || 'Toshkent'),
       district: addr?.district || profile.district || '',
       address: addr?.address || '',
       saved: addr?.id || '',
     }))
   }, [profile.accountLive])
+
+  useEffect(() => {
+    const list = CITIES[form.city] || []
+    if (list.length && !list.includes(form.district)) setForm((f) => ({ ...f, district: list[0] }))
+  }, [form.city, form.district])
 
   const ship = 0 // yetkazish narxi sotuvchi bilan kelishiladi
   const goods = total
@@ -377,7 +381,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         <h2 className="text-[16px] font-bold">Yetkazish usuli</h2>
         <p className="mt-0.5 text-[12px] text-muted">Sizga qulay yetkazish usulini tanlang</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="1–2 kun" price={`${SHIP_FEE.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`} />
+          <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="Narx sotuvchi bilan" price="Kelishiladi" />
           <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘ziroq olib ketish" meta="Bepul" />
         </div>
       </section>
@@ -572,7 +576,7 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
       {step < 3 ? (
         <div className="flex gap-2 rounded-2xl bg-[#eefbf6] p-3 text-[12px] text-[#157a45]">
           <Truck className="mt-0.5 size-4 shrink-0" />
-          <p><b>Yetkazish haqida.</b> Toshkent shahri bo‘ylab 1–2 kun ichida yetkazib beriladi. Boshqa hududlar uchun muddatlar operator tomonidan tasdiqlanadi.</p>
+          <p><b>Yetkazish haqida.</b> Yetkazish narxi va muddatini sotuvchi buyurtmani tasdiqlaganda siz bilan kelishadi. To‘lov naqd, mahsulotni olganingizda.</p>
         </div>
       ) : (
         <div className="flex gap-2 rounded-2xl bg-[#eefbf6] p-3 text-[12px] text-[#157a45]">
