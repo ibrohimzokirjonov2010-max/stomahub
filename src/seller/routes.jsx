@@ -5,6 +5,7 @@ import BoshSahifa from './pages/BoshSahifa'
 import Mahsulotlar from './pages/Mahsulotlar'
 import MahsulotDetail from './pages/MahsulotDetail'
 import Buyurtmalar from './pages/Buyurtmalar'
+import BuyurtmaDetail from './pages/BuyurtmaDetail'
 import Mijozlar from './pages/Mijozlar'
 import Sharhlar from './pages/Sharhlar'
 import Chegirmalar from './pages/Chegirmalar'
@@ -18,8 +19,10 @@ export const sellerRoutes = (
   <Route path="/sotuvchi" element={<SellerGate><SellerLayout /></SellerGate>}>
     <Route index element={<BoshSahifa />} />
     <Route path="mahsulotlar" element={<Mahsulotlar />} />
+    <Route path="buyurtmalar/:id" element={<BuyurtmaDetail />} />
     <Route path="mahsulotlar/:id" element={<MahsulotDetail />} />
     <Route path="buyurtmalar" element={<Buyurtmalar />} />
+    <Route path="buyurtmalar/:id" element={<BuyurtmaDetail />} />
     <Route path="mijozlar" element={<Mijozlar />} />
     <Route path="sharhlar" element={<Sharhlar />} />
     <Route path="chegirmalar" element={<Chegirmalar />} />

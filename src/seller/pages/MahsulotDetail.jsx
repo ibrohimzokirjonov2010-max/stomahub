@@ -47,7 +47,7 @@ export default function MahsulotDetail() {
         <Menu icon={Ellipsis} items={act.items(p)} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[1fr_200px] lg:grid-cols-[1fr_160px]">
+      <div className="grid gap-4 md:grid-cols-[1fr_210px]">
         <div className={`${card} p-3 md:p-4`}>
           <div className="grid gap-4 md:grid-cols-[56px_220px_1fr] lg:grid-cols-[56px_220px_1fr]">
             <div className="order-2 flex gap-2 overflow-x-auto md:order-none md:flex-col">
@@ -81,7 +81,7 @@ export default function MahsulotDetail() {
       </div>
 
       {variants.length > 0 && (
-        <div className={`${card} mt-4 overflow-hidden md:mr-[216px] lg:mr-[176px]`}>
+        <div className={`${card} mt-4 overflow-hidden md:mr-[226px]`}>
           <div className="px-4 pb-2 pt-3.5 text-[16px] font-bold">Variantlar ({variants.length} ta)</div>
           <div className="overflow-x-auto px-3 pb-3"><table className="w-full min-w-[560px]">
             <thead className="bg-[#F6FAFA]"><tr><Th>#</Th><Th>Rang</Th><Th>O‘lcham</Th><Th>Narx (so‘m)</Th><Th>Stok</Th><Th>SKU</Th><Th>Holat</Th><Th className="text-center">Amallar</Th></tr></thead>
@@ -95,7 +95,7 @@ export default function MahsulotDetail() {
         </div>
       )}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1.25fr]">
         <div className="space-y-4">
           <div className={`${card} p-4`}><div className="mb-2 text-[16px] font-bold">Tavsif</div>
             {p.description ? <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-[#3D4E5F]">{p.description}</p> : <p className="text-[13px] text-[#6B7A88]">Tavsif kiritilmagan.</p>}
@@ -112,8 +112,8 @@ export default function MahsulotDetail() {
         <div className="space-y-4">
           <div className={`${card} p-4`}>
             <div className="mb-2 flex items-center justify-between"><span className="text-[16px] font-bold">Oxirgi buyurtmalar</span>{orders.length > 0 && <Link to={`/sotuvchi/buyurtmalar?product=${p.id}`} className="flex items-center gap-1 text-[13px] font-medium text-[#0F766E]">Barchasini ko‘rish<ArrowRight className="size-4" /></Link>}</div>
-            {orders.length ? <div className="overflow-x-auto"><table className="w-full min-w-[440px]">
-              <thead className="bg-[#F6FAFA]"><tr><Th>#</Th><Th>Sana</Th><Th>Xaridor</Th><Th>Variant</Th><Th>Soni</Th><Th>Summa (so‘m)</Th><Th>Holat</Th></tr></thead>
+            {orders.length ? <div className="overflow-x-auto"><table className="w-full min-w-[520px] xl:min-w-0">
+              <thead className="bg-[#F6FAFA]"><tr><Th>#</Th><Th>Sana</Th><Th>Xaridor</Th><Th>Variant</Th><Th>Soni</Th><Th>Summa</Th><Th>Holat</Th></tr></thead>
               <tbody>{orders.slice(0, 5).map((o) => { const it = o.items.find((x) => x.product_id === p.id); return (
                 <tr key={o.id} onClick={() => navigate(`/sotuvchi/buyurtmalar/${o.id}`)} className="cursor-pointer border-t border-[#EEF3F4] hover:bg-[#F7FCFB]">
                   <Td className="whitespace-nowrap">{o.code}</Td><Td>{dmy(o.created_at)}</Td><Td className="whitespace-nowrap">{short(o.customer_name)}</Td><Td>{it.variant || '—'}</Td><Td>{it.qty}</Td><Td>{num(it.qty * it.price)}</Td><Td><StatusBadge status={o.status} /></Td>
