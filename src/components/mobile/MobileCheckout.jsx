@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
-import { receiveStock } from '../../omborData'
+import { createOrder } from '../../buyerApi'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -36,12 +36,7 @@ const PINS = [
 ]
 const SHOP = 'StomaHub do‘koni — Yakkasaroy, Shota Rustaveli ko‘chasi, 15'
 export const METHODS = {
-  click: ['Click', 'Click ilovasi orqali'],
-  payme: ['Payme', 'Payme ilovasi orqali'],
-  uzum: ['Uzum', 'Uzum ilovasi orqali'],
-  card: ['Bank kartasi', 'Visa / Mastercard'],
-  cash: ['Naqd', 'Olganda to‘lash'],
-  nasiya: ['Muddatli to‘lov', 'Bo‘lib to‘lash (Uzum Nasiya)'],
+  cash: ['Naqd', 'Olganda naqd to‘lash'],
 }
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
 const ORDER_KEY = 'stomahub-last-order'
@@ -96,7 +91,7 @@ export default function MobileCheckout() {
   const [allSaved, setAllSaved] = useState(false)
   const [showItems, setShowItems] = useState(false)
   const [tried, setTried] = useState(false)
-  const [method, setMethod] = useState(() => (profile.wallets[profile.defaultPay] ? profile.defaultPay : profile.cards.some((c) => c.id === profile.defaultPay) ? 'card' : 'click'))
+  const [method, setMethod] = useState('cash')
   const [savedCard, setSavedCard] = useState(() => profile.cards.find((c) => c.id === profile.defaultPay)?.id || profile.cards[0]?.id || '')
   const [months, setMonths] = useState(6)
   const [cardNo, setCardNo] = useState({ num: '', exp: '' })
@@ -108,6 +103,8 @@ export default function MobileCheckout() {
   const [agreeErr, setAgreeErr] = useState(false)
   const [sheet, setSheet] = useState(null)
   const [paying, setPaying] = useState(false)
+  const [placing, setPlacing] = useState(false)
+  const [placeErr, setPlaceErr] = useState('')
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const formRef = useRef(null)
@@ -115,8 +112,8 @@ export default function MobileCheckout() {
   useEffect(() => { window.scrollTo(0, 0) }, [step, placed])
 
   const goods = items.reduce((s, it) => s + it.price * it.qty, 0)
-  const ship = shipInfo(mode, form.city)
-  const promoOk = promo && PROMOS[promo] && goods >= (PROMOS[promo].min || 0)
+  const ship = { ...shipInfo(mode, form.city), fee: 0 } // yetkazish narxi sotuvchi bilan kelishiladi
+  const promoOk = false && promo && PROMOS[promo] && goods >= (PROMOS[promo].min || 0)
   const discount = promoOk ? Math.min(goods, PROMOS[promo].calc(goods)) : 0
   const total = goods + ship.fee - discount
   const monthly = Math.ceil(total / months / 1000) * 1000
@@ -159,37 +156,41 @@ export default function MobileCheckout() {
   const applyPromo = () => {
     const key = code.trim().toUpperCase()
     if (!key) return setPromoErr('Promokodni kiriting')
-    const p = PROMOS[key]
-    if (!p) return setPromoErr('Bunday promokod topilmadi')
-    if (p.min && goods < p.min) return setPromoErr(`${som(p.min)} dan ortiq buyurtmaga amal qiladi`)
-    setPromo(key)
-    setPromoErr('')
-    setToast(`Promokod qo‘llandi: ${p.text}`)
+    setPromoErr('Promokodlar hozircha mavjud emas')
   }
 
-  const place = () => {
-    const count = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
-    const at = new Date()
-    const order = {
-      id: `SH-${count}`,
-      at: `${at.getDate()} ${MON[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
-      items: items.map((it) => ({ ...it })),
-      goods, fee: ship.fee, discount, total, method, months: method === 'nasiya' ? months : 0, monthly,
-      mode, eta: ship.range, days: ship.days, name: form.name.trim(), phone,
-      address: mode === 'pickup' ? SHOP : `${form.city}, ${form.address}`,
+  const place = async () => {
+    if (placing) return
+    setPlacing(true)
+    setPlaceErr('')
+    try {
+      const res = await createOrder({
+        items, name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
+        address: form.address, note: form.note || '', pickup: mode === 'pickup',
+      })
+      const at = new Date()
+      const order = {
+        id: (res.orders || []).map((o) => o.code).join(', '),
+        at: `${at.getDate()} ${MON[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
+        items: items.map((it) => ({ ...it })),
+        goods, fee: 0, discount: 0, total: goods, method: 'cash', months: 0, monthly: 0,
+        mode, eta: ship.range, days: ship.days, name: form.name.trim(), phone,
+        address: mode === 'pickup' ? SHOP : `${form.city}, ${form.address}`,
+      }
+      sessionStorage.setItem(ORDER_KEY, JSON.stringify(order))
+      setItems([])
+      profileStore.refreshOrders?.()
+      setPlaced(order)
+      navigate('.', { replace: true, state: { done: true } })
+    } catch (e) {
+      setPlaceErr(e.message || 'Buyurtma yuborilmadi')
+    } finally {
+      setPlacing(false)
     }
-    sessionStorage.setItem(ORDER_KEY, JSON.stringify(order))
-    profileStore.addOrder(order)
-    receiveStock(items)
-    setItems([])
-    setPaying(false)
-    setPlaced(order)
-    navigate('.', { replace: true, state: { done: true } })
   }
   const confirm = () => {
     if (!agree) { setAgreeErr(true); return }
-    if (method === 'cash') place()
-    else setPaying(true)
+    place()
   }
 
   const subtitle = ['Mahsulotlaringizni rasmiylashtirish', 'To‘lov usulini tanlang', 'Ma’lumotlarni tekshirib, tasdiqlang'][step - 1]
@@ -457,7 +458,8 @@ export default function MobileCheckout() {
                 <button type="button" onClick={(e) => { e.preventDefault(); setSheet('oferta') }} className="font-medium text-[#0b6d73] underline underline-offset-2">Ommaviy oferta</button> bilan tanishdim va roziman
               </span>
             </label>
-            <button type="button" onClick={confirm} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.99]">
+            {placeErr && <p role="alert" className="mb-2 rounded-lg bg-[#fff4f4] px-3 py-2 text-[12.5px] text-[#b42318]">{placeErr}</p>}
+            <button type="button" disabled={placing} onClick={confirm} className="disabled:opacity-60 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.99]">
               Buyurtmani tasdiqlash <ArrowRight className="size-[18px]" />
             </button>
           </>
@@ -747,7 +749,7 @@ function Done({ order }) {
           </div>
           <div className="mt-1.5 divide-y divide-line">
             <InfoRow icon={CalendarDays} k="Buyurtma sanasi" v={order.at} />
-            <InfoRow icon={CreditCard} k="To‘lov usuli" v={<span className="flex items-center justify-end gap-2"><span className="scale-[0.8]"><Logo id={order.method} /></span>{order.months ? `${METHODS.nasiya[0]} (${order.months} oy)` : METHODS[order.method][0]}</span>} />
+            <InfoRow icon={CreditCard} k="To‘lov usuli" v={<span className="flex items-center justify-end gap-2"><span className="scale-[0.8]"><Logo id={order.method} /></span>{order.months ? `${METHODS.nasiya[0]} (${order.months} oy)` : (METHODS[order.method] || METHODS.cash)[0]}</span>} />
             <InfoRow icon={Truck} k={order.mode === 'pickup' ? 'Olib ketish' : 'Taxminiy yetkazish vaqti'} v={<>{order.eta}<span className="block text-[10.5px] font-normal text-muted">({order.days})</span></>} />
             <InfoRow icon={Coins} k="Jami summa" v={<span className="text-[16px] font-extrabold">{som(order.total)}</span>} />
           </div>

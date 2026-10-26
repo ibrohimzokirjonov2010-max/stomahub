@@ -22,28 +22,10 @@ export const brands = [
   ['Kuraray', 38], ['Straumann', 34], ['J. Morita', 29], ['Woodpecker', 27], ['Woson', 21],
 ]
 
-// price / oldPrice — so'mda, raqam
-export const marketProducts = [
-  { id: 'filtek-z550', name: 'Filtek Z550 XT', type: 'Kompozit (4 g)', brand: '3M', cat: 'komp', rating: 4.8, reviews: 124, price: 656000, oldPrice: 820000, badge: '-20%', image: img('p1') },
-  { id: 'optibond-fl', name: 'OptiBond FL', type: 'Bonding (8 ml)', brand: 'Kerr', cat: 'bond', rating: 4.7, reviews: 98, price: 1100000, badge: 'Yangi', image: img('p2') },
-  { id: 'sdr-flow', name: 'SDR flow+', type: 'Bulk fill kompozit (2 g)', brand: 'Dentsply', cat: 'komp', rating: 4.6, reviews: 76, price: 382000, oldPrice: 450000, badge: '-15%', image: img('p3') },
-  { id: 'protaper-gold', name: 'ProTaper Gold', type: 'Endodontik fayllar (6 dona)', brand: 'Dentsply', cat: 'endo', rating: 4.8, reviews: 112, price: 900000, image: img('p4') },
-  { id: 'ti-max-x600l', name: 'Ti-Max X600L', type: 'Uchlik (turbina)', brand: 'NSK', cat: 'uch', rating: 4.9, reviews: 64, price: 5350000, oldPrice: 5950000, badge: '-10%', image: img('p5') },
-  { id: 'synea-fusion', name: 'Synea Fusion', type: 'Uchlik (turbina)', brand: 'W&H', cat: 'uch', rating: 4.8, reviews: 52, price: 6800000, badge: 'Yangi', image: img('p6') },
-  { id: 'root-zx-mini', name: 'Root ZX mini', type: 'Apeks lokator', brand: 'J. Morita', cat: 'endo', rating: 4.9, reviews: 36, price: 11000000, oldPrice: 12500000, badge: '-12%', image: img('p7') },
-  { id: 'g-cem-one', name: 'G-CEM ONE', type: 'Rasmiy sement (4.6 g)', brand: 'GC', cat: 'komp', rating: 4.7, reviews: 58, price: 1025000, oldPrice: 1250000, badge: '-18%', image: img('p8') },
-  { id: 'straumann-blx', name: 'Straumann BLX', type: 'Implant (4.1 x 10 mm)', brand: 'Straumann', cat: 'impl', rating: 4.9, reviews: 41, price: 3840000, badge: 'Yangi', image: img('p9') },
-  { id: 'clearfil-se-bond-2', name: 'Clearfil SE Bond 2', type: 'Bonding to‘plam', brand: 'Kuraray', cat: 'bond', rating: 4.8, reviews: 66, price: 1000000, oldPrice: 1250000, badge: '-20%', image: img('p10') },
-  { id: 'woodpecker-uds-e', name: 'Woodpecker UDS-E', type: 'Ultrasonik skaler', brand: 'Woodpecker', cat: 'usk', rating: 4.7, reviews: 54, price: 1998000, badge: 'Yangi', image: img('p11') },
-  { id: 'class-b-avtoklav', name: 'Class B avtoklav', type: '18 litr', brand: 'Woson', cat: 'usk', rating: 4.9, reviews: 28, price: 15950000, oldPrice: 21250000, badge: '-25%', image: img('p12') },
-]
+// Live list: filled from Supabase (active seller_products) by buyerApi.loadMarketProducts().
+export const marketProducts = []
 
-export const initialCart = [
-  { id: 'optibond-fl', name: 'OptiBond FL', type: 'Bonding (8 ml)', price: 1100000, qty: 1, image: img('cart1'), seller: 'Dental Market' },
-  { id: 'filtek-z550', name: 'Filtek Z550 XT', type: 'Kompozit (4 g)', price: 656000, qty: 2, image: img('cart2'), seller: 'Dental Market' },
-  { id: 'protaper-gold', name: 'ProTaper Gold', type: 'Fayllar (6 dona)', price: 900000, qty: 1, image: img('cart3'), seller: 'Stomatex' },
-  { id: 'woodpecker-uds-e', name: 'Woodpecker UDS-E', type: 'Ultrasonik skaler', price: 1998000, qty: 1, image: img('cart4'), seller: 'MedTex Servis' },
-]
+export const initialCart = []
 
 export const productDetail = {
   id: 'optibond-solo-plus',
@@ -70,36 +52,37 @@ export const productDetail = {
   variants: [{ label: '5 ml', price: 275000, oldPrice: 323500 }, { label: '3 × 5 ml (to‘plam)', price: 770000, oldPrice: 970500 }],
 }
 
-export const similarProducts = [
-  { id: 'optibond-fl', name: 'OptiBond FL', type: 'Bonding (8 ml)', brand: 'Kerr', rating: 4.8, reviews: 84, price: 1100000, oldPrice: 1250000, badge: '-12%', image: img('s1') },
-  { id: 'clearfil-se-bond-2', name: 'Clearfil SE Bond 2', type: 'Bonding to‘plami', brand: 'Kuraray', rating: 4.9, reviews: 72, price: 1520000, image: img('s2') },
-  { id: 'single-bond-universal', name: 'Single Bond Universal', type: 'Bonding (5 ml)', brand: '3M', rating: 4.7, reviews: 61, price: 800000, oldPrice: 980000, badge: '-18%', image: img('s3') },
-  { id: 'prime-bond-nt', name: 'Prime&Bond NT', type: 'Bonding (5 ml)', brand: 'Dentsply', rating: 4.6, reviews: 49, price: 750000, image: img('s4') },
-]
+// Similar products are taken from the live list (same category first).
+export const similarProducts = []
+export const similarTo = (p, n = 4) => {
+  const rest = marketProducts.filter((x) => x.id !== p?.id)
+  return [...rest.filter((x) => x.cat && x.cat === p?.cat), ...rest.filter((x) => !x.cat || x.cat !== p?.cat)].slice(0, n)
+}
 
 export const sellers = {
   default: { name: 'DentalShop', logo: 'Dental', about: 'Stomatologik materiallar', rating: 4.9, reviews: 320, city: 'Toshkent' },
 }
 
+// Returns a detail-shaped object for a live product, or null when it is not (or no longer) on sale.
 export function productById(id) {
-  if (!id || id === productDetail.id) return productDetail
-  const s = [...marketProducts, ...similarProducts].find((x) => x.id === id)
-  if (!s) return productDetail
+  const s = marketProducts.find((x) => x.id === id)
+  if (!s) return null
+  const images = s.images?.length ? s.images : [s.image]
   return {
-    ...productDetail,
     ...s,
-    oldPrice: s.oldPrice,
-    badge: s.badge,
-    images: [s.image],
-    thumbs: [s.image],
-    crumb: s.type.split(' (')[0],
-    short: `${s.name} — ${s.brand} brendining ${s.type.toLowerCase()} mahsuloti. Rasmiy distribyutordan, sertifikat va kafolat bilan.`,
-    description: `${s.name} (${s.brand}) — klinik amaliyotda keng qo‘llaniladigan ${s.type.toLowerCase()}. Mahsulot original qadoqda, yaroqlilik muddati uzoq va sertifikatlangan.`,
-    features: ['Original mahsulot, rasmiy distribyutordan', 'Sertifikat va kafolat bilan', 'Keng klinik qo‘llanish', 'Toshkent bo‘ylab 24 soatda yetkazish'],
+    oldPrice: undefined,
+    badge: '',
+    sold: '',
+    images,
+    thumbs: images,
+    crumb: s.cat || 'Mahsulot',
+    short: s.description ? s.description.slice(0, 180) : '',
+    description: s.description || 'Sotuvchi tavsif qo‘shmagan.',
+    features: [],
     highlights: null,
-    variants: null,
-    specs: productDetail.specs.filter(([k]) => k !== 'Hajm' && k !== 'Qo‘llash usuli').map(([k, v]) => [k, k === 'Brend' ? s.brand : k === 'Mahsulot turi' ? s.type : v]),
+    variants: s.variants?.length ? s.variants.map((v) => ({ label: v.name || v.label || v.sku, sku: v.sku, price: Number(v.price) || s.price, stock: Number(v.stock) || 0 })) : null,
+    specs: [['Brend', s.brand || '—'], ['Kategoriya', s.cat || '—'], ['Sotuvchi', s.seller || '—'], ['Omborda', `${s.stock} dona`]],
   }
 }
 
-export const som = (n) => `${n.toLocaleString('ru-RU').replace(/ /g, ' ')} so‘m`
+export const som = (n) => `${(Number(n) || 0).toLocaleString('ru-RU').replace(/ /g, ' ')} so‘m`

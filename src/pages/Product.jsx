@@ -4,7 +4,8 @@ import {
   ChevronLeft, ChevronRight, Star, BadgeCheck, PackageOpen, CalendarDays, Barcode, Boxes, MapPinned, Truck, FileText,
   ShoppingCart, RefreshCw, MapPin, Package, ArrowRight, CircleCheck,
 } from 'lucide-react'
-import { productById, similarProducts, som } from '../marketData'
+import { marketProducts, productById, similarTo, som } from '../marketData'
+import { useMarket } from '../buyerApi'
 import { useCart } from '../cart'
 import { QtyStepper } from '../components/market/CartPanel'
 import { SaleBadge, LikeButton, Rating, AddButton } from '../components/market/ProductCard'
@@ -12,7 +13,24 @@ import { ToothIcon } from '../components/icons'
 
 export default function Product() {
   const { id } = useParams()
+  const market = useMarket()
   const p = productById(id)
+  if (!p) {
+    return (
+      <div className="grid min-h-[320px] place-items-center text-center">
+        <div>
+          <p className="text-[14px] font-semibold text-ink">{market.status === 'loading' || market.status === 'idle' ? 'Mahsulot yuklanmoqda…' : market.status === 'error' ? market.error : 'Mahsulot topilmadi yoki sotuvdan olingan'}</p>
+          <Link to="/marketplace" className="mt-3 inline-flex text-[13px] font-semibold text-sea">Marketplace’ga qaytish</Link>
+        </div>
+      </div>
+    )
+  }
+  return <ProductBody key={p.id} p={p} />
+}
+
+function ProductBody({ p }) {
+  const id = p.id
+  const similarProducts = similarTo(p)
   const [img, setImg] = useState(0)
   const [qty, setQty] = useState(1)
   const [tab, setTab] = useState(0)
@@ -24,13 +42,11 @@ export default function Product() {
 
   const facts = [
     { icon: PackageOpen, label: 'Holati', value: 'Yangi (yopiq)' },
-    { icon: CalendarDays, label: 'Yaroqlilik muddati', value: '09/2028' },
-    { icon: Barcode, label: 'Lot raqami', value: 'KE3028484' },
-    { icon: Boxes, label: 'Miqdor', value: `Omborda ${p.stock}`, ok: true },
-    { icon: MapPinned, label: 'Joylashuv', value: 'Toshkent' },
-    { icon: Truck, label: 'Yetkazib berish', value: '24 soat ichida' },
+    { icon: Boxes, label: 'Miqdor', value: p.stock > 0 ? `Omborda ${p.stock}` : 'Tugagan', ok: p.stock > 0 },
+    { icon: MapPinned, label: 'Sotuvchi', value: p.seller || '—' },
+    { icon: Truck, label: 'To‘lov', value: 'Naqd, yetkazishda' },
   ]
-  const tabs = ['Tavsif', 'Klinik qo‘llanish', 'Texnik xususiyatlar', 'Sertifikat', `Sharhlar (${p.reviews})`, 'Yetkazib berish', 'Qayta buyurtma']
+  const tabs = ['Tavsif', 'Klinik qo‘llanish', 'Texnik xususiyatlar', 'Sertifikat', 'Yetkazib berish', 'Qayta buyurtma']
 
   return (
     <div className="pb-6 pt-2.5 lg:pl-1.5">
@@ -78,8 +94,7 @@ export default function Product() {
           <h1 className="mt-1 text-[25px] font-extrabold leading-tight tracking-tight text-ink">{p.name}</h1>
           <p className="text-[15px] text-muted">{p.type}</p>
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-ink-2">
-            <Stars value={p.rating} /> <span className="font-semibold text-ink">{p.rating}</span> ({p.reviews} ta sharh)
-            <span className="mx-1 h-3 w-px bg-line" /> {p.sold} ta sotilgan
+            {p.brand || p.category}
           </div>
           <p className="mt-2.5 text-[9.5px] leading-[1.6] text-ink-2">{p.short}</p>
 
@@ -129,21 +144,18 @@ export default function Product() {
           </div>
 
           <div className="mt-3 flex items-center gap-4">
-            <QtyStepper value={qty} onChange={(q) => setQty(Math.max(1, q))} size="lg" />
+            <QtyStepper value={qty} onChange={(q) => setQty(Math.max(1, Math.min(p.stock || 1, q)))} size="lg" />
             <span className="text-[10px] text-muted">{p.stock} dona mavjud</span>
           </div>
 
           <button
-            onClick={() => add({ ...p, image: p.thumbs[0] }, qty)}
+            disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(qty, p.stock))}
             className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600"
           >
             <ShoppingCart className="size-4" /> Savatga qo‘shish
           </button>
-          <button onClick={() => { add({ ...p, image: p.thumbs[0] }, qty); navigate('/buyurtma', { state: { from: 'market' } }) }} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
+          <button disabled={p.stock < 1} onClick={() => { add({ ...p, image: p.thumbs[0] }, Math.min(qty, p.stock)); navigate('/buyurtma', { state: { from: 'market' } }) }} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
             Hozir xarid qilish
-          </button>
-          <button className="mt-2 flex h-[32px] w-full items-center justify-center gap-2 rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
-            <RefreshCw className="size-3.5" /> Tez qayta buyurtma
           </button>
 
           <div className="mt-3 flex gap-3 border-t border-line pt-3">
@@ -155,18 +167,11 @@ export default function Product() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1 text-[10.5px] font-bold text-ink">
-                StomaHub Market <BadgeCheck className="size-3.5 fill-[#1a73e8] text-white" />
+                {p.seller || 'Sotuvchi'} <BadgeCheck className="size-3.5 fill-[#1a73e8] text-white" />
               </p>
               <p className="mt-0.5 flex items-center gap-1 text-[9px] text-ink-2">
-                <Star className="size-[10px] fill-star text-star" /> 4.9 · Rasmiy distribyutor
+                <Package className="size-[10px]" /> {marketCount(p.sellerId)} ta mahsulot sotuvda
               </p>
-              <p className="mt-1 flex items-center gap-3 text-[8.5px] text-muted">
-                <span className="flex items-center gap-1"><MapPin className="size-[10px]" /> Toshkent</span>
-                <span className="flex items-center gap-1"><Package className="size-[10px]" /> 1 250+ mahsulot</span>
-              </p>
-              <a href="#" className="mt-2 flex h-[23px] items-center justify-center gap-1.5 rounded-md border border-line text-[9.5px] font-medium text-sea-600 hover:border-sea">
-                Sotuvchi profili <ArrowRight className="size-3" />
-              </a>
             </div>
           </div>
         </aside>
@@ -213,7 +218,7 @@ export default function Product() {
             <img src="/images/market/tooth.jpg" alt="" className="hidden h-[128px] w-full rounded-lg object-cover lg:block" />
           </>
         ) : (
-          <p className="py-8 text-center text-[10.5px] text-muted lg:col-span-3">“{tabs[tab]}” bo‘limi tez orada to‘ldiriladi</p>
+          <p className="py-8 text-center text-[10.5px] text-muted lg:col-span-3">Sotuvchi bu bo‘lim uchun ma’lumot qo‘shmagan</p>
         )}
       </div>
 
@@ -236,7 +241,7 @@ export default function Product() {
               </div>
               <p className="text-[9.5px] text-ink-2">{s.type}</p>
               <p className="text-[8.5px] text-muted">{s.brand}</p>
-              <Rating rating={s.rating} reviews={s.reviews} />
+              
               <div className="mt-1 flex items-end justify-between">
                 <div className="leading-tight">
                   {s.oldPrice && <p className="text-[8.5px] text-muted line-through">{som(s.oldPrice)}</p>}
@@ -250,6 +255,10 @@ export default function Product() {
       </div>
     </div>
   )
+}
+
+function marketCount(sellerId) {
+  return marketProducts.filter((x) => x.sellerId === sellerId).length
 }
 
 function GalleryArrow({ side, onClick }) {

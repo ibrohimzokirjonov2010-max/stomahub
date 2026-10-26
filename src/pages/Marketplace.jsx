@@ -7,6 +7,7 @@ import ProductCard from '../components/market/ProductCard'
 import FilterPanel from '../components/market/FilterPanel'
 import CartPanel from '../components/market/CartPanel'
 import { filterChips, marketProducts } from '../marketData'
+import { loadMarketProducts, useMarket } from '../buyerApi'
 
 const chipIcons = { all: LayoutGrid, komp: PenTool, bond: Hash, endo: Syringe, impl: Pipette, uch: Wrench, asb: Scissors, usk: Microwave, gig: Sparkles }
 
@@ -20,6 +21,7 @@ const sorts = {
 const initialFilters = { cats: [], brands: [], min: 0, max: 50000000, inStock: true, official: false }
 
 export default function Marketplace() {
+  const market = useMarket()
   const [params] = useSearchParams()
   const initialCat = params.get('cat')
   const initialBrand = params.get('brand')
@@ -40,7 +42,7 @@ export default function Marketplace() {
         .filter((p) => !filters.brands.length || filters.brands.includes(p.brand))
         .filter((p) => p.price >= filters.min && p.price <= filters.max)
         .sort(sorts[sort].fn),
-    [filters, sort],
+    [filters, sort, market.status],
   )
 
   return (
@@ -99,13 +101,19 @@ export default function Marketplace() {
         <div className={`mt-3 grid gap-2 ${showFilters ? 'md:grid-cols-[142px_minmax(0,1fr)]' : ''}`}>
           {showFilters && <div className="hidden md:block"><FilterPanel filters={filters} setFilters={setFilters} /></div>}
           <div>
-            {list.length ? (
+            {market.status === 'loading' && !list.length ? (
+              <div className="grid h-[200px] place-items-center rounded-xl bg-white text-[11px] text-muted shadow-card">Mahsulotlar yuklanmoqda…</div>
+            ) : market.status === 'error' ? (
+              <div className="grid h-[200px] place-items-center rounded-xl bg-white text-center text-[11px] text-[#b42318] shadow-card">
+                <div>{market.error}<br /><button type="button" onClick={loadMarketProducts} className="mt-2 font-semibold text-sea">Qayta urinish</button></div>
+              </div>
+            ) : list.length ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                 {list.map((p) => <ProductCard key={p.id} product={p} />)}
               </div>
             ) : (
               <div className="grid h-[200px] place-items-center rounded-xl bg-white text-[11px] text-muted shadow-card">
-                Bu filtr bo‘yicha mahsulot topilmadi
+                {marketProducts.length ? 'Bu filtr bo‘yicha mahsulot topilmadi' : 'Hozircha sotuvda mahsulot yo‘q'}
               </div>
             )}
           </div>
