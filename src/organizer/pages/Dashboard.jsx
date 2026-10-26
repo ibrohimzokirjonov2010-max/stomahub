@@ -324,7 +324,7 @@ function Desktop() {
           >
             <ul className="divide-y divide-[#eef4f3]">
               {list.map((s) => <SeminarRow key={s.id} s={s} navigate={navigate} />)}
-              {list.length === 0 && <li className="py-8 text-center text-[13px] text-[#7e9398]">Seminar topilmadi</li>}
+              {list.length === 0 && <li className="py-8 text-center text-[13px] text-[#7e9398]">Hali seminar yo‘q. Birinchi seminaringizni yarating.</li>}
             </ul>
           </Panel>
           {banner && (
@@ -428,7 +428,7 @@ function Mobile() {
         <div className="flex gap-2.5">
           <img src={next?.image || '/images/hero-implant.jpg'} alt="" className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
-            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">{next?.topic || 'Implantologiya'}</span>
+            <span className="inline-flex rounded-full bg-[#e7f7f4] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-org-teal)]">{next.topic || 'Seminar'}</span>
             <p className="mt-1 flex items-start gap-1 text-[15px] font-bold leading-tight text-[#143044]">
               <span className="min-w-0 flex-1">{next?.title || 'Seminar'}</span>
               <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#9aafb4]" />

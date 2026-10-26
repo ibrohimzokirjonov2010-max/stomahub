@@ -150,9 +150,14 @@ function schedulePush() {
   pushTimer = setTimeout(() => { pushProfile().catch((error) => write({ syncError: error.message }, { remote: true })) }, 400)
 }
 
+export function flushProfile() {
+  clearTimeout(pushTimer)
+  return pushProfile()
+}
+
 async function pushProfile() {
   const uid = currentUid()
-  if (!supabase || !uid || !state.accountLive) return
+  if (!supabase || !uid) return
   let avatar = state.avatar || ''
   if (avatar.startsWith('data:')) {
     avatar = await uploadAvatar(avatar)
@@ -182,10 +187,21 @@ async function pushProfile() {
     updated_at: new Date().toISOString(),
   }
   if (phone && (isDemoUser() || phone !== normalizePhone(DEFAULT.phone))) patch.phone = phone
-  let { error } = await supabase.from('profiles').update(patch).eq('id', uid)
-  if (error && /duplicate|unique/i.test(error.message || '') && patch.phone) {
-    delete patch.phone
+  const { data: existing, error: readError } = await supabase.from('profiles').select('id').eq('id', uid).maybeSingle()
+  if (readError) throw readError
+  let error
+  if (!existing) {
+    ;({ error } = await supabase.from('profiles').insert({ id: uid, role: 'customer', ...patch }))
+    if (error && /duplicate|unique/i.test(error.message || '') && patch.phone) {
+      delete patch.phone
+      ;({ error } = await supabase.from('profiles').insert({ id: uid, role: 'customer', ...patch }))
+    }
+  } else {
     ;({ error } = await supabase.from('profiles').update(patch).eq('id', uid))
+    if (error && /duplicate|unique/i.test(error.message || '') && patch.phone) {
+      delete patch.phone
+      ;({ error } = await supabase.from('profiles').update(patch).eq('id', uid))
+    }
   }
   if (error) throw error
   await syncChildren(uid)
@@ -301,7 +317,7 @@ async function hydrateProfile(nextUid) {
       name: profile?.name || '',
       role: profile?.specialty || '',
       clinic: profile?.clinic || '',
-      city: profile?.city || 'Toshkent',
+      city: profile?.city || '',
       district: profile?.district || '',
       phone: localPhone(profile?.phone),
       email: profile?.email || '',

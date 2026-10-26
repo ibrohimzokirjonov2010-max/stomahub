@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Check, ChevronDown, ChevronRight, CircleHelp, Clock, Coins, CreditCard, FileText, Info, Landmark, Lock, Plus, Undo2, Upload, UserRound, Wallet as WalletIcon, X,
@@ -106,11 +106,14 @@ function DesktopWallet() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('card')
-  const [picked, setPicked] = useState(hub.requisites[0]?.id || '4521')
+  const [picked, setPicked] = useState(hub.requisites[0]?.id || '')
   const [cardOpen, setCardOpen] = useState(false)
   const [err, setErr] = useState('')
   const [sent, setSent] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => {
+    if (!picked && hub.requisites[0]) setPicked(hub.requisites[0].id)
+  }, [hub.requisites, picked])
   const q = (query || '').trim().toLowerCase()
   const rows = useMemo(() => wallet.rows.filter((t) => (filter === 'all' || t.state === filter) && (!q || `${t.seminar} ${t.who}`.toLowerCase().includes(q))), [wallet.rows, filter, q])
   const n = Number(String(amount).replace(/\s/g, ''))
@@ -256,39 +259,21 @@ function DesktopWallet() {
               {err && <span className="mt-1 block text-[11.5px] text-[#e11d48]">{err}</span>}
             </label>
 
-            <p className="mb-1 mt-3 text-[12.5px] font-semibold">To‘lov usulini tanlang</p>
-            <Radio checked={method === 'card'} label="Bank kartasi" onChange={() => { setMethod('card'); setPicked('4521') }} />
-            <Radio checked={method === 'bank'} label="Bank hisobi" onChange={() => { setMethod('bank'); setPicked('bank') }} />
-
             <p className="mb-1.5 mt-3 text-[12.5px] font-semibold">Saqlangan rekvizitlar</p>
-            <div className="relative">
-              <button type="button" onClick={() => setCardOpen((v) => !v)} className={`flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === '4521' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]"><CreditCard className="size-3.5" strokeWidth={1.8} /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[12.5px] font-semibold leading-tight">Karta **** 4521</span>
-                  <span className="mt-0.5 block text-[11px] text-[#7e9398]">Humo · 04/28</span>
-                </span>
-                <ChevronDown className="size-3.5 shrink-0 text-[#8aa4a8]" />
-              </button>
-              {cardOpen && (
-                <ul className="absolute left-0 right-0 z-30 mt-1 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-                  {hub.requisites.map((r) => (
-                    <li key={r.id}>
-                      <button type="button" className="block w-full px-3 py-2 text-left text-[12.5px] font-medium hover:bg-[#f4fbfa]" onClick={() => { setPicked(r.id); setMethod('card'); setCardOpen(false) }}>{r.label} · {r.detail}</button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            {!hub.requisites.length && (
+              <p className="rounded-xl border border-dashed border-[#d5ebe6] bg-[#f7fcfb] px-3 py-4 text-[12.5px] leading-snug text-[#6e868c]">Hali rekvizit yo‘q. Kartangiz yoki bank hisobingizni qo‘shing — pul shu yerga yuboriladi.</p>
+            )}
+            <div className="space-y-2">
+              {hub.requisites.map((item) => (
+                <button key={item.id} type="button" onClick={() => { setPicked(item.id); setMethod('card'); setCardOpen(false) }} className={`flex w-full items-start gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === item.id ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]">{/bank|hisob|mfo/i.test(`${item.label} ${item.detail}`) ? <Landmark className="size-3.5" strokeWidth={1.8} /> : <CreditCard className="size-3.5" strokeWidth={1.8} />}</span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold leading-tight">{item.label}</span>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-[#7e9398]">{item.detail}</span>
+                  </span>
+                </button>
+              ))}
             </div>
-            <button type="button" onClick={() => { setPicked('bank'); setMethod('bank'); setCardOpen(false) }} className={`mt-2 flex w-full items-start gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === 'bank' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[var(--color-org-teal)]"><Landmark className="size-3.5" strokeWidth={1.8} /></span>
-              <span className="min-w-0">
-                <span className="block text-[12.5px] font-semibold leading-tight">Aloqabank</span>
-                <span className="mt-0.5 block text-[11px] leading-snug text-[#7e9398]">MFO: 00487</span>
-                <span className="mt-1 block text-[11px] leading-none text-[#7e9398]">Hisob raqami</span>
-                <span className="mt-0.5 block whitespace-nowrap text-[11px] font-semibold tracking-tight text-[#143044]">2020&nbsp;8000&nbsp;1234&nbsp;5678&nbsp;9001</span>
-              </span>
-            </button>
 
             <button type="button" onClick={() => setAddOpen(true)} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-org-teal)]">
               <Plus className="size-3.5" strokeWidth={2.4} /> Rekvizit qo‘shish
@@ -390,9 +375,13 @@ function MobileWallet() {
   const wallet = walletOf(hub)
   const [filter, setFilter] = useState('all')
   const [cardOpen, setCardOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
   const [amount, setAmount] = useState('')
-  const [picked, setPicked] = useState(hub.requisites[0]?.id || '4521')
+  const [picked, setPicked] = useState(hub.requisites[0]?.id || '')
   const [err, setErr] = useState('')
+  useEffect(() => {
+    if (!picked && hub.requisites[0]) setPicked(hub.requisites[0].id)
+  }, [hub.requisites, picked])
   const rows = mobileRows(wallet).filter((t) => filter === 'all' || t.kind === filter)
   const card = hub.requisites.find((r) => r.id === picked) || hub.requisites[0]
   const ask = async () => {
@@ -449,14 +438,16 @@ function MobileWallet() {
         <p className="mt-0.5 text-[12px] text-[#6e868c]">Mablag‘ni o‘z karta hisobingizga o‘tkazing.</p>
         <button type="button" onClick={() => setCardOpen((v) => !v)} className="mt-3 flex h-12 w-full items-center gap-2.5 rounded-xl bg-[#f4fbfa] px-3 text-left">
           <span className="grid size-8 place-items-center rounded-lg bg-white text-[var(--color-org-teal)]"><CreditCard className="size-4" /></span>
-          <span className="flex-1 text-[14px] font-semibold tracking-wide">{card?.label || '**** 4521'}</span>
+          <span className="flex-1 text-[14px] font-semibold tracking-wide">{card ? card.label : 'Rekvizit tanlanmagan'}</span>
           <ChevronDown className="size-4 text-[#8aa4a8]" />
         </button>
+        {!hub.requisites.length && <p className="mt-2 text-[12px] leading-snug text-[#6e868c]">Hali rekvizit yo‘q. Pastdagi tugma orqali karta yoki hisob qo‘shing.</p>}
         {cardOpen && (
           <div className="absolute left-3 right-3 z-20 mt-1 rounded-xl border border-[#e6eeec] bg-white p-2 shadow-lg">
             {hub.requisites.map((r) => (
               <button key={r.id} type="button" className="block w-full px-2 py-1.5 text-left text-[12.5px] font-semibold" onClick={() => { setPicked(r.id); setCardOpen(false) }}>{r.label} · {r.detail}</button>
             ))}
+            {!hub.requisites.length && <p className="px-2 py-2 text-[12px] text-[#6e868c]">Saqlangan rekvizit yo‘q</p>}
           </div>
         )}
         <label className="mt-3 block text-[12px] font-medium text-[#1c4a5a]">Summa
@@ -466,6 +457,9 @@ function MobileWallet() {
           </span>
         </label>
         {err && <p className="mt-1 text-[12px] text-[#e11d48]">{err}</p>}
+        <button type="button" onClick={() => setAddOpen(true)} className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-org-teal)]">
+          <Plus className="size-3.5" strokeWidth={2.4} /> Rekvizit qo‘shish
+        </button>
         <button type="button" onClick={ask} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-org-teal)] text-[15px] font-semibold text-white">
           <Upload className="size-4" strokeWidth={2.2} /> Pul yechish
         </button>
@@ -507,6 +501,7 @@ function MobileWallet() {
         ))}
         {rows.length === 0 && <p className="px-3 py-8 text-center text-[12.5px] text-[#7e9398]">Tranzaksiya yo‘q</p>}
       </section>
+      {addOpen && <AddRequisite onClose={() => setAddOpen(false)} onSave={(item) => { addRequisite(item); setPicked(item.id); setAddOpen(false); notify('Rekvizit saqlandi') }} />}
     </div>
   )
 }

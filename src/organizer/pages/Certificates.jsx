@@ -4,7 +4,7 @@ import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, Download,
   Filter, Mail, MapPin, MessageSquare, Pencil, QrCode, Search, Send, Shield, Users,
 } from 'lucide-react'
-import { downloadText, issueCert, useHub } from '../../hubStore'
+import { downloadText, issueCert, newestSeminar, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
@@ -16,49 +16,6 @@ const TONE = {
   none: 'bg-[#fde8ee] text-[#e11d48]',
 }
 const STATE_LABEL = { done: 'Berilgan', progress: 'Jarayonda', none: 'Berilmagan' }
-const COURSE = 'Implantologiya: nazariya va amaliyot'
-const CERT_DATE = '24-noyabr 2026'
-
-const MOBILE_FIRST = [
-  { name: 'Aliyeva Mohira', phone: '+998 90 123 45 67', state: 'done', date: '21.10.2026' },
-  { name: 'Karimov Bekzod', phone: '+998 91 234 56 78', state: 'done', date: '21.10.2026' },
-  { name: 'Toirov Dilshod', phone: '+998 93 345 67 89', state: 'done', date: '21.10.2026' },
-  { name: 'Saidova Malika', phone: '+998 90 456 78 90', state: 'wait', date: '' },
-  { name: 'Usmonov Javohir', phone: '+998 91 567 89 01', state: 'done', date: '21.10.2026' },
-  { name: 'Raximova Sevara', phone: '+998 93 678 90 12', state: 'wait', date: '' },
-  { name: 'Jalilov Akmal', phone: '+998 90 789 01 23', state: 'done', date: '21.10.2026' },
-  { name: 'Eshmatova Dildora', phone: '+998 91 890 12 34', state: 'wait', date: '' },
-]
-
-const EXTRA = [
-  ['Nazarova', 'Nilufar'], ['Ergashev', 'Otabek'], ['Qodirova', 'Madina'], ['Soliyev', 'Jasur'],
-  ['Abdullayeva', 'Kamola'], ['Hamidov', 'Bobur'], ['Karimova', 'Aziza'], ['Yuldasheva', 'Shahzod'],
-  ['Toirova', 'Dilshod'], ['Usmonova', 'Sevara'], ['Rahimova', 'Bekzod'], ['Aliyev', 'Javohir'],
-  ['Karimova', 'Malika'], ['Saidov', 'Azizbek'], ['Mirzayeva', 'Mohira'], ['Nodirova', 'Sevinch'],
-  ['Tursunov', 'Jamshid'], ['Yusupov', 'Sardor'], ['Ismoilov', 'Behzod'], ['Raximova', 'Dilnoza'],
-  ['Eshmatov', 'Akmal'], ['Jalilova', 'Dildora'], ['Qodirov', 'Nilufar'], ['Nazarov', 'Madina'],
-  ['Hamidova', 'Otabek'], ['Soliyeva', 'Kamola'], ['Ergasheva', 'Bobur'], ['Abdullayev', 'Aziza'],
-  ['Yuldashev', 'Shahzod'], ['Toirov', 'Sevara'], ['Usmonov', 'Malika'], ['Rahimov', 'Jasur'],
-  ['Aliyeva', 'Bekzod'], ['Karimov', 'Dildora'],
-]
-
-function buildMobile() {
-  const rows = MOBILE_FIRST.map((r, i) => ({ ...r, id: i + 1 }))
-  EXTRA.forEach(([fam, given], i) => {
-    const n = rows.length
-    const doneSlots = 23
-    const state = i < doneSlots ? 'done' : 'wait'
-    rows.push({
-      id: n + 1,
-      name: `${fam} ${given}`,
-      phone: `+998 9${(i + 2) % 10} ${String(120 + i).padStart(3, '0')} ${String(20 + (i % 70)).padStart(2, '0')} ${String(12 + (i % 80)).padStart(2, '0')}`,
-      state,
-      date: state === 'done' ? '21.10.2026' : '',
-    })
-  })
-  return rows
-}
-
 function decorate(list) {
   return list.map((c) => ({
     ...c,
@@ -215,6 +172,7 @@ export default function Certificates() {
           onResend={() => notify('Sertifikat qayta yuborildi')}
           onIssue={issue}
           onReset={() => { setQ(''); setState('all'); setTicket('all'); setTab('all') }}
+          seminar={newestSeminar(hub.seminars)}
         />
       </div>
 
@@ -301,19 +259,20 @@ function Desktop(p) {
         </nav>
       </div>
 
-      <div className="mb-2.5 flex items-center gap-3 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
-        <img src="/images/seminars/teeth.jpg" alt="" className="h-[52px] w-[72px] rounded-xl object-cover" />
-        <div className="min-w-0">
-          <p className="text-[15px] font-bold leading-tight text-[#143044]">Implantologiya: nazariya va amaliyot</p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[#6e868c]">
-            <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#12a394]" /> 24-noyabr 2026, 10:00</span>
-            <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#12a394]" /> Toshkent, Congress Hall</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#e7f8ee] px-2 py-0.5 text-[12px] font-semibold text-[#16a34a]">
-              <CircleCheck className="size-3.5" /> O‘tkazildi
-            </span>
-          </p>
+      {p.seminar ? (
+        <div className="mb-2.5 flex items-center gap-3 rounded-2xl border border-[#e6f1ef] bg-white px-3 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
+          <img src={p.seminar.image || '/images/seminars/teeth.jpg'} alt="" className="h-[52px] w-[72px] rounded-xl object-cover" />
+          <div className="min-w-0">
+            <p className="text-[15px] font-bold leading-tight text-[#143044]">{p.seminar.title}</p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[#6e868c]">
+              <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[#12a394]" /> {p.seminar.date || 'Sana yo‘q'}{p.seminar.startTime ? `, ${p.seminar.startTime}` : ''}</span>
+              <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[#12a394]" /> {p.seminar.place || p.seminar.city || 'Manzil yo‘q'}</span>
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <p className="mb-2.5 rounded-2xl border border-dashed border-[#d5ebe6] bg-white px-4 py-6 text-center text-[13px] text-[#7e9398]">Hali seminar yo‘q. Sertifikatlar seminar yaratilgach shu yerda chiqadi.</p>
+      )}
 
       <section className="mb-2.5 grid grid-cols-4 gap-2.5">
         <Kpi icon={Users} label="Jami ishtirokchilar" value={String(p.counts.all)} />

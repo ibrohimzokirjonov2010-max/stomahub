@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Megaphone, Star, Mic, ChartColumn, Settings, CircleQuestionMark } from 'lucide-react'
 import { FAQ, som } from '../data'
 import { addMessage, addSpeaker, downloadText, saveMarketing, saveSettings, useHub } from '../../hubStore'
 import { profileStore } from '../../profileStore'
-import { signOut } from '../../sessionStore'
+import { signOut, useSession } from '../../sessionStore'
 import { useOrg } from '../Shell'
 import { Badge, Btn, Card, Field, Toggle, inputCls } from '../ui'
 
@@ -12,7 +12,7 @@ export function Marketing() {
   const { notify } = useOrg()
   const hub = useHub()
   const [on, setOn] = useState(hub.marketing || { push: true, email: true, telegram: false })
-  const [budget, setBudget] = useState(hub.marketing?.budget || '150 000')
+  const [budget, setBudget] = useState(hub.marketing?.budget || '')
   return (
     <div>
       <h1 className="text-[22px] font-bold">Marketing</h1>
@@ -30,7 +30,7 @@ export function Marketing() {
         ))}
       </div>
       <Card className="mt-3" title="Reklama byudjeti">
-        <Field label="Kunlik byudjet, so‘m"><input className={inputCls()} value={budget} onChange={(e) => setBudget(e.target.value)} /></Field>
+        <Field label="Kunlik byudjet, so‘m"><input className={inputCls()} value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="Masalan: 150 000" /></Field>
         <Btn className="mt-3" onClick={() => { saveMarketing({ ...on, budget }); notify('Marketing sozlamalari saqlandi') }}>Saqlash</Btn>
       </Card>
     </div>
@@ -137,21 +137,50 @@ export function SettingsPage() {
   const { notify } = useOrg()
   const navigate = useNavigate()
   const hub = useHub()
-  const [name, setName] = useState(hub.settings?.name || '')
-  const [email, setEmail] = useState(hub.settings?.email || '')
+  const session = useSession()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [err, setErr] = useState('')
-  const [notes, setNotes] = useState(hub.settings?.notes !== false)
+  const [notes, setNotes] = useState(true)
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    if (!hub.ready || hydrated) return
+    setName(hub.settings?.name || session.profile?.name || '')
+    setEmail(hub.settings?.email || session.profile?.email || session.user?.email || '')
+    setNotes(hub.settings?.notes !== false)
+    setHydrated(true)
+  }, [hub.ready, hub.settings, session.profile, session.user, hydrated])
   return (
     <div>
       <h1 className="text-[22px] font-bold">Sozlamalar</h1>
       <p className="mt-0.5 text-[13px] text-[#6e868c]">Tashkilotchi profili va bildirishnomalar.</p>
       <Card className="mt-4" title="Profil">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Ism-familiya" req error={err}><input className={inputCls(!!err)} value={name} onChange={(e) => setName(e.target.value)} /></Field>
-          <Field label="Email" req><input className={inputCls()} value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-[13px]"><span>Yangi ro‘yxat haqida xabar</span><Toggle on={notes} onChange={setNotes} label="Bildirishnoma" /></div>
-        <Btn className="mt-4" onClick={() => { if (name.trim().length < 3 || !email.includes('@')) { setErr('Ism va emailni to‘g‘ri kiriting'); return } setErr(''); saveSettings({ name: name.trim(), email: email.trim(), notes }); notify('Sozlamalar saqlandi') }}>Saqlash</Btn>
+        <form
+          className="grid gap-3 sm:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const nextName = name.trim()
+            const nextEmail = email.trim()
+            if (nextName.length < 2 || (nextEmail && !nextEmail.includes('@'))) {
+              setErr('Ism va emailni to‘g‘ri kiriting')
+              return
+            }
+            setErr('')
+            saveSettings({ name: nextName, email: nextEmail, notes })
+            notify('Sozlamalar saqlandi')
+          }}
+        >
+          <Field label="Ism-familiya" req error={err}>
+            <input id="org-profile-name" name="org-profile-name" type="text" autoComplete="name" className={inputCls(!!err)} value={name} onChange={(e) => { setName(e.target.value); setErr('') }} onKeyDown={(e) => e.stopPropagation()} />
+          </Field>
+          <Field label="Email" req>
+            <input id="org-profile-email" name="org-profile-email" type="email" autoComplete="email" className={inputCls()} value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} onKeyDown={(e) => e.stopPropagation()} />
+          </Field>
+          <div className="sm:col-span-2 mt-0 flex items-center justify-between text-[13px]"><span>Yangi ro‘yxat haqida xabar</span><Toggle on={notes} onChange={setNotes} label="Bildirishnoma" /></div>
+          <div className="sm:col-span-2">
+            <Btn type="submit">Saqlash</Btn>
+          </div>
+        </form>
         <button type="button" className="mt-3 text-[13px] font-semibold text-[#d14343]" onClick={async () => { await signOut(); profileStore.update({ loggedOut: true }); navigate('/kirish') }}>Chiqish</button>
       </Card>
     </div>

@@ -8,7 +8,7 @@ import {
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { ADS, adPrice } from '../../elonlarData'
-import { COURSES, allOrders, profileStore, useProfile } from '../../profileStore'
+import { COURSES, allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
 import { signOut } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -95,7 +95,8 @@ export default function MobileProfil() {
     e.target.value = ''
     if (!file) return
     try {
-      profileStore.update({ avatar: await toAvatar(file) })
+      profileStore.update({ accountLive: true, avatar: await toAvatar(file) })
+      await flushProfile()
       setToast('Profil rasmi yangilandi')
     } catch {
       setToast('Rasmni o‘qib bo‘lmadi')
@@ -124,7 +125,7 @@ export default function MobileProfil() {
 
   const stats = [
     { id: 'orders', icon: ShoppingBag, value: orders.length, label: 'Buyurtmalar', go: () => navigate('/profil/buyurtmalar') },
-    { id: 'courses', icon: GraduationCap, value: COURSES.length, label: 'Kurslar', go: () => navigate('/profil/kurslar') },
+    { id: 'courses', icon: GraduationCap, value: myCourseCount, label: 'Kurslar', go: () => navigate('/profil/kurslar') },
     { id: 'seminars', icon: CalendarDays, value: semCount, label: 'Seminarlar', go: () => navigate('/profil/seminarlar') },
     { id: 'bonus', icon: Coins, value: som(profile.bonus), label: 'Bonus balans' },
   ]
@@ -324,10 +325,11 @@ function EditSheet({ profile, onPick, onClose, onSaved }) {
     phone: f.phone.length !== 9 && 'Raqamni to‘liq kiriting',
     email: f.email && !/^\S+@\S+\.\S+$/.test(f.email) && 'Email noto‘g‘ri',
   }
-  const save = () => {
+  const save = async () => {
     setTried(true)
     if (Object.values(errors).some(Boolean)) return
-    profileStore.update({ ...f, name: f.name.trim(), clinic: f.clinic.trim(), district: f.district.trim() })
+    profileStore.update({ accountLive: true, ...f, name: f.name.trim(), clinic: f.clinic.trim(), district: f.district.trim() })
+    await flushProfile()
     onSaved()
   }
   return (

@@ -6,6 +6,9 @@ import {
 } from 'lucide-react'
 import { seminarChips, mySeminars, whyAttend } from '../seminarsData'
 import { publicRecords, useHub } from '../hubStore'
+import { useProfile } from '../profileStore'
+import { currentUid } from '../recordSync'
+import { useSession } from '../sessionStore'
 import HubNotice from '../components/HubNotice'
 import { som } from '../marketData'
 
@@ -27,9 +30,29 @@ const sorts = {
   expensive: { label: 'Qimmatroq', fn: (a, b) => b.price - a.price },
 }
 
+function mineCards(hub, live) {
+  if (!live) return mySeminars
+  const catalog = publicRecords(hub)
+  return (hub.myRegistrations || []).map((row) => {
+    const match = catalog.find((item) => item.id === row.seminar_id)
+    return {
+      id: row.seminar_id || row.id,
+      title: match?.title || 'Seminar',
+      city: row.city || match?.city || '',
+      place: match?.place || '',
+      day: match?.day || '—',
+      mon: match?.mon || '',
+    }
+  })
+}
+
 export default function SeminarsPage() {
   const hub = useHub()
+  const profile = useProfile()
+  const session = useSession()
+  const live = profile.accountLive || !!currentUid() || session.status === 'authed'
   const seminars = publicRecords(hub)
+  const mine = mineCards(hub, live)
   const [cat, setCat] = useState('all')
   const [format, setFormat] = useState('')
   const [band, setBand] = useState('')
@@ -47,12 +70,13 @@ export default function SeminarsPage() {
     return keys.map((key) => [key, monthLabel(key)])
   }, [seminars])
 
+  const mineIds = useMemo(() => new Set(mine.map((s) => s.id)), [mine])
   const list = useMemo(() => {
     return seminars
       .filter((s) => cat === 'all' || s.cat === cat)
       .filter((s) => !format || s.format === format)
       .filter((s) => !month || s.monthKey === month)
-      .filter((s) => !onlyMine || s.mine)
+      .filter((s) => !onlyMine || mineIds.has(s.id) || (!live && s.mine))
       .filter((s) => band !== 'low' || s.price <= 1000000)
       .filter((s) => band !== 'high' || s.price > 1000000)
       .filter((s) => {
@@ -63,7 +87,7 @@ export default function SeminarsPage() {
       })
       .slice()
       .sort(sorts[sort].fn)
-  }, [seminars, cat, format, band, month, sort, onlyMine, from, to])
+  }, [seminars, cat, format, band, month, sort, onlyMine, from, to, mineIds, live])
 
   const groups = useMemo(() => {
     const keys = [...new Set(list.map((s) => s.monthKey))].sort()
@@ -137,7 +161,9 @@ export default function SeminarsPage() {
             <button onClick={() => setOnlyMine(true)} className="text-[9.5px] font-medium text-sea hover:underline">Barchasini ko‘rish</button>
           </div>
           <div className="flex flex-col gap-2">
-            {mySeminars.map((s) => (
+            {live && !hub.ready && <p className="px-1 py-3 text-[11px] leading-snug text-muted">Seminarlaringiz yuklanmoqda…</p>}
+            {(hub.ready || !live) && !mine.length && <p className="px-1 py-3 text-[11px] leading-snug text-muted">{live ? 'Hali seminar yo‘q. Ro‘yxatdan o‘tgan seminarlaringiz shu yerda chiqadi.' : 'Hisobga kiring — ro‘yxatdan o‘tgan seminarlar shu yerda chiqadi.'}</p>}
+            {mine.map((s) => (
               <Link key={s.id} to={`/seminarlar/${s.id}`} className="flex items-center gap-2 rounded-lg p-1 hover:bg-page">
                 <span className="grid h-[36px] w-[34px] shrink-0 place-items-center rounded-md bg-sea-50 text-center leading-none">
                   <span className="text-[12px] font-extrabold text-sea-600">{s.day}</span>
@@ -145,7 +171,7 @@ export default function SeminarsPage() {
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-[10.5px] font-semibold text-ink">{s.title}</span>
-                  <span className="block truncate text-[9px] text-muted">{s.city}, {s.place}</span>
+                  <span className="block truncate text-[9px] text-muted">{[s.city, s.place].filter(Boolean).join(', ')}</span>
                 </span>
               </Link>
             ))}

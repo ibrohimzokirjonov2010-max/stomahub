@@ -8,6 +8,8 @@ import ShopLayout from '../components/market/ShopLayout'
 import { ToothIcon } from '../components/icons'
 import { TYPES, TYPE_LABEL, TYPE_LINE, certs, STATS } from '../sertifikatData'
 import { useProfile } from '../profileStore'
+import { currentUid } from '../recordSync'
+import { useSession } from '../sessionStore'
 
 const THEMES = {
   teal: { bg: '#ffffff', ink: '#0b3b4a', accent: '#0e8f8a', corner: 'linear-gradient(135deg, #0e8f8a, #6fd0c4)', frame: '#cfe9e5' },
@@ -26,16 +28,18 @@ export default function Sertifikatlar() {
 
 function Board() {
   const profile = useProfile()
-  const owner = profile.accountLive ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
-  const library = profile.accountLive ? [] : certs
-  const stats = profile.accountLive ? { count: 0, cme: 0, done: 0 } : STATS
+  const session = useSession()
+  const live = profile.accountLive || !!currentUid() || session.status === 'authed'
+  const owner = live ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
+  const library = live ? [] : certs
+  const stats = live ? { count: 0, cme: 0, done: 0 } : STATS
   const [params, setParams] = useSearchParams()
   const [type, setType] = useState('all')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('new')
   const [toast, setToast] = useState('')
   const openId = params.get('cert')
-  const open = certs.find((c) => c.id === openId) || null
+  const open = live ? null : (certs.find((c) => c.id === openId) || null)
 
   const list = useMemo(() => {
     const text = query.trim().toLowerCase()
@@ -90,7 +94,7 @@ function Board() {
       </div>
 
       {list.length === 0 ? (
-        <p className="mt-6 rounded-2xl bg-white p-8 text-center text-[13px] text-muted shadow-card">{profile.accountLive ? 'Hali sertifikat yo‘q. Seminar yoki kursni yakunlagach, u shu yerda saqlanadi.' : 'Sertifikat topilmadi.'}</p>
+        <p className="mt-6 rounded-2xl bg-white p-8 text-center text-[13px] text-muted shadow-card">{live ? 'Hali sertifikat yo‘q. Seminar yoki kursni yakunlagach, u shu yerda saqlanadi.' : 'Sertifikat topilmadi.'}</p>
       ) : (
         <div className="cert-grid mt-4">
           {list.map((c) => (

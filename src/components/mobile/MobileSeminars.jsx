@@ -10,7 +10,10 @@ import HubNotice from '../HubNotice'
 import { useCart } from '../../cart'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
-import { useSeminarStore, toggleSaved } from './seminarStore'
+import { SHOWCASE_SAVED, useSeminarStore, toggleSaved } from './seminarStore'
+import { useProfile } from '../../profileStore'
+import { currentUid } from '../../recordSync'
+import { useSession } from '../../sessionStore'
 
 const ImplantIcon = (p) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
@@ -271,8 +274,15 @@ function FilterSheet({ initial, count, onClose, onApply }) {
 }
 
 function MineSheet({ cards, store, onClose }) {
-  const reg = cards.filter((s) => store.registered[s.id])
-  const saved = cards.filter((s) => store.saved.includes(s.id) && !store.registered[s.id])
+  const profile = useProfile()
+  const session = useSession()
+  const live = profile.accountLive || !!currentUid() || session.status === 'authed'
+  const savedIds = store.saved.length ? store.saved : (live ? [] : SHOWCASE_SAVED)
+  const regIds = live
+    ? new Set([...(Object.keys(store.registered || {})), ...savedIds])
+    : null
+  const reg = cards.filter((s) => store.registered[s.id] && (!live || regIds.has(s.id)))
+  const saved = cards.filter((s) => savedIds.includes(s.id) && !store.registered[s.id])
   const Row = ({ s, badge }) => (
     <Link to={store.registered[s.id]?.order ? `/seminarlar/${s.id}/royxat` : `/seminarlar/${s.id}`} className="flex items-center gap-3 rounded-2xl border border-line p-2">
       <img src={s.image} alt="" className="size-14 shrink-0 rounded-xl object-cover" />

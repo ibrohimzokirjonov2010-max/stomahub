@@ -1,4 +1,5 @@
 import { friendlySupabaseError, supabase } from './supabaseClient'
+import { displayClock, displayDate, displayWhen, tashkentClock } from './time'
 
 function reviveId(id) {
   const value = String(id ?? '')
@@ -102,7 +103,7 @@ function personFromRow(row) {
     email: row.email,
     ticket: row.ticket,
     pay: row.pay,
-    registered: row.registered,
+    registered: displayWhen(row.registered, row.created_at),
     city: row.city,
     role: row.role,
     avatar: row.avatar,
@@ -128,7 +129,7 @@ function paymentFromRow(row) {
     phone: row.phone,
     email: row.email,
     ticket: row.ticket,
-    when: row.when_label,
+    when: displayWhen(row.when_label, row.created_at),
     avatar: row.avatar,
     face: row.face || 0,
   }
@@ -325,7 +326,7 @@ export async function pullHub() {
     id: row.id,
     amount: Number(row.amount) || 0,
     card: row.card,
-    date: row.date_label,
+    date: displayDate(row.date_label, row.created_at),
     method: row.method,
   }))
   next.requisites = (requisites || []).map((row) => ({
@@ -333,7 +334,7 @@ export async function pullHub() {
     label: row.label,
     detail: row.detail,
   }))
-  next.activity = (activity || []).map((row) => ({ icon: row.icon, title: row.title, text: row.text, time: row.time_label }))
+  next.activity = (activity || []).map((row) => ({ icon: row.icon, title: row.title, text: row.text, time: displayClock(row.time_label, row.created_at) }))
   next.reviews = (reviews || []).map((row) => ({
     name: row.name, clinic: row.clinic, stars: row.stars, text: row.text, date: row.date_label, avatar: row.avatar,
   }))
@@ -421,7 +422,7 @@ async function logActivity(uid, item) {
     icon: item.icon || 'cal',
     title: item.title || '',
     text: item.text || '',
-    time_label: item.time || new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+    time_label: item.time || tashkentClock(),
     sort_at: -Date.now(),
   })
   if (error) throw error
@@ -608,7 +609,7 @@ export async function pushMessage(text) {
     organizer_id: uid,
     author_id: uid,
     body: text,
-    at_label: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+    at_label: tashkentClock(),
   })
   if (error) throw error
 }

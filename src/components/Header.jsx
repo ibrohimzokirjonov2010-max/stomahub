@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, X } from 'lucide-react'
+import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, LogOut, X } from 'lucide-react'
 import { Logo } from './icons'
 import { useCart } from '../cart'
-import { useProfile } from '../profileStore'
+import { profileStore, useProfile } from '../profileStore'
+import { signOut, useSession } from '../sessionStore'
 
 // variant="home" — bosh sahifa dizayni, variant="shop" — marketplace sahifalari
 // search (faqat shop): "image" — "Rasm orqali qidirish" tugmasi, "icon" — faqat kamera ikonkasi, "plain" — oddiy qidiruv
@@ -11,8 +12,10 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const shop = variant === 'shop'
   const { items, count } = useCart()
   const profile = useProfile()
-  const who = profile.accountLive ? (profile.name || 'Shifokor') : 'Mehmon'
-  const role = profile.accountLive ? (profile.role || 'Stomatolog') : 'Hisobga kiring'
+  const session = useSession()
+  const authed = session.status === 'authed' || profile.accountLive
+  const who = authed ? (profile.name || session.profile?.name || 'Shifokor') : 'Mehmon'
+  const role = authed ? (profile.role || session.profile?.specialty || 'Stomatolog') : 'Hisobga kiring'
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const cartFrom = pathname.startsWith('/forma') ? 'forma' : pathname.startsWith('/jihoz') ? 'jihoz' : 'market'
@@ -107,14 +110,27 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
         )}
 
         <div className="ml-1 hidden h-8 w-px bg-line sm:block" />
-        <button className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-1.5 hover:bg-page">
-          <img src={profile.avatar || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
+        <button type="button" onClick={() => navigate(authed ? '/profil' : '/kirish')} className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-1.5 hover:bg-page">
+          <img src={profile.avatar || session.profile?.avatar_url || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
           <span className="hidden text-left leading-tight xl:block">
             <span className="block text-[10.5px] font-semibold text-ink">{who}</span>
             <span className="block text-[9.5px] text-muted">{role}</span>
           </span>
           <ChevronDown className="hidden size-4 text-ink-2 xl:block" />
         </button>
+        {authed && (
+          <button
+            type="button"
+            onClick={async () => {
+              await signOut()
+              profileStore.update({ loggedOut: true, accountLive: false })
+              navigate('/kirish')
+            }}
+            className="hidden h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-semibold text-[#d14343] hover:bg-[#fff5f5] sm:inline-flex"
+          >
+            <LogOut className="size-3.5" /> Chiqish
+          </button>
+        )}
       </div>
     </header>
   )

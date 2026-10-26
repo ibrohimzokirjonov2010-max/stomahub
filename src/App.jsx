@@ -100,6 +100,7 @@ import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
+import Profil from './pages/Profil'
 import MobileManzillar from './components/mobile/MobileManzillar'
 import MobileTolovUsullari from './components/mobile/MobileTolovUsullari'
 import MobileSevimlilar from './components/mobile/MobileSevimlilar'
@@ -192,13 +193,14 @@ export default function App() {
           <Route path="/community/:id" element={<Responsive mobile={<MobilePost />}><Navigate to="/community" replace /></Responsive>} />
           <Route path="/sertifikatlar" element={<Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive>} />
           <Route path="/klinika" element={<Klinika />} />
-          <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/profil/tolov-usullari" element={<Responsive mobile={<MobileTolovUsullari />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/profil/sevimlilar" element={<Responsive mobile={<MobileSevimlilar />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/profil/buyurtmalar" element={<Responsive mobile={<MobileBuyurtmalar />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/profil/seminarlar" element={<Responsive mobile={<MobileSeminarlarim />}><Navigate to="/klinika" replace /></Responsive>} />
+          <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
+          <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
+          <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil /></Responsive>} />
+          <Route path="/profil/tolov-usullari" element={<Responsive mobile={<MobileTolovUsullari />}><Profil /></Responsive>} />
+          <Route path="/profil/sevimlilar" element={<Responsive mobile={<MobileSevimlilar />}><Profil /></Responsive>} />
+          <Route path="/profil/buyurtmalar" element={<Responsive mobile={<MobileBuyurtmalar />}><Profil section="orders" /></Responsive>} />
+          <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Profil /></Responsive>} />
+          <Route path="/profil/seminarlar" element={<Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive>} />
           <Route path="/buyurtma/kuzatish/:id" element={<Responsive mobile={<MobileKuzatish />}><Navigate to="/klinika" replace /></Responsive>} />
           <Route path="/xizmatlar" element={<Xizmatlar />} />
           <Route path="/davolash-rejalari" element={<Rejalar />} />
