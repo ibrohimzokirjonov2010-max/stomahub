@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown, Search, Check } from 'lucide-react'
-import { categoryCounts, brands } from '../../marketData'
+import { categoryCounts as CATS, marketProducts } from '../../marketData'
+import { useMarket } from '../../buyerApi'
 
 function Box({ title, children }) {
   const [open, setOpen] = useState(true)
@@ -37,7 +38,11 @@ export default function FilterPanel({ filters, setFilters }) {
       return { ...f, [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] }
     })
 
-  const shownBrands = brands
+  useMarket()
+  const categoryCounts = CATS.map(([key, label]) => [key, label, key === 'all' ? marketProducts.length : marketProducts.filter((p) => p.cat === key).length])
+  const brandMap = {}
+  marketProducts.forEach((p) => { if (p.brand) brandMap[p.brand] = (brandMap[p.brand] || 0) + 1 })
+  const shownBrands = Object.entries(brandMap)
     .filter(([b]) => b.toLowerCase().includes(brandQuery.toLowerCase()))
     .slice(0, showAll ? undefined : 8)
 
