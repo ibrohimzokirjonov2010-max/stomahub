@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, UserPlus, UserRound, Users } from 'lucide-react'
+import { ArrowRight, ClipboardList, Globe, Stethoscope, BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, UserPlus, UserRound, Users } from 'lucide-react'
 import { profileStore, useProfile } from '../profileStore'
 import { retryHub } from '../hubStore'
 import { supabase } from '../supabaseClient'
@@ -466,167 +466,214 @@ function Auth({ mode }) {
     }
   }
 
-  return (
-    <div className="grid min-h-screen bg-[#f3faf8] lg:h-[calc(100dvh/var(--z))] lg:min-h-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)] lg:overflow-hidden">
-      <aside className="relative hidden overflow-hidden bg-[#0c7f7a] lg:block">
-        <img src="/images/jihozlar/fengdan.jpg" alt="" className="absolute inset-0 size-full object-cover object-[78%_center]" />
-        <div className="absolute inset-y-0 left-0 w-[68%] bg-[#0e8b84]" style={{ clipPath: 'ellipse(78% 85% at 8% 50%)' }} />
-        <div className="relative flex h-full flex-col px-10 py-10 text-white xl:px-14">
-          <Link to="/" aria-label="StomaHub" className="inline-flex">
-            <img src="/images/logo.png" alt="" className="h-10 w-auto brightness-0 invert" />
-          </Link>
-          <h1 className="mt-14 max-w-[420px] text-[40px] font-extrabold leading-[1.12] tracking-tight xl:text-[46px]">{t.title}</h1>
-          <p className="mt-4 max-w-[380px] text-[16px] leading-relaxed text-white/90">{t.lead}</p>
-          <ul className="mt-10 space-y-4">
-            {t.feats.map((label, i) => {
-              const Icon = [GraduationCap, ShoppingCart, Users, BookOpen][i]
-              return (
-                <li key={label} className="flex items-center gap-3 text-[15px] font-medium">
-                  <span className="grid size-10 place-items-center rounded-full bg-white/15"><Icon className="size-5" /></span>
-                  {label}
-                </li>
-              )
-            })}
-          </ul>
+  const isLogin = mode === 'login'
+  const langBtn = (
+    <div className="relative">
+      <button type="button" onClick={() => setOpenLang((v) => !v)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e3ecea] bg-[#f6fbfa] px-3 text-[13px] font-medium text-[#24384d]">
+        <Globe className="size-4 text-[#0F766E]" /> {t.lang} <ChevronDown className="size-3.5" />
+      </button>
+      {openLang && (
+        <div className="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-xl border border-[#e6eef2] bg-white shadow-lg">
+          {Object.entries(COPY).map(([key, item]) => (
+            <button key={key} type="button" onClick={() => { setLang(key); setOpenLang(false); setErr('') }} className={`block w-full px-3 py-2 text-left text-[13px] hover:bg-[#f3faf8] ${key === lang ? 'font-semibold text-[#0F766E]' : ''}`}>{item.lang}</button>
+          ))}
         </div>
-      </aside>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="grid min-h-screen bg-white lg:h-[calc(100dvh/var(--z))] lg:min-h-0 lg:grid-cols-[minmax(0,1.07fr)_minmax(480px,1fr)] lg:overflow-hidden lg:bg-[#f2f9f8]">
+      <AuthAside t={t} />
 
       <main className="overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center px-4 py-6">
-        <div className="relative w-full max-w-[460px] rounded-[28px] bg-white px-6 py-7 shadow-[0_16px_50px_rgb(16_50_48/0.08)] sm:px-8">
-          <div className="absolute right-5 top-5">
-            <button type="button" onClick={() => setOpenLang((v) => !v)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#e3ecea] px-3 text-[12.5px] font-semibold text-[#3d5168]">
-              <span className="text-[#0b8a84]">A</span> {t.lang} <ChevronDown className="size-3.5" />
-            </button>
-            {openLang && (
-              <div className="absolute right-0 z-10 mt-1 w-36 overflow-hidden rounded-xl border border-[#e6eef2] bg-white shadow-lg">
-                {Object.entries(COPY).map(([key, item]) => (
-                  <button key={key} type="button" onClick={() => { setLang(key); setOpenLang(false); setErr('') }} className={`block w-full px-3 py-2 text-left text-[13px] hover:bg-[#f3faf8] ${key === lang ? 'font-semibold text-[#0b8a84]' : ''}`}>{item.lang}</button>
-                ))}
-              </div>
-            )}
+        {/* Mobil sarlavha: logo, sarlavha, kreslo surati to‘lqin bilan */}
+        <div className="relative overflow-hidden lg:hidden">
+          <div className={`absolute right-0 top-0 ${isLogin ? 'h-full w-[60%]' : 'h-[82%] w-[55%]'}`}>
+            <img src="/images/landing/auth-clinic.jpg" alt="" className="size-full object-cover object-[60%_45%]" />
           </div>
-
-          <h2 className="pr-28 text-[32px] font-extrabold tracking-tight text-[#10283f]">{mode === 'login' ? t.login : t.reg}</h2>
-          <p className="mt-2 text-[14px] leading-relaxed text-[#5c6e80]">{mode === 'login' ? t.loginLead : t.regLead}</p>
-          <div className="mt-4">
-            <span className="text-[13px] font-semibold text-[#17324d]">{t.kind}</span>
-            <div className="mt-1.5 grid grid-cols-2 gap-2">
-              {[['customer', t.customer], ['organizer', t.organizer]].map(([key, label]) => (
-                <button key={key} type="button" onClick={() => setRoleIntent(key)} className={`h-10 rounded-xl border text-[13.5px] font-semibold ${roleIntent === key ? 'border-[#0d8a84] bg-[#e8f7f5] text-[#0b8a84]' : 'border-[#e3ecea] text-[#3d5168]'}`}>{label}</button>
-              ))}
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
+            {isLogin
+              ? <path d="M-1 -1 H46 C36 30 40 62 62 80 C76 92 90 97 101 98 V101 H-1 Z" fill="#fff" />
+              : <path d="M-1 -1 H48 C40 28 46 52 64 64 C78 74 92 76 101 76 V101 H-1 Z" fill="#fff" />}
+          </svg>
+          <div className={`relative px-6 pt-10 ${isLogin ? 'pb-16' : 'pb-8'}`}>
+            <div className="flex items-start justify-between">
+              <Link to="/" aria-label="StomaHub"><img src="/images/landing/logo-mark.png" alt="StomaHub" className={isLogin ? 'h-11 w-auto' : 'h-9 w-auto'} /></Link>
             </div>
-          </div>
-
-          <form onSubmit={submit} className="mt-6 space-y-3.5">
-            {mode === 'register' && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} />}
-            {mode === 'login' ? (
-              <Field label={t.id} icon={UserRound} value={id} onChange={setId} placeholder={t.idPh} />
+            {isLogin ? (
+              <>
+                <h1 className="mt-8 max-w-[190px] text-[40px] font-extrabold leading-[1.1] tracking-tight text-[#0f2438]">Xush kelibsiz!</h1>
+                <p className="mt-3 max-w-[180px] text-[17px] leading-snug text-[#5c6e80]">{t.title}.</p>
+              </>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label={t.phone} icon={Phone} value={phone} onChange={setPhone} placeholder={t.phonePh} />
-                <div>
-                  <Field label={t.email} icon={Mail} value={email} onChange={(v) => { setEmail(v); if (emailErr) setEmailErr(emailProblem(v)) }} onBlur={() => email && setEmailErr(emailProblem(email))} placeholder={t.emailPh} type="email" invalid={!!emailErr} />
-                  {emailErr && <p role="alert" className="mt-1 text-[12px] font-medium text-[#d14343]">{emailErr}</p>}
-                </div>
-              </div>
+              <>
+                <h1 className="relative mt-6 text-[26px] font-extrabold leading-tight tracking-tight text-[#0f2438]">{t.reg}</h1>
+                <p className="mt-1.5 max-w-[230px] text-[13px] text-[#5c6e80]">{t.title}.</p>
+              </>
             )}
-            {mode === 'register' && (
-              <label className="block">
-                <span className="text-[13px] font-semibold text-[#17324d]">{t.spec}</span>
-                <span className="mt-1.5 flex h-12 items-center gap-2 rounded-xl border border-[#e3ecea] px-3 focus-within:border-[#0b8a84]">
-                  <GraduationCap className="size-[18px] text-[#8aa0a8]" />
-                  <select value={spec} onChange={(e) => setSpec(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none">
-                    <option value="">{t.specPh}</option>
-                    {SPECS.map((s) => <option key={s}>{s}</option>)}
-                  </select>
-                </span>
-              </label>
-            )}
-            {mode === 'login' ? (
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-[#17324d]">{t.pass}</span>
-                  <button type="button" onClick={resetPassword} className="text-[12.5px] font-semibold text-[#0b8a84]">{t.forgot}</button>
-                </div>
-                <Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} />
-                {forgot && <p className="mt-1.5 text-[12.5px] leading-snug text-[#5c6e80]">{t.forgotNote}</p>}
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-[13px] font-semibold text-[#17324d]">{t.pass}</span>
-                  <span className="mt-1.5 block"><Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} /></span>
-                </label>
-                <label className="block">
-                  <span className="text-[13px] font-semibold text-[#17324d]">{t.pass2}</span>
-                  <span className="mt-1.5 block"><Pass value={pass2} onChange={setPass2} placeholder={t.pass2Ph} show={show2} onToggle={() => setShow2((v) => !v)} /></span>
-                </label>
-              </div>
-            )}
-            {mode === 'register' && (
-              <label className="flex items-center gap-2 text-[13.5px] text-[#17324d]">
-                <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="size-4 accent-[#0b8a84]" />
-                {t.terms}
-              </label>
-            )}
-                {otpSent && mode === 'login' && (
-                  <Field label={t.code} icon={Lock} value={otp} onChange={setOtp} placeholder={t.codePh} />
-                )}
-                {err && <p className="text-[13px] font-medium text-[#d14343]">{err}</p>}
-                {info && <p className="text-[13px] font-medium text-[#0b8a84]">{info}</p>}
-                <button type="submit" disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d8a84] text-[15px] font-semibold text-white hover:bg-[#08756f] disabled:opacity-60">
-              {mode === 'login' ? <LogIn className="size-[18px]" /> : <UserPlus className="size-[18px]" />}
-              {mode === 'login' ? (emailFormatOk(id.trim()) || digits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
-            </button>
-          </form>
-
-          <div className="my-4 flex items-center gap-3 text-[12.5px] text-[#8aa0a8]">
-            <span className="h-px flex-1 bg-[#e6eeec]" /> {t.or} <span className="h-px flex-1 bg-[#e6eeec]" />
+            <span className="mt-5 block h-2 w-12 rounded-full bg-[#bfe6e0]" />
           </div>
-          <button type="button" onClick={google} disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#dbe6e4] text-[14.5px] font-semibold text-[#17324d] hover:bg-[#f7fbfa] disabled:opacity-60">
-            <GoogleMark /> {mode === 'login' ? t.googleIn : t.googleUp}
-          </button>
-          {bot ? (
-            <div className="mt-3">
-              <TelegramButton bot={bot} role={roleIntent} label={t.telegram} onError={setErr} onBusy={setBusy} />
-            </div>
-          ) : null}
-          {bot && (
-            <p className="mt-3 text-center text-[12.5px] text-[#5c6e80]">
-              <a className="font-semibold text-[#0b8a84]" href={`https://t.me/${bot}?start=link`} target="_blank" rel="noreferrer">{t.linkBot}</a>
-            </p>
-          )}
-          <p className="mt-5 text-center text-[13.5px] text-[#5c6e80]">
-            {mode === 'login' ? t.noAcc : t.hasAcc}{' '}
-            <Link to={mode === 'login' ? '/royxat' : '/kirish'} className="font-semibold text-[#0b8a84]">{mode === 'login' ? t.toReg : t.login}</Link>
-          </p>
         </div>
+
+        <div className="flex min-h-full items-start justify-center lg:items-center lg:px-6 lg:py-6">
+          <div className="relative w-full bg-white px-6 pb-8 lg:max-w-[520px] lg:rounded-[24px] lg:px-9 lg:py-8 lg:shadow-[0_16px_50px_rgb(16_50_48/0.07)]">
+            <div className="absolute right-6 top-5 hidden lg:block">{langBtn}</div>
+
+            <div className="hidden lg:block">
+              <h2 className={`pr-32 font-extrabold tracking-tight text-[#0f2438] ${isLogin ? 'mt-14 text-[40px]' : 'mt-8 text-[34px]'}`}>{isLogin ? t.login : t.reg}</h2>
+              <p className="mt-2 max-w-[360px] text-[14.5px] leading-relaxed text-[#5c6e80]">{isLogin ? t.loginLead : t.regLead}</p>
+            </div>
+            <form onSubmit={submit} className={`mt-5 ${isLogin ? 'space-y-5' : 'space-y-4'}`}>
+              {!isLogin && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} />}
+              {isLogin ? (
+                <Field label={t.id} icon={UserRound} value={id} onChange={setId} placeholder={t.idPh} big />
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <label className="block">
+                    <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.phone}</span>
+                    <span className="mt-1.5 flex h-12 items-center rounded-xl border border-[#e3eaee] bg-[#f7f9fa] focus-within:border-[#0F766E]">
+                      <span className="flex h-full items-center gap-1.5 border-r border-[#e3eaee] px-3 text-[14px] text-[#24384d] lg:hidden">+998 <ChevronDown className="size-4 text-[#5c6e80]" /></span>
+                      <Phone className="ml-3 size-[18px] shrink-0 text-[#7d8f99]" />
+                      <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder={t.phonePh} className="min-w-0 flex-1 bg-transparent px-2.5 text-[14px] outline-none placeholder:text-[#9aa9b1]" />
+                    </span>
+                  </label>
+                  <div>
+                    <Field label={t.email} icon={Mail} value={email} onChange={(v) => { setEmail(v); if (emailErr) setEmailErr(emailProblem(v)) }} onBlur={() => email && setEmailErr(emailProblem(email))} placeholder={t.emailPh} type="email" invalid={!!emailErr} />
+                    {emailErr && <p role="alert" className="mt-1 text-[12px] font-medium text-[#d14343]">{emailErr}</p>}
+                  </div>
+                </div>
+              )}
+              {!isLogin && (
+                <label className="block">
+                  <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.spec}</span>
+                  <span className="relative mt-1.5 flex h-12 items-center gap-2.5 rounded-xl border border-[#e3eaee] bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E]">
+                    <Stethoscope className="size-[18px] text-[#7d8f99] lg:hidden" /><GraduationCap className="hidden size-[18px] text-[#7d8f99] lg:block" />
+                    <select value={spec} onChange={(e) => setSpec(e.target.value)} className={`min-w-0 flex-1 appearance-none bg-transparent text-[14px] outline-none ${spec ? '' : 'text-[#7d8f99]'}`}>
+                      <option value="">{t.specPh}</option>
+                      {SPECS.map((s) => <option key={s}>{s}</option>)}
+                    </select>
+                    <ChevronDown className="pointer-events-none size-4 text-[#5c6e80]" />
+                  </span>
+                </label>
+              )}
+              {isLogin ? (
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.pass}</span>
+                    <button type="button" onClick={resetPassword} className="hidden text-[13px] font-semibold text-[#0F766E] lg:inline">{t.forgot}</button>
+                  </div>
+                  <Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} big />
+                  <div className="mt-3 text-right lg:hidden"><button type="button" onClick={resetPassword} className="text-[14px] font-semibold text-[#0F766E]">{t.forgot}</button></div>
+                  {forgot && <p className="mt-1.5 text-[12.5px] leading-snug text-[#5c6e80]">{t.forgotNote}</p>}
+                </div>
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <label className="block">
+                    <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.pass}</span>
+                    <span className="mt-1.5 block"><Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} /></span>
+                  </label>
+                  <label className="block">
+                    <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.pass2}</span>
+                    <span className="mt-1.5 block"><Pass value={pass2} onChange={setPass2} placeholder={t.pass2Ph} show={show2} onToggle={() => setShow2((v) => !v)} /></span>
+                  </label>
+                </div>
+              )}
+              {!isLogin && (
+                <label className="flex items-center gap-2.5 text-[13.5px] text-[#24384d]">
+                  <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="size-[18px] accent-[#0F766E]" />
+                  <span><span className="font-medium text-[#0F766E]">Foydalanish shartlariga</span> roziman</span>
+                </label>
+              )}
+              {otpSent && isLogin && <Field label={t.code} icon={Lock} value={otp} onChange={setOtp} placeholder={t.codePh} />}
+              {err && <p className="text-[13px] font-medium text-[#d14343]">{err}</p>}
+              {info && <p className="text-[13px] font-medium text-[#0F766E]">{info}</p>}
+              <button type="submit" disabled={busy} className={`flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0F766E] font-semibold text-white hover:bg-[#0b5f59] disabled:opacity-60 ${isLogin ? 'h-14 text-[17px]' : 'h-[52px] text-[16px]'}`}>
+                {isLogin ? <LogIn className="size-5" /> : <UserPlus className="size-5" />}
+                {isLogin ? (emailFormatOk(id.trim()) || digits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
+              </button>
+            </form>
+
+            <div className="my-4 flex items-center gap-4 text-[13px] text-[#7d8f99]">
+              <span className="h-px flex-1 bg-[#e3eaee]" /> {t.or} <span className="h-px flex-1 bg-[#e3eaee]" />
+            </div>
+            <button type="button" onClick={google} disabled={busy} className={`flex w-full items-center justify-center gap-3 rounded-xl border border-[#0F766E]/70 bg-white font-semibold text-[#0f2438] hover:bg-[#f4faf9] disabled:opacity-60 ${isLogin ? 'h-14 text-[16px]' : 'h-12 text-[14.5px]'}`}>
+              <GoogleMark /> {isLogin ? t.googleIn : t.googleUp}
+            </button>
+            {bot ? <div className="mt-3"><TelegramButton bot={bot} role={roleIntent} label={t.telegram} onError={setErr} onBusy={setBusy} /></div> : null}
+            {bot && (
+              <p className="mt-3 text-center text-[12.5px] text-[#5c6e80]">
+                <a className="font-semibold text-[#0F766E]" href={`https://t.me/${bot}?start=link`} target="_blank" rel="noreferrer">{t.linkBot}</a>
+              </p>
+            )}
+            <div className={`mt-6 flex items-center justify-center gap-3 rounded-2xl bg-[#effaf8] text-[14.5px] text-[#3d5168] ${isLogin ? 'h-[68px]' : 'h-14'}`}>
+              {isLogin ? t.noAcc : t.hasAcc}
+              <Link to={isLogin ? '/royxat' : '/kirish'} className="inline-flex items-center gap-1.5 font-semibold text-[#0F766E]">{isLogin ? t.toReg : t.login} <ArrowRight className="size-4" /></Link>
+            </div>
+            {/* Hisob turi: kirishda rol profildan avtomatik aniqlanadi; bu faqat yangi hisob uchun */}
+            <p className="mt-4 text-center text-[12.5px] text-[#7d8f99]">
+              {t.kind}:{' '}
+              {[['customer', t.customer], ['organizer', t.organizer]].map(([key, label], k) => (
+                <span key={key}>{k ? ' · ' : ''}<button type="button" onClick={() => setRoleIntent(key)} aria-pressed={roleIntent === key} className={roleIntent === key ? 'font-semibold text-[#0F766E]' : 'underline-offset-2 hover:underline'}>{label}</button></span>
+              ))}
+            </p>
+          </div>
         </div>
       </main>
     </div>
   )
 }
 
-function Field({ label, icon: Icon, value, onChange, onBlur, placeholder, type = 'text', invalid = false }) {
+export function AuthAside({ t }) {
+  return (
+    <aside className="relative hidden overflow-hidden bg-[#0d6f68] lg:block">
+      <img src="/images/landing/auth-clinic.jpg" alt="" className="absolute inset-y-0 right-0 h-full w-[78%] object-cover object-[45%_center]" />
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
+        <defs><linearGradient id="aside-g" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stopColor="#0b6b64" /><stop offset="1" stopColor="#13887f" /></linearGradient></defs>
+        <path d="M0 0 H86 C66 18 60 42 52 62 C46 78 36 90 26 100 H0 Z" fill="url(#aside-g)" />
+      </svg>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white/40 to-transparent" />
+      <div className="relative flex h-full flex-col px-10 py-12 text-white xl:px-14">
+        <Link to="/" aria-label="StomaHub" className="inline-flex"><img src="/images/landing/logo-white-mark.png" alt="StomaHub" className="h-14 w-auto" /></Link>
+        <h1 className="mt-14 max-w-[440px] text-[34px] font-extrabold leading-[1.2] tracking-tight xl:text-[38px]">{t.title}</h1>
+        <p className="mt-5 max-w-[360px] text-[17px] leading-relaxed text-white/90">{t.lead}</p>
+        <ul className="mt-9 space-y-6">
+          {t.feats.map((label, i) => {
+            const Icon = [GraduationCap, ShoppingCart, Users, ClipboardList][i]
+            const words = label.split(' ')
+            const cut = i === 2 ? 1 : 2
+            return (
+              <li key={label} className="flex items-center gap-4 text-[15.5px] font-medium leading-snug">
+                <span className="grid size-[52px] shrink-0 place-items-center rounded-full bg-white/15 ring-1 ring-white/10"><Icon className="size-6" /></span>
+                <span>{words.slice(0, cut).join(' ')}<br />{words.slice(cut).join(' ')}</span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </aside>
+  )
+}
+
+function Field({ label, icon: Icon, value, onChange, onBlur, placeholder, type = 'text', invalid = false, big = false }) {
   return (
     <label className="block">
-      <span className="text-[13px] font-semibold text-[#17324d]">{label}</span>
-      <span className={`mt-1.5 flex h-12 items-center gap-2 rounded-xl border px-3 focus-within:border-[#0b8a84] ${invalid ? 'border-[#d14343]' : 'border-[#e3ecea]'}`}>
-        <Icon className="size-[18px] shrink-0 text-[#8aa0a8]" />
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} aria-invalid={invalid || undefined} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aafb4]" />
+      <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
+      <span className={`mt-1.5 flex items-center gap-2.5 rounded-xl border bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${big ? 'h-14' : 'h-12'} ${invalid ? 'border-[#d14343]' : 'border-[#e3eaee]'}`}>
+        <Icon className="size-[19px] shrink-0 text-[#7d8f99]" />
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} aria-invalid={invalid || undefined} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
       </span>
     </label>
   )
 }
 
-function Pass({ value, onChange, placeholder, show, onToggle }) {
+function Pass({ value, onChange, placeholder, show, onToggle, big = false }) {
   return (
-    <span className="flex h-12 items-center gap-2 rounded-xl border border-[#e3ecea] px-3 focus-within:border-[#0b8a84]">
-      <Lock className="size-[18px] shrink-0 text-[#8aa0a8]" />
-      <input type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aafb4]" />
-      <button type="button" onClick={onToggle} aria-label={show ? 'Yashirish' : 'Ko‘rsatish'} className="text-[#8aa0a8]">
-        {show ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
+    <span className={`flex items-center gap-2.5 rounded-xl border border-[#e3eaee] bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${big ? 'h-14' : 'h-12'}`}>
+      <Lock className="size-[19px] shrink-0 text-[#7d8f99]" />
+      <input type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
+      <button type="button" onClick={onToggle} aria-label={show ? 'Yashirish' : 'Ko‘rsatish'} className="text-[#5c6e80]">
+        {show ? <Eye className="size-[19px]" /> : <EyeOff className="size-[19px]" />}
       </button>
     </span>
   )
