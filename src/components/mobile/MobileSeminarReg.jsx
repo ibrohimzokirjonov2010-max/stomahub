@@ -7,6 +7,9 @@ import {
 } from 'lucide-react'
 import { seminarView, som } from '../../seminarsData'
 import { publicRecord, quotePromo, useHub } from '../../hubStore'
+import { cardBrand, cvvRequired, validateCard } from '../../cardCheck'
+import { useCountdown } from '../../payBits'
+import LiveQr from '../LiveQr'
 import { useCart } from '../../cart'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -76,7 +79,7 @@ function RegView({ id, seminar }) {
   const [tried, setTried] = useState(false)
   const [method, setMethod] = useState('click')
   const [months, setMonths] = useState(6)
-  const [cardNo, setCardNo] = useState({ num: '', exp: '' })
+  const [cardNo, setCardNo] = useState({ num: '', exp: '', cvv: '' })
   const [payTried, setPayTried] = useState(false)
   const [promo, setPromo] = useState('')
   const [promoErr, setPromoErr] = useState('')
@@ -120,10 +123,10 @@ function RegView({ id, seminar }) {
   }
 
   const cardDigits = cardNo.num.replace(/\D/g, '')
-  const [mm, yy] = cardNo.exp.split('/').map(Number)
-  const now = new Date()
-  const expOk = mm >= 1 && mm <= 12 && yy >= 0 && (2000 + yy > now.getFullYear() || (2000 + yy === now.getFullYear() && mm >= now.getMonth() + 1))
-  const cardErr = method === 'card' && { num: cardDigits.length !== 16 && 'Karta raqami 16 ta raqam', exp: !expOk && 'Muddat noto‘g‘ri' }
+  const cardChecked = method === 'card' ? validateCard(cardNo) : {}
+  const cardErr = { num: cardChecked.num, exp: cardChecked.exp, cvv: cardChecked.cvv }
+  const needCvv = cvvRequired(cardDigits)
+  const brand = cardBrand(cardDigits)
 
   const applyPromo = () => {
     const q = quotePromo(promo, s.id, subtotal)
@@ -135,7 +138,7 @@ function RegView({ id, seminar }) {
 
   const pay = () => {
     setPayTried(true)
-    if (cardErr && (cardErr.num || cardErr.exp)) return
+    if (cardErr.num || cardErr.exp || cardErr.cvv) return
     setPaying(true)
   }
 
@@ -250,13 +253,19 @@ function RegView({ id, seminar }) {
                 ))}
               </div>
               {method === 'card' && (
-                <div className="mt-3 grid grid-cols-[1fr_96px] gap-2.5">
+                <div className="mt-3 space-y-2.5">
                   <Field label="Karta raqami" err={payTried && cardErr.num}>
                     <input inputMode="numeric" autoComplete="cc-number" value={cardDigits.replace(/(\d{4})(?=\d)/g, '$1 ')} onChange={(e) => setCardNo((c) => ({ ...c, num: e.target.value.replace(/\D/g, '').slice(0, 16) }))} placeholder="8600 0000 0000 0000" className={input} />
                   </Field>
-                  <Field label="Muddati" err={payTried && cardErr.exp}>
-                    <input inputMode="numeric" autoComplete="cc-exp" value={cardNo.exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setCardNo((c) => ({ ...c, exp: d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d })) }} placeholder="OO/YY" className={input} />
-                  </Field>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Field label="Muddati" err={payTried && cardErr.exp}>
+                      <input inputMode="numeric" autoComplete="cc-exp" value={cardNo.exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setCardNo((c) => ({ ...c, exp: d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d })) }} placeholder="MM/YY" className={input} />
+                    </Field>
+                    <Field label={needCvv ? 'CVV' : 'CVV (ixtiyoriy)'} err={payTried && cardErr.cvv}>
+                      <input inputMode="numeric" autoComplete="cc-csc" value={cardNo.cvv} onChange={(e) => setCardNo((c) => ({ ...c, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) }))} placeholder={needCvv ? 'CVV' : 'shart emas'} className={input} />
+                    </Field>
+                  </div>
+                  <p className="text-[11px] text-muted">{brand === 'visa' || brand === 'mc' ? 'Visa va Mastercard uchun CVV kerak' : 'Uzcard va Humo uchun CVV shart emas'}</p>
                 </div>
               )}
               {method === 'split' && (
@@ -532,6 +541,34 @@ function UzFlag() {
 }
 
 function Paying({ method, amount, onCancel, onDone }) {
+  const wallet = method === 'click' || method === 'payme' || method === 'uzum'
+  if (wallet) return <WalletPay method={method} amount={amount} onCancel={onCancel} onDone={onDone} />
+  return <AutoPay method={method} amount={amount} onCancel={onCancel} onDone={onDone} />
+}
+
+function WalletPay({ method, amount, onCancel, onDone }) {
+  const { left, text } = useCountdown(300)
+  const brand = METHODS[method]?.[0] || 'To‘lov'
+  return (
+    <div className="fixed inset-0 z-[70] flex flex-col justify-end bg-ink/45">
+      <div role="dialog" aria-modal="true" aria-label="To‘lov" className="rounded-t-3xl bg-white px-5 pb-[calc(18px+env(safe-area-inset-bottom))] pt-5 text-center">
+        <div className="mx-auto w-fit"><PayLogo id={method} size="size-12" /></div>
+        <p className="mt-2 text-[13px] text-ink-2">{brand} orqali to‘lov</p>
+        <p className="text-[24px] font-extrabold text-[#0d2a4a]">{som(amount)}</p>
+        <div className="mx-auto mt-3 grid size-36 place-items-center rounded-xl border border-line">
+          <LiveQr text={`${brand}:${amount}`} className="size-28" />
+        </div>
+        <p className="mt-2 text-[12px] text-ink-2">{brand} ilovasida QR kodni skanerlang.</p>
+        <p className="mt-2 text-[12.5px] text-muted" aria-live="polite">{left ? 'To‘lov kutilmoqda...' : 'Vaqt tugadi'}</p>
+        <p className="font-mono text-[20px] font-bold tabular-nums text-[#0d2a4a]">{text}</p>
+        <button type="button" onClick={onDone} className="mt-3 h-11 w-full rounded-xl bg-[#0b6d73] text-[13.5px] font-semibold text-white">To‘lovni tekshirish <span className="font-medium opacity-80">(demo)</span></button>
+        <button type="button" onClick={onCancel} className="mt-2 h-11 w-full rounded-xl border border-line text-[13.5px] font-semibold text-ink">Bekor qilish</button>
+      </div>
+    </div>
+  )
+}
+
+function AutoPay({ method, amount, onCancel, onDone }) {
   const [phase, setPhase] = useState(0)
   const done = useRef(onDone)
   done.current = onDone
@@ -647,7 +684,7 @@ function Done({ s, m, reg }) {
             <span className="absolute -right-[26px] -top-[11px] size-5 rounded-full bg-[#f6faf9]" />
           </div>
           <div className="flex flex-col items-center px-3.5 pb-3.5 pt-3">
-            <Qr seed={`${order}-${s.id}-${reg.phone}`} className="size-[108px]" />
+            <LiveQr text={reg.checkin || `STH:${order}`} className="size-[108px]" />
             <span className="mt-1.5 rounded-md bg-[#e3f4f1] px-2 py-0.5 text-[11.5px] font-bold text-[#0b6d73]">#{order}</span>
             <p className="mt-1 text-[11px] text-ink-2">Ro‘yxatdan o‘tishda QR kodni ko‘rsating</p>
           </div>

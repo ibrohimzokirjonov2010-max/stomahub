@@ -7,10 +7,10 @@ import {
 } from 'lucide-react'
 import { PAY_LABEL } from '../data'
 import { useOrg } from '../Shell'
-import { addParticipant, checkIn, downloadText, removeParticipant, useHub } from '../../hubStore'
+import { addParticipant, checkIn, downloadText, newestSeminar, removeParticipant, useHub } from '../../hubStore'
 import { Btn, Field, Modal, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
-import { FACE, MOBILE_PEOPLE, MOBILE_SEMINAR } from './participantsData'
+import { FACE } from './participantsData'
 import './participants.css'
 
 const TEAL = 'var(--color-org-teal)'
@@ -178,7 +178,7 @@ function DesktopParticipants() {
   const { query, notify } = useOrg()
   const hub = useHub()
   const SEMINARS = hub.seminars
-  const [seminar, setSeminar] = useState('endo')
+  const [seminar, setSeminar] = useState('all')
   const [semOpen, setSemOpen] = useState(false)
   const semRef = useRef(null)
   useDismiss(semRef, () => setSemOpen(false))
@@ -186,7 +186,7 @@ function DesktopParticipants() {
   const [ticket, setTicket] = useState('all')
   const [pay, setPay] = useState('all')
   const [city, setCity] = useState('all')
-  const rows = useMemo(() => hub.participants.filter((p) => p.seminarId === seminar), [hub.participants, seminar])
+  const rows = useMemo(() => (seminar === 'all' ? hub.participants : hub.participants.filter((p) => p.seminarId === seminar)), [hub.participants, seminar])
   const [selected, setSelected] = useState(null)
   const [panel, setPanel] = useState(true)
   const [tab, setTab] = useState('info')
@@ -199,7 +199,11 @@ function DesktopParticipants() {
   const perRef = useRef(null)
   useDismiss(perRef, () => setPerOpen(false))
 
-  const current = SEMINARS.find((s) => s.id === seminar) || SEMINARS[1]
+  const allMode = seminar === 'all'
+  const current = allMode ? null : (SEMINARS.find((s) => s.id === seminar) || SEMINARS[0])
+  const headSeats = allMode ? SEMINARS.reduce((n, s) => n + (Number(s.seats) || 0), 0) : (current?.seats || rows.length)
+  const headTitle = allMode ? 'Barcha seminarlar' : (current?.title || 'Seminar')
+  const headImage = allMode ? (newestSeminar(SEMINARS)?.image || '/images/seminars/teeth.jpg') : (current?.id === 'endo' ? '/images/bemorlar/bemor-intra.jpg' : current?.image)
   const filtered = useMemo(() => {
     const s = `${query} ${q}`.trim().toLowerCase()
     return rows.filter((p) => {
@@ -219,7 +223,10 @@ function DesktopParticipants() {
   const to = Math.min(safe * per, filtered.length)
   const person = panel ? rows.find((p) => p.id === selected) || null : null
 
-  useEffect(() => { setPage(1) }, [q, query, ticket, pay, city, per])
+  useEffect(() => { setPage(1) }, [q, query, ticket, pay, city, per, seminar])
+  useEffect(() => {
+    if (seminar !== 'all' && !SEMINARS.some((s) => s.id === seminar)) setSeminar('all')
+  }, [seminar, SEMINARS])
 
   const clearFilters = () => {
     setQ('')
@@ -260,7 +267,7 @@ function DesktopParticipants() {
       </div>
 
       <section className="mt-3 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-        <KpiCard icon={Users} label="Jami ishtirokchilar" value={`${rows.length} / ${current.seats || rows.length}`} pct={current.seats ? `${Math.round((rows.length / current.seats) * 100)}%` : ''} pctClass="text-[#16a34a]" bar={current.seats ? Math.round((rows.length / current.seats) * 100) : 0} iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
+        <KpiCard icon={Users} label="Jami ishtirokchilar" value={`${rows.length} / ${headSeats || rows.length}`} pct={headSeats ? `${Math.min(100, Math.round((rows.length / headSeats) * 100))}%` : ''} pctClass="text-[#16a34a]" bar={headSeats ? Math.min(100, Math.round((rows.length / headSeats) * 100)) : 0} iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
         <KpiCard icon={Wallet} label="To‘lov qilingan" value={String(rows.filter((p) => p.pay === 'paid').length)} pct="" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[var(--color-org-teal)]" />
         <KpiCard icon={Clock} label="Kutilmoqda" value={String(rows.filter((p) => p.pay === 'wait').length)} pct="" pctClass="text-[#e09a12]" iconBg="bg-[#fff6e8] text-[#e09a12]" />
         <KpiCard icon={XCircle} label="Keldi" value={String(rows.filter((p) => p.arrived).length)} pct="" pctClass="text-[#16a34a]" iconBg="bg-[#e7f7f4] text-[#16a34a]" />
@@ -269,21 +276,32 @@ function DesktopParticipants() {
       <div className="mt-2.5 flex items-center gap-2 rounded-2xl border border-[#e6f1ef] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
         <div ref={semRef} className="relative min-w-0 flex-1">
           <button type="button" onClick={() => setSemOpen((v) => !v)} className="flex w-full min-w-0 items-center gap-2.5 text-left">
-            <img src={current.id === 'endo' ? '/images/bemorlar/bemor-intra.jpg' : current.image} alt="" className="h-9 w-[84px] shrink-0 rounded-lg object-cover object-center" />
+            <img src={headImage} alt="" className="h-9 w-[84px] shrink-0 rounded-lg object-cover object-center" />
             <span className="min-w-0">
               <span className="flex items-center gap-1">
-                <span className="truncate text-[13.5px] font-bold leading-tight">{current.title}</span>
+                <span className="truncate text-[13.5px] font-bold leading-tight">{headTitle}</span>
                 <ChevronDown className="size-4 shrink-0 text-[#8aa4a8]" />
               </span>
               <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-[#6e868c]">
-                <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {current.date}</span>
-                <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {current.city}</span>
-                <span>{current.sold} / {current.seats}</span>
+                {allMode ? (
+                  <span>{SEMINARS.length} ta seminar · {rows.length} ishtirokchi</span>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 text-[var(--color-org-teal)]" /> {current?.date}</span>
+                    <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 text-[var(--color-org-teal)]" /> {current?.city}</span>
+                    <span>{current?.sold} / {current?.seats}</span>
+                  </>
+                )}
               </span>
             </span>
           </button>
           {semOpen && (
             <ul className="absolute left-0 top-full z-30 mt-2 max-h-72 w-[min(420px,80vw)] overflow-auto rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
+              <li>
+                <button type="button" className={`block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[#f4fbfa] ${allMode ? 'font-semibold text-[var(--color-org-teal)]' : ''}`} onClick={() => { setSeminar('all'); setSemOpen(false) }}>
+                  Barcha seminarlar
+                </button>
+              </li>
               {SEMINARS.map((s) => (
                 <li key={s.id}>
                   <button
@@ -495,7 +513,7 @@ function DesktopParticipants() {
       </div>
 
       <AddModal open={add} onClose={() => setAdd(false)} onSave={(row) => {
-        const person = addParticipant({ ...row, seminarId: seminar })
+        const person = addParticipant({ ...row, seminarId: allMode ? (newestSeminar(SEMINARS)?.id || '') : seminar })
         setSelected(person.id)
         setPanel(true)
         setPagerFree(true)
@@ -602,26 +620,51 @@ function MailForm({ onClose, onSend, to }) {
 
 const M_PAY = { paid: 'To‘langan', wait: 'Kutilmoqda', cancel: 'Bekor qilingan' }
 
+const TINTS = [
+  ['#e5f6f3', '#0d8a84'],
+  ['#f1e9ff', '#7c3aed'],
+  ['#e7f0ff', '#2563eb'],
+  ['#fff3e0', '#e08a00'],
+  ['#eef1f4', '#64748b'],
+  ['#e7f8ef', '#16a34a'],
+]
+
 function MobileParticipants() {
   const { notify } = useOrg()
   const hub = useHub()
   const [tab, setTab] = useState('people')
   const [chip, setChip] = useState('all')
   const [sheet, setSheet] = useState(null)
+  const [seminar, setSeminar] = useState('all')
+  const head = seminar === 'all' ? newestSeminar(hub.seminars) : (hub.seminars.find((s) => s.id === seminar) || newestSeminar(hub.seminars))
+  const seats = seminar === 'all' ? hub.seminars.reduce((n, s) => n + (Number(s.seats) || 0), 0) : (head?.seats || 0)
+
+  const people = useMemo(() => {
+    const rows = seminar === 'all' ? hub.participants : hub.participants.filter((p) => p.seminarId === seminar)
+    return rows.map((p, i) => ({
+      id: p.id,
+      initials: String(p.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?',
+      name: p.name,
+      phone: p.phone,
+      ticket: p.ticket,
+      pay: p.pay === 'wait' || p.pay === 'cancel' ? p.pay : 'paid',
+      tint: TINTS[i % TINTS.length],
+    }))
+  }, [hub.participants, seminar])
 
   const counts = useMemo(() => ({
-    all: MOBILE_PEOPLE.length,
-    paid: MOBILE_PEOPLE.filter((p) => p.pay === 'paid').length,
-    wait: MOBILE_PEOPLE.filter((p) => p.pay === 'wait').length,
-    cancel: MOBILE_PEOPLE.filter((p) => p.pay === 'cancel').length,
-  }), [])
+    all: people.length,
+    paid: people.filter((p) => p.pay === 'paid').length,
+    wait: people.filter((p) => p.pay === 'wait').length,
+    cancel: people.filter((p) => p.pay === 'cancel').length,
+  }), [people])
 
-  const list = useMemo(() => MOBILE_PEOPLE.filter((p) => {
+  const list = useMemo(() => people.filter((p) => {
     if (chip === 'paid' && p.pay !== 'paid') return false
     if (chip === 'wait' && p.pay !== 'wait') return false
     if (chip === 'cancel' && p.pay !== 'cancel') return false
     return true
-  }), [chip])
+  }), [people, chip])
 
   const chips = [
     ['all', 'Hammasi', counts.all],
@@ -633,12 +676,15 @@ function MobileParticipants() {
   return (
     <div className="bg-white text-[#143044]">
       <div className="flex gap-2.5 pb-2">
-        <img src={MOBILE_SEMINAR.image} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
+        <img src={head?.image || '/images/seminars/teeth.jpg'} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
         <div className="min-w-0">
-          <span className="inline-flex rounded-full bg-[#e7f6f3] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--color-org-teal)]">{MOBILE_SEMINAR.topic}</span>
-          <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{MOBILE_SEMINAR.title}</p>
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {MOBILE_SEMINAR.when}</p>
-          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {MOBILE_SEMINAR.place}</p>
+          <select value={seminar} onChange={(e) => setSeminar(e.target.value)} className="max-w-full bg-transparent text-[10.5px] font-semibold text-[var(--color-org-teal)]" aria-label="Seminar">
+            <option value="all">Barcha seminarlar</option>
+            {hub.seminars.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+          </select>
+          <p className="mt-0.5 text-[14.5px] font-bold leading-tight">{seminar === 'all' ? 'Barcha seminarlar' : head?.title}</p>
+          <p className="mt-1 flex items-center gap-1 text-[11px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {seminar === 'all' ? `${hub.seminars.length} ta seminar` : `${head?.date || ''}${head?.startTime ? `, ${head.startTime}` : ''}`}</p>
+          <p className="flex items-center gap-1 text-[11px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0 text-[var(--color-org-teal)]" /> {seminar === 'all' ? 'Barcha shaharlar' : (head?.place || head?.city)}</p>
         </div>
       </div>
 
@@ -665,7 +711,7 @@ function MobileParticipants() {
             <div className="flex items-center justify-between px-3 pb-1.5 pt-2">
               <h2 className="text-[15px] font-bold">Ishtirokchilar ro‘yxati</h2>
               <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--color-org-teal)]">
-                <Users className="size-4" /> {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}
+                <Users className="size-4" /> {people.length} / {seats || people.length}
               </span>
             </div>
             <div className="flex items-center justify-end px-3">
@@ -722,10 +768,10 @@ function MobileParticipants() {
         )}
         {tab === 'umumiy' && (
           <div className="space-y-2 px-3 py-3 text-[13px]">
-            <p className="font-bold">{MOBILE_SEMINAR.title}</p>
-            <p className="text-[#5e787e]">{MOBILE_SEMINAR.when}</p>
-            <p className="text-[#5e787e]">{MOBILE_SEMINAR.place}</p>
-            <p className="rounded-xl bg-[#f4fbfa] p-3 text-[12.5px] text-[#3e5a62]">Ro‘yxatdan o‘tganlar: {MOBILE_SEMINAR.going} / {MOBILE_SEMINAR.seats}. To‘langan: {counts.paid}. Kutilmoqda: {counts.wait}.</p>
+            <p className="font-bold">{seminar === 'all' ? 'Barcha seminarlar' : head?.title}</p>
+            <p className="text-[#5e787e]">{seminar === 'all' ? `${hub.seminars.length} ta seminar` : head?.date}</p>
+            <p className="text-[#5e787e]">{seminar === 'all' ? 'Barcha shaharlar' : (head?.place || head?.city)}</p>
+            <p className="rounded-xl bg-[#f4fbfa] p-3 text-[12.5px] text-[#3e5a62]">Ro‘yxatdan o‘tganlar: {people.length} / {seats || people.length}. To‘langan: {counts.paid}. Kutilmoqda: {counts.wait}.</p>
           </div>
         )}
         {tab === 'tickets' && (

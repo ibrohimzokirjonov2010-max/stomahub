@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { FACES, num, som } from '../data'
 import { useOrg } from '../Shell'
-import { downloadText, refundPayment, useHub } from '../../hubStore'
+import { downloadText, moneyOf, newestSeminar, refundPayment, useHub } from '../../hubStore'
 import { Modal } from '../ui'
 
 const TEAL = 'var(--color-org-teal)'
@@ -501,7 +501,8 @@ function Row({ icon: Icon, label, children }) {
 
 function MobilePay({ notify }) {
   const hub = useHub()
-  const sem = hub.seminars.find((s) => s.status !== 'qoralama') || hub.seminars[0]
+  const totals = moneyOf(hub)
+  const sem = newestSeminar(hub.seminars.filter((s) => s.status !== 'qoralama')) || newestSeminar(hub.seminars)
   const [tab, setTab] = useState('all')
   const [filter, setFilter] = useState(false)
   const [open, setOpen] = useState(null)
@@ -554,9 +555,9 @@ function MobilePay({ notify }) {
 
           <div className="mt-2 grid grid-cols-3 rounded-2xl bg-white px-1 py-1.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             {[
-              [Banknote, 'Jami tushum', '17 500 000'],
-              [CreditCard, 'Komissiya (12%)', '2 100 000'],
-              [Wallet, 'Sizga', '15 400 000'],
+              [Banknote, 'Jami tushum', Math.round(totals.gross).toLocaleString('ru-RU')],
+              [CreditCard, 'Komissiya (12%)', Math.round(totals.fee).toLocaleString('ru-RU')],
+              [Wallet, 'Sizga', Math.round(totals.net).toLocaleString('ru-RU')],
             ].map(([Icon, label, value]) => (
               <div key={label} className="px-1 text-center">
                 <span className="mx-auto grid size-7 place-items-center rounded-full bg-[#e7f6f4]" style={{ color: TEAL }}><Icon className="size-3.5" /></span>

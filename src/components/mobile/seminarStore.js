@@ -51,7 +51,15 @@ export function register(id, info) {
       title: info.title,
     })
     if (!res.ok) return res
-    next = { ...info, price: res.paid, synced: true, order: res.payment?.id || info.order }
+    const code = res.person?.code || ''
+    next = {
+      ...info,
+      price: res.paid,
+      synced: true,
+      order: res.payment?.id || info.order,
+      code,
+      checkin: code ? `STH:${code}|${res.payment?.id || ''}` : '',
+    }
   }
   write({ ...state, registered: { ...state.registered, [id]: next } })
   return { ok: true, info: next }

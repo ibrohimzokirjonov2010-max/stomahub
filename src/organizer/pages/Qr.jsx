@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import jsQR from 'jsqr'
 import {
   BarChart3, Calendar, Camera, Check, ChevronDown, ChevronRight, Clock, CreditCard,
-  MapPin, Phone, QrCode, Settings, UserRound, X, Zap,
+  MapPin, Phone, QrCode, Settings, UserRound, X,
 } from 'lucide-react'
 import { useOrg } from '../Shell'
-import { checkInQuery, setQrSound, useHub } from '../../hubStore'
-import { QrMark } from '../ui'
-
+import { checkInPayload, setQrSound, useHub } from '../../hubStore'
 const TABS = [
   { id: 'scan', label: 'QR skaner', icon: QrCode },
   { id: 'manual', label: 'Manuel check-in', icon: UserRound },
@@ -33,12 +32,11 @@ export default function Qr() {
   const [tab, setTab] = useState('scan')
   const [seminar, setSeminar] = useState(hub.seminars[0]?.id || 'implant-nov')
   const [open, setOpen] = useState(false)
-  const [scanning, setScanning] = useState(false)
   const [code, setCode] = useState('')
   const [sound, setSound] = useState(hub.qrSound !== false)
   const [manualOpen, setManualOpen] = useState(false)
-  const [mobileScan, setMobileScan] = useState(false)
   const [last, setLast] = useState(null)
+  const seen = useRef('')
   const pop = useRef(null)
   const sem = SEMINARS.find((s) => s.id === seminar) || SEMINARS[0]
   const list = hub.participants.filter((p) => p.seminarId === sem?.id).map((p, i) => ({
@@ -53,35 +51,22 @@ export default function Qr() {
     return () => document.removeEventListener('mousedown', fn)
   }, [])
 
-  const scan = () => {
-    if (scanning) return
-    setScanning(true)
-    window.setTimeout(() => {
-      setScanning(false)
-      const hit = checkInQuery(sem?.id, '')
-      if (hit) { setLast(hit); notify(sound ? `${hit.name} — Keldi` : `${hit.name} qayd etildi`) }
-      else notify('Yangi kod topilmadi')
-    }, 700)
+  const applyCode = (text) => {
+    const raw = String(text || '').trim()
+    if (!raw || raw === seen.current) return
+    seen.current = raw
+    window.setTimeout(() => { if (seen.current === raw) seen.current = '' }, 1800)
+    const res = checkInPayload(sem?.id, raw)
+    if (!res.ok) { notify(res.error); return }
+    setLast(res.person)
+    notify(res.already ? `${res.person.name} allaqachon kirgan` : (sound ? `${res.person.name} — Keldi` : `${res.person.name} qayd etildi`))
   }
 
   const manual = () => {
     const name = code.trim()
-    if (name.length < 3) { notify('Ism yoki kod kiriting'); return }
-    const hit = checkInQuery(sem?.id, name)
     setCode('')
     setManualOpen(false)
-    if (hit) setLast(hit)
-    notify(hit ? `${hit.name} — Keldi` : 'Ishtirokchi topilmadi')
-  }
-
-  const rescan = () => {
-    setMobileScan(true)
-    window.setTimeout(() => {
-      setMobileScan(false)
-      const hit = checkInQuery(sem?.id, '')
-      if (hit) setLast(hit)
-      notify(hit ? `${hit.name} — Keldi` : 'Yangi kod topilmadi')
-    }, 700)
+    applyCode(name)
   }
 
   return (
@@ -155,12 +140,8 @@ export default function Qr() {
 
           <div className="min-w-0">
             {tab === 'scan' && (
-              <div className="relative h-[434px] overflow-hidden rounded-[20px] bg-[#1a2428]">
-                <img src="/images/qr-scanner-desk.png" alt="" className="size-full object-cover object-center" />
-                {scanning && <div className="pointer-events-none absolute inset-x-[18%] top-[46%] h-0.5 animate-pulse bg-[#5dcec4] shadow-[0_0_16px_#5dcec4]" />}
-                <button type="button" onClick={scan} className="absolute bottom-[18px] left-1/2 h-11 w-[196px] -translate-x-1/2 rounded-xl text-[13px] font-semibold text-transparent">
-                  {scanning ? 'Tekshirilmoqda' : 'QR kodni skanerlang'}
-                </button>
+              <div className="relative h-[434px] overflow-hidden rounded-[20px]">
+                <CameraScan onCode={applyCode} onManual={() => setTab('manual')} manualLabel="Manuel check-in" />
               </div>
             )}
             {tab === 'manual' && (
@@ -234,30 +215,8 @@ export default function Qr() {
           </div>
         </section>
 
-        <div className="relative mt-2 h-[420px] overflow-hidden rounded-[26px] bg-[#0e242c]">
-          <img src="/images/ishlar/ish-reception.jpg" alt="" className="absolute inset-0 size-full object-cover" />
-          <div className="absolute inset-0 bg-[#062028]/45" />
-          <img src="/images/qr-hand.png" alt="" className="absolute inset-0 size-full object-cover object-[center_42%]" style={{ maskImage: 'radial-gradient(ellipse 78% 72% at 50% 48%, #000 42%, transparent 74%)', WebkitMaskImage: 'radial-gradient(ellipse 78% 72% at 50% 48%, #000 42%, transparent 74%)' }} />
-          <button type="button" aria-label="Chaqmoq" className="absolute left-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-black/40 text-white">
-            <Zap className="size-4" />
-          </button>
-          <button type="button" aria-label="Kamera" className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-black/40 text-white">
-            <Camera className="size-4" />
-          </button>
-          <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/50 px-3 py-1.5 text-[12px] font-medium text-white">
-            QR kodni skaner qiling
-          </div>
-          <CornerFrame />
-          <div className="absolute left-1/2 top-[54px] z-[2] w-[150px] -translate-x-1/2 rounded-[20px] border-[5px] border-[#141414] bg-white px-2 pb-2 pt-1.5 text-center shadow-2xl">
-            <p className="text-[10px] font-extrabold text-[var(--color-org-teal)]">StomaHub</p>
-            <p className="text-[8px] leading-tight text-[#5c7278]">{sem?.title || 'Seminar'}</p>
-            <div className="mx-auto my-1 w-fit"><QrMark size={78} seed={9} /></div>
-            <p className="text-[11px] font-bold leading-tight text-[#163044]">{last?.name || 'Ishtirokchi'}</p>
-            <span className="mt-0.5 inline-flex rounded-full bg-[#e8eef2] px-2 py-px text-[9px] font-semibold text-[#5e787e]">{last?.ticket || 'Standart'}</span>
-            <p className="mt-1 text-[8px] leading-tight text-[#8aa0a4]">21 oktabr 2026</p>
-            <p className="text-[8px] leading-tight text-[#8aa0a4]">Toshkent City Kongress Markazi</p>
-          </div>
-          {mobileScan && <div className="pointer-events-none absolute inset-x-[18%] top-1/2 z-[3] h-0.5 bg-[#5eecc8] shadow-[0_0_12px_#5eecc8]" />}
+        <div className="relative mt-2 h-[420px] overflow-hidden rounded-[26px]">
+          <CameraScan onCode={applyCode} onManual={() => setManualOpen(true)} manualLabel="Qo‘lda belgilash" />
         </div>
 
         <div className="relative z-10 -mt-4 shrink-0 rounded-t-[26px] bg-white px-3.5 pb-2 pt-3 shadow-[0_-8px_24px_rgb(12_40_50/0.06)]">
@@ -302,7 +261,7 @@ export default function Qr() {
                 <button type="button" onClick={() => setManualOpen(true)} className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[#d5ebe6] bg-white text-[13px] font-semibold text-[#143044]">
                   <UserRound className="size-4 text-[var(--color-org-teal)]" /> Qo‘lda belgilash
                 </button>
-                <button type="button" onClick={rescan} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white">
+                <button type="button" onClick={() => setManualOpen(false)} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white">
                   <QrCode className="size-4" /> Yana skaner qilish
                 </button>
               </div>
@@ -312,6 +271,89 @@ export default function Qr() {
 
       </div>
     </>
+  )
+}
+
+function CameraScan({ onCode, onManual, manualLabel }) {
+  const videoRef = useRef(null)
+  const onCodeRef = useRef(onCode)
+  onCodeRef.current = onCode
+  const [phase, setPhase] = useState('loading')
+
+  useEffect(() => {
+    let stream
+    let raf = 0
+    let dead = false
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    let busy = false
+    const stopTracks = () => stream?.getTracks().forEach((t) => t.stop())
+    const giveUp = window.setTimeout(() => { if (!dead && !stream) setPhase('off') }, 4000)
+    const begin = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) { setPhase('off'); return }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+      } catch {
+        if (!dead) setPhase('off')
+        return
+      }
+      if (dead) { stopTracks(); return }
+      const video = videoRef.current
+      if (!video) { stopTracks(); setPhase('off'); return }
+      video.srcObject = stream
+      try { await video.play() } catch { /* autoplay bloklansa ham kadr turadi */ }
+      if (!dead) setPhase('live')
+      const tick = () => {
+        if (dead) return
+        if (video.readyState >= 2 && !busy && video.videoWidth) {
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+          ctx.drawImage(video, 0, 0)
+          const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          const hit = jsQR(image.data, image.width, image.height, { inversionAttempts: 'dontInvert' })
+          if (hit?.data) {
+            busy = true
+            onCodeRef.current(hit.data)
+            window.setTimeout(() => { busy = false }, 1600)
+          }
+        }
+        raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    begin()
+    return () => {
+      dead = true
+      window.clearTimeout(giveUp)
+      cancelAnimationFrame(raf)
+      stopTracks()
+    }
+  }, [])
+
+  return (
+    <div className="relative h-full bg-[#12343c]">
+      <video ref={videoRef} className={`size-full object-cover ${phase === 'live' ? '' : 'hidden'}`} playsInline muted autoPlay />
+      {phase === 'live' && (
+        <>
+          <CornerFrame />
+          <p className="absolute inset-x-4 top-3 text-center text-[12.5px] font-medium text-white">QR kodni ramka ichiga oling</p>
+        </>
+      )}
+      {phase !== 'live' && (
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-white">
+          <Camera className="size-8 text-[#7dfff0]" />
+          <p className="text-[16px] font-bold">{phase === 'loading' ? 'Kamera so‘ralmoqda' : 'Kamera mavjud emas'}</p>
+          <p className="max-w-[300px] text-[13px] leading-snug text-white/85">
+            {phase === 'loading'
+              ? 'Brauzer kameraga ruxsat so‘ramoqda.'
+              : 'Kamerani ochib bo‘lmadi. Ishtirokchini qo‘lda belgilash orqali check-in qiling — ism, telefon yoki chipta kodi.'}
+          </p>
+          {phase === 'off' && (
+            <button type="button" onClick={onManual} className="mt-1 h-10 rounded-xl bg-white px-4 text-[13px] font-semibold text-[#143044]">{manualLabel}</button>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Calendar, Check, ChevronDown, Crown, Download, Gem, GraduationCap, House, Link2, MapPin,
   Pencil, Plus, QrCode, ShoppingCart, Tag, Ticket, Users, Wallet,
 } from 'lucide-react'
 import { MONTHS, som } from '../data'
-import { downloadText, saveTickets, upsertPromo, useHub } from '../../hubStore'
+import { downloadText, newestSeminar, saveTickets, upsertPromo, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Btn, Field, MenuBtn, Modal, QrMark, Toggle, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
@@ -76,8 +76,11 @@ export default function Tickets() {
 function useSeminarPick() {
   const hub = useHub()
   const list = hub.seminars
-  const [sid, setSid] = useState(() => list.find((s) => s.id === 'implant-nov')?.id || list[0]?.id || '')
-  const sem = list.find((s) => s.id === sid) || list[0]
+  const [sid, setSid] = useState(() => newestSeminar(list)?.id || '')
+  useEffect(() => {
+    if (!list.some((s) => s.id === sid)) setSid(newestSeminar(list)?.id || '')
+  }, [list, sid])
+  const sem = list.find((s) => s.id === sid) || newestSeminar(list)
   return { list, sid, setSid, sem }
 }
 

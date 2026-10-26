@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { som } from '../data'
 import { useOrg } from '../Shell'
-import { useHub } from '../../hubStore'
+import { moneyOf, useHub } from '../../hubStore'
 
 const BRAND = 'var(--color-org-teal)'
 const INK = '#10182a'
@@ -64,6 +64,7 @@ export default function Seminars() {
 function Desktop() {
   const { query, city: headerCity, cityOn } = useOrg()
   const hub = useHub()
+  const totals = moneyOf(hub)
   const SEMINARS = hub.seminars
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
@@ -109,9 +110,9 @@ function Desktop() {
       </div>
 
       <section className="mt-4 grid grid-cols-4 gap-3">
-        <Kpi icon={CalendarDays} label="Jami seminarlar" value={String(SEMINARS.length)} hint={<span style={{ color: GREEN }} className="font-medium">{SEMINARS.filter((s) => s.status === 'rejalashtirilgan').length} ta yaqinlashmoqda</span>} />
+        <Kpi icon={CalendarDays} label="Jami seminarlar" value={String(totals.seminars)} hint={<span style={{ color: GREEN }} className="font-medium">{SEMINARS.filter((s) => s.status === 'rejalashtirilgan').length} ta yaqinlashmoqda</span>} />
         <Kpi icon={Users} label="Jami ishtirokchilar" value={String(hub.participants.length)} hint={<span>ro‘yxatdagilar</span>} />
-        <Kpi icon={Wallet} label="Umumiy tushum" value={som(hub.payments.filter((p) => p.state === 'ok').reduce((n, p) => n + p.sum, 0))} hint={<span>muvaffaqiyatli to‘lovlar</span>} />
+        <Kpi icon={Wallet} label="Umumiy tushum" value={som(totals.gross)} hint={<span>muvaffaqiyatli to‘lovlar</span>} />
         <Kpi icon={Award} label="Berilgan sertifikatlar" value={String(hub.certs.filter((c) => c.state === 'done').length)} hint={<span className="font-semibold" style={{ color: GREEN }}>berilgan</span>} />
       </section>
 

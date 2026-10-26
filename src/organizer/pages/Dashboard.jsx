@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { MONTHS, SEAT, som } from '../data'
 import { useOrg } from '../Shell'
-import { useHub } from '../../hubStore'
+import { moneyOf, useHub, walletOf } from '../../hubStore'
 import { Badge, Btn, MiniSelect, Modal, cx } from '../ui'
 
 /** Bar heights traced from the 1280 design (0–200 scale). */
@@ -19,14 +19,6 @@ const TICKETS = [
   { label: 'VIP', pct: 24, n: 298, color: '#5ed0c6' },
   { label: 'Student', pct: 12, n: 149, color: '#b7ebe4' },
   { label: 'Bepul', pct: 8, n: 99, color: '#e5f7f4' },
-]
-
-const CHECKINS = [
-  { name: 'Aliyeva Mohira', phone: '+998 90 123 45 67', ticket: 'Standart', time: 'Bugun, 09:12', ok: true, avatar: '/images/seller-2.jpg' },
-  { name: 'Karimov Bekzod', phone: '+998 91 234 56 78', ticket: 'VIP', time: 'Bugun, 08:56', ok: true, avatar: '/images/seller-3.jpg' },
-  { name: 'Toirov Dilshod', phone: '+998 93 345 67 89', ticket: 'Standart', time: 'Bugun, 08:42', ok: false, avatar: '/images/forma/woman-navy.jpg' },
-  { name: 'Saydova Malika', phone: '+998 90 456 78 90', ticket: 'Standart', time: 'Bugun, 08:21', ok: true, avatar: '/images/forma/man-teal.jpg' },
-  { name: 'Usmonov Javohir', phone: '+998 91 567 89 01', ticket: 'VIP', time: 'Bugun, 08:10', ok: true, avatar: '/images/seller-1.jpg' },
 ]
 
 const ICONS = { user: Users, pay: Wallet, cal: Calendar, award: Award, qr: QrCode }
@@ -303,7 +295,8 @@ function Desktop() {
     if (!s) return rows
     return rows.filter((x) => `${x.title} ${x.city}`.toLowerCase().includes(s))
   }, [query, hub.seminars])
-  const revenue = hub.payments.filter((p) => p.state === 'ok').reduce((n, p) => n + p.sum, 0)
+  const totals = moneyOf(hub)
+  const revenue = totals.gross
   const feed = hub.activity?.length ? hub.activity : []
 
   const bars = metric === 'Ishtirokchilar soni' ? BARS : BARS.map((n) => Math.max(8, Math.round(n * 0.55)))
@@ -338,7 +331,7 @@ function Desktop() {
       </div>
 
       <section className="grid grid-cols-2 gap-3 min-[1180px]:grid-cols-4">
-        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(hub.seminars.length)} delta={`+${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length}`} hint="rejalashtirilgan" />
+        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(totals.seminars)} delta={`+${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length}`} hint="rejalashtirilgan" />
         <DashKpi icon={Users} label="Jami ishtirokchilar" value={String(hub.participants.length)} delta="" hint="ro‘yxatdagilar" />
         <DashKpi icon={Wallet} label="Umumiy tushum" value={som(revenue)} delta="" hint="muvaffaqiyatli to‘lovlar" />
         <DashKpi icon={Award} label="Berilgan sertifikatlar" value={String(hub.certs.filter((c) => c.state === 'done').length)} delta="" hint="berilgan" />
@@ -443,9 +436,15 @@ function Mobile() {
   const { query } = useOrg()
   const hub = useHub()
   const next = hub.seminars.find((s) => s.status === 'rejalashtirilgan' || s.status === 'jarayonda') || hub.seminars[0]
+  const wallet = walletOf(hub)
+  const arrived = hub.participants.filter((p) => p.arrived).length
+  const pct = next?.seats ? Math.min(100, Math.round(((next.sold || 0) / next.seats) * 100)) : 0
   const [info, setInfo] = useState(false)
   const q = query.trim().toLowerCase()
-  const rows = q ? CHECKINS.filter((r) => `${r.name} ${r.phone} ${r.ticket}`.toLowerCase().includes(q)) : CHECKINS
+  const rows = hub.participants
+    .filter((p) => !q || `${p.name} ${p.phone} ${p.ticket}`.toLowerCase().includes(q))
+    .slice(0, 8)
+    .map((p) => ({ name: p.name, phone: p.phone, ticket: p.ticket, time: String(p.registered || '').split(', ')[1] || p.registered, ok: !!p.arrived, avatar: p.avatar }))
 
   return (
     <div className="-mt-1 pb-1">
@@ -482,9 +481,9 @@ function Mobile() {
           </div>
           <div className="mt-2 flex items-center gap-2">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#e6f3f1]">
-              <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: '84%' }} />
+              <div className="h-full rounded-full bg-[#14b8a6]" style={{ width: `${pct}%` }} />
             </div>
-            <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">84%</span>
+            <span className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">{pct}%</span>
           </div>
         </div>
       </Link>
@@ -495,8 +494,8 @@ function Mobile() {
             <Users className="size-[18px]" strokeWidth={1.8} />
           </span>
           <p className="mt-2 text-[12px] text-[#6e868c]">Bugungi check-in</p>
-          <p className="mt-0.5 text-[18px] font-bold leading-none tracking-tight text-[#143044]">28 kishi</p>
-          <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Jami: 42 ishtirokchi</p>
+          <p className="mt-0.5 text-[18px] font-bold leading-none tracking-tight text-[#143044]">{arrived} kishi</p>
+          <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Jami: {hub.participants.length} ishtirokchi</p>
         </article>
         <article className="relative rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_6px_18px_rgb(20_60_60/0.04)]">
           <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
@@ -513,7 +512,7 @@ function Mobile() {
               Ushlab turilgan summa to‘lov tasdiqlangach hamyonga o‘tadi.
             </p>
           )}
-          <p className="mt-0.5 text-[16px] font-bold leading-tight tracking-tight text-[#143044]">17 500 000 so‘m</p>
+          <p className="mt-0.5 text-[16px] font-bold leading-tight tracking-tight text-[#143044]">{som(wallet.hold)}</p>
           <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Ushlab turilgan summa</p>
         </article>
       </div>
@@ -549,7 +548,7 @@ function Mobile() {
       </div>
       <ul className="mt-2 divide-y divide-[#eef3f2] overflow-hidden rounded-2xl border border-[#e7f2f0] bg-white">
         {rows.map((r) => (
-          <li key={r.phone} className="flex items-center gap-2 px-2.5 py-2">
+          <li key={`${r.name}-${r.phone}`} className="flex items-center gap-2 px-2.5 py-2">
             <img src={r.avatar} alt="" className="size-9 shrink-0 rounded-full object-cover" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13.5px] font-semibold leading-tight text-[#143044]">{r.name}</p>
