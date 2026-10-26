@@ -9,7 +9,7 @@ import { ToothIcon } from '../components/icons'
 import { addBemor } from '../bemorData'
 import { useOmbor, patchOmbor } from '../omborData'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from '../recordSync'
-import { useClinicPayments } from '../tolovData'
+import { useCrmStats } from '../crmStats'
 import {
   TODAY, CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, STAFF, REVENUE, MONTHS_CAP, WD, WD_LONG,
   seedVisits, seedPatients, shiftIso, weekday, label, avatarOf,
@@ -34,7 +34,7 @@ export default function Klinika() {
   const [settings, setSettings] = useState(loadSettings)
   const [visits, setVisits] = useState([])
   const [patients, setPatients] = useState([])
-  const clinicPayments = useClinicPayments()
+  const crm = useCrmStats()
   const [boardReady, setBoardReady] = useState(false)
   const [date, setDate] = useState(TODAY)
   const [view, setView] = useState('day')
@@ -86,9 +86,10 @@ export default function Klinika() {
     toastTimer.current = window.setTimeout(() => setToast(''), 2600)
   }
 
-  const todayCount = visits.filter((x) => x.date === TODAY).length
-  const load = Math.round((todayCount / TOTAL_SLOTS) * 100)
-  const clinicIncome = clinicPayments.filter((row) => row.status !== 'Qaytarilgan').reduce((sum, row) => sum + (Number(row.amount) || 0), 0)
+  // Ko‘rsatkichlar umumiy crmStats funksiyasidan — /uchrashuvlar va /tolovlar bilan bir xil
+  const todayCount = crm.todayAppointments
+  const load = Math.min(100, Math.round((todayCount / TOTAL_SLOTS) * 100))
+  const clinicIncome = crm.revenueTotal
   const demoClinic = isDemoUser()
   const dayVisits = visits.filter((x) => x.date === date)
 
@@ -174,7 +175,7 @@ export default function Klinika() {
           </Stat>
           <Stat icon={CircleDollarSign} title="Tushum" tone="#fff1df" ink="#c2410c">
             <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0"><b className="whitespace-nowrap text-[19px] leading-none">{som(demoClinic ? REVENUE.month.total : clinicIncome)}</b><p className="mt-1 truncate text-[10.5px] text-muted">{demoClinic ? 'namuna hisob' : clinicIncome ? 'saqlangan to‘lovlar' : 'Hali tushum yo‘q'}</p></div>
+              <div className="min-w-0"><b className="whitespace-nowrap text-[19px] leading-none">{som(clinicIncome)}</b><p className="mt-1 truncate text-[10.5px] text-muted">{clinicIncome ? 'jami to‘lovlar' : 'Hali tushum yo‘q'}</p></div>
             </div>
           </Stat>
           <Stat icon={Armchair} title="Kreslo bandligi">
@@ -231,7 +232,7 @@ export default function Klinika() {
 
           <div className="min-w-0 space-y-3">
             <MiniCalendar visits={visits} date={date} onPick={(iso) => { setDate(iso); setView('day') }} />
-            <Revenue demo={demoClinic} total={clinicIncome} />
+            <Revenue demo={false} total={clinicIncome} />
           </div>
         </div>
 

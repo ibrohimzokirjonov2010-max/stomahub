@@ -4,6 +4,7 @@ import { BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, P
 import { profileStore, useProfile } from '../profileStore'
 import { retryHub } from '../hubStore'
 import { supabase } from '../supabaseClient'
+import { flashToast } from '../components/FlashToast'
 import { ensureProfile, intendedRole, setIntendedRole, useSession } from '../sessionStore'
 
 const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Sotuvchi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
@@ -174,7 +175,20 @@ const COPY = {
 }
 
 const digits = (v) => v.replace(/\D/g, '')
-const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+const emailFormatOk = (v) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim())
+// Namuna / test domenlari — ro‘yxatdan o‘tishda qabul qilinmaydi
+const BLOCKED_DOMAINS = ['example.com', 'example.org', 'example.net', 'test.com', 'mailinator.com', 'tempmail.com', '10minutemail.com', 'yopmail.com']
+const BLOCKED_TLDS = ['test', 'example', 'invalid', 'localhost', 'local']
+export function emailProblem(v) {
+  const value = String(v || '').trim().toLowerCase()
+  if (!value) return 'Email manzilini kiriting'
+  if (!emailFormatOk(value)) return 'Email formati noto‘g‘ri (masalan: ism@gmail.com)'
+  const domain = value.split('@')[1]
+  const tld = domain.split('.').pop()
+  if (BLOCKED_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`)) || BLOCKED_TLDS.includes(tld)) return 'Bu domen qabul qilinmaydi — haqiqiy email manzilingizni kiriting'
+  return ''
+}
+const emailOk = (v) => !emailProblem(v)
 
 export function Login() {
   return <Auth mode="login" />
@@ -217,6 +231,7 @@ function Auth({ mode }) {
   const [forgot, setForgot] = useState(false)
   const [err, setErr] = useState('')
   const [info, setInfo] = useState('')
+  const [emailErr, setEmailErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState('')
@@ -359,7 +374,7 @@ function Auth({ mode }) {
 
   const resetPassword = async () => {
     const raw = id.trim()
-    if (!emailOk(raw)) {
+    if (!emailFormatOk(raw)) {
       setForgot(true)
       setInfo(t.forgotNote)
       return
@@ -376,10 +391,10 @@ function Auth({ mode }) {
     e.preventDefault()
     setErr('')
     setInfo('')
-    if (!supabase) return setErr(t.errSupabase)
+    if (mode === 'login' && !supabase) return setErr(t.errSupabase)
     if (mode === 'login') {
       const raw = id.trim()
-      if (emailOk(raw)) {
+      if (emailFormatOk(raw)) {
         if (pass.length < 6) return setErr(t.errPass)
         setBusy(true)
         finishing.current = true
@@ -408,11 +423,13 @@ function Auth({ mode }) {
     const phoneDigits = digits(phone).replace(/^998/, '').slice(-9)
     if (name.trim().length < 3) return setErr(t.errName)
     if (phoneDigits.length !== 9) return setErr(t.errPhone)
-    if (!emailOk(email)) return setErr(t.errEmail)
+    const emailIssue = emailProblem(email)
+    if (emailIssue) { setEmailErr(emailIssue); return setErr(emailIssue) }
     if (!spec) return setErr(t.errSpec)
     if (pass.length < 6) return setErr(t.errPass)
     if (pass !== pass2) return setErr(t.errMatch)
     if (!terms) return setErr(t.errTerms)
+    if (!supabase) return setErr(t.errSupabase)
     setBusy(true)
     finishing.current = true
     const { data, error } = await supabase.auth.signUp({
@@ -429,13 +446,18 @@ function Auth({ mode }) {
       return
     }
     if (!data.session) {
-      finishing.current = false
-      setBusy(false)
-      setInfo(t.confirmEmail)
-      return
+      // Email tasdiqlash o‘chirilgan — darhol kirib ko‘ramiz
+      const signed = await supabase.auth.signInWithPassword({ email: email.trim(), password: pass })
+      if (signed.error || !signed.data.session) {
+        finishing.current = false
+        setBusy(false)
+        setInfo(t.confirmEmail)
+        return
+      }
     }
     try {
       const role = await applyAccount({ forceRole: true })
+      flashToast('Muvaffaqiyatli ro‘yxatdan o‘tdingiz! Kabinetingizga xush kelibsiz.')
       navigate(destination(role), { replace: true })
     } catch (signError) {
       finishing.current = false
@@ -503,7 +525,10 @@ function Auth({ mode }) {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label={t.phone} icon={Phone} value={phone} onChange={setPhone} placeholder={t.phonePh} />
-                <Field label={t.email} icon={Mail} value={email} onChange={setEmail} placeholder={t.emailPh} type="email" />
+                <div>
+                  <Field label={t.email} icon={Mail} value={email} onChange={(v) => { setEmail(v); if (emailErr) setEmailErr(emailProblem(v)) }} onBlur={() => email && setEmailErr(emailProblem(email))} placeholder={t.emailPh} type="email" invalid={!!emailErr} />
+                  {emailErr && <p role="alert" className="mt-1 text-[12px] font-medium text-[#d14343]">{emailErr}</p>}
+                </div>
               </div>
             )}
             {mode === 'register' && (
@@ -552,7 +577,7 @@ function Auth({ mode }) {
                 {info && <p className="text-[13px] font-medium text-[#0b8a84]">{info}</p>}
                 <button type="submit" disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0d8a84] text-[15px] font-semibold text-white hover:bg-[#08756f] disabled:opacity-60">
               {mode === 'login' ? <LogIn className="size-[18px]" /> : <UserPlus className="size-[18px]" />}
-              {mode === 'login' ? (emailOk(id.trim()) || digits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
+              {mode === 'login' ? (emailFormatOk(id.trim()) || digits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
             </button>
           </form>
 
@@ -583,13 +608,13 @@ function Auth({ mode }) {
   )
 }
 
-function Field({ label, icon: Icon, value, onChange, placeholder, type = 'text' }) {
+function Field({ label, icon: Icon, value, onChange, onBlur, placeholder, type = 'text', invalid = false }) {
   return (
     <label className="block">
       <span className="text-[13px] font-semibold text-[#17324d]">{label}</span>
-      <span className="mt-1.5 flex h-12 items-center gap-2 rounded-xl border border-[#e3ecea] px-3 focus-within:border-[#0b8a84]">
+      <span className={`mt-1.5 flex h-12 items-center gap-2 rounded-xl border px-3 focus-within:border-[#0b8a84] ${invalid ? 'border-[#d14343]' : 'border-[#e3ecea]'}`}>
         <Icon className="size-[18px] shrink-0 text-[#8aa0a8]" />
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aafb4]" />
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} aria-invalid={invalid || undefined} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aafb4]" />
       </span>
     </label>
   )

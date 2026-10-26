@@ -1,3 +1,4 @@
+import { tashkentToday } from './tashkentDate'
 import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
 
@@ -92,8 +93,7 @@ export function setVisits(next) {
 }
 
 export function todayIso() {
-  const d = new Date()
-  return isoOf(d.getFullYear(), d.getMonth() + 1, d.getDate())
+  return tashkentToday()
 }
 
 export function pad(n) { return String(n).padStart(2, '0') }

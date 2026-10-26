@@ -1,3 +1,4 @@
+import FlashToast from './components/FlashToast'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
@@ -60,6 +61,7 @@ import Reja from './pages/Reja'
 import IntakeDialog from './components/market/IntakeDialog'
 import ShopLayout from './components/market/ShopLayout'
 import Responsive from './components/mobile/Responsive'
+import CrmGate from './components/CrmGate'
 import MobileChrome from './components/mobile/MobileChrome'
 import MobileMarketplace from './components/mobile/MobileMarketplace'
 import MobileProduct from './components/mobile/MobileProduct'
@@ -116,6 +118,7 @@ export default function App() {
       <BrowserRouter>
         <MobileChrome />
         <IntakeDialog />
+        <FlashToast />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/kirish" element={<Login />} />
@@ -174,15 +177,15 @@ export default function App() {
           <Route path="/brendlar" element={<Responsive mobile={<MobileBrendlar />}><Brendlar /></Responsive>} />
           <Route path="/aksiyalar" element={<Aksiyalar />} />
           <Route path="/aksiyalar/:id" element={<ShopLayout active="aksiya" placeholder="Mahsulot, brend yoki kategoriya qidiring..."><Aksiya /></ShopLayout>} />
-          <Route path="/bemorlar" element={<Responsive mobile={<MobileBemorlar />}><Bemorlar /></Responsive>} />
-          <Route path="/bemorlar/yangi" element={<Responsive mobile={<MobileBemorNew />}><Navigate to="/bemorlar" replace /></Responsive>} />
-          <Route path="/bemorlar/:id" element={<Responsive mobile={<MobileBemor />}><ShopLayout active="bemorlar" placeholder="Bemor qidiring (ism, telefon, ID)..."><Bemor /></ShopLayout></Responsive>} />
-          <Route path="/uchrashuvlar" element={<Responsive mobile={<MobileUchrashuvlar />}><Uchrashuvlar /></Responsive>} />
-          <Route path="/uchrashuvlar/yangi" element={<Responsive mobile={<MobileUchrashuvNew />}><Navigate to="/uchrashuvlar" replace /></Responsive>} />
-          <Route path="/tolovlar" element={<Responsive mobile={<MobileTolovlar />}><Tolovlar /></Responsive>} />
-          <Route path="/tolovlar/yangi" element={<Responsive mobile={<MobileTolovNew />}><Navigate to="/tolovlar" replace /></Responsive>} />
-          <Route path="/ombor" element={<Responsive mobile={<MobileOmbor />}><Ombor /></Responsive>} />
-          <Route path="/ombor/yangi" element={<Responsive mobile={<MobileOmborNew />}><Navigate to="/ombor" replace /></Responsive>} />
+          <Route path="/bemorlar" element={<CrmGate><Responsive mobile={<MobileBemorlar />}><Bemorlar /></Responsive></CrmGate>} />
+          <Route path="/bemorlar/yangi" element={<CrmGate><Responsive mobile={<MobileBemorNew />}><Navigate to="/bemorlar" replace /></Responsive></CrmGate>} />
+          <Route path="/bemorlar/:id" element={<CrmGate><Responsive mobile={<MobileBemor />}><ShopLayout active="bemorlar" placeholder="Bemor qidiring (ism, telefon, ID)..."><Bemor /></ShopLayout></Responsive></CrmGate>} />
+          <Route path="/uchrashuvlar" element={<CrmGate><Responsive mobile={<MobileUchrashuvlar />}><Uchrashuvlar /></Responsive></CrmGate>} />
+          <Route path="/uchrashuvlar/yangi" element={<CrmGate><Responsive mobile={<MobileUchrashuvNew />}><Navigate to="/uchrashuvlar" replace /></Responsive></CrmGate>} />
+          <Route path="/tolovlar" element={<CrmGate><Responsive mobile={<MobileTolovlar />}><Tolovlar /></Responsive></CrmGate>} />
+          <Route path="/tolovlar/yangi" element={<CrmGate><Responsive mobile={<MobileTolovNew />}><Navigate to="/tolovlar" replace /></Responsive></CrmGate>} />
+          <Route path="/ombor" element={<CrmGate><Responsive mobile={<MobileOmbor />}><Ombor /></Responsive></CrmGate>} />
+          <Route path="/ombor/yangi" element={<CrmGate><Responsive mobile={<MobileOmborNew />}><Navigate to="/ombor" replace /></Responsive></CrmGate>} />
           <Route path="/buyurtma" element={<Responsive mobile={<MobileCart />}><Checkout /></Responsive>} />
           <Route path="/buyurtma/rasmiylashtirish" element={<Responsive mobile={<MobileCheckout />}><Navigate to="/buyurtma" replace /></Responsive>} />
           <Route path="/mutaxassislar" element={<Responsive mobile={<MobileMutaxassislar />}><Navigate to="/" replace /></Responsive>} />
@@ -192,7 +195,7 @@ export default function App() {
           <Route path="/community" element={<Responsive mobile={<MobileCommunity />}><Community /></Responsive>} />
           <Route path="/community/:id" element={<Responsive mobile={<MobilePost />}><Navigate to="/community" replace /></Responsive>} />
           <Route path="/sertifikatlar" element={<Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive>} />
-          <Route path="/klinika" element={<Klinika />} />
+          <Route path="/klinika" element={<CrmGate><Klinika /></CrmGate>} />
           <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil /></Responsive>} />
@@ -202,9 +205,9 @@ export default function App() {
           <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Profil /></Responsive>} />
           <Route path="/profil/seminarlar" element={<Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive>} />
           <Route path="/buyurtma/kuzatish/:id" element={<Responsive mobile={<MobileKuzatish />}><Navigate to="/klinika" replace /></Responsive>} />
-          <Route path="/xizmatlar" element={<Xizmatlar />} />
-          <Route path="/davolash-rejalari" element={<Rejalar />} />
-          <Route path="/davolash-rejalari/:id" element={<Reja />} />
+          <Route path="/xizmatlar" element={<CrmGate><Xizmatlar /></CrmGate>} />
+          <Route path="/davolash-rejalari" element={<CrmGate><Rejalar /></CrmGate>} />
+          <Route path="/davolash-rejalari/:id" element={<CrmGate><Reja /></CrmGate>} />
           <Route
             path="/ortiqcha/:id"
             element={
