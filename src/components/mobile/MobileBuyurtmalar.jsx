@@ -63,10 +63,14 @@ export default function MobileBuyurtmalar() {
     o.items.forEach((it) => add(it, it.qty))
     navigate('/buyurtma', { state: { from: 'profil' } })
   }
-  const cancel = (o) => {
-    profileStore.cancelOrder(o.id)
-    setDetail(null)
-    setToast(`#${o.id} buyurtmasi bekor qilindi`)
+  const cancel = async (o) => {
+    try {
+      await profileStore.cancelOrder(o.id)
+      setDetail(null)
+      setToast(`#${o.id} buyurtmasi bekor qilindi`)
+    } catch (e) {
+      setToast(e.message || 'Bekor qilib bo‘lmadi')
+    }
   }
 
   return (
@@ -88,7 +92,14 @@ export default function MobileBuyurtmalar() {
           })}
         </div>
 
-        {list.length === 0 ? (
+        {profile.ordersStatus === 'loading' && !orders.length ? (
+          <p className="mt-6 text-center text-[13px] text-muted">Buyurtmalar yuklanmoqda…</p>
+        ) : profile.ordersStatus === 'error' ? (
+          <div className="mt-6 rounded-2xl bg-[#fff4f4] p-4 text-center text-[13px] text-[#b42318]">
+            {profile.ordersError}
+            <button type="button" onClick={() => profileStore.refreshOrders()} className="mt-2 block w-full font-semibold text-sea">Qayta urinish</button>
+          </div>
+        ) : list.length === 0 ? (
           <div className="mt-14 text-center">
             <span className={`mx-auto grid size-16 place-items-center rounded-full bg-[#e3f4f1] ${teal}`}><Package className="size-8" strokeWidth={1.6} /></span>
             <p className={`mt-3 text-[15px] font-bold ${navy}`}>{tab === 'active' ? 'Faol buyurtma yo‘q' : tab === 'delivered' ? 'Yetkazilgan buyurtma yo‘q' : 'Bekor qilingan buyurtma yo‘q'}</p>
@@ -105,7 +116,7 @@ export default function MobileBuyurtmalar() {
       {open && (
         <DetailSheet
           order={open}
-          canCancel={open.status === 'processing' && ownIds.includes(open.id)}
+          canCancel={open.dbStatus === 'yangi' && ownIds.includes(open.id)}
           onCancel={() => cancel(open)}
           onTrack={() => track(open)}
           onRepeat={() => repeat(open)}
