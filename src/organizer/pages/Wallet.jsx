@@ -105,27 +105,28 @@ function DesktopWallet() {
       <h1 className="text-[26px] font-bold leading-none tracking-tight">Hamyon</h1>
       <p className="mt-1.5 text-[13.5px] text-[#6e868c]">Seminarlardan olingan to‘lovlar va pul yechish</p>
 
-      <section className="mt-4 grid grid-cols-3 gap-3.5">
-        {BALANCES.map((b) => <Balance key={b.title} {...b} />)}
-      </section>
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_240px] items-start gap-3">
+        <div className="min-w-0 space-y-3">
+          <section className="grid grid-cols-3 gap-3">
+            {BALANCES.map((b) => <Balance key={b.title} {...b} />)}
+          </section>
 
-      <section className="mt-3.5 rounded-2xl border border-[#d7f0ea] bg-[#f4fbfa] px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-lg bg-white text-[15px] font-bold text-[#0c8f86] shadow-[0_1px_2px_rgb(16_40_40/0.05)]">%</span>
-          <h2 className="text-[15px] font-bold">Komissiya hisoblash misoli</h2>
-        </div>
-        <p className="mt-1.5 text-[13px] text-[#5e787e]">Platforma komissiyasi har bir to‘lov summasidan 12% ni tashkil qiladi.</p>
-        <div className="mt-3.5 grid grid-cols-[minmax(0,1fr)_28px_minmax(0,1fr)_28px_minmax(0,1fr)] items-center">
-          <Calc n="10 000 000 so‘m" l="To‘lov summasi" />
-          <span className="text-center text-[22px] font-medium leading-none text-[#b7c6ca]">−</span>
-          <Calc n="1 200 000 so‘m" l="Platforma komissiyasi (12%)" />
-          <span className="text-center text-[22px] font-medium leading-none text-[#b7c6ca]">=</span>
-          <Calc n="8 800 000 so‘m" l="Sizga o‘tkaziladigan summa" hi />
-        </div>
-      </section>
+          <section className="rounded-2xl border border-[#d7f0ea] bg-[#f4fbfa] px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 place-items-center rounded-lg bg-white text-[14px] font-bold text-[#0c8f86]">%</span>
+              <h2 className="text-[14px] font-bold">Komissiya hisoblash misoli</h2>
+            </div>
+            <p className="mt-1 text-[12.5px] text-[#5e787e]">Platforma komissiyasi har bir to‘lov summasidan 12% ni tashkil qiladi.</p>
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_22px_minmax(0,1fr)_22px_minmax(0,1fr)] items-center">
+              <Calc n="10 000 000 so‘m" l="To‘lov summasi" />
+              <span className="text-center text-[20px] font-medium leading-none text-[#b7c6ca]">−</span>
+              <Calc n="1 200 000 so‘m" l="Platforma komissiyasi (12%)" />
+              <span className="text-center text-[20px] font-medium leading-none text-[#b7c6ca]">=</span>
+              <Calc n="8 800 000 so‘m" l="Sizga o‘tkaziladigan summa" hi />
+            </div>
+          </section>
 
-      <div className="mt-3.5 grid grid-cols-[minmax(0,1fr)_300px] items-start gap-3.5">
-        <section className="min-w-0 rounded-2xl border border-[#e6f1ef] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section className="min-w-0 rounded-2xl border border-[#e6f1ef] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
           <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-4">
             <div>
               <h2 className="text-[15px] font-bold leading-tight">Tranzaksiyalar</h2>
@@ -150,17 +151,17 @@ function DesktopWallet() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-collapse text-left">
               <colgroup>
-                <col className="w-[88px]" />
+                <col className="w-[78px]" />
+                <col className="w-[158px]" />
+                <col className="w-[108px]" />
+                <col className="w-[104px]" />
+                <col className="w-[108px]" />
                 <col />
-                <col className="w-[112px]" />
-                <col className="w-[116px]" />
-                <col className="w-[112px]" />
-                <col className="w-[138px]" />
               </colgroup>
               <thead>
-                <tr className="border-y border-[#eef3f2] text-[12px] text-[#8aa0a4]">
+                <tr className="border-y border-[#eef3f2] text-[11.5px] text-[#8aa0a4]">
                   {['Sana', 'Seminar', 'Summa', 'Komissiya (12%)', 'Sizga', 'Holat'].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-2 py-2.5 text-left font-medium">{h}</th>
+                    <th key={h} className="px-2 py-2.5 text-left font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -170,16 +171,16 @@ function DesktopWallet() {
                   const Icon = st.icon
                   return (
                     <tr key={t.date + t.seminar} className="border-b border-[#f3f7f6] last:border-0">
-                      <td className="whitespace-nowrap px-2 py-3 align-middle text-[12.5px] text-[#3e5a62]">{t.date}</td>
-                      <td className="px-2 py-3 align-middle text-[12.5px] font-medium leading-snug">
-                        <Link to="/tashkilotchi/seminarlar/implant" className="text-[#143044] hover:text-[#0c8f86]">{t.seminar}</Link>
+                      <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{t.date}</td>
+                      <td className="px-2 py-2.5 align-middle text-[12px] font-medium leading-snug">
+                        <Link to="/tashkilotchi/seminarlar/implant" className="line-clamp-2 text-[#143044] hover:text-[#0c8f86]">{t.seminar}</Link>
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3 align-middle text-[12.5px]">{som(t.sum)}</td>
-                      <td className="whitespace-nowrap px-2 py-3 align-middle text-[12.5px] text-[#3e5a62]">{som(t.fee)}</td>
-                      <td className="whitespace-nowrap px-2 py-3 align-middle text-[12.5px] font-bold">{som(t.net)}</td>
-                      <td className="px-2 py-3 align-middle">
-                        <span className={`inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-[11.5px] font-semibold ${st.cls}`}>
-                          <Icon className="size-3.5 shrink-0" strokeWidth={2.4} />
+                      <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px]">{som(t.sum)}</td>
+                      <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] text-[#3e5a62]">{som(t.fee)}</td>
+                      <td className="whitespace-nowrap px-2 py-2.5 align-middle text-[12px] font-bold">{som(t.net)}</td>
+                      <td className="px-2 py-2.5 align-middle">
+                        <span className={`inline-flex h-6 items-center gap-1 whitespace-nowrap rounded-full px-2 text-[11px] font-semibold ${st.cls}`}>
+                          <Icon className="size-3 shrink-0" strokeWidth={2.4} />
                           {st.label}
                         </span>
                       </td>
@@ -193,44 +194,45 @@ function DesktopWallet() {
             </table>
           </div>
         </section>
+        </div>
 
-        <div className="space-y-3">
-          <section className="rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <h2 className="flex items-center gap-2 text-[15px] font-bold">
-              <FileText className="size-[18px] text-[#0c8f86]" strokeWidth={1.8} />
+        <div className="w-[240px] space-y-3">
+          <section className="rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+            <h2 className="flex items-center gap-1.5 text-[13.5px] font-bold leading-tight">
+              <FileText className="size-4 shrink-0 text-[#0c8f86]" strokeWidth={1.8} />
               Pul yechish so‘rovi
             </h2>
-            <p className="mt-3 text-[12.5px] text-[#6e868c]">Yechib olish mumkin bo‘lgan summa</p>
-            <p className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#14a394]">8 200 000 so‘m</p>
+            <p className="mt-2.5 text-[12px] text-[#6e868c]">Yechib olish mumkin bo‘lgan summa</p>
+            <p className="mt-0.5 text-[20px] font-bold leading-tight tracking-tight text-[#14a394]">8 200 000 so‘m</p>
 
-            <label className="mt-3.5 block">
-              <span className="mb-1.5 block text-[13px] font-medium text-[#1c4a5a]">Yechib olish summasi</span>
-              <span className={`flex h-11 items-center gap-2 rounded-xl border bg-white px-3 ${err ? 'border-[#e11d48]' : 'border-[#e3eeec] focus-within:border-[#0c8f86]'}`}>
+            <label className="mt-3 block">
+              <span className="mb-1.5 block text-[12.5px] font-medium text-[#1c4a5a]">Yechib olish summasi</span>
+              <span className={`flex h-10 items-center gap-2 rounded-xl border bg-white px-2.5 ${err ? 'border-[#e11d48]' : 'border-[#e3eeec] focus-within:border-[#0c8f86]'}`}>
                 <input
                   value={amount}
                   onChange={(e) => { setAmount(moneyInput(e.target.value)); setErr(''); setSent(false) }}
                   placeholder="Masalan: 1 000 000"
                   inputMode="numeric"
-                  className="min-w-0 flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-[#9aafb4]"
+                  className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-[#9aafb4]"
                 />
-                <span className="shrink-0 text-[13px] text-[#8aa0a4]">so‘m</span>
+                <span className="shrink-0 text-[12px] text-[#8aa0a4]">so‘m</span>
               </span>
               {err && <span className="mt-1 block text-[11.5px] text-[#e11d48]">{err}</span>}
             </label>
 
-            <p className="mb-1.5 mt-3.5 text-[13px] font-semibold">To‘lov usulini tanlang</p>
+            <p className="mb-1 mt-3 text-[12.5px] font-semibold">To‘lov usulini tanlang</p>
             <Radio checked={method === 'card'} label="Bank kartasi" onChange={() => { setMethod('card'); setPicked('4521') }} />
             <Radio checked={method === 'bank'} label="Bank hisobi" onChange={() => { setMethod('bank'); setPicked('bank') }} />
 
-            <p className="mb-2 mt-3.5 text-[13px] font-semibold">Saqlangan rekvizitlar</p>
+            <p className="mb-1.5 mt-3 text-[12.5px] font-semibold">Saqlangan rekvizitlar</p>
             <div className="relative">
-              <button type="button" onClick={() => setCardOpen((v) => !v)} className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left ${picked === '4521' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]"><CreditCard className="size-4" strokeWidth={1.8} /></span>
+              <button type="button" onClick={() => setCardOpen((v) => !v)} className={`flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === '4521' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]"><CreditCard className="size-3.5" strokeWidth={1.8} /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-semibold leading-tight">Karta **** 4521</span>
-                  <span className="mt-0.5 block text-[12px] text-[#7e9398]">Humo · 04/28</span>
+                  <span className="block text-[12.5px] font-semibold leading-tight">Karta **** 4521</span>
+                  <span className="mt-0.5 block text-[11px] text-[#7e9398]">Humo · 04/28</span>
                 </span>
-                <ChevronDown className="size-4 shrink-0 text-[#8aa4a8]" />
+                <ChevronDown className="size-3.5 shrink-0 text-[#8aa4a8]" />
               </button>
               {cardOpen && (
                 <ul className="absolute left-0 right-0 z-30 mt-1 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
@@ -240,32 +242,30 @@ function DesktopWallet() {
                 </ul>
               )}
             </div>
-            <button type="button" onClick={() => { setPicked('bank'); setMethod('bank'); setCardOpen(false) }} className={`mt-2 w-full rounded-xl border px-3 py-2.5 text-left ${picked === 'bank' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
-              <span className="flex items-start gap-2.5">
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]"><Landmark className="size-4" strokeWidth={1.8} /></span>
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold leading-tight">Aloqabank</span>
-                  <span className="mt-0.5 block text-[12px] text-[#7e9398]">MFO: 00487</span>
-                </span>
+            <button type="button" onClick={() => { setPicked('bank'); setMethod('bank'); setCardOpen(false) }} className={`mt-2 flex w-full items-start gap-2 rounded-xl border px-2.5 py-2 text-left ${picked === 'bank' ? 'border-[#cfe7e3] bg-white' : 'border-[#e6eeec] bg-white'}`}>
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e7f7f4] text-[#0c8f86]"><Landmark className="size-3.5" strokeWidth={1.8} /></span>
+              <span className="min-w-0">
+                <span className="block text-[12.5px] font-semibold leading-tight">Aloqabank</span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-[#7e9398]">MFO: 00487</span>
+                <span className="block text-[11px] leading-snug text-[#7e9398]">Hisob raqami: 2020 8000 1234 5678 9001</span>
               </span>
-              <span className="mt-1 block whitespace-nowrap pl-5 text-[11px] text-[#7e9398]">Hisob raqami: 2020 8000 1234 5678 9001</span>
             </button>
 
             <button type="button" onClick={() => setAddOpen(true)} className="mt-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[#0c8f86]">
               <Plus className="size-3.5" strokeWidth={2.4} /> Rekvizit qo‘shish
             </button>
             {sent && <p className="mt-2 rounded-lg bg-[#e7f8ee] px-2.5 py-1.5 text-[12px] text-[#15803d]">{som(n)} so‘rovi qabul qilindi. 1–3 ish kuni.</p>}
-            <button type="button" onClick={submit} className="mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#0c8f86] text-[14px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">
+            <button type="button" onClick={submit} className="mt-3 flex h-10 w-full items-center justify-center rounded-xl bg-[#0c8f86] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(12_143_134/0.22)] hover:bg-[#0a7e76]">
               So‘rov yuborish →
             </button>
           </section>
 
-          <section className="rounded-2xl border border-[#e3f3ef] bg-[#f4fbfa] p-4">
-            <h2 className="flex items-center gap-2 text-[14px] font-bold">
+          <section className="rounded-2xl border border-[#e3f3ef] bg-[#f4fbfa] p-3.5">
+            <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
               <span className="grid size-5 place-items-center rounded-full bg-white text-[#0c8f86]"><Info className="size-3.5" strokeWidth={2.2} /></span>
               Muhim ma’lumotlar
             </h2>
-            <ul className="mt-2.5 list-disc space-y-1.5 pl-4 text-[12.5px] leading-snug text-[#3e5a62]">
+            <ul className="mt-2 list-disc space-y-1.5 pl-4 text-[12px] leading-snug text-[#3e5a62]">
               {FACTS.map((f) => <li key={f}>{f}</li>)}
             </ul>
           </section>
@@ -279,11 +279,11 @@ function DesktopWallet() {
 
 function Balance({ icon: Icon, title, value, text, info }) {
   return (
-    <article className="rounded-2xl border border-[#e6f1ef] bg-white px-4 py-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-      <span className="grid size-10 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
-        <Icon className="size-[18px]" strokeWidth={1.8} />
+    <article className="rounded-2xl border border-[#e6f1ef] bg-white px-3.5 py-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+      <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[#0c8f86]">
+        <Icon className="size-4" strokeWidth={1.8} />
       </span>
-      <p className="mt-3 flex items-center gap-1 text-[13px] text-[#6e868c]">
+      <p className="mt-2.5 flex items-center gap-1 text-[12.5px] text-[#6e868c]">
         {title}
         {info && (
           <button type="button" title={text} aria-label={text} className="text-[#9bb0b6]">
@@ -291,24 +291,24 @@ function Balance({ icon: Icon, title, value, text, info }) {
           </button>
         )}
       </p>
-      <p className="mt-1 text-[22px] font-bold leading-none tracking-tight text-[#14a394]">{value}</p>
-      <p className="mt-2 text-[12px] leading-snug text-[#8aa0a4]">{text}</p>
+      <p className="mt-1 text-[20px] font-bold leading-none tracking-tight text-[#143044]">{value}</p>
+      <p className="mt-1.5 text-[11.5px] leading-snug text-[#8aa0a4]">{text}</p>
     </article>
   )
 }
 
 function Calc({ n, l, hi }) {
   return (
-    <div className={`rounded-xl bg-white px-3 py-3.5 text-center shadow-[0_1px_2px_rgb(16_40_40/0.04)] ${hi ? 'ring-1 ring-[#c9ebe4]' : ''}`}>
-      <p className={`text-[18px] font-bold leading-tight tracking-tight ${hi ? 'text-[#14a394]' : 'text-[#143044]'}`}>{n}</p>
-      <p className="mt-1 text-[12px] leading-snug text-[#7e9398]">{l}</p>
+    <div className={`rounded-xl bg-white px-2 py-3 text-center shadow-[0_1px_2px_rgb(16_40_40/0.04)] ${hi ? 'ring-1 ring-[#c9ebe4]' : ''}`}>
+      <p className={`text-[15px] font-bold leading-tight tracking-tight ${hi ? 'text-[#14a394]' : 'text-[#143044]'}`}>{n}</p>
+      <p className="mt-1 text-[11px] leading-snug text-[#7e9398]">{l}</p>
     </div>
   )
 }
 
 function Radio({ checked, label, onChange }) {
   return (
-    <button type="button" onClick={onChange} className="flex w-full items-center gap-2.5 py-[5px] text-left text-[13.5px] text-[#143044]">
+    <button type="button" onClick={onChange} className="flex w-full items-center gap-2 py-1 text-left text-[12.5px] text-[#143044]">
       <span className={`grid size-[18px] shrink-0 place-items-center rounded-full border-2 ${checked ? 'border-[#0c8f86]' : 'border-[#c9d6d8]'}`}>
         {checked && <span className="size-2.5 rounded-full bg-[#0c8f86]" />}
       </span>
