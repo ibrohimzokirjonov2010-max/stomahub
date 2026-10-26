@@ -23,7 +23,7 @@ export default function MobileTolovUsullari() {
           <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#0F766E]" /> Onlayn to‘lov va karta saqlash hozircha mavjud emas — hech qanday karta ma’lumoti so‘ralmaydi.
         </p>
       </div>
-      <MobileTabBar active="profile" />
+      <MobileTabBar />
     </div>
   )
 }
