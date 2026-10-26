@@ -11,7 +11,7 @@ const every = (n, max) => Math.max(1, Math.ceil(n / max))
 // O'qlar bilan grafik: kind = 'line' (maydonli) yoki 'bar'
 export function Chart({ labels, series, kind = 'line', height = 200, fmt = short, maxTicks = 16 }) {
   const W = 1000, H = 300
-  const top = nice(Math.max(1, ...series.flatMap((s) => s.values)))
+  const top = nice(Math.max(4, ...series.flatMap((s) => s.values)))
   const n = labels.length
   const x = (i) => (kind === 'bar' ? ((i + 0.5) / n) * W : n > 1 ? (i / (n - 1)) * W : W / 2)
   const y = (v) => H - (v / top) * H
