@@ -1,3 +1,4 @@
+import { supabase } from '../../supabaseClient'
 export const TEAL = 'var(--color-org-teal)'
 export const TEAL_MOBILE = 'var(--color-org-teal)'
 
@@ -38,10 +39,22 @@ export function uzDate(iso, mode = 'dash') {
   return `${day}-${mon} ${y}`
 }
 
+// Upload to public storage so other users see the image (blob: URLs only work in this tab).
+export async function uploadImage(file, folder = 'seminars') {
+  const { data: { user } = {} } = supabase ? await supabase.auth.getUser() : {}
+  if (!supabase || !user) return URL.createObjectURL(file)
+  if (file.size > 10 * 1024 * 1024) throw new Error('Fayl 10 MB dan katta')
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const path = `${user.id}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage.from('seller-media').upload(path, file, { contentType: file.type, upsert: false })
+  if (error) throw error
+  return supabase.storage.from('seller-media').getPublicUrl(path).data.publicUrl
+}
+
 export function readImage(file, onOk, onBad) {
   if (!file) return
   if (!/^image\/(png|jpeg)$/.test(file.type)) { onBad?.(); return }
-  onOk(URL.createObjectURL(file))
+  uploadImage(file).then(onOk, () => onBad?.())
 }
 
 export const box = 'h-10 w-full rounded-xl border border-[#e3eeec] bg-white px-3 text-[13px] text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-org-teal'

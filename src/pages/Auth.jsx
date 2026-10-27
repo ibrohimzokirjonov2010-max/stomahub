@@ -38,6 +38,8 @@ const COPY = {
     confirmEmail: 'Hisob ochildi. Emailingizdagi tasdiqlash havolasini bosing, so‘ng kiring.',
     errCode: '6 xonali kodni kiriting',
     errSupabase: 'Supabase sozlanmagan',
+    errPhoneTaken: 'Bu telefon raqam allaqachon ro‘yxatdan o‘tgan. Iltimos, tizimga kiring.',
+    loginLink: 'Tizimga kirish',
     linkBot: 'Avval botda telefon raqamingizni ulang',
     noAcc: 'Hisobingiz yo‘qmi?',
     toReg: 'Ro‘yxatdan o‘tish',
@@ -92,6 +94,8 @@ const COPY = {
     confirmEmail: 'Аккаунт создан. Подтвердите email, затем войдите.',
     errCode: 'Введите 6-значный код',
     errSupabase: 'Supabase не настроен',
+    errPhoneTaken: 'Этот номер телефона уже зарегистрирован. Пожалуйста, войдите.',
+    loginLink: 'Войти',
     linkBot: 'Сначала привяжите номер в боте',
     noAcc: 'Нет аккаунта?',
     toReg: 'Регистрация',
@@ -146,6 +150,8 @@ const COPY = {
     confirmEmail: 'Account created. Confirm the email, then sign in.',
     errCode: 'Enter the 6-digit code',
     errSupabase: 'Supabase is not configured',
+    errPhoneTaken: 'This phone number is already registered. Please sign in.',
+    loginLink: 'Sign in',
     linkBot: 'Link your phone in the bot first',
     noAcc: 'No account yet?',
     toReg: 'Create one',
@@ -178,6 +184,11 @@ const COPY = {
 const digits = (v) => v.replace(/\D/g, '')
 const emailFormatOk = (v) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim())
 // Namuna / test domenlari — ro‘yxatdan o‘tishda qabul qilinmaydi
+// Duplicate phone hits profiles_phone_uidx inside the auth trigger → GoTrue returns a generic 500.
+export function isPhoneTaken(error) {
+  const m = String(error?.message || '').toLowerCase()
+  return m.includes('database error saving new user') || m.includes('profiles_phone_uidx') || (m.includes('duplicate') && m.includes('phone'))
+}
 const BLOCKED_DOMAINS = ['example.com', 'example.org', 'example.net', 'test.com', 'mailinator.com', 'tempmail.com', '10minutemail.com', 'yopmail.com']
 const BLOCKED_TLDS = ['test', 'example', 'invalid', 'localhost', 'local']
 export function emailProblem(v) {
@@ -226,6 +237,7 @@ function Auth({ mode }) {
   const [terms, setTerms] = useState(false)
   const [forgot, setForgot] = useState(false)
   const [err, setErr] = useState('')
+  const [phoneTaken, setPhoneTaken] = useState(false)
   const [info, setInfo] = useState('')
   const [emailErr, setEmailErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -432,6 +444,12 @@ function Auth({ mode }) {
     if (!terms) return setErr(t.errTerms)
     if (!supabase) return setErr(t.errSupabase)
     setBusy(true)
+    setPhoneTaken(false)
+    // Optional pre-check (boolean only; ignored if RPC not deployed)
+    try {
+      const pre = await supabase.rpc('phone_registered', { p_phone: e164Reg })
+      if (!pre.error && pre.data === true) { setBusy(false); setPhoneTaken(true); return setErr(t.errPhoneTaken) }
+    } catch {}
     finishing.current = true
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
@@ -442,7 +460,7 @@ function Auth({ mode }) {
     })
     if (error) {
       finishing.current = false
-      setErr(error.message)
+      if (isPhoneTaken(error)) { setPhoneTaken(true); setErr(t.errPhoneTaken) } else setErr(error.message)
       setBusy(false)
       return
     }
@@ -590,7 +608,7 @@ function Auth({ mode }) {
                 </label>
               )}
               {otpSent && isLogin && <Field label={t.code} icon={Lock} value={otp} onChange={setOtp} placeholder={t.codePh} />}
-              {err && <p className="text-[13px] font-medium text-[#d14343]">{err}</p>}
+              {err && <p className="text-[13px] font-medium text-[#d14343]">{err}{phoneTaken && !isLogin && <> <Link to="/kirish" className="font-semibold text-[#0F766E] underline">{t.loginLink}</Link></>}</p>}
               {info && <p className="text-[13px] font-medium text-[#0F766E]">{info}</p>}
               <button type="submit" disabled={busy} className={`flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0F766E] font-semibold text-white hover:bg-[#0b5f59] disabled:opacity-60 ${isLogin ? 'h-14 text-[17px]' : 'h-[52px] text-[16px]'}`}>
                 {isLogin ? <LogIn className="size-5" /> : <UserPlus className="size-5" />}
