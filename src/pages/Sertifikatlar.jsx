@@ -31,15 +31,35 @@ function Board() {
   const session = useSession()
   const live = profile.accountLive || !!currentUid() || session.status === 'authed'
   const owner = live ? (profile.name || 'Ism kiritilmagan') : 'Sizning ismingiz'
-  const library = live ? [] : certs
-  const stats = live ? { count: 0, cme: 0, done: 0 } : STATS
+  const fromProfile = (profile.certificates || []).map((c, i) => {
+    const iso = (c.issuedAt || c.issued_at || '').slice(0, 10)
+    return {
+      id: c.id || `cert-${i}`,
+      order: i + 1,
+      title: c.title || 'Sertifikat',
+      type: 'online',
+      speaker: '',
+      date: iso || '',
+      iso: iso || '1970-01-01',
+      place: 'Onlayn',
+      cme: 0,
+      hours: 0,
+      theme: 'teal',
+      fileUrl: c.fileUrl || c.file_url || '',
+      courseId: c.courseId || c.course_id || '',
+    }
+  })
+  const library = live ? fromProfile : certs
+  const stats = live
+    ? { count: fromProfile.length, cme: fromProfile.reduce((s, c) => s + c.cme, 0), done: fromProfile.length }
+    : STATS
   const [params, setParams] = useSearchParams()
   const [type, setType] = useState('all')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('new')
   const [toast, setToast] = useState('')
   const openId = params.get('cert')
-  const open = live ? null : (certs.find((c) => c.id === openId) || null)
+  const open = library.find((c) => c.id === openId) || null
 
   const list = useMemo(() => {
     const text = query.trim().toLowerCase()

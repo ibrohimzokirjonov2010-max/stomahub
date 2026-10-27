@@ -71,13 +71,15 @@ function seed() {
   }))
 }
 
-let rows = seed()
+const DEMO_SERVICES = seed()
+let rows = []
 const listeners = new Set()
 const emit = () => {
   listeners.forEach((fn) => fn())
   touchBlob('services')
 }
 bindBlob('services', {
+  seed: DEMO_SERVICES,
   get: () => rows,
   empty: () => [],
   set: (next) => {

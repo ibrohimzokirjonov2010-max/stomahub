@@ -69,13 +69,15 @@ function seed() {
   return [...designed, ...Array.from({ length: 238 }, (_, i) => filler(i))]
 }
 
-let rows = seed()
+const DEMO_STOCK = seed()
+let rows = []
 const listeners = new Set()
 const emit = () => {
   listeners.forEach((fn) => fn())
   touchBlob('stock')
 }
 bindBlob('stock', {
+  seed: DEMO_STOCK,
   get: () => rows,
   empty: () => [],
   set: (next) => {

@@ -6,7 +6,7 @@ import {
 import ShopLayout from '../components/market/ShopLayout'
 import { ToothIcon } from '../components/icons'
 import {
-  TOPICS, CATS, catTopic, TRENDS, LEADERS, KINDS, KIND_LABEL, SAMPLE_SHOTS, seedPosts, seedSaved, PROMO,
+  TOPICS, CATS, catTopic, KINDS, KIND_LABEL, SAMPLE_SHOTS,
 } from '../communityData'
 import { useProfile } from '../profileStore'
 
@@ -62,7 +62,7 @@ function Board({ query }) {
   const [topic, setTopic] = useState('all')
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('yangi')
-  const [posts, setPosts] = useState(seedPosts)
+  const [posts, setPosts] = useState([])
   const [liked, setLiked] = useState(() => new Set())
   const [saved, setSaved] = useState(() => new Set())
   const [followed, setFollowed] = useState(() => new Set())
@@ -70,7 +70,10 @@ function Board({ query }) {
   const [hidden, setHidden] = useState(() => new Set())
   const [composer, setComposer] = useState(null)
   const [toast, setToast] = useState('')
-  const [promo, setPromo] = useState(true)
+  const [promo, setPromo] = useState(false)
+  const leaders = []
+  const trends = []
+  const promoImg = '' 
 
   const list = useMemo(() => {
     const text = query.trim().toLowerCase()
@@ -133,10 +136,7 @@ function Board({ query }) {
     ping('Post joylandi')
   }
 
-  const savedCards = [
-    ...posts.filter((p) => saved.has(p.id)).map((p) => ({ id: p.id, title: p.title, meta: `${p.author} · ${p.time}`, image: p.images[0] })),
-    ...seedSaved,
-  ]
+  const savedCards = posts.filter((p) => saved.has(p.id)).map((p) => ({ id: p.id, title: p.title, meta: `${p.author} · ${p.time}`, image: p.images?.[0] }))
 
   return (
     <div className="pb-8 pt-3">
@@ -233,11 +233,11 @@ function Board({ query }) {
         <aside className="min-w-0 space-y-3">
           <section className="rounded-2xl bg-white p-3 shadow-card">
             <div className="mb-2 flex items-center justify-between">
-              <b className="text-[13px]">Haftaning top a’zolari</b>
-              <span className="text-[11px] font-semibold text-sea">Barchasini ko‘rish</span>
+              <b className="text-[13px]">Faol a’zolar</b>
             </div>
             <ol className="space-y-2">
-              {LEADERS.map((m, i) => (
+              {!leaders.length && <li className="px-1 py-4 text-center text-[12px] text-muted">Hali reyting yo‘q</li>}
+              {leaders.map((m, i) => (
                 <li key={m.name} className="flex items-center gap-2">
                   <span className="w-4 text-[12px] font-bold text-muted">{i + 1}</span>
                   <img src={m.avatar} alt="" className="size-8 rounded-full object-cover" />
@@ -257,7 +257,7 @@ function Board({ query }) {
               <span className="text-[11px] font-semibold text-sea">Barchasini ko‘rish</span>
             </div>
             <ol className="space-y-1.5">
-              {TRENDS.map(([tag, count, id], i) => (
+              {trends.map(([tag, count, id], i) => (
                 <li key={tag}>
                   <button type="button" onClick={() => setTopic(id)} className="flex w-full items-center gap-2 text-left">
                     <span className="w-4 text-[12px] text-muted">{i + 1}</span>
@@ -270,7 +270,7 @@ function Board({ query }) {
           </section>
 
           {promo && <section className="relative overflow-hidden rounded-2xl bg-[#123044] text-white shadow-card">
-            <img src={PROMO} alt="" className="h-[150px] w-full object-cover opacity-80" />
+            <img src={promoImg} alt="" className="h-[150px] w-full object-cover opacity-80" />
             <button type="button" aria-label="Yopish" onClick={() => setPromo(false)} className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white/80 text-ink"><X className="size-3.5" /></button>
             <div className="p-3">
               <b className="text-[14px]">Klinik holatingizni ulashing</b>

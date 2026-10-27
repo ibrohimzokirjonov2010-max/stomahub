@@ -9,6 +9,8 @@ import { ToothIcon } from '../components/icons'
 import { addBemor } from '../bemorData'
 import { useOmbor, patchOmbor } from '../omborData'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from '../recordSync'
+import { supabase } from '../supabaseClient'
+import { profileStore } from '../profileStore'
 import { useCrmStats } from '../crmStats'
 import {
   TODAY, CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, STAFF, REVENUE, MONTHS_CAP, WD, WD_LONG,
@@ -17,21 +19,77 @@ import {
 
 const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
 const TOTAL_SLOTS = CHAIRS.length * SLOTS.length
-const SETTINGS_KEY = 'stomahub-klinika'
+const DEFAULT_SETTINGS = { name: '', city: '', open: '09:00', close: '18:00', phone: '', address: '', website: '' }
 
-function loadSettings() {
-  try {
-    return { name: 'Mening klinikam', city: '', open: '09:00', close: '18:00', ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') }
-  } catch {
-    return { name: 'Mening klinikam', city: '', open: '09:00', close: '18:00' }
+function hoursParts(hours) {
+  const m = String(hours || '').match(/(\d{1,2}:\d{2})\s*[–\-—]\s*(\d{1,2}:\d{2})/)
+  return m ? { open: m[1], close: m[2] } : { open: '09:00', close: '18:00' }
+}
+
+function settingsFromClinic(row) {
+  if (!row) return { ...DEFAULT_SETTINGS }
+  const parts = hoursParts(row.hours)
+  return {
+    name: row.name || '',
+    city: row.city || row.address || '',
+    open: row.open_time || parts.open,
+    close: row.close_time || parts.close,
+    phone: row.phone || '',
+    address: row.address || '',
+    website: row.website || '',
   }
+}
+
+async function fetchCustomerClinic(uid) {
+  if (!supabase || !uid) return null
+  const { data, error } = await supabase.from('customer_clinic').select('*').eq('user_id', uid).maybeSingle()
+  if (error) return null
+  return data
+}
+
+async function upsertCustomerClinic(uid, settings) {
+  if (!supabase || !uid) return { ok: false, error: 'Kirish talab qilinadi' }
+  const open = settings.open || '09:00'
+  const close = settings.close || '18:00'
+  const base = {
+    user_id: uid,
+    name: (settings.name || '').trim() || 'Mening klinikam',
+    address: (settings.address || settings.city || '').trim(),
+    hours: `${open}–${close}`,
+    phone: (settings.phone || '').trim(),
+    website: (settings.website || '').trim(),
+    updated_at: new Date().toISOString(),
+  }
+  const extended = {
+    ...base,
+    city: (settings.city || '').trim(),
+    open_time: open,
+    close_time: close,
+  }
+  let error = (await supabase.from('customer_clinic').upsert(extended)).error
+  if (error && /city|open_time|close_time|schema cache|column/i.test(error.message || '')) {
+    error = (await supabase.from('customer_clinic').upsert(base)).error
+  }
+  if (error) return { ok: false, error: error.message }
+  profileStore.update({
+    clinic: base.name,
+    clinicInfo: {
+      name: base.name,
+      address: base.address,
+      hours: base.hours,
+      phone: base.phone,
+      website: base.website,
+      photo: profileStore.get()?.clinicInfo?.photo || '',
+    },
+  })
+  return { ok: true, row: base }
 }
 
 export default function Klinika() {
   const navigate = useNavigate()
   const location = useLocation()
   const stock = useOmbor()
-  const [settings, setSettings] = useState(loadSettings)
+  const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS }))
   const [visits, setVisits] = useState([])
   const [patients, setPatients] = useState([])
   const crm = useCrmStats()
@@ -47,26 +105,30 @@ export default function Klinika() {
   }, [location.state])
   useEffect(() => {
     let stop = false
-    const unsub = onAccount((id) => {
+    const unsub = onAccount(async (id) => {
       if (!id) {
         setBoardReady(false)
+        setSettings({ ...DEFAULT_SETTINGS })
+        setVisits([])
+        setPatients([])
         return
       }
-      loadBlob('clinic_board').then((payload) => {
-        if (stop) return
-        if (payload) {
-          if (payload.settings) setSettings(payload.settings)
-          setVisits(Array.isArray(payload.visits) ? payload.visits : [])
-          setPatients(Array.isArray(payload.patients) ? payload.patients : [])
-        } else if (isDemoUser()) {
-          setVisits(seedVisits())
-          setPatients(seedPatients)
-        } else {
-          setVisits([])
-          setPatients([])
-        }
-        setBoardReady(true)
-      })
+      const [clinic, payload] = await Promise.all([fetchCustomerClinic(id), loadBlob('clinic_board')])
+      if (stop) return
+      if (clinic) setSettings(settingsFromClinic(clinic))
+      else if (payload?.settings) setSettings({ ...DEFAULT_SETTINGS, ...payload.settings })
+      else setSettings({ ...DEFAULT_SETTINGS })
+      if (payload) {
+        setVisits(Array.isArray(payload.visits) ? payload.visits : [])
+        setPatients(Array.isArray(payload.patients) ? payload.patients : [])
+      } else if (isDemoUser()) {
+        setVisits(seedVisits())
+        setPatients(seedPatients)
+      } else {
+        setVisits([])
+        setPatients([])
+      }
+      setBoardReady(true)
     })
     return () => { stop = true; unsub() }
   }, [])
@@ -123,10 +185,16 @@ export default function Klinika() {
     setAdding(false)
     flash('Bemor qo‘shildi va Bemorlar bo‘limiga saqlandi')
   }
-  const saveSettings = (next) => {
-    setSettings(next)
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next))
+  const saveSettings = async (next) => {
+    const uid = currentUid()
+    const cleaned = { ...DEFAULT_SETTINGS, ...next, name: (next.name || '').trim() || 'Mening klinikam' }
+    setSettings(cleaned)
     setSettingsOpen(false)
+    const res = await upsertCustomerClinic(uid, cleaned)
+    if (!res.ok) {
+      flash(res.error || 'Saqlashda xato')
+      return
+    }
     flash('Sozlamalar saqlandi')
   }
 
@@ -137,7 +205,7 @@ export default function Klinika() {
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sea-50 text-sea"><ToothIcon className="size-8" /></span>
             <div className="min-w-0">
-              <h1 className="flex items-center gap-1.5 text-[22px] font-extrabold tracking-tight text-ink">{settings.name} <BadgeCheck className="size-5 fill-sea text-white" /></h1>
+              <h1 className="flex items-center gap-1.5 text-[22px] font-extrabold tracking-tight text-ink">{settings.name || 'Mening klinikam'} <BadgeCheck className="size-5 fill-sea text-white" /></h1>
               <p className="mt-1 flex flex-wrap items-center gap-3 text-[11.5px] text-muted">
                 <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" /> {settings.city || 'Shahar tanlanmagan'}</span>
                 <button type="button" onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-1 font-medium text-sea underline-offset-2 hover:underline"><Settings className="size-3.5" /> Sozlamalar</button>
@@ -739,21 +807,31 @@ function PatientDialog({ onClose, onSave }) {
 
 function SettingsDialog({ value, onClose, onSave }) {
   const [form, setForm] = useState(value)
+  const [saving, setSaving] = useState(false)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  const submit = async () => {
+    if (saving) return
+    setSaving(true)
+    await onSave({ ...form, name: form.name.trim() || 'Mening klinikam' })
+    setSaving(false)
+  }
   return (
     <Dialog
       title="Klinika sozlamalari"
       onClose={onClose}
-      foot={<><button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-medium">Bekor qilish</button><button type="button" onClick={() => onSave({ ...form, name: form.name.trim() || 'Mening klinikam' })} className="h-10 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white">Saqlash</button></>}
+      foot={<><button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-medium">Bekor qilish</button><button type="button" disabled={saving} onClick={submit} className="h-10 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white disabled:opacity-60">{saving ? 'Saqlanmoqda…' : 'Saqlash'}</button></>}
     >
       <div className="space-y-3">
-        <Field label="Klinika nomi"><input value={form.name} onChange={(e) => set('name', e.target.value)} className={input} /></Field>
+        <Field label="Klinika nomi"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Smile Dental" className={input} /></Field>
         <Field label="Shahar">
           <select value={form.city} onChange={(e) => set('city', e.target.value)} className={input}>
             <option value="">Shahar tanlanmagan</option>
             {CITY_LIST.map((c) => <option key={c}>{c}</option>)}
           </select>
         </Field>
+        <Field label="Manzil"><input value={form.address || ''} onChange={(e) => set('address', e.target.value)} placeholder="Ko‘cha, uy" className={input} /></Field>
+        <Field label="Telefon"><input value={form.phone || ''} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+        <Field label="Veb-sayt"><input value={form.website || ''} onChange={(e) => set('website', e.target.value)} placeholder="https://" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Ish boshlanishi"><input type="time" value={form.open} onChange={(e) => set('open', e.target.value)} className={input} /></Field>
           <Field label="Ish tugashi"><input type="time" value={form.close} onChange={(e) => set('close', e.target.value)} className={input} /></Field>

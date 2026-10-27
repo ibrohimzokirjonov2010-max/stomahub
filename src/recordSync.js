@@ -41,10 +41,18 @@ export function useCatalogVersion() {
 
 export function bindBlob(kind, api) {
   let seed = null
-  try {
-    seed = structuredClone(api.get())
-  } catch {
-    seed = api.get()
+  if (api.seed !== undefined) {
+    try {
+      seed = structuredClone(typeof api.seed === 'function' ? api.seed() : api.seed)
+    } catch {
+      seed = typeof api.seed === 'function' ? api.seed() : api.seed
+    }
+  } else {
+    try {
+      seed = structuredClone(api.get())
+    } catch {
+      seed = api.get()
+    }
   }
   blobs.set(kind, { ...api, seed })
 }
@@ -115,7 +123,9 @@ async function pullBlobs() {
   applying = true
   for (const [kind, api] of blobs) {
     if (found.has(kind)) api.set(found.get(kind))
-    else if (!demo && typeof api.empty === 'function') api.set(api.empty())
+    else if (demo && api.seed != null) {
+      try { api.set(structuredClone(api.seed)) } catch { api.set(api.seed) }
+    } else if (!demo && typeof api.empty === 'function') api.set(api.empty())
   }
   applying = false
   const missing = [...blobs.keys()].filter((kind) => !found.has(kind))

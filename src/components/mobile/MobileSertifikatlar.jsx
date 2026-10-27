@@ -36,9 +36,23 @@ export default function MobileSertifikatlar() {
   const [tab, setTab] = useState('all')
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
-  const open = live ? null : (certs.find((c) => c.id === params.get('cert')) || null)
-
-  const source = live ? [] : certs
+  const fromProfile = (profile.certificates || []).map((c, i) => {
+    const iso = (c.issuedAt || c.issued_at || '').slice(0, 10)
+    return {
+      id: c.id || `cert-${i}`,
+      title: c.title || 'Sertifikat',
+      type: 'online',
+      speaker: '',
+      date: iso || '',
+      iso: iso || '1970-01-01',
+      place: 'Onlayn',
+      cme: 0,
+      hours: 0,
+      theme: 'teal',
+    }
+  })
+  const source = live ? fromProfile : certs
+  const open = source.find((c) => c.id === params.get('cert')) || null
   const list = useMemo(() => source.filter((c) => tab === 'all' || c.type === tab).sort((a, b) => b.iso.localeCompare(a.iso)), [tab, source])
   const countOf = (k) => (k === 'all' ? source.length : source.filter((c) => c.type === k).length)
   const cme = source.reduce((sum, row) => sum + row.cme, 0)

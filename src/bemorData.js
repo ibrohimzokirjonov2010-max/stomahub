@@ -158,13 +158,15 @@ function seed() {
   return [...designed, malika, ...fillers].map((p) => ({ debt: Math.max(0, p.total - p.paid), ...p }))
 }
 
-let rows = seed()
+const DEMO_PATIENTS = seed()
+let rows = []
 const listeners = new Set()
 const emit = () => {
   listeners.forEach((fn) => fn())
   touchBlob('patients')
 }
 bindBlob('patients', {
+  seed: DEMO_PATIENTS,
   get: () => rows,
   empty: () => [],
   set: (next) => {

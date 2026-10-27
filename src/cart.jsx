@@ -6,7 +6,7 @@ import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordS
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(initialCart)
+  const [items, setItems] = useState([])
   const [reviewing, setReviewing] = useState(false)
   const [cartReady, setCartReady] = useState(false)
 
@@ -59,7 +59,7 @@ export function CartProvider({ children }) {
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
 
   return (
-    <CartContext.Provider value={{ items, setItems, add, setQty, remove, clear, count, total, reviewing, openReview: () => setReviewing(true), closeReview: () => setReviewing(false) }}>
+    <CartContext.Provider value={{ items, setItems, add, setQty, remove, clear, count, total, cartReady, reviewing, openReview: () => setReviewing(true), closeReview: () => setReviewing(false) }}>
       {children}
     </CartContext.Provider>
   )

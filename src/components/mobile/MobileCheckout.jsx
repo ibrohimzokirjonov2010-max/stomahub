@@ -65,7 +65,7 @@ function readOrder() {
 }
 
 export default function MobileCheckout() {
-  const { items, setItems } = useCart()
+  const { items, setItems, cartReady } = useCart()
   const navigate = useNavigate()
   const loc = useLocation()
   const [placed, setPlaced] = useState(() => (loc.state?.done ? readOrder() : null))
@@ -140,6 +140,13 @@ export default function MobileCheckout() {
 
   const patch = (k, v) => setForm((f) => ({ ...f, [k]: v, ...(k === 'address' || k === 'district' || k === 'city' ? { saved: '' } : {}) }))
 
+  if (!cartReady) {
+    return (
+      <div className={`${page} grid min-h-screen place-items-center text-[14px] font-semibold text-[#0b8a84]`}>
+        Savat yuklanmoqda…
+      </div>
+    )
+  }
   if (!placed && items.length === 0) return <Navigate to="/buyurtma" replace />
   if (placed) return <Done order={placed} />
 
