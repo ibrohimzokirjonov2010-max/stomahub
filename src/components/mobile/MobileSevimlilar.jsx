@@ -30,7 +30,7 @@ export default function MobileSevimlilar() {
   useEffect(() => { window.scrollTo(0, 0) }, [tab])
 
   const lists = {
-    products: profile.favProducts.map((id) => marketProducts.find((p) => p.id === id)).filter(Boolean),
+    products: (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || { id, name: String(id), type: 'Mahsulot', price: 0, image: '/images/market/placeholder.jpg' }),
     seminars: SEMINARS.filter((s) => seminarStore.saved.includes(s.id)),
     courses: COURSES.filter((c) => profile.favCourses.includes(c.id)),
     ads: [...added, ...ADS].filter((a) => savedAds.has(a.id)),

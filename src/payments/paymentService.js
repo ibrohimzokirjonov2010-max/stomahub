@@ -18,12 +18,14 @@ export function tokenizeCardInput({ brand, number, exp, setDefault = false }) {
   const digits = String(number || '').replace(/\D/g, '')
   if (!CARD_BRANDS.includes(brand)) throw new Error('Karta turi noto‘g‘ri')
   if (digits.length !== 16) throw new Error('Karta raqami 16 ta raqam bo‘lishi kerak')
-  if (!/^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(String(exp || ''))) throw new Error('Amal qilish muddati MM/YY formatida')
+  const expDigits = String(exp || '').replace(/\D/g, '').slice(0, 4)
+  const expNorm = expDigits.length === 4 ? `${expDigits.slice(0, 2)}/${expDigits.slice(2)}` : String(exp || '')
+  if (!/^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(expNorm)) throw new Error('Amal qilish muddati MM/YY formatida')
   return {
     id: `c${Date.now().toString(36)}`,
     brand,
     last4: digits.slice(-4),
-    exp: String(exp),
+    exp: expNorm,
     isDefault: !!setDefault,
     // cvv intentionally never accepted or returned
   }

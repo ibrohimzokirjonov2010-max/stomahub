@@ -202,11 +202,11 @@ export default function App() {
           <Route path="/admin/mahsulotlar" element={<AdminMahsulotlar />} />
           <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
-          <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil /></Responsive>} />
-          <Route path="/profil/tolov-usullari" element={<Responsive mobile={<MobileTolovUsullari />}><Profil /></Responsive>} />
-          <Route path="/profil/sevimlilar" element={<Responsive mobile={<MobileSevimlilar />}><Profil /></Responsive>} />
+          <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil section="addresses" /></Responsive>} />
+          <Route path="/profil/tolov-usullari" element={<Responsive mobile={<MobileTolovUsullari />}><Profil section="payments" /></Responsive>} />
+          <Route path="/profil/sevimlilar" element={<Responsive mobile={<MobileSevimlilar />}><Profil section="saved" /></Responsive>} />
           <Route path="/profil/buyurtmalar" element={<Responsive mobile={<MobileBuyurtmalar />}><Profil section="orders" /></Responsive>} />
-          <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Profil /></Responsive>} />
+          <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Profil section="courses" /></Responsive>} />
           <Route path="/profil/seminarlar" element={<Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive>} />
           <Route path="/buyurtma/kuzatish/:id" element={<Responsive mobile={<MobileKuzatish />}><Navigate to="/klinika" replace /></Responsive>} />
           <Route path="/xizmatlar" element={<CrmGate><Xizmatlar /></CrmGate>} />

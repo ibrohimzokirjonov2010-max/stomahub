@@ -68,6 +68,7 @@ export const SEED_ORDERS = []
 const listeners = new Set()
 let applyingRemote = false
 let pushTimer = null
+let hydratedUid = null
 
 function read() {
   try {
@@ -188,10 +189,21 @@ function localPhone(value) {
 }
 
 async function syncChildren(uid) {
+  // Never wipe DB from empty local state before hydrate finished for this uid.
+  if (hydratedUid !== uid) return
+
   const addresses = state.addresses || []
-  await supabase.from('customer_addresses').delete().eq('user_id', uid)
+  const addrIds = new Set(addresses.map((row) => `${uid}:${row.id}`))
+  const { data: existingAddrs, error: addrReadErr } = await supabase
+    .from('customer_addresses').select('id').eq('user_id', uid)
+  if (addrReadErr) throw addrReadErr
+  const orphanAddrs = (existingAddrs || []).map((r) => r.id).filter((id) => !addrIds.has(id))
+  if (orphanAddrs.length) {
+    const { error } = await supabase.from('customer_addresses').delete().in('id', orphanAddrs)
+    if (error) throw error
+  }
   if (addresses.length) {
-    const { error } = await supabase.from('customer_addresses').insert(addresses.map((row, index) => ({
+    const { error } = await supabase.from('customer_addresses').upsert(addresses.map((row, index) => ({
       id: `${uid}:${row.id}`,
       user_id: uid,
       payload: row,
@@ -199,9 +211,19 @@ async function syncChildren(uid) {
     })))
     if (error) throw error
   }
-  await supabase.from('customer_cards').delete().eq('user_id', uid)
-  if (state.cards?.length) {
-    const rows = state.cards.map((card) => ({
+
+  const cards = state.cards || []
+  const cardIds = new Set(cards.map((card) => `${uid}:${card.id}`))
+  const { data: existingCards, error: cardReadErr } = await supabase
+    .from('customer_cards').select('id').eq('user_id', uid)
+  if (cardReadErr) throw cardReadErr
+  const orphanCards = (existingCards || []).map((r) => r.id).filter((id) => !cardIds.has(id))
+  if (orphanCards.length) {
+    const { error } = await supabase.from('customer_cards').delete().in('id', orphanCards)
+    if (error) throw error
+  }
+  if (cards.length) {
+    const rows = cards.map((card) => ({
       id: `${uid}:${card.id}`,
       user_id: uid,
       brand: card.brand || '',
@@ -210,27 +232,38 @@ async function syncChildren(uid) {
       bank: card.bank || '',
       is_default: !!card.isDefault,
     }))
-    let { error } = await supabase.from('customer_cards').insert(rows)
+    let { error } = await supabase.from('customer_cards').upsert(rows)
     if (error && /is_default|schema cache|column/i.test(error.message || '')) {
-      ;({ error } = await supabase.from('customer_cards').insert(rows.map(({ is_default, ...r }) => r)))
+      ;({ error } = await supabase.from('customer_cards').upsert(rows.map(({ is_default, ...r }) => r)))
     }
     if (error) throw error
   }
+
   {
-    const del = await supabase.from('customer_wallets').delete().eq('user_id', uid)
-    if (del.error && !/does not exist|schema cache|relation/i.test(del.error.message || '')) throw del.error
-    if (!del.error && state.linkedWallets?.length) {
-      const { error } = await supabase.from('customer_wallets').insert(state.linkedWallets.map((w) => ({
-        id: `${uid}:${w.id}`,
-        user_id: uid,
-        provider: w.provider,
-        label: w.label || '',
-        phone: w.phone || '',
-        is_default: !!w.isDefault,
-      })))
-      if (error && !/does not exist|schema cache|relation/i.test(error.message || '')) throw error
+    const wallets = state.linkedWallets || []
+    const walletIds = new Set(wallets.map((w) => `${uid}:${w.id}`))
+    const existing = await supabase.from('customer_wallets').select('id').eq('user_id', uid)
+    if (existing.error && !/does not exist|schema cache|relation/i.test(existing.error.message || '')) throw existing.error
+    if (!existing.error) {
+      const orphans = (existing.data || []).map((r) => r.id).filter((id) => !walletIds.has(id))
+      if (orphans.length) {
+        const { error } = await supabase.from('customer_wallets').delete().in('id', orphans)
+        if (error) throw error
+      }
+      if (wallets.length) {
+        const { error } = await supabase.from('customer_wallets').upsert(wallets.map((w) => ({
+          id: `${uid}:${w.id}`,
+          user_id: uid,
+          provider: w.provider,
+          label: w.label || '',
+          phone: w.phone || '',
+          is_default: !!w.isDefault,
+        })))
+        if (error && !/does not exist|schema cache|relation/i.test(error.message || '')) throw error
+      }
     }
   }
+
   const clinic = state.clinicInfo || {}
   let photo = clinic.photo || ''
   if (photo.startsWith('data:')) {
@@ -249,16 +282,33 @@ async function syncChildren(uid) {
   }
   const { error: clinicErr } = await supabase.from('customer_clinic').upsert(clinicRow)
   if (clinicErr && !/does not exist|schema cache/i.test(clinicErr.message || '')) throw clinicErr
-  await supabase.from('customer_favorites').delete().eq('user_id', uid)
+
   const favs = [
-    ...(state.favProducts || []).map((id) => ({ kind: 'product', item_id: id })),
-    ...(state.favCourses || []).map((id) => ({ kind: 'course', item_id: id })),
-    ...(state.favMasters || []).map((id) => ({ kind: 'master', item_id: id })),
+    ...(state.favProducts || []).map((id) => ({ kind: 'product', item_id: String(id) })),
+    ...(state.favCourses || []).map((id) => ({ kind: 'course', item_id: String(id) })),
+    ...(state.favMasters || []).map((id) => ({ kind: 'master', item_id: String(id) })),
   ]
-  if (favs.length) {
-    const { error } = await supabase.from('customer_favorites').insert(favs.map((row) => ({ ...row, user_id: uid })))
+  const favKey = (row) => `${row.kind}:${row.item_id}`
+  const keepFav = new Set(favs.map(favKey))
+  const { data: existingFavs, error: favReadErr } = await supabase
+    .from('customer_favorites').select('kind,item_id').eq('user_id', uid)
+  if (favReadErr) throw favReadErr
+  const orphans = (existingFavs || []).filter((row) => !keepFav.has(`${row.kind}:${row.item_id}`))
+  for (const row of orphans) {
+    const { error } = await supabase.from('customer_favorites').delete()
+      .eq('user_id', uid).eq('kind', row.kind).eq('item_id', row.item_id)
     if (error) throw error
   }
+  const haveFav = new Set((existingFavs || []).map((row) => `${row.kind}:${row.item_id}`))
+  const toInsert = favs.filter((row) => !haveFav.has(favKey(row)))
+  if (toInsert.length) {
+    const { error } = await supabase.from('customer_favorites').upsert(
+      toInsert.map((row) => ({ ...row, user_id: uid })),
+      { onConflict: 'user_id,kind,item_id' },
+    )
+    if (error) throw error
+  }
+
   const progress = Object.entries(state.courseDone || {})
   if (progress.length) {
     const { error } = await supabase.from('customer_course_progress').upsert(progress.map(([course_id, done]) => ({
@@ -288,6 +338,7 @@ async function uploadClinicPhoto(dataUrl) {
 
 async function hydrateProfile(nextUid) {
   if (!supabase || !nextUid) {
+    hydratedUid = null
     applyingRemote = true
     localStorage.removeItem(KEY)
     state = { ...DEFAULT, accountLive: false, loggedOut: true }
@@ -295,67 +346,21 @@ async function hydrateProfile(nextUid) {
     listeners.forEach((l) => l())
     return
   }
+  // Clear local UI immediately for non-demo accounts, but do NOT sync children yet.
   if (!isDemoUser()) {
     applyingRemote = true
     state = { ...EMPTY_ACCOUNT }
     applyingRemote = false
     listeners.forEach((l) => l())
   }
+
   const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', nextUid).maybeSingle()
   if (error) {
     write({ syncError: error.message, accountLive: false }, { remote: true })
     return
   }
-  const seeded = profile?.prefs?.customer_seeded
-  if (!seeded && isDemoUser()) {
-    write({ accountLive: true, loggedOut: false, syncError: '' }, { remote: true })
-    await pushProfile()
-    return
-  }
-  if (!seeded) {
-    const prefs = { ...(profile?.prefs || {}), customer_seeded: true, defaultPay: '', readNotifs: [] }
-    await supabase.from('profiles').update({
-      prefs,
-      name: profile?.name || '',
-      specialty: profile?.specialty || '',
-      updated_at: new Date().toISOString(),
-    }).eq('id', nextUid)
-    write({
-      accountLive: true,
-      loggedOut: false,
-      syncError: '',
-      name: profile?.name || '',
-      role: profile?.specialty || '',
-      clinic: profile?.clinic || '',
-      city: profile?.city || '',
-      district: profile?.district || '',
-      phone: localPhone(profile?.phone),
-      email: profile?.email || '',
-      avatar: profile?.avatar_url || '',
-      license: profile?.license || '',
-      experience: profile?.experience_years ? String(profile.experience_years) : '',
-      about: profile?.about || '',
-      verified: !!profile?.verified,
-      lang: profile?.lang || 'uz',
-      plus: !!profile?.plus,
-      bonus: profile?.bonus || 0,
-      notif: { ...DEFAULT.notif, ...(profile?.notif || {}) },
-      addresses: [],
-      cards: [],
-      linkedWallets: [],
-      clinicInfo: { name: profile?.clinic || '', address: '', hours: '', phone: '', website: '', photo: '' },
-      certificates: [],
-      defaultAddr: '',
-      defaultPay: '',
-      favCourses: [],
-      favProducts: [],
-      favMasters: [],
-      orders: [],
-      readNotifs: [],
-      courseDone: {},
-    }, { remote: true })
-    return
-  }
+
+  // Always load children from DB first — never invent empty arrays over real rows.
   const [addresses, cards, favs, progress, clinicRes, walletsRes, certsRes] = await Promise.all([
     supabase.from('customer_addresses').select('payload,sort_at').eq('user_id', nextUid).order('sort_at'),
     supabase.from('customer_cards').select('*').eq('user_id', nextUid),
@@ -376,10 +381,29 @@ async function hydrateProfile(nextUid) {
     write({ syncError: err.error.message, accountLive: true, loggedOut: false }, { remote: true })
     return
   }
-  const prefs = profile?.prefs || {}
+
+  const prefs = { ...(profile?.prefs || {}) }
+  if (!prefs.customer_seeded) {
+    prefs.customer_seeded = true
+    // Mark seeded only — do not wipe children or push empty local state.
+    await supabase.from('profiles').update({
+      prefs,
+      updated_at: new Date().toISOString(),
+    }).eq('id', nextUid)
+  }
+
   const courseDone = {}
   ;(progress.data || []).forEach((row) => { courseDone[row.course_id] = row.done })
   const clinicRow = clinicRes?.data
+
+  // Demo organizer first-run: if no children yet, allow push of local demo seed once.
+  if (isDemoUser() && !(addresses.data || []).length && !(cards.data || []).length) {
+    write({ accountLive: true, loggedOut: false, syncError: '' }, { remote: true })
+    hydratedUid = nextUid
+    await pushProfile()
+    return
+  }
+
   write({
     accountLive: true,
     loggedOut: false,
@@ -439,6 +463,7 @@ async function hydrateProfile(nextUid) {
     readNotifs: prefs.readNotifs || [],
     courseDone,
   }, { remote: true })
+  hydratedUid = nextUid
 }
 
 async function refreshOrders() {
@@ -474,8 +499,9 @@ export const profileStore = {
     await refreshOrders()
   },
   toggleFav: (key, id) => {
-    const list = state[key] || []
-    write({ [key]: list.includes(id) ? list.filter((x) => x !== id) : [...list, id] })
+    const sid = String(id)
+    const list = (state[key] || []).map(String)
+    write({ [key]: list.includes(sid) ? list.filter((x) => x !== sid) : [...list, sid] })
   },
   setCourseDone: (id, n) => write({ courseDone: { ...state.courseDone, [id]: n } }),
 }

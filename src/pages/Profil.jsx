@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import { fetchNotifications, markNotificationsRead, useRemote } from '../buyerApi'
-import { som } from '../marketData'
+import { marketProducts, som } from '../marketData'
 import {
   ADDRESS_KINDS, COURSES, addr, allOrders, courseDone, flushProfile, profileStore, useProfile,
 } from '../profileStore'
@@ -86,8 +86,23 @@ const fmtPhone = (p) => {
 
 const fmtBonus = (n) => (Number(n) || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')
 
+const SECTION_TAB = {
+  profile: 'info',
+  info: 'info',
+  orders: 'orders',
+  tickets: 'courses',
+  courses: 'courses',
+  addresses: 'addresses',
+  payments: 'payments',
+  saved: 'saved',
+  clinic: 'clinic',
+  settings: 'info',
+  notifs: 'notifs',
+  security: 'security',
+}
+
 export default function Profil({ section = 'profile' }) {
-  const initial = section === 'orders' ? 'orders' : section === 'tickets' ? 'courses' : 'info'
+  const initial = SECTION_TAB[section] || 'info'
   return (
     <ShopLayout active="profil" search="plain" placeholder="Stomatologiya mahsulotlari...">
       <Board initial={initial} />
@@ -846,8 +861,8 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
           </select>
           <input className={field} inputMode="numeric" placeholder="Karta raqami (saqlanmaydi)" value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: e.target.value.replace(/\D/g, '').slice(0, 16) })} />
           <input className={field} placeholder="MM/YY" value={cardForm.exp} onChange={(e) => {
-            let v = e.target.value.replace(/[^\d]/g, '').slice(0, 5)
-            if (v.length === 2 && !cardForm.exp.includes('/')) v += '/'
+            const d = e.target.value.replace(/\D/g, '').slice(0, 4)
+            const v = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d
             setCardForm({ ...cardForm, exp: v })
           }} />
           <label className="flex items-center gap-2 text-[13px] text-[#1a2b3c]">
@@ -892,15 +907,37 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
 }
 
 function SavedBlock({ profile }) {
-  const n = (profile.favProducts || []).length + (profile.favCourses || []).length + (profile.favMasters || []).length
+  const products = (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || { id, name: String(id) })
+  const courses = (profile.favCourses || []).map((id) => COURSES.find((c) => c.id === id) || { id, title: id })
+  const masters = profile.favMasters || []
+  const n = products.length + courses.length + masters.length
+  const remove = async (key, id) => {
+    profileStore.toggleFav(key, id)
+    await flushProfile()
+  }
   return (
     <section className={card}>
       <SectionHead title="Saqlanganlar" />
       {!n ? <Empty text="Saqlangan mahsulot, kurs yoki usta yo‘q." /> : (
-        <ul className="grid gap-2 text-[13.5px] text-[#1a2b3c]">
-          <li>Mahsulotlar: <b>{(profile.favProducts || []).length}</b></li>
-          <li>Kurslar: <b>{(profile.favCourses || []).length}</b></li>
-          <li>Ustalar: <b>{(profile.favMasters || []).length}</b></li>
+        <ul className="grid gap-2">
+          {products.map((p) => (
+            <li key={`p-${p.id}`} className="flex items-center justify-between rounded-xl border border-[#e7eef2] px-3 py-2 text-[13.5px]">
+              <span className="font-semibold text-[#12263a]">{p.name || p.title || p.id}</span>
+              <button type="button" className="text-[12px] font-semibold text-[#d14343]" onClick={() => remove('favProducts', p.id)}>O‘chirish</button>
+            </li>
+          ))}
+          {courses.map((c) => (
+            <li key={`c-${c.id}`} className="flex items-center justify-between rounded-xl border border-[#e7eef2] px-3 py-2 text-[13.5px]">
+              <span className="font-semibold text-[#12263a]">{c.title || c.id}</span>
+              <button type="button" className="text-[12px] font-semibold text-[#d14343]" onClick={() => remove('favCourses', c.id)}>O‘chirish</button>
+            </li>
+          ))}
+          {masters.map((id) => (
+            <li key={`m-${id}`} className="flex items-center justify-between rounded-xl border border-[#e7eef2] px-3 py-2 text-[13.5px]">
+              <span className="font-semibold text-[#12263a]">{id}</span>
+              <button type="button" className="text-[12px] font-semibold text-[#d14343]" onClick={() => remove('favMasters', id)}>O‘chirish</button>
+            </li>
+          ))}
         </ul>
       )}
       <Link to="/marketplace" className="mt-3 inline-flex text-[13px] font-semibold text-[#0F766E]">Marketplace’ga o‘tish</Link>
