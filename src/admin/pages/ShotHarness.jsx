@@ -76,6 +76,8 @@ const FIXTURE = {
 }
 
 export default function ShotHarness() {
+  // Sync before child effects so fixture RPCs win the first fetch.
+  if (typeof window !== 'undefined') window.__ADMIN_SHOT__ = true
   const { sec: secParam } = useParams()
   const [sp] = useSearchParams()
   const sec = (secParam || sp.get('s') || '01').padStart(2, '0')
@@ -84,10 +86,7 @@ export default function ShotHarness() {
   const [month] = useState(() => new Date(2026, 9, 1))
   const data = useMemo(() => FIXTURE, [])
 
-  useEffect(() => {
-    window.__ADMIN_SHOT__ = true
-    return () => { delete window.__ADMIN_SHOT__ }
-  }, [])
+  useEffect(() => () => { delete window.__ADMIN_SHOT__ }, [])
 
   const Page = meta.Page
   const mobileActive = ADMIN_MOBILE_TAB.find((t) => meta.to === t.to || meta.to.startsWith(t.to + '/'))?.to
