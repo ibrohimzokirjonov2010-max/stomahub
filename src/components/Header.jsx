@@ -6,6 +6,7 @@ import { useCart } from '../cart'
 import { profileStore, useProfile } from '../profileStore'
 import { fetchNotifications } from '../buyerApi'
 import { signOut, useSession } from '../sessionStore'
+import { initialsOf, looksLikeDemoName } from '../demoPurge'
 
 // variant="home" — bosh sahifa dizayni, variant="shop" — marketplace sahifalari
 // search (faqat shop): "image" — "Rasm orqali qidirish" tugmasi, "icon" — faqat kamera ikonkasi, "plain" — oddiy qidiruv
@@ -15,8 +16,13 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const profile = useProfile()
   const session = useSession()
   const authed = session.status === 'authed' || profile.accountLive
-  const who = authed ? (profile.name || session.profile?.name || 'Shifokor') : 'Mehmon'
-  const role = authed ? (profile.role || session.profile?.specialty || 'Stomatolog') : 'Hisobga kiring'
+  const remoteName = session.profile?.name || ''
+  const localName = profile.accountLive ? (profile.name || '') : ''
+  const rawName = authed ? (localName || remoteName || '') : ''
+  const who = !authed ? 'Mehmon' : (looksLikeDemoName(rawName) && remoteName && !looksLikeDemoName(remoteName) ? remoteName : (rawName || remoteName || 'Shifokor'))
+  const role = !authed ? 'Hisobga kiring' : (profile.accountLive ? (profile.role || session.profile?.specialty || '') : (session.profile?.specialty || profile.role || '')) || '—'
+  const avatarUrl = (profile.accountLive ? profile.avatar : '') || session.profile?.avatar_url || ''
+  const showInitials = authed && !avatarUrl
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const cartFrom = pathname.startsWith('/forma') ? 'forma' : pathname.startsWith('/jihoz') ? 'jihoz' : 'market'
@@ -125,7 +131,11 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
 
         <div className="ml-1 hidden h-8 w-px bg-line sm:block" />
         <button type="button" onClick={() => navigate(authed ? '/profil' : '/kirish')} className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-1.5 hover:bg-page">
-          <img src={profile.avatar || session.profile?.avatar_url || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
+          {showInitials ? (
+            <span className="grid size-[26px] place-items-center rounded-full bg-sea-50 text-[10px] font-bold text-sea">{initialsOf(who)}</span>
+          ) : (
+            <img src={avatarUrl || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
+          )}
           <span className="hidden text-left leading-tight xl:block">
             <span className="block text-[10.5px] font-semibold text-ink">{who}</span>
             <span className="block text-[9.5px] text-muted">{role}</span>

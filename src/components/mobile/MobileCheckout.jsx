@@ -253,7 +253,7 @@ export default function MobileCheckout() {
               <Head icon={MapPin} title="Yetkazib berish ma’lumotlari" text="Buyurtmangiz qayerga yetkazilsin?" />
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Field f="name" icon={UserRound} label="Ism va familiya" err={tried && errors.name}>
-                  <input value={form.name} onChange={(e) => patch('name', e.target.value)} autoComplete="name" placeholder="Ibrohim Zokirjonov" className={inp} />
+                  <input value={form.name} onChange={(e) => patch('name', e.target.value)} autoComplete="name" placeholder="Ism Familiya" className={inp} />
                 </Field>
                 <Field f="phone" icon={Phone} label="Telefon raqami" err={tried && errors.phone}>
                   <span className="flex items-center gap-1">

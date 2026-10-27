@@ -7,13 +7,7 @@ export const FOCUS = '2026-10-22'
 export const WDS = ['Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak']
 export const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktyabr', 'noyabr', 'dekabr']
 
-export const DEMO_DOCTORS_U = [
-  { id: 'karimov', name: 'Dr. Karimov', role: 'Implantolog' },
-  { id: 'aliyeva', name: 'Dr. Aliyeva', role: 'Terapevt' },
-  { id: 'toxtayev', name: 'Dr. To‘xtayev', role: 'Ortoped' },
-  { id: 'saidova', name: 'Dr. Saidova', role: 'Gigiyenist' },
-  { id: 'ibrohim', name: 'Dr. Ibrohim', role: 'Stomatolog' },
-]
+export const DEMO_DOCTORS_U = []
 export const doctors = []
 
 export const rooms = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3', 'Kreslo 4']
@@ -34,46 +28,13 @@ const a = (date, start, dur, name, photo, service, status, doctor, room, extra =
   id: `u${n++}`, date, start, dur, name, photo: pic(photo), service, status, doctor, room, ...extra,
 })
 
-export const seedVisits = [
-  a('2026-10-20', '08:00', 60, 'Aliyeva Mohira', 'bemor-mohira', 'Konsultatsiya', 'tasdiq', 'aliyeva', 'Kreslo 1'),
-  a('2026-10-20', '10:00', 60, 'Tursunov Bobur', 'bemor-bobur', 'Implant', 'bekor', 'karimov', 'Kreslo 2'),
-  a('2026-10-20', '12:00', 60, 'Normurodov I.', '', 'Gigiyena', 'tasdiq', 'saidova', 'Kreslo 1'),
-  a('2026-10-20', '14:00', 60, 'Saidova Nargiza', '', 'Gigiyena', 'kutil', 'saidova', 'Kreslo 3'),
-  a('2026-10-20', '16:00', 60, 'Xolmatov Nuriddin', '', 'Davolash', 'tasdiq', 'aliyeva', 'Kreslo 2'),
+export const seedVisits = []
 
-  a('2026-10-21', '08:00', 60, 'Raximov Aziz', '', 'Gigiyena', 'kutil', 'saidova', 'Kreslo 2'),
-  a('2026-10-21', '10:00', 90, 'Qodirova Aziza', 'bemor-aziza', 'Ortodontik', 'tasdiq', 'toxtayev', 'Kreslo 1'),
-  a('2026-10-21', '12:00', 60, 'Karimov Aziz', 'bemor-aziz', 'Davolash', 'tasdiq', 'aliyeva', 'Kreslo 3'),
-  a('2026-10-21', '14:00', 60, 'Usmonov Davron', 'bemor-davron', 'Gigiyena', 'kutil', 'saidova', 'Kreslo 2'),
-  a('2026-10-21', '16:00', 60, 'Aliyeva Mohira', 'bemor-mohira', 'Konsultatsiya', 'davol', 'aliyeva', 'Kreslo 1'),
-
-  a('2026-10-22', '08:00', 60, 'Normatova Dilnoza', 'bemor-dilnoza', 'Gigiyena', 'davol', 'saidova', 'Kreslo 1', { isNew: true }),
-  a('2026-10-22', '10:00', 60, 'Ismoilova Madina', 'bemor-madina', 'Davolash', 'tasdiq', 'aliyeva', 'Kreslo 2', { isNew: true }),
-  a('2026-10-22', '12:00', 60, 'Aliyeva Mohira', 'bemor-mohira', 'Davolash', 'tasdiq', 'aliyeva', 'Kreslo 1'),
-  a('2026-10-22', '14:00', 90, 'Qodirov Temur', '', 'Implant', 'tasdiq', 'karimov', 'Kreslo 3', { isNew: true }),
-  a('2026-10-22', '16:00', 60, 'Tursunov Bobur', 'bemor-bobur', 'Nazorat', 'kutil', 'karimov', 'Kreslo 2'),
-
-  a('2026-10-23', '08:30', 60, 'Usmonov D.', 'bemor-davron', 'Konsultatsiya', 'davol', 'aliyeva', 'Kreslo 1'),
-  a('2026-10-23', '10:00', 60, 'Xudoyberdiyev A.', 'bemor-anvar', 'Davolash', 'davol', 'aliyeva', 'Kreslo 2'),
-  a('2026-10-23', '12:00', 60, 'Karimova Saida', '', 'Implant', 'tasdiq', 'karimov', 'Kreslo 3'),
-  a('2026-10-23', '14:00', 60, 'Karimova Saida', '', 'Nazorat', 'davol', 'karimov', 'Kreslo 3'),
-  a('2026-10-23', '16:00', 90, 'Normatova Dilnoza', 'bemor-dilnoza', 'Ortodontik', 'tasdiq', 'toxtayev', 'Kreslo 1'),
-
-  a('2026-10-24', '08:00', 60, 'Karimova Saida', '', 'Davolash', 'tasdiq', 'aliyeva', 'Kreslo 2'),
-  a('2026-10-24', '10:00', 60, 'Jabborova Sevara', 'bemor-sevara', 'Konsultatsiya', 'tasdiq', 'aliyeva', 'Kreslo 1'),
-  a('2026-10-24', '12:00', 60, 'Raximov Sardor', 'bemor-sardor', 'Jarrohlik', 'bekor', 'karimov', 'Kreslo 4'),
-  a('2026-10-24', '14:00', 60, 'Ismoilova Madina', 'bemor-madina', 'Nazorat', 'davol', 'aliyeva', 'Kreslo 2'),
-  a('2026-10-24', '16:00', 60, 'Qodirova Aziza', 'bemor-aziza', 'Davolash', 'tasdiq', 'aliyeva', 'Kreslo 1'),
-
-  a('2026-10-25', '10:00', 90, 'Jabborova Sevara', 'bemor-sevara', 'Konsultatsiya', 'tasdiq', 'aliyeva', 'Kreslo 1'),
-  a('2026-10-25', '16:00', 60, 'Usmonov D.', 'bemor-davron', 'Konsultatsiya', 'tasdiq', 'aliyeva', 'Kreslo 2'),
-]
-
-const DEMO_VISITS = seedVisits
+const DEMO_VISITS = []
 let visits = []
 const listeners = new Set()
 bindBlob('visits', {
-  seed: DEMO_VISITS,
+  seed: [],
   get: () => visits,
   empty: () => [],
   set: (next) => {

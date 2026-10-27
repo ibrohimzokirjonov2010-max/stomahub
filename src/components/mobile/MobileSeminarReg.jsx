@@ -200,7 +200,7 @@ function RegView({ id, seminar }) {
             <Section icon={UserRound} title="Shaxsiy ma’lumotlar" first />
             <div className="grid grid-cols-2 gap-2.5">
               <Field label="F.I.SH" f="name" err={tried && errors.name}>
-                <input value={form.name} onChange={set('name')} autoComplete="name" placeholder="Ibrohim Zokirjonov" className={input} />
+                <input value={form.name} onChange={set('name')} autoComplete="name" placeholder="Ism Familiya" className={input} />
               </Field>
               <Field label="Telefon raqami" f="phone" err={tried && errors.phone}>
                 <span className="mt-0.5 flex h-8 items-center gap-1 rounded-lg bg-white px-1.5">

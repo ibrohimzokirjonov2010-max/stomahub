@@ -204,7 +204,7 @@ export default function Bemorlar() {
             </div>
           </section>
 
-          {current && <Side patient={current} onVisit={(date) => patchBemor(current.id, { next: date, visits: [{ date, kind: 'Qabul', note: 'Yangi qabul', doctor: 'Dr. Ibrohim' }, ...(current.visits || [])] })} />}
+          {current && <Side patient={current} onVisit={(date) => patchBemor(current.id, { next: date, visits: [{ date, kind: 'Qabul', note: 'Yangi qabul', doctor: '' }, ...(current.visits || [])] })} />}
         </div>
       </div>
       {open && <AddModal onClose={() => setOpen(false)} />}

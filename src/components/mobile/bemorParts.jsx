@@ -10,7 +10,6 @@ export const MSTATUS = {
 export const STATUS_TABS = ['Yangi', 'Davolanishda', 'Kuzatuvda', 'Faol', 'Nofaol']
 
 export const DOCTORS = {
-  'Dr. Ibrohim': '/images/yangiliklar/yang-sardor.jpg',
   'Dr. Aziza': '/images/bemorlar/bemor-dilnoza.jpg',
   'Dr. Kamron': '/images/yangiliklar/yang-dilshod.jpg',
   'Dr. Sardor': '/images/jihozlar/engineer.jpg',

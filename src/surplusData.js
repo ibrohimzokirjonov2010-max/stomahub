@@ -1,3 +1,4 @@
+import { profileStore } from './profileStore'
 const img = (n) => `/images/surplus/${n}.jpg`
 
 export const surplusChips = [
@@ -45,7 +46,7 @@ export function addSurplusItem({ name, type, brand, cat, expiry, city, price, ol
     name, type, brand, cat, expiry, city, price, condition, qty,
     oldPrice: oldPrice > price ? oldPrice : null,
     rating: 5, reviews: 0,
-    seller: { name: 'Dr. Ibrohim', avatar: img('seller') },
+    seller: { name: (profileStore.get()?.name || 'Shifokor'), avatar: (profileStore.get()?.avatar || img('seller')) },
     discount: oldPrice > price ? `-${Math.round((1 - price / oldPrice) * 100)}%` : null,
     image: image || surplusItems.find((p) => p.cat === cat)?.image || img('i1'),
     order: -Date.now(),
@@ -91,7 +92,7 @@ export const surplusDetail = {
   images: [img('main'), img('t2'), img('t3'), img('t4'), img('t5')],
   thumbs: [img('t1'), img('t2'), img('t3'), img('t4'), img('t5')],
   seller: {
-    name: 'Dr. Ibrohim Zokirjonov',
+    name: 'Shifokor',
     avatar: img('seller'),
     rating: 4.9,
     reviews: 28,

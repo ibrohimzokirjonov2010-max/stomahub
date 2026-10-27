@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { cancelMyOrder, fetchMyOrders } from './buyerApi'
 import { supabase } from './supabaseClient'
 import { currentUid, isDemoUser, onAccount, uploadAvatar } from './recordSync'
+import { looksLikeDemoName } from './demoPurge'
 
 const KEY = 'stomahub-profile'
 
@@ -80,6 +81,10 @@ function read() {
 }
 
 let state = read()
+if (looksLikeDemoName(state.name)) {
+  state = { ...state, name: '', avatar: state.avatar?.includes('avatar.jpg') ? '' : state.avatar }
+  try { localStorage.setItem(KEY, JSON.stringify({ ...state, avatar: '' })) } catch { /* ignore */ }
+}
 
 function write(next, opts = {}) {
   state = { ...state, ...next }
@@ -408,7 +413,7 @@ async function hydrateProfile(nextUid) {
     accountLive: true,
     loggedOut: false,
     syncError: '',
-    name: profile?.name || state.name,
+    name: (profile?.name && !looksLikeDemoName(profile.name) ? profile.name : (looksLikeDemoName(state.name) ? '' : (profile?.name || state.name))) || profile?.name || '',
     role: profile?.specialty || state.role,
     clinic: profile?.clinic || clinicRow?.name || '',
     city: profile?.city || state.city,

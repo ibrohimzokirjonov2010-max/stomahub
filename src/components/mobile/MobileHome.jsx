@@ -14,6 +14,7 @@ import { publicRecords, useHub } from '../../hubStore'
 import { seminarCard } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast } from './parts'
+import { initialsOf, looksLikeDemoName } from '../../demoPurge'
 
 const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays, color: '#14a39a', bg: '#e3f6f3' },
@@ -40,7 +41,8 @@ export default function MobileHome() {
   const { add } = useCart()
   const profile = useProfile()
   const feed = useFeed()
-  const hello = profile.accountLive ? (profile.name?.split(' ')[0] || 'shifokor') : 'mehmon'
+  const rawHello = profile.accountLive ? (profile.name || '') : ''
+  const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (rawHello.split(' ')[0] || 'shifokor'))
   const hub = useHub()
   const todaySeminars = publicRecords(hub).slice(0, 2).map((raw) => {
     const s = seminarCard(raw)
@@ -104,7 +106,11 @@ export default function MobileHome() {
 
         {/* Salomlashish */}
         <div className="mt-3 flex items-center gap-3">
-          <img src="/images/avatar.jpg" alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
+          {profile.avatar ? (
+            <img src={profile.avatar} alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
+          ) : (
+            <span className="grid size-12 place-items-center rounded-full bg-sea-50 text-[14px] font-bold text-sea ring-2 ring-white">{initialsOf(profile.name || hello)}</span>
+          )}
           <div className="min-w-0">
             <p className="text-[18px] font-bold leading-tight text-ink">Salom, {hello}!</p>
             <p className="mt-0.5 text-[12.5px] text-muted">Stomatologlar uchun barcha narsa bir joyda</p>

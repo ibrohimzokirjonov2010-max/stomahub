@@ -258,7 +258,7 @@ function ReviewsSheet({ reviews, onClose, onAdd }) {
   const [stars, setStars] = useState(5)
   const [text, setText] = useState('')
   const submit = () => {
-    onAdd({ name: 'Dr. Ibrohim', role: 'Stomatolog', date: 'Bugun', stars, text: text.trim() })
+    onAdd({ name: '', role: '', date: 'Bugun', stars, text: text.trim() })
     setText('')
   }
   return (

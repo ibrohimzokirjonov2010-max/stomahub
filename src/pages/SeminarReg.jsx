@@ -141,7 +141,7 @@ export default function SeminarReg() {
                 <Field label="F.I.Sh" required>
                   <span className="flex h-11 items-center gap-2 rounded-xl border border-line px-3">
                     <UserRound className="size-4 text-muted" />
-                    <input value={form.name} onChange={set('name')} placeholder="Masalan: Karimov Alisher Baxtiyorovich" className="w-full bg-transparent text-[13px] outline-none" />
+                    <input value={form.name} onChange={set('name')} placeholder="Masalan: Ism Familiya" className="w-full bg-transparent text-[13px] outline-none" />
                   </span>
                 </Field>
                 <div className="grid gap-3 sm:grid-cols-2">

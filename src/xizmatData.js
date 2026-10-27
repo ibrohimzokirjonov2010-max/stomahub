@@ -45,33 +45,10 @@ const colorOf = { profilaktika: 0, terapiya: 1, endodontiya: 2, jarrohlik: 2, im
 const firstRow = ['profilaktika', 'terapiya', 'endodontiya', 'jarrohlik', 'implantologiya', 'ortodontiya', 'estetik', 'protezlash']
 
 function seed() {
-  const ordered = []
-  firstRow.forEach((cat) => ordered.push([cat, NAMES[cat][0]]))
-  CATS.forEach(({ key }) => NAMES[key].forEach((row, i) => {
-    if (!(i === 0 && firstRow.includes(key))) ordered.push([key, row])
-  }))
-  return ordered.map(([cat, [name, price, duration]], i) => ({
-    id: `xzm-${i + 1}`,
-    code: `XZM-${String(i + 1).padStart(3, '0')}`,
-    name,
-    cat,
-    price,
-    duration,
-    teeth: '',
-    status: i % 13 === 11 ? 'nofaol' : 'faol',
-    short: DESCRIPTIONS[cat],
-    body: '',
-    materials: '',
-    tags: [catOf(cat).label.split(' ')[0].toLowerCase()],
-    inPlans: true,
-    color: COLORS[colorOf[cat]],
-    art: cat,
-    image: '',
-    docs: [],
-  }))
+  return []
 }
 
-const DEMO_SERVICES = seed()
+const DEMO_SERVICES = []
 let rows = []
 const listeners = new Set()
 const emit = () => {
@@ -79,7 +56,7 @@ const emit = () => {
   touchBlob('services')
 }
 bindBlob('services', {
-  seed: DEMO_SERVICES,
+  seed: [],
   get: () => rows,
   empty: () => [],
   set: (next) => {

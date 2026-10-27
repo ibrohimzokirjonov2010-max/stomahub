@@ -2,19 +2,12 @@ import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
 import { shiftIso } from './klinikaData'
 
-const face = (n) => `/images/bemorlar/bemor-${n}.jpg`
-
 export const TODAY = '2026-10-25'
 export const CHAIR_LIST = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3']
 export const TIMES = ['09:00', '10:00', '11:30', '13:00', '14:00', '15:30', '17:00']
 export const PAY_METHODS = ['Naqd', 'Plastik karta', 'Click', 'Payme', 'Bank o‘tkazmasi']
 
-export const DEMO_DOCTORS = [
-  { id: 'sardor', name: 'Dr. Sardor Karimov', role: 'Implantolog', photo: face('sardor') },
-  { id: 'kamol', name: 'Dr. Kamol Rahimov', role: 'Ortodont', photo: face('anvar') },
-  { id: 'malika', name: 'Dr. Malika Yo‘ldosheva', role: 'Endodontist', photo: face('sevara') },
-  { id: 'ibrohim', name: 'Dr. Ibrohim', role: 'Stomatolog', photo: '/images/avatar.jpg' },
-]
+export const DEMO_DOCTORS = []
 export const DOCTORS = []
 export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DEMO_DOCTORS.find((d) => d.id === id) || { id: id || 'me', name: 'Shifokor', role: 'Stomatolog', photo: '' }
 
@@ -121,78 +114,7 @@ function visitsFrom(id, stages) {
   }))
 }
 
-function build({ id, kind, patient, doctor, start, done, active, total, paid, status, chair = 'Kreslo 1' }) {
-  const k = KINDS[kind]
-  const wsum = k.steps.reduce((s, x) => s + x[4], 0)
-  let left = total
-  const stages = k.steps.map(([title, desc, teeth, art, w], i) => {
-    const price = i === k.steps.length - 1 ? left : Math.round((total * w) / wsum / 50000) * 50000
-    left -= price
-    const st = i < done ? 'bajarildi' : i < done + active ? 'jarayonda' : 'rejada'
-    const date = st === 'bajarildi' ? shiftIso(start, i) : st === 'jarayonda' ? TODAY : shiftIso(TODAY, (i - done - active + 1) * 4)
-    return { id: `${id}-s${i + 1}`, title, desc, teeth, art, price, date, status: st }
-  })
-  return {
-    id, code: id.toUpperCase(), patient, doctor, chair, title: k.title, subtitle: k.subtitle, start, status, paid,
-    discount: 0, payMode: 'full', stages, visits: visitsFrom(id, stages), note: '', teeth: {},
-    payments: paid ? [{ date: start, sum: paid, method: 'Plastik karta' }] : [],
-  }
-}
-
-const aliyeva = (() => {
-  const stages = [
-    { id: 'dr-0001-s1', title: 'Ko‘rik va rentgen', desc: 'Klinik ko‘rik, rentgen suratlari va davolash rejasini tuzish', teeth: [], art: null, price: 200000, date: '2026-10-12', status: 'bajarildi' },
-    { id: 'dr-0001-s2', title: 'Kanal davolash', desc: '36-tish kanal davolash (endodontik)', teeth: [36], art: 'endo', price: 1500000, date: '2026-10-15', status: 'bajarildi' },
-    { id: 'dr-0001-s3', title: 'Kompozit plomba', desc: '36-tish kompozit plomba qo‘yish', teeth: [36], art: 'filling', price: 800000, date: '2026-10-20', status: 'jarayonda' },
-    { id: 'dr-0001-s4', title: 'Implant o‘rnatish', desc: '46-tish implant o‘rnatish', teeth: [46], art: 'implant', price: 4500000, date: '2026-10-25', status: 'rejada' },
-    { id: 'dr-0001-s5', title: 'Toj o‘rnatish', desc: '46-tish ustiga kronka o‘rnatish', teeth: [46], art: 'crown', price: 2800000, date: '', status: 'rejada' },
-  ]
-  return {
-    id: 'dr-0001',
-    code: 'DR-0001',
-    patient: { id: 'aliyeva-mohira', name: 'Aliyeva Mohira', phone: '+998 90 123 45 67', age: '25 yosh', gender: 'Ayol', city: 'Toshkent', photo: face('mohira'), code: 'P-0001' },
-    doctor: 'sardor',
-    chair: 'Kreslo 1',
-    title: 'Implant va kronka',
-    subtitle: 'Implant + kronka kompleks davolash',
-    start: '2026-10-12',
-    status: 'jarayonda',
-    paid: 5200000,
-    discount: 0,
-    payMode: 'stages',
-    stages,
-    visits: [
-      { id: 'dr-0001-v1', date: '2026-10-12', time: '10:00', title: 'Ko‘rik va rentgen', status: 'bajarildi' },
-      { id: 'dr-0001-v2', date: '2026-10-15', time: '11:30', title: 'Kanal davolash (36)', status: 'bajarildi' },
-      { id: 'dr-0001-v3', date: '2026-10-20', time: '11:30', title: 'Kompozit plomba (36)', status: 'jarayonda' },
-      { id: 'dr-0001-v4', date: '2026-10-25', time: '10:00', title: 'Implant (46)', status: 'rejada' },
-      { id: 'dr-0001-v5', date: '', time: '', title: 'Kronka (46)', status: 'rejada' },
-    ],
-    note: 'Bemor implant va kronka uchun rozi. Keyingi uchrashuvda 36-tish plomba yakunlanadi.',
-    teeth: {},
-    payments: [
-      { date: '2026-10-12', sum: 1700000, method: 'Naqd' },
-      { date: '2026-10-20', sum: 3500000, method: 'Plastik karta' },
-    ],
-  }
-})()
-
-const pt = (id, name, phone, age, gender, photo, code, city = 'Toshkent') => ({ id, name, phone, age, gender, city, photo, code })
-
-function seed() {
-  return [
-    aliyeva,
-    build({ id: 'dr-0002', kind: 'orto', patient: pt('karimov-aziz', 'Karimov Aziz', '+998 91 987 65 43', '32 yosh', 'Erkak', face('aziz'), 'P-0002'), doctor: 'kamol', start: '2026-10-18', done: 5, active: 0, total: 3800000, paid: 3800000, status: 'yakunlangan', chair: 'Kreslo 2' }),
-    build({ id: 'dr-0003', kind: 'tozalash', patient: pt('', 'Nazarova Sitora', '+998 90 111 22 33', '29 yosh', 'Ayol', '', 'P-0031'), doctor: 'malika', start: '2026-10-25', done: 1, active: 0, total: 1200000, paid: 0, status: 'kutilmoqda', chair: 'Kreslo 3' }),
-    build({ id: 'dr-0004', kind: 'endo', patient: pt('', 'To‘xtayeva Dilnoza', '+998 93 555 77 88', '34 yosh', 'Ayol', face('dilnoza'), 'P-0032'), doctor: 'sardor', start: '2026-10-22', done: 3, active: 1, total: 3200000, paid: 1600000, status: 'jarayonda' }),
-    build({ id: 'dr-0005', kind: 'protez', patient: pt('', 'Raximov Bobur', '+998 97 444 55 66', '41 yosh', 'Erkak', face('bobur'), 'P-0033'), doctor: 'kamol', start: '2026-10-15', done: 5, active: 0, total: 4500000, paid: 4500000, status: 'yakunlangan', chair: 'Kreslo 2' }),
-    build({ id: 'dr-0006', kind: 'kanal', patient: pt('', 'Mirzayeva Munojat', '+998 91 222 33 44', '38 yosh', 'Ayol', '', 'P-0034', 'Samarqand'), doctor: 'malika', start: '2026-10-19', done: 1, active: 1, total: 2700000, paid: 1350000, status: 'jarayonda', chair: 'Kreslo 3' }),
-    build({ id: 'dr-0007', kind: 'implant', patient: pt('', 'Qodirov Jasur', '+998 90 666 77 99', '45 yosh', 'Erkak', face('davron'), 'P-0035'), doctor: 'sardor', start: '2026-10-21', done: 2, active: 1, total: 5000000, paid: 2500000, status: 'jarayonda' }),
-    build({ id: 'dr-0008', kind: 'orto', patient: pt('ismoilova-madina', 'Ismoilova Madina', '+998 94 333 22 11', '18 yosh', 'Ayol', face('madina'), 'P-0007'), doctor: 'kamol', start: '2026-10-17', done: 5, active: 0, total: 3600000, paid: 3600000, status: 'yakunlangan', chair: 'Kreslo 2' }),
-  ]
-}
-
-const DEMO_PLANS = seed()
+const DEMO_PLANS = []
 let plans = []
 let templates = []
 const listeners = new Set()
@@ -201,7 +123,7 @@ const emit = () => {
   touchBlob('plans')
 }
 bindBlob('plans', {
-  seed: () => ({ plans: DEMO_PLANS, templates: [] }),
+  seed: () => ({ plans: [], templates: [] }),
   get: () => ({ plans, templates }),
   empty: () => ({ plans: [], templates: [] }),
   set: (payload) => {

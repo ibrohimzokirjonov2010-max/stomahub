@@ -280,7 +280,7 @@ function Timeline({ list, onOpen, offset = (_, i) => i }) {
                 <span className="block truncate text-[11px] text-muted">{v.note || (v.tooth ? `${v.tooth}-tish` : '—')}</span>
               </span>
               <span className="flex shrink-0 items-center gap-1.5">
-                <img src={DOCTORS[v.doctor] || DOCTORS['Dr. Ibrohim']} alt="" className="size-7 rounded-full object-cover object-top" />
+                <img src={DOCTORS[v.doctor] || ''} alt="" className="size-7 rounded-full object-cover object-top" />
                 <span className="text-[11.5px] font-medium text-ink">{v.doctor}</span>
                 <ChevronRight className="size-4 text-muted" />
               </span>
@@ -301,7 +301,7 @@ function VisitSheet({ p, preset, onClose, onDone }) {
   const [time, setTime] = useState('')
   const [kind, setKind] = useState(preset.kind || '')
   const [tooth, setTooth] = useState(preset.tooth || '')
-  const [doctor, setDoctor] = useState('Dr. Ibrohim')
+  const [doctor, setDoctor] = useState('')
   const [note, setNote] = useState('')
   const [tried, setTried] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
