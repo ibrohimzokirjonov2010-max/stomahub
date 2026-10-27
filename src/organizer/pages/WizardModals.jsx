@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   Award, Crown, Gift, Star, Ticket, Users, X, ChevronDown,
 } from 'lucide-react'
-import { TEAL, TICKET_COLORS, box, uzDate } from './wizardBits'
+import { TEAL, TICKET_COLORS, box, uzDate, uploadImage } from './wizardBits'
 
 const ICONS = [
   { id: 'ticket', Icon: Ticket },
@@ -205,7 +205,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
             <span>Rasm yuklash</span>
             <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0]
-              if (file && /^image\/(png|jpeg)$/.test(file.type)) setF({ ...f, avatar: URL.createObjectURL(file) })
+              if (file && /^image\/(png|jpeg)$/.test(file.type)) uploadImage(file, 'speakers').then((src) => setF((x) => ({ ...x, avatar: src })), () => {})
             }} />
           </label>
         </div>
