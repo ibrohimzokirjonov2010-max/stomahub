@@ -81,7 +81,13 @@ export function MidRow({ data, month, onPick }) {
           <h2 className="text-[16px] font-bold text-[#10283F]">Platforma aylanmasi</h2>
           <MonthChip month={month} onPick={onPick} />
         </div>
-        <BarChart labels={byDay.map((_, i) => String(i + 1))} values={byDay} height={230} maxTicks={16} />
+        <BarChart
+          labels={byDay.map((_, i) => String(i + 1))}
+          values={byDay}
+          height={230}
+          maxTicks={16}
+          tipFmt={(v, i) => `${String(i + 1).padStart(2, '0')}.${String(month.getMonth() + 1).padStart(2, '0')}.${month.getFullYear()} — ${som(v)}`}
+        />
       </div>
       <div className={`${card} p-5`}>
         <div className="flex items-start justify-between">

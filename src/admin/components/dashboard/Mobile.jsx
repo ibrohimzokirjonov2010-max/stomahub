@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import {
   CalendarDays, ChevronDown, ChevronRight, Coins, GraduationCap, Package,
-  Percent, ShoppingBag, Store, Users, Megaphone, UserPlus, Shirt, Monitor,
+  Percent, ShoppingBag, Store, Users, Megaphone, UserPlus, Shirt, Monitor, Syringe, Box,
 } from 'lucide-react'
 import { BarChart } from '../Chart'
 import { PayBadge } from './StatusBadge'
@@ -10,8 +10,8 @@ import { daysInMonth, dmyhm, monthTitle, num, som } from '../../format'
 const card = 'rounded-2xl border border-[#E6EEF0] bg-white shadow-[0_1px_2px_rgb(16_40_63/0.04)]'
 
 const CAT_ICON = {
-  Materiallar: Package,
-  Implantlar: Package,
+  Materiallar: Box,
+  Implantlar: Syringe,
   Uskunalar: Monitor,
   Seminarlar: GraduationCap,
   'Forma va kiyimlar': Shirt,
@@ -113,7 +113,13 @@ export function MobileChart({ data, month }) {
       </div>
       <p className="mt-1 text-[12.5px] text-[#5C6E80]">Umumiy: <span className="font-semibold text-[#10283F]">{som(data.turnover)}</span></p>
       <div className="mt-3">
-        <BarChart labels={labs} values={byDay} height={200} maxTicks={8} />
+        <BarChart
+          labels={labs}
+          values={byDay}
+          height={200}
+          maxTicks={8}
+          tipFmt={(v, i) => `${String(i + 1).padStart(2, '0')}.${String(month.getMonth() + 1).padStart(2, '0')}.${month.getFullYear()} — ${som(v)}`}
+        />
       </div>
     </div>
   )
