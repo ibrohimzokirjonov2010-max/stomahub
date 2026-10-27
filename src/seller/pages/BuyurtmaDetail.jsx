@@ -144,7 +144,7 @@ export default function BuyurtmaDetail() {
             <h3 className="text-[15px] font-bold">To‘lov ma’lumotlari</h3>
             <div className="mt-3 space-y-1.5"><Row l="Mahsulotlar jami" v={som(o.subtotal)} />{Number(o.discount_amount) > 0 && <Row l="Chegirma" v={`−${som(o.discount_amount)}`} />}<Row l="Yetkazib berish" v={som(o.delivery_fee || 0)} /></div>
             <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Jami summa</span><span>{som(total)}</span></div>
-            <Row l="Stoqm Hub komissiyasi (12%)" v={som(o.commission)} />
+            <Row l="StomaHub komissiyasi (12%)" v={som(o.commission)} />
             <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Sizga tushadi</span><span>{som(o.payout)}</span></div>
             <div className="flex gap-2 rounded-lg bg-[#F0FDFA] p-3 text-[12px] text-[#3D4E5F]"><Info className="size-5 shrink-0 text-[#0F766E]" /><div><b className="text-[#10283F]">To‘lov naqd pulda amalga oshiriladi.</b><br />Xaridordan to‘lov yetkazilganda qabul qilinadi.</div></div>
           </div>

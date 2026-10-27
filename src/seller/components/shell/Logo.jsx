@@ -13,7 +13,7 @@ export default function Logo({ size = 'md' }) {
     <div className="flex items-center gap-2.5">
       <ToothMark className={big ? 'size-[42px]' : 'size-[32px]'} />
       <div className="whitespace-nowrap leading-tight">
-        <div className={`${big ? 'text-[22px]' : 'text-[18px]'} font-extrabold tracking-tight text-[#10283F]`}>Stoqm <span className="text-[#0F766E]">Hub</span></div>
+        <div className={`${big ? 'text-[22px]' : 'text-[18px]'} font-extrabold tracking-tight text-[#10283F]`}>Stoma<span className="text-[#0F766E]">Hub</span></div>
         <div className={`${big ? 'text-[13px]' : 'text-[11px]'} font-medium text-[#0F766E]/80`}>Sotuvchi kabineti</div>
       </div>
     </div>

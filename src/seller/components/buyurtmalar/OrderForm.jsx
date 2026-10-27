@@ -89,7 +89,7 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
       {pdAmt > 0 && <Row k={`Shaxsiy chegirma (${pd}%)`} v={`−${som(pdAmt)}`} />}
       <Row k="Yetkazib berish" v={som(fe)} />
       <div className="my-2 flex items-center justify-between rounded-lg bg-[#CCFBF1] px-3 py-2.5 font-bold"><span>Jami summa</span><span>{som(net + fe)}</span></div>
-      <Row k={`Stoqm Hub komissiyasi (${COMMISSION_RATE * 100}%)`} v={som(commission)} />
+      <Row k={`StomaHub komissiyasi (${COMMISSION_RATE * 100}%)`} v={som(commission)} />
       <div className="mt-2 flex items-center justify-between rounded-lg bg-[#CCFBF1] px-3 py-2.5 font-bold"><span>Sizga tushadi</span><span>{som(net - commission + fe)}</span></div>
     </div>
   )
