@@ -238,6 +238,12 @@ function Auth({ mode }) {
   const [forgot, setForgot] = useState(false)
   const [err, setErr] = useState('')
   const [phoneTaken, setPhoneTaken] = useState(false)
+  // Google OAuth qaytishida xato bo‘lsa (masalan, bekor qilindi) — ko‘rsatamiz
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const msg = params.get('error_description') || hash.get('error_description')
+    if (msg) setErr(`Google orqali kirish amalga oshmadi: ${decodeURIComponent(msg.replace(/\+/g, ' '))}`)
+  }, [])
   const [info, setInfo] = useState('')
   const [emailErr, setEmailErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -276,7 +282,7 @@ function Auth({ mode }) {
       role: res.profile?.specialty || '',
     })
     await retryHub()
-    return res.profile?.role === 'organizer' ? 'organizer' : 'customer'
+    return ['organizer', 'seller'].includes(res.profile?.role) ? res.profile.role : 'customer'
   }
 
   useEffect(() => {
@@ -375,7 +381,6 @@ function Auth({ mode }) {
       options: {
         redirectTo: redirect.toString(),
         queryParams: { prompt: 'select_account' },
-        data: { role: roleIntent, name: name.trim() },
       },
     })
     if (error) {
@@ -604,7 +609,7 @@ function Auth({ mode }) {
               {!isLogin && (
                 <label className="flex items-center gap-2.5 text-[13.5px] text-[#24384d]">
                   <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="size-[18px] accent-[#0F766E]" />
-                  <span><span className="font-medium text-[#0F766E]">Foydalanish shartlariga</span> roziman</span>
+                  <span><Link to="/foydalanish-shartlari" target="_blank" className="font-medium text-[#0F766E] underline">Foydalanish shartlari</Link>ga va <Link to="/maxfiylik" target="_blank" className="font-medium text-[#0F766E] underline">maxfiylik siyosati</Link>ga roziman</span>
                 </label>
               )}
               {otpSent && isLogin && <Field label={t.code} icon={Lock} value={otp} onChange={setOtp} placeholder={t.codePh} />}

@@ -5,6 +5,7 @@ import './catalogBindings'
 import { CartProvider } from './cart'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
+import { Privacy, Terms } from './pages/Legal'
 import Marketplace from './pages/Marketplace'
 import Product from './pages/Product'
 import Surplus from './pages/Surplus'
@@ -126,6 +127,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/kirish" element={<Login />} />
           <Route path="/royxat" element={<Register />} />
+          <Route path="/maxfiylik" element={<Privacy />} />
+          <Route path="/foydalanish-shartlari" element={<Terms />} />
           <Route path="/marketplace" element={<Responsive mobile={<MobileMarketplace />}><ShopLayout active="all"><Marketplace /></ShopLayout></Responsive>} />
           <Route
             path="/product/:id"

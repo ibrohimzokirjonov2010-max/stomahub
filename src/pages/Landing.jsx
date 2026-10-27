@@ -253,7 +253,7 @@ export default function Landing() {
           </div>
           <Foot title="Platforma" links={[['Marketplace', '/marketplace'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Ustalar', '/ustalar']]} />
           <Foot title="Klinika uchun" links={[['Klinika CRM', '/klinika'], ['Ustalar laboratoriyalari', '/ustalar'], ['Konsultatsiyalar', '/community'], ['E’lonlar', '/elonlar']]} />
-          <Foot title="Yordam" links={[['Savol-javob', '#faq'], ['Foydalanish shartlari', '/royxat'], ['Maxfiylik siyosati', '/royxat'], ['Sayt xaritasi', '/kategoriyalar']]} />
+          <Foot title="Yordam" links={[['Savol-javob', '#faq'], ['Foydalanish shartlari', '/foydalanish-shartlari'], ['Maxfiylik siyosati', '/maxfiylik'], ['Sayt xaritasi', '/kategoriyalar']]} />
           <div>
             <p className="text-[14px] font-bold text-[#0f2438]">Aloqa</p>
             <a href={CONTACT_PHONE_TEL} className="mt-3 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><Phone className="size-4 text-[#0F766E]" /> {CONTACT_PHONE}</a>
