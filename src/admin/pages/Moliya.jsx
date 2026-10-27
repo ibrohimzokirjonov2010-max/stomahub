@@ -97,7 +97,7 @@ export default function Moliya() {
       )} />
 
       <TableCard className="hidden lg:block">
-        <DataTable head={['#', 'Do‘kon', 'Telefon', 'Summa', 'Ussul', 'Holat', 'Sana', 'Amallar']}>
+        <DataTable head={['#', 'Do‘kon', 'Telefon', 'Summa', 'Usul', 'Holat', 'Sana', 'Amallar']}>
           {rows.map((r, i) => (
             <tr key={r.id} className="border-t border-[#EEF3F4]">
               <td className="px-3 py-3 text-[#8A9AA8]">{(page - 1) * pageSize + i + 1}</td>
@@ -138,7 +138,7 @@ export default function Moliya() {
           <div className="space-y-3 text-[13px]">
             <div className="text-[22px] font-extrabold text-[#0F766E]">{som(pick.amount)}</div>
             <div><span className="text-[#8A9AA8]">Do‘kon:</span> {pick.shop_name}</div>
-            <div><span className="text-[#8A9AA8]">Ussul:</span> {payLabel(pick.method)}</div>
+            <div><span className="text-[#8A9AA8]">Usul:</span> {payLabel(pick.method)}</div>
             <div><span className="text-[#8A9AA8]">Telefon:</span> {maskPhone(pick.phone)}</div>
             <div><span className="text-[#8A9AA8]">Izoh:</span> {pick.note || '—'}</div>
             {pick.status === 'kutilmoqda' && (
