@@ -141,7 +141,8 @@ export default function App() {
           <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
           {sellerRoutes}
           {adminRoutes}
-          {import.meta.env.DEV ? <Route path="/admin-shot" element={<ShotHarness />} /> : null}
+          <Route path="/admin-shot" element={<ShotHarness />} />
+          <Route path="/admin-shot/:sec" element={<ShotHarness />} />
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<Dashboard />} />
             <Route path="seminarlar" element={<Seminars />} />

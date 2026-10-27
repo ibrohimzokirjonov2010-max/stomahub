@@ -2,23 +2,33 @@ import { Route } from 'react-router-dom'
 import AdminGate from './AdminGate'
 import AdminLayout from './AdminLayout'
 import Dashboard from './pages/Dashboard'
-import Placeholder from './pages/Placeholder'
+import Foydalanuvchilar from './pages/Foydalanuvchilar'
+import Sotuvchilar from './pages/Sotuvchilar'
+import Tashkilotchilar from './pages/Tashkilotchilar'
+import Elonlar from './pages/Elonlar'
+import Buyurtmalar from './pages/Buyurtmalar'
+import Escrow from './pages/Escrow'
+import Tasdiqlashlar from './pages/Tasdiqlashlar'
+import Moliya from './pages/Moliya'
+import Shikoyatlar from './pages/Shikoyatlar'
+import Hisobotlar from './pages/Hisobotlar'
+import Sozlamalar from './pages/Sozlamalar'
 import Mahsulotlar from './pages/Mahsulotlar'
 
 export const adminRoutes = (
   <Route path="/admin" element={<AdminGate><AdminLayout /></AdminGate>}>
     <Route index element={<Dashboard />} />
-    <Route path="foydalanuvchilar" element={<Placeholder title="Foydalanuvchilar" />} />
-    <Route path="sotuvchilar" element={<Placeholder title="Sotuvchilar" />} />
-    <Route path="tashkilotchilar" element={<Placeholder title="Seminar tashkilotchilari" />} />
-    <Route path="elonlar" element={<Placeholder title="E’lonlar" />} />
-    <Route path="buyurtmalar" element={<Placeholder title="Buyurtmalar" />} />
-    <Route path="escrow" element={<Placeholder title="Escrow va pul aylanmasi" />} />
-    <Route path="tasdiqlashlar" element={<Placeholder title="Tasdiqlashlar" />} />
-    <Route path="moliya" element={<Placeholder title="Moliya va komissiya" />} />
-    <Route path="shikoyatlar" element={<Placeholder title="Shikoyatlar" />} />
-    <Route path="hisobotlar" element={<Placeholder title="Hisobotlar" />} />
-    <Route path="sozlamalar" element={<Placeholder title="Sozlamalar" />} />
+    <Route path="foydalanuvchilar" element={<Foydalanuvchilar />} />
+    <Route path="sotuvchilar" element={<Sotuvchilar />} />
+    <Route path="tashkilotchilar" element={<Tashkilotchilar />} />
+    <Route path="elonlar" element={<Elonlar />} />
+    <Route path="buyurtmalar" element={<Buyurtmalar />} />
+    <Route path="escrow" element={<Escrow />} />
+    <Route path="tasdiqlashlar" element={<Tasdiqlashlar />} />
+    <Route path="moliya" element={<Moliya />} />
+    <Route path="shikoyatlar" element={<Shikoyatlar />} />
+    <Route path="hisobotlar" element={<Hisobotlar />} />
+    <Route path="sozlamalar" element={<Sozlamalar />} />
     <Route path="mahsulotlar" element={<Mahsulotlar />} />
   </Route>
 )

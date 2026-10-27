@@ -117,3 +117,76 @@ export function ToneBadge({ tone = 'teal', children, dot }) {
     </span>
   )
 }
+
+export function MigrateBanner({ show, file = '0012_admin_sections.sql' }) {
+  if (!show) return null
+  return (
+    <div className="mt-3 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[13px] text-[#92400E]">
+      Kerakli RPC topilmadi. <code className="font-semibold">supabase/migrations/{file}</code> ni Supabase SQL editorida qo‘llang.
+    </div>
+  )
+}
+
+export function StatusDot({ tone = 'teal', children }) {
+  return <ToneBadge tone={tone} dot>{children}</ToneBadge>
+}
+
+export function TableCard({ children, className = '' }) {
+  return <div className={`${card} mt-4 overflow-hidden ${className}`}>{children}</div>
+}
+
+export function DataTable({ head, children }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-[13px]">
+        <thead className="bg-[#F8FBFC] text-[11.5px] uppercase tracking-wide text-[#5C6E80]">
+          <tr>{head.map((h) => <th key={h} className="whitespace-nowrap px-3 py-2.5 font-semibold">{h}</th>)}</tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  )
+}
+
+export function RowActions({ children }) {
+  return <div className="flex flex-wrap items-center gap-1.5">{children}</div>
+}
+
+export function Btn({ tone = 'ghost', children, className = '', ...rest }) {
+  const map = {
+    primary: 'bg-[#0F766E] text-white hover:bg-[#0d6a63]',
+    ghost: 'border border-[#E6EEF0] bg-white text-[#10283F] hover:bg-[#F8FBFC]',
+    danger: 'border border-[#FECACA] bg-white text-[#B91C1C] hover:bg-[#FEF2F2]',
+    soft: 'bg-[#F0FDFA] text-[#0F766E] hover:bg-[#CCFBF1]',
+  }
+  return (
+    <button type="button" className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12.5px] font-semibold disabled:opacity-50 ${map[tone] || map.ghost} ${className}`} {...rest}>
+      {children}
+    </button>
+  )
+}
+
+export function KpiStrip({ items }) {
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {items.map((x) => (
+        <div key={x.label} className={`${card} p-3.5 ${x.active ? 'border-[#0F766E] ring-1 ring-[#0F766E]/30' : ''}`}>
+          <div className="flex items-center gap-2 text-[12.5px] font-medium text-[#5C6E80]">
+            {x.icon && <x.icon className="size-4 text-[#0F766E]" />}
+            {x.label}
+          </div>
+          <div className="mt-1 text-[22px] font-extrabold tracking-tight text-[#10283F]">{x.value}</div>
+          {x.sub && <div className="mt-0.5 text-[11.5px] text-[#8A9AA8]">{x.sub}</div>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function MobileCards({ rows, render }) {
+  return (
+    <ul className="mt-3 flex flex-col gap-2.5 lg:hidden">
+      {rows.map((r, i) => <li key={r.id || i} className={`${card} p-3`}>{render(r, i)}</li>)}
+    </ul>
+  )
+}
