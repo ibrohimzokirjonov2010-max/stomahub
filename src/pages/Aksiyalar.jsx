@@ -2,12 +2,16 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Clock, Heart, Search, ShoppingCart, Star } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
-import { catalog, clock, som, useCountdown } from '../aksiyaData'
+import { getCatalog, clock, som, useCountdown } from '../aksiyaData'
 
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export default function Aksiyalar() {
+  useCatalogVersion()
+  const catalog = getCatalog()
   const [q, setQ] = useState('')
   const [letter, setLetter] = useState('all')
   const [sort, setSort] = useState('pop')
@@ -24,7 +28,7 @@ export default function Aksiyalar() {
     if (sort === 'cheap') rows = [...rows].sort((a, b) => a.price - b.price)
     if (sort === 'rich') rows = [...rows].sort((a, b) => b.price - a.price)
     return rows
-  }, [q, letter, sort])
+  }, [catalog, q, letter, sort])
 
   return (
     <ShopLayout active="aksiya" placeholder="Mahsulot, brend yoki kategoriya qidiring...">
@@ -65,7 +69,8 @@ export default function Aksiyalar() {
           <p className="mt-8 text-center text-[13px] text-muted">Bu filtrda aksiya topilmadi.</p>
         ) : (
           <div className="aksiya-grid mt-3">
-            {list.map((d) => (
+            {!catalog.length ? <EmptyCatalog title="Aksiyalar bo‘sh" text="Hali aksiyalar yo‘q. catalog_items (deal) orqali qo‘shiladi." /> : null}
+      {list.map((d) => (
               <Card key={d.id} deal={d} saved={!!saved[d.id]} onSave={() => setSaved((s) => ({ ...s, [d.id]: !s[d.id] }))} />
             ))}
           </div>

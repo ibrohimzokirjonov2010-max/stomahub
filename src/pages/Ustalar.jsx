@@ -5,6 +5,8 @@ import {
   MapPin, Briefcase, ChevronDown, Upload, ShieldCheck, BadgeCheck, Clock, X,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { masters, cats, cities, districts, sorts, why, statusLabel } from '../ustalarData'
 
 const catIcon = { all: LayoutGrid, unit: Wrench, handpiece: Cog, compressor: Fan, autoclave: Container, cbct: Scan, scan: Monitor, install: Hammer }
@@ -19,6 +21,7 @@ export default function Ustalar() {
 }
 
 function Catalog({ query }) {
+  useCatalogVersion()
   const [cat, setCat] = useState('all')
   const [city, setCity] = useState('Toshkent')
   const [district, setDistrict] = useState('')
@@ -55,6 +58,7 @@ function Catalog({ query }) {
 
   return (
     <div className="pb-8 pt-3">
+    {!masters.length ? <EmptyCatalog title="Ustalar ro‘yxati bo‘sh" text="Hali ustalar qo‘shilmagan." /> : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-[240px] max-w-[560px]">
           <h1 className="text-[22px] font-extrabold leading-tight text-ink">Ustalar va servis</h1>

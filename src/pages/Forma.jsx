@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { LayoutGrid, Shirt, UserRound, Footprints, Stethoscope, Heart, Star, ShoppingCart, List, Upload, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
 import { cats, genders, allSizes, colors, fabrics, brands, sorts, tiers, products, money, colorOf, sizeChart } from '../formaData'
 
@@ -17,6 +19,7 @@ export default function Forma() {
 }
 
 function Catalog({ query }) {
+  useCatalogVersion()
   const [params] = useSearchParams()
   const [cat, setCat] = useState('all')
   const [gender, setGender] = useState([])
@@ -121,7 +124,8 @@ function Catalog({ query }) {
             <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">Mahsulot topilmadi</div>
           ) : view === 'grid' ? (
             <div className="grid min-w-0 grid-cols-2 gap-2 xl:grid-cols-4">
-              {list.map((p) => <Card key={p.id} p={p} saved={saved.has(p.id)} onSave={() => setSaved((s) => { const n = new Set(s); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} />)}
+              {!products.length ? <EmptyCatalog title="Forma katalogi bo‘sh" text="Hali forma mahsulotlari qo‘shilmagan." /> : null}
+      {list.map((p) => <Card key={p.id} p={p} saved={saved.has(p.id)} onSave={() => setSaved((s) => { const n = new Set(s); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} />)}
             </div>
           ) : (
             <div className="flex flex-col gap-2">

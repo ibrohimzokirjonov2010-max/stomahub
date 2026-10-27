@@ -5,6 +5,8 @@ import {
   Syringe, Ellipsis, MapPin, ArrowUpDown, LayoutGrid, List, Star,
 } from 'lucide-react'
 import { LikeButton, AddButton } from '../components/market/ProductCard'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { surplusChips, surplusItems, cities, conditions } from '../surplusData'
 import { som } from '../marketData'
 
@@ -34,6 +36,7 @@ export function ConditionBadge({ value, className = '' }) {
 }
 
 export default function Surplus() {
+  useCatalogVersion()
   const [params] = useSearchParams()
   const [cat, setCat] = useState(params.get('cat') || 'all')
   const [city, setCity] = useState('')
@@ -173,7 +176,8 @@ export default function Surplus() {
           <div className="grid h-[200px] place-items-center rounded-xl bg-white text-[11px] text-muted shadow-card">E’lonlar topilmadi</div>
         ) : view === 'grid' ? (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            {list.map((p) => <SurplusCard key={p.id} item={p} />)}
+            {!surplusItems.length ? <EmptyCatalog title="Ortiqcha jihozlar bo‘sh" text="Hali e’lonlar yo‘q." /> : null}
+      {list.map((p) => <SurplusCard key={p.id} item={p} />)}
           </div>
         ) : (
           <div className="flex flex-col gap-2">

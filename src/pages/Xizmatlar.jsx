@@ -4,6 +4,7 @@ import {
   Clock, ChevronLeft, ChevronRight, Check, Trash2, Power, X,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
 import ServiceArt from '../components/ServiceArt'
 import XizmatDialog from '../components/XizmatDialog'
 import { CATS, COLORS, catOf, useXizmatlar, saveXizmat, patchXizmat, removeXizmat, importXizmat, nextCode } from '../xizmatData'
@@ -178,7 +179,8 @@ export default function Xizmatlar() {
           <CatTile active={cat === 'all'} onClick={() => resetPage(setCat)('all')} label="Barchasi" count={all.length}>
             <LayoutGrid className="size-9 text-sea" strokeWidth={1.4} />
           </CatTile>
-          {CATS.map((c) => (
+          {!list.length ? <EmptyCatalog title="Xizmatlar bo‘sh" text="Hali xizmatlar yo‘q. Klinika kabinetidan qo‘shing." /> : null}
+      {CATS.map((c) => (
             <CatTile key={c.key} active={cat === c.key} onClick={() => resetPage(setCat)(c.key)} label={c.label} count={counts[c.key]}>
               <ServiceArt kind={c.key} className="size-12" />
             </CatTile>

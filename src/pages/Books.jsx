@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingCart, Star, BookOpen, Plus, X, Check } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
 import {
   cats, formatOptions, langOptions, stockOptions, publisherOptions, langName, sorts,
-  books, library, perks, money, featured,
+  books, library, perks, money,
 } from '../booksData'
 
 const empty = { formats: [], langs: [], publishers: [], yearFrom: 2015, yearTo: 2026, priceFrom: 0, priceTo: 5000000, stock: 'all', sort: 'popular', cat: 'all' }
@@ -20,6 +22,8 @@ export default function BooksRoute() {
 }
 
 function Books({ query }) {
+  useCatalogVersion()
+  const featuredBook = books.find((b) => b.featured) || books[0] || null
   const [f, setF] = useState(empty)
   const [ask, setAsk] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -123,7 +127,9 @@ function Books({ query }) {
               </select>
             </label>
           </div>
-          {list.length ? (
+          {!books.length ? (
+            <EmptyCatalog title="Kitoblar katalogi bo‘sh" text="Hali hech qanday kitob qo‘shilmagan. Admin yoki sotuvchi catalog_items orqali qo‘shadi." />
+          ) : list.length ? (
             <div className="grid min-w-0 grid-cols-2 gap-2 xl:grid-cols-4">
               {list.map((b) => <BookCard key={b.id} book={b} />)}
             </div>
@@ -134,19 +140,25 @@ function Books({ query }) {
 
         <aside className="flex flex-col gap-3">
           <div className="rounded-xl bg-white p-3 shadow-card">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-[12px] font-bold text-ink">Haftaning tanlovi</h3>
-              {featured.off ? <span className="rounded-full bg-sale px-1.5 py-0.5 text-[9px] font-bold text-white">-{featured.off}%</span> : null}
-            </div>
-            <Link to={`/kitoblar/${featured.id}`}><img src={featured.cover} alt="" className="h-[132px] w-full rounded-lg object-cover" /></Link>
-            <Link to={`/kitoblar/${featured.id}`} className="mt-2 block text-[13px] font-bold leading-tight text-ink">{featured.title}</Link>
-            <p className="text-[10px] text-muted">{featured.author}</p>
-            <p className="text-[10px] text-muted">{featured.year} · {featured.pages} sahifa</p>
-            <p className="mt-1 flex items-center gap-1 text-[10px] text-ink-2"><Star className="size-3 fill-star text-star" /> {featured.rating}</p>
-            <p className="mt-1 text-[16px] font-extrabold text-sale">{money(featured.price)}</p>
-            {featured.oldPrice ? <p className="text-[10px] text-muted line-through">{money(featured.oldPrice)}</p> : null}
-            <CartButton book={featured} wide />
-            <Link to={`/kitoblar/${featured.id}/oqish`} className="mt-1.5 flex h-8 w-full items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea hover:bg-sea-50">Namuna o‘qish</Link>
+            {featuredBook ? (
+              <>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-[12px] font-bold text-ink">Haftaning tanlovi</h3>
+                  {featuredBook.off ? <span className="rounded-full bg-sale px-1.5 py-0.5 text-[9px] font-bold text-white">-{featuredBook.off}%</span> : null}
+                </div>
+                <Link to={`/kitoblar/${featuredBook.id}`}><img src={featuredBook.cover} alt="" className="h-[132px] w-full rounded-lg object-cover" /></Link>
+                <Link to={`/kitoblar/${featuredBook.id}`} className="mt-2 block text-[13px] font-bold leading-tight text-ink">{featuredBook.title}</Link>
+                <p className="text-[10px] text-muted">{featuredBook.author}</p>
+                <p className="text-[10px] text-muted">{featuredBook.year} · {featuredBook.pages} sahifa</p>
+                <p className="mt-1 flex items-center gap-1 text-[10px] text-ink-2"><Star className="size-3 fill-star text-star" /> {featuredBook.rating}</p>
+                <p className="mt-1 text-[16px] font-extrabold text-sale">{money(featuredBook.price)}</p>
+                {featuredBook.oldPrice ? <p className="text-[10px] text-muted line-through">{money(featuredBook.oldPrice)}</p> : null}
+                <CartButton book={featuredBook} wide />
+                <Link to={`/kitoblar/${featuredBook.id}/oqish`} className="mt-1.5 flex h-8 w-full items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea hover:bg-sea-50">Namuna o‘qish</Link>
+              </>
+            ) : (
+              <p className="py-2 text-[11px] text-muted">Tanlangan kitob yo‘q</p>
+            )}
             <div className="mt-2 flex flex-col gap-1">
               {perks.map((p) => <p key={p} className="flex items-center gap-1.5 text-[10px] text-ink-2"><Check className="size-3 text-sea" /> {p}</p>)}
             </div>

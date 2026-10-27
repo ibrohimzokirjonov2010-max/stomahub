@@ -5,6 +5,8 @@ import {
   ShoppingCart, X, ChevronDown,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
 import {
   products, catList, catName, statusList, statusName, primaryBrands, warranties, cities, sorts,
@@ -26,6 +28,7 @@ export default function Jihozlar() {
 }
 
 function Catalog({ query }) {
+  useCatalogVersion()
   const [params] = useSearchParams()
   const [cat, setCat] = useState(params.get('cat') || 'all')
   const [status, setStatus] = useState([])
@@ -159,7 +162,8 @@ function Catalog({ query }) {
             <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">Jihoz topilmadi</div>
           ) : view === 'grid' ? (
             <div className="grid min-w-0 grid-cols-2 gap-2 xl:grid-cols-4">
-              {list.map((p) => (
+              {!products.length ? <EmptyCatalog title="Jihozlar katalogi bo‘sh" text="Hali jihozlar qo‘shilmagan." /> : null}
+      {list.map((p) => (
                 <Card key={p.id} p={p} picked={picked.includes(p.id)} onPick={() => togglePick(p.id)} onOffer={() => setOffer(p)} />
               ))}
             </div>
