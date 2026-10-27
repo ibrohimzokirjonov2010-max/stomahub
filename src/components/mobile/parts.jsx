@@ -17,7 +17,7 @@ export function MobileTopBar({ onSearch, onBell, search = true }) {
   const { items } = useCart()
   const navigate = useNavigate()
   return (
-    <header className="flex items-center justify-between">
+    <header className="app-topbar sticky top-0 z-30 -mx-3.5 -mt-3 flex items-center justify-between bg-[#eef7f8]/95 px-3.5 pb-1 backdrop-blur">
       <BrandLogo />
       <div className="flex items-center gap-1">
         {search && (
@@ -31,7 +31,6 @@ export function MobileTopBar({ onSearch, onBell, search = true }) {
         </button>
         <button type="button" onClick={onBell} aria-label="Bildirishnomalar" className="relative grid size-10 place-items-center rounded-full text-ink">
           <Bell className="size-[21px]" />
-          <CountBadge>2</CountBadge>
         </button>
       </div>
     </header>

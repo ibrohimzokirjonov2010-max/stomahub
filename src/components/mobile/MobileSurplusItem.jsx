@@ -28,8 +28,16 @@ export default function MobileSurplusItem() {
 function SurplusView({ id }) {
   const d = getSurplusDetail(id)
   const related = similarFor(id)
-  const s = d.seller
   const navigate = useNavigate()
+  if (!d) {
+    return (
+      <div className="px-4 py-16 text-center">
+        <p className="text-[16px] font-bold text-ink">E’lon topilmadi</p>
+        <button type="button" onClick={() => navigate('/ortiqcha')} className="mt-3 text-[13px] font-semibold text-sea">Ortiqcha materiallarga qaytish</button>
+      </div>
+    )
+  }
+  const s = d.seller
   const { items, add, setQty, remove } = useCart()
   const [shot, setShot] = useState(0)
   const [liked, setLiked] = useState(false)

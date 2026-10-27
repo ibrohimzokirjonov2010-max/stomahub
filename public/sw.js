@@ -1,4 +1,4 @@
-const CACHE = 'stomahub-v3'
+const CACHE = 'stomahub-v4'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

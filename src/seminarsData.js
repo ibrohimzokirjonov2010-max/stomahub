@@ -80,7 +80,6 @@ export const monthOrder = [
 ]
 
 export const seminars = []
-export const DEMO_SEMINARS_LIST = DEMO_SEMINARS
 
 export const mySeminars = seminars.filter((s) => s.mine)
 
@@ -153,42 +152,36 @@ export function seminarPage(id) {
 }
 
 export function buildSeminarPage(s) {
-  const featured = s.id === 'implant-toj'
-  const speaker = featured
-    ? { name: 'Dr. Aziz Karimov, PhD', role: 'Implantolog, jarroh', avatar: '/images/surplus/seller.jpg', rating: 4.9, reviews: 132, lines: ['15 yil tajriba', '5 000+ implant operatsiyasi', 'Xalqaro treninglar va sertifikatlar', 'Toshkent, DentAKI Clinic'] }
-    : { name: s.speaker.name, role: s.speaker.role, avatar: s.speaker.avatar, rating: 4.8, reviews: 48, lines: ['Klinik amaliyot va o‘qitish', s.city, `${s.cme} ballik dastur muallifi`] }
+  const speaker = {
+    name: s.speaker?.name || 'Ma’ruzachi',
+    role: s.speaker?.role || '',
+    avatar: s.speaker?.avatar || '/images/avatar.jpg',
+    rating: 4.8,
+    reviews: 48,
+    lines: ['Klinik amaliyot va o‘qitish', s.city, `${s.cme || 6} ballik dastur muallifi`],
+  }
 
   return {
     ...s,
     catName: catLabel[s.cat],
-    title: featured ? 'Implantologiya: Implantdan tojgacha' : s.title,
-    lead: featured
-      ? 'Diagnostika, jarrohlik protokoli, implant o‘rnatish va implant usti protezlash bo‘yicha intensiv 2 kunlik seminar.'
-      : `${s.text}. ${s.city}da, ${s.place}da o‘tadigan amaliy seminar.`,
-    whenTitle: featured ? '24-oktabr 2026' : `${Number(s.day)}-${MON_NAME[s.mon] || 'noyabr'} ${String(s.monthKey || '2026-11').slice(0, 4)}`,
-    whenText: featured ? 'Shanba, 10:00 – 18:00' : `${s.weekday}, ${s.time}`,
+    title: s.title,
+    lead: `${s.text}. ${s.city}da, ${s.place}da o‘tadigan amaliy seminar.`,
+    whenTitle: `${Number(s.day)}-${MON_NAME[s.mon] || 'noyabr'} ${String(s.monthKey || '2026-11').slice(0, 4)}`,
+    whenText: `${s.weekday}, ${s.time}`,
     whereTitle: s.city,
-    whereText: featured ? 'Hyatt Regency, konferens-zal' : s.place,
+    whereText: s.place,
     modeTitle: s.format.startsWith('Offline +') ? 'Offline + jonli efir' : s.format === 'Online' ? 'Online' : 'Offline',
     modeText: s.format.startsWith('Offline +') ? 'Zalda va onlayn qatnashish' : 'Zalda qatnashish',
-    hero: featured ? pic('surgery') : s.image,
-    about: featured
-      ? 'Ushbu amaliy va nazariy seminar implantologiyada zamonaviy yondashuvlarni qamrab oladi: diagnostika, suyak augmentatsiyasi, implant o‘rnatish protokoli, implant usti protezlash va asoratlarning oldini olish. Nazariy bilimlar amaliy mashg‘ulotlar bilan mustahkamlanadi.'
-      : `${s.title} — ${s.text.toLowerCase()}. Dastur nazariy qism, klinik holatlar va amaliy mashg‘ulotdan iborat. Ishtirokchilar sertifikat va CME ball oladi.`,
-    learn: featured
-      ? ['Implantologiyada diagnostika va rejalashtirish', 'Suyak augmentatsiyasi va sinus lifting', 'Implant o‘rnatish bosqichlari va jarrohlik protokollari', 'Abutment tanlash va vaqtinchalik/doimiy toj protezlash', 'Asoratlar va ularning oldini olish', 'Amaliy mashg‘ulot: phantom modellarda']
-      : learnByCat[s.cat],
-    perks: featured
-      ? [['Amaliy mashg‘ulotlar', 'Har bir ishtirokchi implant tizimi'], ['Kichik guruhlar', 'Individual yondashuv'], ['Sertifikat beriladi', 'CME 8 ball'], ['Ilmiy materiallar', 'Nazariy bilimlar va protokollar'], ['Networking', 'Hamkasblar bilan tanishish']]
-      : [['Amaliy mashg‘ulot', 'Kichik guruhlarda ishlash'], ['Sertifikat', `CME ${s.cme} ball`], ['Materiallar', 'Tashkilotchi taqdim etadi'], ['Networking', 'Hamkasblar bilan tanishish']],
+    hero: s.image,
+    about: `${s.title} — ${String(s.text || '').toLowerCase()}. Dastur nazariy qism, klinik holatlar va amaliy mashg‘ulotdan iborat. Ishtirokchilar sertifikat va CME ball oladi.`,
+    learn: learnByCat[s.cat] || learnByCat.other,
+    perks: [['Amaliy mashg‘ulot', 'Kichik guruhlarda ishlash'], ['Sertifikat', `CME ${s.cme || 6} ball`], ['Materiallar', 'Tashkilotchi taqdim etadi'], ['Networking', 'Hamkasblar bilan tanishish']],
     speaker,
-    scheduleTitle: featured ? 'Dastur (24-oktabr 2026)' : `Dastur (${s.day} ${s.mon})`,
+    scheduleTitle: `Dastur (${s.day} ${s.mon})`,
     schedule: scheduleFor(s),
     gear: ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
-    venue: featured
-      ? { name: 'Hyatt Regency Tashkent', address: 'Toshkent sh., Navoi ko‘chasi, 1A', image: pic('hotel'), map: 'https://maps.google.com/?q=Hyatt+Regency+Tashkent' }
-      : { name: s.place, address: `${s.city}`, image: pic('hotel'), map: `https://maps.google.com/?q=${encodeURIComponent(s.place + ' ' + s.city)}` },
-    seatsBanner: featured ? 30 : s.left,
+    venue: { name: s.place, address: `${s.city}`, image: pic('hotel'), map: `https://maps.google.com/?q=${encodeURIComponent((s.place || '') + ' ' + (s.city || ''))}` },
+    seatsBanner: s.left,
     plans: s.organizer && Array.isArray(s.tickets) && s.tickets.length
       ? s.tickets.filter((t) => t.price).map((t) => ({
           id: t.id,
@@ -201,18 +194,10 @@ export function buildSeminarPage(s) {
           seats: t.seats || t.total,
         }))
       : plansFor(s),
-    review: {
-      name: 'Dr. Sevara Ahmedova', avatar: '/images/surplus/u6.jpg', date: '12.02.2026', rating: 5,
-      text: 'Juda foydali va amaliy seminar. Amaliy qism ayniqsa zo‘r bo‘ldi, tavsiya qilaman!',
-    },
-    similar: featured
-      ? [
-          { id: 'sinus-lifting', title: 'Sinus lifting va vertikal augmentatsiya', date: '12-noyabr 2026', city: 'Toshkent', price: 1800000, image: pic('surgery') },
-          { id: 'raqamli-implant', title: 'Raqamli implantologiya va skanerlar', date: '28-noyabr 2026', city: 'Samarqand', price: 1000000, image: '/images/hero-implant.jpg' },
-        ]
-      : seminars.filter((x) => x.id !== s.id).slice(0, 2).map((x) => ({
-          id: x.id, title: x.title, date: `${x.day}-${x.mon === 'OKT' ? 'oktabr' : 'noyabr'} 2026`, city: x.city, price: x.price, image: x.image,
-        })),
+    review: null,
+    similar: seminars.filter((x) => x.id !== s.id).slice(0, 2).map((x) => ({
+      id: x.id, title: x.title, date: `${x.day}-${x.mon === 'OKT' ? 'oktabr' : 'noyabr'} 2026`, city: x.city, price: x.price, image: x.image,
+    })),
   }
 }
 
@@ -221,7 +206,7 @@ const cardImage = { 'implant-toj': '/images/seminar-1.jpg', 'mikroskop-endo': '/
 const BREAKS = /breyk|Tushlik|qahva/i
 
 export function seminarCard(s) {
-  const days = s.id === 'implant-toj' ? 2 : 1
+  const days = Number(s.days) > 1 ? Number(s.days) : 1
   const d = Number(s.day)
   const month = MONTHS[s.mon]
   const standart = plansFor(s)[0]
@@ -237,7 +222,7 @@ export function seminarCard(s) {
     oldPrice: standart.oldPrice,
     off: Math.round((1 - s.price / standart.oldPrice) * 100),
     dateKey: `${s.monthKey}-${s.day}`,
-    speaker: s.id === 'implant-toj' ? { name: 'Dr. Aziz Karimov', role: 'Implantolog, jarroh', avatar: '/images/surplus/seller.jpg' } : s.speaker,
+    speaker: s.speaker,
   }
 }
 

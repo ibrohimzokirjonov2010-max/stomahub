@@ -10,7 +10,7 @@ import { useMarket } from '../../buyerApi'
 import { profileStore, useProfile } from '../../profileStore'
 import { ToothIcon } from '../icons'
 import MobileTabBar from './MobileTabBar'
-import { MobileTopBar, MobileToast, GiftArt, QtyStepper, GoCartButton } from './parts'
+import { MobileTopBar, MobileToast, QtyStepper, GoCartButton } from './parts'
 
 const GROUPS = [
   { key: 'mat', label: 'Materiallar', icon: Box, cats: ['komp', 'bond', 'endo'] },
@@ -95,14 +95,6 @@ export default function MobileMarketplace() {
           )}
         </label>
 
-        <Link to="/aksiyalar" className="mt-3 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#d9f2ef] to-[#e8f7f5] py-2 pl-1.5 pr-3">
-          <GiftArt className="h-[44px] w-[54px] shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-bold text-ink">10 000 so‘m bonus oling!</p>
-            <p className="line-clamp-2 text-[10px] leading-snug text-ink-2">Ilovada ro‘yxatdan o‘ting va birinchi xaridingizda foydalaning.</p>
-          </div>
-          <ChevronRight className="size-5 shrink-0 text-ink" />
-        </Link>
       </div>
 
       {/* Kategoriyalar */}

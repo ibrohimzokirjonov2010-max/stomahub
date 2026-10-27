@@ -96,10 +96,10 @@ function SeminarView({ id }) {
         <img src={s.hero} alt="" className={`absolute inset-0 size-full object-cover ${s.id === 'implant-toj' ? '-scale-x-100' : ''}`} />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0b4f55]/10 via-[#0b4f55]/55 to-[#0b4f55]/95" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0b4f55]/60 to-transparent" />
-        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/seminarlar'))} aria-label="Orqaga" className="absolute left-3.5 top-3.5 grid size-10 place-items-center rounded-full bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.15)]">
+        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/seminarlar'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-full bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.15)]">
           <ChevronLeft className="size-5" />
         </button>
-        <div className="absolute right-3.5 top-3.5 flex gap-2">
+        <div className="safe-overlay-top absolute right-3.5 flex gap-2">
           <button type="button" onClick={() => setToast(toggleSaved(s.id) ? 'Seminar saqlandi' : 'Saqlanganlardan olib tashlandi')} aria-label="Saqlash" aria-pressed={saved} className="grid size-10 place-items-center rounded-full bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.15)]">
             <Bookmark className={`size-[18px] ${saved ? 'fill-sea text-sea' : ''}`} />
           </button>
@@ -144,7 +144,7 @@ function SeminarView({ id }) {
       </button>
 
       {/* Tablar */}
-      <div className="sticky top-0 z-20 mt-3 overflow-x-auto bg-[#f6f9fb]/95 px-3 py-2 backdrop-blur no-scrollbar">
+      <div className="sticky top-0 z-20 mt-3 overflow-x-auto bg-[#f6f9fb] px-3 py-2 backdrop-blur no-scrollbar">
         <div className="flex w-max gap-2">
           {TABS.map(([key, label, Icon]) => (
             <button key={key} type="button" onClick={() => goTo(key)} aria-current={tab === key ? 'true' : undefined} className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-medium transition ${tab === key ? 'bg-sea text-white shadow-[0_4px_12px_-4px_rgb(11_138_149/0.6)]' : 'border border-line bg-white text-ink'}`}>
@@ -208,7 +208,7 @@ function SeminarView({ id }) {
       </section>
 
       {/* Pastki panel */}
-      <div className="fixed inset-x-0 bottom-[62px] z-30 flex items-center gap-3 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
+      <div className="app-action-bar fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
         {reg ? (
           <>
             <div className="min-w-0 flex-1">
