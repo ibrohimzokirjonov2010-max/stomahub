@@ -3,6 +3,7 @@ import { Phone, MapPin, Clock, Save, Plus } from 'lucide-react'
 import Modal from '../shell/Modal'
 import { Btn, Field, Input, Toggle, Err, toast } from '../ui'
 import { insertRow, updateRow, logActivity } from '../../api'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 export default function BranchForm({ edit, onClose }) {
   const [v, setV] = useState(() => edit ? { ...edit } : { name: '', address: '', phone: '+998 ', hours: '09:00 - 18:00', active: true })
@@ -23,7 +24,7 @@ export default function BranchForm({ edit, onClose }) {
       <div className="space-y-3">
         <Field label="Filial nomi"><Input value={v.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Chilonzor filiali" /></Field>
         <Field label="Manzil"><Input icon={MapPin} value={v.address} onChange={(e) => set('address', e.target.value)} placeholder="Shahar, tuman, ko‘cha" /></Field>
-        <div className="grid gap-3 md:grid-cols-2"><Field label="Telefon"><Input icon={Phone} value={v.phone} onChange={(e) => set('phone', e.target.value)} inputMode="tel" /></Field><Field label="Ish vaqti"><Input icon={Clock} value={v.hours} onChange={(e) => set('hours', e.target.value)} placeholder="09:00 - 18:00" /></Field></div>
+        <div className="grid gap-3 md:grid-cols-2"><Field label="Telefon"><PhoneInput className="h-11" value={v.phone} onChange={(val) => set('phone', toE164(val) || extractUzLocalDigits(val))} valueMode="e164" /></Field><Field label="Ish vaqti"><Input icon={Clock} value={v.hours} onChange={(e) => set('hours', e.target.value)} placeholder="09:00 - 18:00" /></Field></div>
         <div className="flex items-center gap-3"><Toggle checked={v.active} onChange={(x) => set('active', x)} /><span className="text-[13px] font-semibold">{v.active ? 'Faol' : 'Faol emas'}</span></div>
         <Err>{err}</Err>
       </div>

@@ -277,7 +277,7 @@ export default function Bemor() {
           <form onSubmit={addVisit} className="space-y-2">
             <input name="date" type="date" required className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
             <input name="kind" required placeholder="Qabul turi" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <input name="doctor" defaultValue="Dr. Ibrohim" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
+            <input name="doctor" defaultValue="" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
             <button className="h-9 rounded-lg bg-sea px-4 text-[13px] font-semibold text-white">Saqlash</button>
           </form>
         </Modal>

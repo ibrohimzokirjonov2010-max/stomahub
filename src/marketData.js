@@ -13,13 +13,13 @@ export const filterChips = [
 ]
 
 export const categoryCounts = [
-  ['all', 'Barchasi', '1 248'], ['komp', 'Kompozitlar', 186], ['bond', 'Bondlar', 84], ['endo', 'Endodontiya', 152],
-  ['impl', 'Implantlar', 96], ['uch', 'Uchliklar', 74], ['asb', 'Asboblar', 210], ['usk', 'Uskunalar', 128], ['gig', 'Gigiyena', 98],
+  ['all', 'Barchasi', 0], ['komp', 'Kompozitlar', 0], ['bond', 'Bondlar', 0], ['endo', 'Endodontiya', 0],
+  ['impl', 'Implantlar', 0], ['uch', 'Uchliklar', 0], ['asb', 'Asboblar', 0], ['usk', 'Uskunalar', 0], ['gig', 'Gigiyena', 0],
 ]
 
 export const brands = [
-  ['3M', 124], ['Kerr', 86], ['Dentsply', 102], ['Tokuyama', 64], ['GC', 78], ['Ivoclar', 56], ['NSK', 48], ['W&H', 42],
-  ['Kuraray', 38], ['Straumann', 34], ['J. Morita', 29], ['Woodpecker', 27], ['Woson', 21],
+  ['3M', 0], ['Kerr', 0], ['Dentsply', 0], ['Tokuyama', 0], ['GC', 0], ['Ivoclar', 0], ['NSK', 0], ['W&H', 0],
+  ['Kuraray', 0], ['Straumann', 0], ['J. Morita', 0], ['Woodpecker', 0], ['Woson', 0],
 ]
 
 // Live list: filled from Supabase (active seller_products) by buyerApi.loadMarketProducts().
@@ -29,12 +29,12 @@ export const initialCart = []
 
 export const productDetail = {
   id: 'optibond-solo-plus',
-  name: 'OptiBond Solo Plus',
-  type: 'Universal adgeziv (5 ml)',
-  brand: 'Kerr',
-  rating: 4.8,
-  reviews: 96,
-  sold: '1 250',
+  name: '',
+  type: '',
+  brand: '',
+  rating: 0,
+  reviews: 0,
+  sold: '',
   price: 275000,
   oldPrice: 323529,
   badge: '-15%',
@@ -60,7 +60,7 @@ export const similarTo = (p, n = 4) => {
 }
 
 export const sellers = {
-  default: { name: 'DentalShop', logo: 'Dental', about: 'Stomatologik materiallar', rating: 4.9, reviews: 320, city: 'Toshkent' },
+  default: { name: '', logo: '', about: '', rating: 0, reviews: 0, city: '' },
 }
 
 // Returns a detail-shaped object for a live product, or null when it is not (or no longer) on sale.

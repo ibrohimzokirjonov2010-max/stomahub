@@ -1,3 +1,4 @@
+import { profileStore } from './profileStore'
 const img = (n) => `/images/surplus/${n}.jpg`
 
 export const surplusChips = [
@@ -45,7 +46,7 @@ export function addSurplusItem({ name, type, brand, cat, expiry, city, price, ol
     name, type, brand, cat, expiry, city, price, condition, qty,
     oldPrice: oldPrice > price ? oldPrice : null,
     rating: 5, reviews: 0,
-    seller: { name: 'Dr. Ibrohim', avatar: img('seller') },
+    seller: { name: (profileStore.get()?.name || 'Shifokor'), avatar: (profileStore.get()?.avatar || img('seller')) },
     discount: oldPrice > price ? `-${Math.round((1 - price / oldPrice) * 100)}%` : null,
     image: image || surplusItems.find((p) => p.cat === cat)?.image || img('i1'),
     order: -Date.now(),
@@ -63,9 +64,9 @@ export const surplusDetail = {
   condition: 'Yopiq',
   state: 'Yangi',
   expiry: '10/2028',
-  rating: 4.9,
-  reviews: 12,
-  views: 256,
+  rating: 0,
+  reviews: 0,
+  views: 0,
   price: 850000,
   oldPrice: 1200000,
   short: 'Sifatli universal kompozit. Rang: A2. Yopiq, ishlatilmagan. Klinikamizda ortib qolgan, arzon narxda sotaman.',
@@ -91,16 +92,16 @@ export const surplusDetail = {
   images: [img('main'), img('t2'), img('t3'), img('t4'), img('t5')],
   thumbs: [img('t1'), img('t2'), img('t3'), img('t4'), img('t5')],
   seller: {
-    name: 'Dr. Ibrohim Zokirjonov',
+    name: 'Shifokor',
     avatar: img('seller'),
-    rating: 4.9,
-    reviews: 28,
-    deals: 56,
+    rating: 0,
+    reviews: 0,
+    deals: 0,
     city: 'Toshkent',
     place: 'Klinika',
     reply: '5 daqiqa ichida',
     telegram: 'https://t.me/',
-    phone: '+998 90 123 45 67',
+    phone: '',
   },
 }
 
@@ -155,7 +156,7 @@ function fromItem(item) {
       place: 'Klinika',
       reply: '10 daqiqa ichida',
       telegram: 'https://t.me/',
-      phone: '+998 90 123 45 67',
+      phone: '',
     },
   }
 }

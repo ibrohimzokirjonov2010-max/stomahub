@@ -14,6 +14,8 @@ import { publicRecords, useHub } from '../../hubStore'
 import { seminarCard } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast } from './parts'
+import { initialsOf, looksLikeDemoName } from '../../demoPurge'
+import { useSession } from '../../sessionStore'
 
 const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays, color: '#14a39a', bg: '#e3f6f3' },
@@ -39,8 +41,16 @@ export default function MobileHome() {
   const deals = market.products.slice(0, 2)
   const { add } = useCart()
   const profile = useProfile()
+  const session = useSession()
   const feed = useFeed()
-  const hello = profile.accountLive ? (profile.name?.split(' ')[0] || 'shifokor') : 'mehmon'
+  const rawHello = profile.accountLive ? (profile.name || session.profile?.full_name || session.profile?.name || '') : (session.profile?.full_name || session.profile?.name || '')
+  // Uzbek convention: «Familiya Ism» → greet with Ism (2nd word); single token stays as-is
+  const helloName = (() => {
+    const parts = String(rawHello || '').trim().split(/\s+/).filter(Boolean)
+    if (!parts.length) return ''
+    return parts.length >= 2 ? parts[1] : parts[0]
+  })()
+  const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()
   const todaySeminars = publicRecords(hub).slice(0, 2).map((raw) => {
     const s = seminarCard(raw)
@@ -104,7 +114,11 @@ export default function MobileHome() {
 
         {/* Salomlashish */}
         <div className="mt-3 flex items-center gap-3">
-          <img src="/images/avatar.jpg" alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
+          {profile.avatar ? (
+            <img src={profile.avatar} alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
+          ) : (
+            <span className="grid size-12 place-items-center rounded-full bg-sea-50 text-[14px] font-bold text-sea ring-2 ring-white">{initialsOf(profile.name || hello)}</span>
+          )}
           <div className="min-w-0">
             <p className="text-[18px] font-bold leading-tight text-ink">Salom, {hello}!</p>
             <p className="mt-0.5 text-[12.5px] text-muted">Stomatologlar uchun barcha narsa bir joyda</p>

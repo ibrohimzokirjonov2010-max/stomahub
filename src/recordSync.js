@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { DEMO_ORGANIZER_ID } from './hubSeed'
+import { scrubBlobPayload } from './demoPurge'
 
 const blobs = new Map()
 const accountListeners = new Set()
@@ -106,7 +107,11 @@ async function flushBlobs() {
 function resetBlobs() {
   applying = true
   blobs.forEach((api) => {
-    if (api.seed != null) api.set(structuredClone(api.seed))
+    if (typeof api.empty === 'function') api.set(api.empty())
+    else if (Array.isArray(api.seed)) api.set([])
+    else if (api.seed != null) {
+      try { api.set(structuredClone(api.seed)) } catch { api.set(api.seed) }
+    }
   })
   applying = false
 }
@@ -121,13 +126,27 @@ async function pullBlobs() {
   const found = new Map((data || []).map((row) => [row.kind, row.payload]))
   const demo = isDemoUser()
   applying = true
+  const scrubbedKinds = []
   for (const [kind, api] of blobs) {
-    if (found.has(kind)) api.set(found.get(kind))
-    else if (demo && api.seed != null) {
+    if (found.has(kind)) {
+      let payload = found.get(kind)
+      if (!demo) {
+        const cleaned = scrubBlobPayload(kind, payload)
+        if (JSON.stringify(cleaned) !== JSON.stringify(payload)) {
+          payload = cleaned
+          scrubbedKinds.push(kind)
+        }
+      }
+      api.set(payload)
+    } else if (demo && api.seed != null) {
       try { api.set(structuredClone(api.seed)) } catch { api.set(api.seed) }
     } else if (!demo && typeof api.empty === 'function') api.set(api.empty())
   }
   applying = false
+  if (!demo && scrubbedKinds.length) {
+    scrubbedKinds.forEach((kind) => dirty.add(kind))
+    await flushBlobs().catch((error) => { syncError = error.message })
+  }
   const missing = [...blobs.keys()].filter((kind) => !found.has(kind))
   if (demo && missing.length) {
     dirty.clear()

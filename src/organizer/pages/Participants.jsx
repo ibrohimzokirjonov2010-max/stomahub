@@ -12,6 +12,7 @@ import { Btn, Field, Modal, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
 import { FACE } from './participantsData'
 import './participants.css'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../components/PhoneInput'
 
 const TEAL = 'var(--color-org-teal)'
 const DASH = '\u2013'
@@ -587,7 +588,7 @@ function AddModal({ open, onClose, onSave }) {
     <Modal open={open} title="Ishtirokchi qo‘shish" onClose={onClose}>
       <div className="space-y-3">
         <Field label="Ism-familiya" req error={errors.name}><input className={inputCls(errors.name)} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Aliyeva Mohira" /></Field>
-        <Field label="Telefon" req error={errors.phone}><input className={inputCls(errors.phone)} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+998 90 123 45 67" /></Field>
+        <Field label="Telefon" req error={errors.phone}><PhoneInput className={inputCls(errors.phone)} value={form.phone} onChange={(v) => setForm({ ...form, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" invalid={!!errors.phone} placeholder="+998 90 123 45 67" /></Field>
         <Field label="Email" req error={errors.email}><input className={inputCls(errors.email)} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="m.aliyeva@mail.uz" /></Field>
         <Field label="Chipta turi">
           <select className={inputCls()} value={form.ticket} onChange={(e) => setForm({ ...form, ticket: e.target.value })}>

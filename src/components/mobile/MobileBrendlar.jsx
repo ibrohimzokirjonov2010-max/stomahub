@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, X, ChevronRight, Filter, Check } from 'lucide-react'
 import { brands as marketBrands } from '../../marketData'
+import { useMarket } from '../../buyerApi'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -12,32 +13,32 @@ const COUNTRIES = {
 }
 
 const BRANDS = [
-  { name: '3M', count: 124, country: 'us', rank: 1, logo: Logo3M, side: true },
-  { name: 'Straumann', count: 86, country: 'ch', rank: 2, logo: LogoStraumann },
-  { name: 'Dentsply Sirona', count: 142, country: 'de', rank: 3, logo: LogoDentsply, market: 'Dentsply' },
-  { name: 'Nobel Biocare', count: 98, country: 'ch', rank: 4, logo: LogoNobel },
-  { name: 'Ivoclar', count: 156, country: 'li', rank: 5, logo: LogoIvoclar },
-  { name: 'VOCO', count: 64, country: 'de', rank: 6, logo: LogoVoco },
-  { name: 'GC', count: 72, country: 'jp', rank: 7, logo: LogoGC },
-  { name: 'Coltene', count: 89, country: 'ch', rank: 8, logo: LogoColtene },
-  { name: 'Kerr', count: 67, country: 'us', rank: 9, logo: LogoKerr },
-  { name: 'Osstem Implant', count: 58, country: 'kr', rank: 10, logo: LogoOsstem },
-  { name: 'Megagen', count: 48, country: 'kr', rank: 11, logo: LogoMegagen },
-  { name: 'Neobiotech', count: 46, country: 'kr', rank: 12, logo: LogoNeo },
-  { name: 'SDI', count: 38, country: 'au', rank: 13, logo: LogoSDI, side: true },
-  { name: 'VITA', count: 42, country: 'de', rank: 14, logo: LogoVita, side: true },
-  { name: 'NSK', count: 48, country: 'jp', rank: 15, logo: () => <Word color="#163a7a" className="text-[26px] tracking-[0.06em]">NSK</Word> },
-  { name: 'W&H', count: 42, country: 'at', rank: 16, logo: () => <Word color="#4b5563" className="text-[24px]">W&amp;H</Word> },
-  { name: 'Tokuyama', count: 64, country: 'jp', rank: 17, logo: () => <Word color="#1a4f8b" className="text-[20px] italic">Tokuyama</Word> },
-  { name: 'Kuraray', count: 38, country: 'jp', rank: 18, logo: () => <Word color="#0057a8" className="text-[22px] font-bold lowercase">kuraray</Word> },
-  { name: 'Ultradent', count: 52, country: 'us', rank: 19, logo: () => <Word color="#f26b1f" className="text-[18px] tracking-wide">ULTRADENT</Word> },
-  { name: 'Planmeca', count: 31, country: 'fi', rank: 20, logo: () => <Word color="#163a7a" className="text-[18px] tracking-[0.12em]">PLANMECA</Word>, to: '/jihozlar?brand=Planmeca' },
-  { name: 'Woodpecker', count: 27, country: 'cn', rank: 21, logo: () => <Word color="#1f8a4c" className="text-[18px] font-bold">Woodpecker</Word> },
-  { name: 'Angelus', count: 31, country: 'br', rank: 23, logo: () => <Word color="#111" className="text-[22px] font-bold lowercase italic">angelus</Word> },
-  { name: 'Bien-Air', count: 24, country: 'ch', rank: 24, logo: () => <Word color="#c8102e" className="text-[20px] tracking-tight">Bien-Air</Word> },
-  { name: 'EMS', count: 36, country: 'ch', rank: 25, logo: () => <Word color="#0072bc" className="text-[26px] italic tracking-[0.04em]">EMS</Word> },
-  { name: 'Hu-Friedy', count: 45, country: 'us', rank: 26, logo: () => <Word color="#00205b" className="text-[21px] tracking-tight">HU-FRIEDY</Word> },
-  { name: 'Zimmer Biomet', count: 33, country: 'us', rank: 22, logo: () => <Word color="#1d4e89" className="text-[15px] leading-[1.05] tracking-wide">ZIMMER<br />BIOMET</Word> },
+  { name: '3M', count: 0, country: 'us', rank: 1, logo: Logo3M, side: true },
+  { name: 'Straumann', count: 0, country: 'ch', rank: 2, logo: LogoStraumann },
+  { name: 'Dentsply Sirona', count: 0, country: 'de', rank: 3, logo: LogoDentsply, market: 'Dentsply' },
+  { name: 'Nobel Biocare', count: 0, country: 'ch', rank: 4, logo: LogoNobel },
+  { name: 'Ivoclar', count: 0, country: 'li', rank: 5, logo: LogoIvoclar },
+  { name: 'VOCO', count: 0, country: 'de', rank: 6, logo: LogoVoco },
+  { name: 'GC', count: 0, country: 'jp', rank: 7, logo: LogoGC },
+  { name: 'Coltene', count: 0, country: 'ch', rank: 8, logo: LogoColtene },
+  { name: 'Kerr', count: 0, country: 'us', rank: 9, logo: LogoKerr },
+  { name: 'Osstem Implant', count: 0, country: 'kr', rank: 10, logo: LogoOsstem },
+  { name: 'Megagen', count: 0, country: 'kr', rank: 11, logo: LogoMegagen },
+  { name: 'Neobiotech', count: 0, country: 'kr', rank: 12, logo: LogoNeo },
+  { name: 'SDI', count: 0, country: 'au', rank: 13, logo: LogoSDI, side: true },
+  { name: 'VITA', count: 0, country: 'de', rank: 14, logo: LogoVita, side: true },
+  { name: 'NSK', count: 0, country: 'jp', rank: 15, logo: () => <Word color="#163a7a" className="text-[26px] tracking-[0.06em]">NSK</Word> },
+  { name: 'W&H', count: 0, country: 'at', rank: 16, logo: () => <Word color="#4b5563" className="text-[24px]">W&amp;H</Word> },
+  { name: 'Tokuyama', count: 0, country: 'jp', rank: 17, logo: () => <Word color="#1a4f8b" className="text-[20px] italic">Tokuyama</Word> },
+  { name: 'Kuraray', count: 0, country: 'jp', rank: 18, logo: () => <Word color="#0057a8" className="text-[22px] font-bold lowercase">kuraray</Word> },
+  { name: 'Ultradent', count: 0, country: 'us', rank: 19, logo: () => <Word color="#f26b1f" className="text-[18px] tracking-wide">ULTRADENT</Word> },
+  { name: 'Planmeca', count: 0, country: 'fi', rank: 20, logo: () => <Word color="#163a7a" className="text-[18px] tracking-[0.12em]">PLANMECA</Word>, to: '/jihozlar?brand=Planmeca' },
+  { name: 'Woodpecker', count: 0, country: 'cn', rank: 21, logo: () => <Word color="#1f8a4c" className="text-[18px] font-bold">Woodpecker</Word> },
+  { name: 'Angelus', count: 0, country: 'br', rank: 23, logo: () => <Word color="#111" className="text-[22px] font-bold lowercase italic">angelus</Word> },
+  { name: 'Bien-Air', count: 0, country: 'ch', rank: 24, logo: () => <Word color="#c8102e" className="text-[20px] tracking-tight">Bien-Air</Word> },
+  { name: 'EMS', count: 0, country: 'ch', rank: 25, logo: () => <Word color="#0072bc" className="text-[26px] italic tracking-[0.04em]">EMS</Word> },
+  { name: 'Hu-Friedy', count: 0, country: 'us', rank: 26, logo: () => <Word color="#00205b" className="text-[21px] tracking-tight">HU-FRIEDY</Word> },
+  { name: 'Zimmer Biomet', count: 0, country: 'us', rank: 22, logo: () => <Word color="#1d4e89" className="text-[15px] leading-[1.05] tracking-wide">ZIMMER<br />BIOMET</Word> },
 ]
 
 const GROUPS = [['all', 'Barchasi'], ['AB', 'A-B'], ['CD', 'C-D'], ['EF', 'E-F'], ['GH', 'G-H'], ['IJ', 'I-J'], ['KL', 'K-L'], ['MN', 'M-N'], ['OP', 'O-P'], ['QRS', 'Q-S'], ['TUV', 'T-V'], ['WXYZ', 'W-Z'], ['0', '0-9']]
@@ -54,6 +55,7 @@ const linkOf = (b) => {
 }
 
 export default function MobileBrendlar() {
+  const market = useMarket()
   const [q, setQ] = useState('')
   const [group, setGroup] = useState('all')
   const [country, setCountry] = useState('')
@@ -62,10 +64,16 @@ export default function MobileBrendlar() {
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
 
+  const brandsLive = useMemo(() => BRANDS.map((b) => {
+    const key = String(b.market || b.name).split(/\s/)[0].toLowerCase()
+    const count = (market.products || []).filter((p) => String(p.brand || '').toLowerCase().includes(key)).length
+    return { ...b, count }
+  }), [market.products])
+
   const filter = useCallback((c, s = q, g = group) => {
     const text = s.trim().toLowerCase()
-    return BRANDS.filter((b) => inGroup(b.name, g) && (!c || b.country === c) && (!text || b.name.toLowerCase().includes(text)))
-  }, [q, group])
+    return brandsLive.filter((b) => inGroup(b.name, g) && (!c || b.country === c) && (!text || b.name.toLowerCase().includes(text)))
+  }, [q, group, brandsLive])
 
   const list = useMemo(() => {
     const out = filter(country)

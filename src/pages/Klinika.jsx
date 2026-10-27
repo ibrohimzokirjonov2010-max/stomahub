@@ -13,13 +13,14 @@ import { supabase } from '../supabaseClient'
 import { profileStore } from '../profileStore'
 import { useCrmStats } from '../crmStats'
 import {
-  TODAY, CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, STAFF, REVENUE, MONTHS_CAP, WD, WD_LONG,
-  seedVisits, seedPatients, shiftIso, weekday, label, avatarOf,
+  TODAY, DEFAULT_CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, MONTHS_CAP, WD, WD_LONG,
+  chairsFromSettings, shiftIso, weekday, label, avatarOf,
 } from '../klinikaData'
+import { scrubClinicBoard } from '../demoPurge'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
-const TOTAL_SLOTS = CHAIRS.length * SLOTS.length
-const DEFAULT_SETTINGS = { name: '', city: '', open: '09:00', close: '18:00', phone: '', address: '', website: '' }
+const DEFAULT_SETTINGS = { name: '', city: '', open: '09:00', close: '18:00', phone: '', address: '', website: '', chair_count: 0 }
 
 function hoursParts(hours) {
   const m = String(hours || '').match(/(\d{1,2}:\d{2})\s*[–\-—]\s*(\d{1,2}:\d{2})/)
@@ -37,6 +38,7 @@ function settingsFromClinic(row) {
     phone: row.phone || '',
     address: row.address || '',
     website: row.website || '',
+    chair_count: Number(row.chair_count) || 0,
   }
 }
 
@@ -65,10 +67,15 @@ async function upsertCustomerClinic(uid, settings) {
     city: (settings.city || '').trim(),
     open_time: open,
     close_time: close,
+    chair_count: Math.max(0, Math.min(12, Number(settings.chair_count) || 0)),
   }
   let error = (await supabase.from('customer_clinic').upsert(extended)).error
-  if (error && /city|open_time|close_time|schema cache|column/i.test(error.message || '')) {
-    error = (await supabase.from('customer_clinic').upsert(base)).error
+  if (error && /city|open_time|close_time|chair_count|schema cache|column/i.test(error.message || '')) {
+    const { chair_count, ...noChair } = extended
+    error = (await supabase.from('customer_clinic').upsert(noChair)).error
+    if (error && /city|open_time|close_time|schema cache|column/i.test(error.message || '')) {
+      error = (await supabase.from('customer_clinic').upsert(base)).error
+    }
   }
   if (error) return { ok: false, error: error.message }
   profileStore.update({
@@ -119,11 +126,12 @@ export default function Klinika() {
       else if (payload?.settings) setSettings({ ...DEFAULT_SETTINGS, ...payload.settings })
       else setSettings({ ...DEFAULT_SETTINGS })
       if (payload) {
-        setVisits(Array.isArray(payload.visits) ? payload.visits : [])
-        setPatients(Array.isArray(payload.patients) ? payload.patients : [])
-      } else if (isDemoUser()) {
-        setVisits(seedVisits())
-        setPatients(seedPatients)
+        const cleaned = isDemoUser() ? payload : scrubClinicBoard(payload)
+        setVisits(Array.isArray(cleaned.visits) ? cleaned.visits : [])
+        setPatients(Array.isArray(cleaned.patients) ? cleaned.patients : [])
+        if (!isDemoUser() && JSON.stringify(cleaned) !== JSON.stringify(payload)) {
+          saveBlob('clinic_board', cleaned)
+        }
       } else {
         setVisits([])
         setPatients([])
@@ -150,9 +158,11 @@ export default function Klinika() {
 
   // Ko‘rsatkichlar umumiy crmStats funksiyasidan — /uchrashuvlar va /tolovlar bilan bir xil
   const todayCount = crm.todayAppointments
-  const load = Math.min(100, Math.round((todayCount / TOTAL_SLOTS) * 100))
   const clinicIncome = crm.revenueTotal
-  const demoClinic = isDemoUser()
+  const chairList = chairsFromSettings(settings)
+  const chairs = chairList.length ? chairList : []
+  const totalSlots = Math.max(1, (chairs.length || 0) * SLOTS.length)
+  const load = chairs.length ? Math.min(100, Math.round((todayCount / totalSlots) * 100)) : 0
   const dayVisits = visits.filter((x) => x.date === date)
 
   const setStatus = (id, status) => {
@@ -229,7 +239,7 @@ export default function Klinika() {
         <section className="klk-stats">
           <Stat icon={CalendarDays} title="Bugungi qabullar">
             <div className="flex items-end justify-between gap-3">
-              <div><b className="text-[24px] leading-none">{todayCount}</b><p className="mt-1 text-[11px] text-muted">Jami {TOTAL_SLOTS} ta slotdan</p></div>
+              <div><b className="text-[24px] leading-none">{todayCount}</b><p className="mt-1 text-[11px] text-muted">{chairs.length ? `Jami ${totalSlots} ta slotdan` : "Kreslo sozlanmagan"}</p></div>
               <div className="flex-1 pb-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-[#e7eef5]"><span className="block h-full rounded-full bg-sea" style={{ width: `${load}%` }} /></div>
                 <p className="mt-1 text-right text-[10.5px] text-muted">{load}%</p>
@@ -248,7 +258,7 @@ export default function Klinika() {
           </Stat>
           <Stat icon={Armchair} title="Kreslo bandligi">
             <div className="flex items-end justify-between gap-3">
-              <div><b className="text-[24px] leading-none">{load}%</b><p className="mt-1 text-[11px] text-muted">{CHAIRS.length} ta kreslodan</p></div>
+              <div><b className="text-[24px] leading-none">{load}%</b><p className="mt-1 text-[11px] text-muted">{chairs.length ? `${chairs.length} ta kreslodan` : "Kreslo sozlanmagan"}</p></div>
               <Ring value={load} />
             </div>
           </Stat>
@@ -277,9 +287,42 @@ export default function Klinika() {
             {view === 'day' && (
               weekday(date) === 6 ? (
                 <div className="mt-3 grid h-[300px] place-items-center rounded-xl bg-[#f7fafc] text-[13px] text-muted">Yakshanba — dam olish kuni</div>
+              ) : !boardReady ? (
+                <div className="mt-3 grid h-[300px] place-items-center rounded-xl bg-[#f7fafc] text-[13px] text-muted">Yuklanmoqda…</div>
+              ) : !chairs.length ? (
+                <div className="mt-3 grid h-[300px] place-items-center rounded-xl bg-[#f7fafc] px-4 text-center">
+                  <div>
+                    <p className="text-[14px] font-semibold text-ink">Hali qabul yo‘q</p>
+                    <p className="mt-1 text-[12.5px] text-muted">Avval klinika sozlamalarida kreslo sonini kiriting, so‘ng qabulga yozing.</p>
+                    <button type="button" onClick={() => setSettingsOpen(true)} className="mt-3 inline-flex h-9 items-center rounded-xl bg-sea px-4 text-[12.5px] font-semibold text-white">Klinika sozlamalari</button>
+                  </div>
+                </div>
+              ) : dayVisits.length === 0 ? (
+                <div className="mt-3 space-y-3">
+                  <div className="grid place-items-center rounded-xl bg-[#f7fafc] px-4 py-8 text-center">
+                    <p className="text-[14px] font-semibold text-ink">Hali qabul yo‘q</p>
+                    <p className="mt-1 text-[12.5px] text-muted">Bugun uchun yozilgan bemorlar shu yerda ko‘rinadi.</p>
+                    <button type="button" onClick={() => setBooking({})} className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#0b5f63] px-4 text-[12.5px] font-semibold text-white"><CalendarPlus className="size-4" /> Qabulga yozish</button>
+                  </div>
+                  <div className="klk-chairs">
+                    {chairs.map((chair, ci) => (
+                      <ChairColumn
+                        key={chair}
+                        chair={chair}
+                        index={ci}
+                        visits={[]}
+                        menu={menu}
+                        setMenu={setMenu}
+                        onStatus={setStatus}
+                        onCancel={cancelVisit}
+                        onBook={(time) => setBooking({ chair: ci, time, date })}
+                      />
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <div className="klk-chairs mt-3">
-                  {CHAIRS.map((chair, ci) => (
+                  {chairs.map((chair, ci) => (
                     <ChairColumn
                       key={chair}
                       chair={chair}
@@ -300,7 +343,7 @@ export default function Klinika() {
 
           <div className="min-w-0 space-y-3">
             <MiniCalendar visits={visits} date={date} onPick={(iso) => { setDate(iso); setView('day') }} />
-            <Revenue demo={false} total={clinicIncome} />
+            <Revenue total={clinicIncome} />
           </div>
         </div>
 
@@ -309,9 +352,7 @@ export default function Klinika() {
           <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
             <CardHead title="Xodimlar" onMore={() => setStaffOpen(true)} />
             <ul className="mt-1 divide-y divide-line">
-              {demoClinic ? STAFF.slice(0, 4).map((s) => <StaffRow key={s.id} s={s} menu={menu} setMenu={setMenu} />) : (
-                <li className="px-2 py-6 text-center text-[12.5px] text-muted">Xodimlar ro‘yxati bo‘sh. Bu bo‘lim faqat sizning klinikangiz uchun.</li>
-              )}
+              <li className="px-2 py-6 text-center text-[12.5px] text-muted">Xodimlar ro‘yxati bo‘sh. Bu bo‘lim faqat sizning klinikangiz uchun.</li>
             </ul>
           </section>
           <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
@@ -339,15 +380,13 @@ export default function Klinika() {
         </div>
       </div>
 
-      {booking && <BookingDialog initial={booking} visits={visits} onClose={() => setBooking(null)} onSave={saveVisit} />}
+      {booking && <BookingDialog initial={booking} visits={visits} chairs={chairs.length ? chairs : DEFAULT_CHAIRS} onClose={() => setBooking(null)} onSave={saveVisit} />}
       {adding && <PatientDialog onClose={() => setAdding(false)} onSave={savePatient} />}
       {settingsOpen && <SettingsDialog value={settings} onClose={() => setSettingsOpen(false)} onSave={saveSettings} />}
       {staffOpen && (
         <Dialog title="Barcha xodimlar" onClose={() => setStaffOpen(false)}>
           <ul className="divide-y divide-line">
-            {demoClinic ? STAFF.map((s) => <StaffRow key={s.id} s={s} menu={menu} setMenu={setMenu} plain />) : (
-              <li className="px-2 py-6 text-center text-[12.5px] text-muted">Hali xodim qo‘shilmagan.</li>
-            )}
+            <li className="px-2 py-6 text-center text-[12.5px] text-muted">Hali xodim qo‘shilmagan.</li>
           </ul>
         </Dialog>
       )}
@@ -479,7 +518,7 @@ function Overview({ visits, date, mode, onPick }) {
         {Array.from({ length: lead }, (_, i) => <span key={`e${i}`} />)}
         {days.map((iso) => {
           const list = visits.filter((x) => x.date === iso)
-          const pct = Math.round((list.length / TOTAL_SLOTS) * 100)
+          const pct = Math.round((list.length / Math.max(1, DEFAULT_CHAIRS.length * SLOTS.length)) * 100)
           const off = weekday(iso) === 6
           return (
             <button key={iso} type="button" onClick={() => onPick(iso)} className={`rounded-xl border p-2 text-left transition hover:border-sea ${iso === TODAY ? 'border-sea bg-sea-50' : 'border-line'} ${mode === 'week' ? 'min-h-[180px]' : ''}`}>
@@ -491,7 +530,7 @@ function Overview({ visits, date, mode, onPick }) {
                 <>
                   <span className="mt-2 block text-[12px] font-semibold">{list.length} qabul</span>
                   <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-[#e7eef5]"><span className="block h-full rounded-full bg-sea" style={{ width: `${pct}%` }} /></span>
-                  {mode === 'week' && CHAIRS.map((c, ci) => (
+                  {mode === 'week' && DEFAULT_CHAIRS.map((c, ci) => (
                     <span key={c} className="mt-1.5 flex justify-between text-[11px] text-ink-2"><span>{c}</span><span>{list.filter((x) => x.chair === ci).length}/{SLOTS.length}</span></span>
                   ))}
                 </>
@@ -554,40 +593,12 @@ function MiniCalendar({ visits, date, onPick }) {
   )
 }
 
-function Revenue({ demo, total }) {
-  const [period, setPeriod] = useState('month')
-  if (!demo) {
-    return (
-      <section className="rounded-2xl bg-white p-3 shadow-card">
-        <b className="text-[13px]">Daromad statistikasi</b>
-        <p className="mt-2 text-[19px] font-bold">{som(total)}</p>
-        <p className="mt-3 text-[12.5px] text-muted">{total ? 'Bu raqam faqat sizning to‘lovlaringizdan olinadi.' : 'Hali tushum yo‘q. Bemor to‘lovlari shu yerda yig‘iladi.'}</p>
-      </section>
-    )
-  }
-  const r = REVENUE[period]
-  const max = Math.max(...r.income)
+function Revenue({ total }) {
   return (
     <section className="rounded-2xl bg-white p-3 shadow-card">
-      <div className="flex items-center justify-between gap-2">
-        <b className="text-[13px]">Daromad statistikasi</b>
-        <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-7 rounded-lg border border-line bg-white px-1.5 text-[11.5px] outline-none">
-          {Object.entries(REVENUE).map(([k, x]) => <option key={k} value={k}>{x.label}</option>)}
-        </select>
-      </div>
-      <p className="mt-2 flex items-baseline gap-2"><b className="text-[19px]">{som(r.total)}</b><span className="text-[12px] font-semibold text-sea">{r.delta}</span></p>
-      <div className="mt-2 flex h-16 items-end gap-[2px]">
-        {r.income.map((n, i) => (
-          <span key={i} className="flex flex-1 items-end gap-px" title={`Tushum ${n} mln, xarajat ${r.cost[i]} mln`}>
-            <span className="flex-1 rounded-sm bg-sea" style={{ height: `${(n / max) * 64}px` }} />
-            <span className="flex-1 rounded-sm bg-[#bfdbfe]" style={{ height: `${(r.cost[i] / max) * 64}px` }} />
-          </span>
-        ))}
-      </div>
-      <div className="mt-2 flex gap-3 text-[10.5px] text-muted">
-        <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-sea" />Tushum</span>
-        <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[#bfdbfe]" />Xarajat</span>
-      </div>
+      <b className="text-[13px]">Daromad statistikasi</b>
+      <p className="mt-2 text-[19px] font-bold">{som(total)}</p>
+      <p className="mt-3 text-[12.5px] text-muted">{total ? 'Bu raqam faqat sizning to‘lovlaringizdan olinadi.' : 'Hali tushum yo‘q. Bemor to‘lovlari shu yerda yig‘iladi.'}</p>
     </section>
   )
 }
@@ -733,7 +744,7 @@ function GenderPick({ value, onChange }) {
   )
 }
 
-function BookingDialog({ initial, visits, onClose, onSave }) {
+function BookingDialog({ initial, visits, chairs = DEFAULT_CHAIRS, onClose, onSave }) {
   const [form, setForm] = useState({ name: '', phone: '', female: false, service: SERVICES[0], date: TODAY, chair: 0, time: '', ...initial })
   const [error, setError] = useState('')
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
@@ -753,22 +764,22 @@ function BookingDialog({ initial, visits, onClose, onSave }) {
       foot={<><button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-medium">Bekor qilish</button><button type="button" onClick={submit} className="h-10 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white">Saqlash</button></>}
     >
       <div className="space-y-3">
-        <Field label="Bemor ismi familiyasi"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Aliyeva Malika" className={input} /></Field>
+        <Field label="Bemor ismi familiyasi"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Bemor ismi" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Telefon"><input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+          <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
           <Field label="Jinsi"><GenderPick value={form.female} onChange={(v) => set('female', v)} /></Field>
         </div>
         <Field label="Xizmat"><select value={form.service} onChange={(e) => set('service', e.target.value)} className={input}>{SERVICES.map((s) => <option key={s}>{s}</option>)}</select></Field>
         <div className="grid grid-cols-3 gap-2">
           <Field label="Sana"><input type="date" value={form.date} onChange={(e) => set('date', e.target.value || TODAY)} className={input} /></Field>
-          <Field label="Kreslo"><select value={form.chair} onChange={(e) => set('chair', Number(e.target.value))} className={input}>{CHAIRS.map((c, i) => <option key={c} value={i}>{c}</option>)}</select></Field>
+          <Field label="Kreslo"><select value={form.chair} onChange={(e) => set('chair', Number(e.target.value))} className={input}>{chairs.map((c, i) => <option key={c} value={i}>{c}</option>)}</select></Field>
           <Field label="Vaqt">
             <select value={time} onChange={(e) => set('time', e.target.value)} className={input} disabled={!free.length}>
               {free.length ? free.map((t) => <option key={t}>{t}</option>) : <option value="">Bo‘sh emas</option>}
             </select>
           </Field>
         </div>
-        <p className="text-[11.5px] text-muted">{CHAIRS[form.chair]} — {label(form.date)}: {free.length} ta bo‘sh slot</p>
+        <p className="text-[11.5px] text-muted">{chairs[form.chair] || `Kreslo ${Number(form.chair) + 1}`} — {label(form.date)}: {free.length} ta bo‘sh slot</p>
         {error && <p className="text-[12px] text-[#e11d48]">{error}</p>}
       </div>
     </Dialog>
@@ -790,9 +801,9 @@ function PatientDialog({ onClose, onSave }) {
       foot={<><button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-medium">Bekor qilish</button><button type="button" onClick={submit} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white"><UserPlus className="size-4" /> Qo‘shish</button></>}
     >
       <div className="space-y-3">
-        <Field label="Ism familiya"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Karimov Akmal" className={input} /></Field>
+        <Field label="Ism familiya"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Bemor ismi" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Telefon"><input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+          <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
           <Field label="Jinsi"><GenderPick value={form.female} onChange={(v) => set('female', v)} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -830,13 +841,16 @@ function SettingsDialog({ value, onClose, onSave }) {
           </select>
         </Field>
         <Field label="Manzil"><input value={form.address || ''} onChange={(e) => set('address', e.target.value)} placeholder="Ko‘cha, uy" className={input} /></Field>
-        <Field label="Telefon"><input value={form.phone || ''} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+        <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone || ''} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
         <Field label="Veb-sayt"><input value={form.website || ''} onChange={(e) => set('website', e.target.value)} placeholder="https://" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Ish boshlanishi"><input type="time" value={form.open} onChange={(e) => set('open', e.target.value)} className={input} /></Field>
           <Field label="Ish tugashi"><input type="time" value={form.close} onChange={(e) => set('close', e.target.value)} className={input} /></Field>
         </div>
-        <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Kreslolar: {CHAIRS.join(', ')} · Tushlik {LUNCH}</p>
+        <Field label="Kreslo soni">
+          <input type="number" min="0" max="12" value={form.chair_count ?? 0} onChange={(e) => set('chair_count', Number(e.target.value) || 0)} className={input} />
+        </Field>
+        <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Tushlik: {LUNCH}. Kreslo soni 0 bo‘lsa jadval bo‘sh holatda chiqadi.</p>
       </div>
     </Dialog>
   )

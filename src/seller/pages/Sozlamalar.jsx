@@ -13,6 +13,7 @@ import StaffForm from '../components/sozlamalar/StaffForm'
 import BranchForm from '../components/sozlamalar/BranchForm'
 import StaffDetail from '../components/sozlamalar/StaffDetail'
 import { ROLE_LABEL, NOTIFY, DEFAULT_NOTIFY, maskPhone, initials } from '../components/sozlamalar/constants'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../components/PhoneInput'
 
 const card = 'rounded-2xl border border-[#E2ECEE] bg-white'
 const EXTRA = [
@@ -81,7 +82,7 @@ export default function Sozlamalar() {
   const shopFields = (
     <div className="space-y-3">
       <Field label="Do‘kon nomi"><Input icon={Store} value={shop.name} onChange={(e) => setShop({ ...shop, name: e.target.value })} /></Field>
-      <Field label="Telefon raqam"><Input icon={Phone} value={shop.phone} onChange={(e) => setShop({ ...shop, phone: e.target.value })} placeholder="+998 90 123 45 67" inputMode="tel" /></Field>
+      <Field label="Telefon raqam"><PhoneInput className="h-11" value={shop.phone} onChange={(v) => setShop({ ...shop, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
       <Field label="Manzil"><Input icon={MapPin} value={shop.address} onChange={(e) => setShop({ ...shop, address: e.target.value })} placeholder="Shahar, tuman, ko‘cha" /></Field>
       <div className="grid grid-cols-2 gap-3"><Field label="Ish kunlari"><Input icon={CalendarDays} value={shop.work_days} onChange={(e) => setShop({ ...shop, work_days: e.target.value })} /></Field><Field label="Ish vaqti"><Input icon={Clock} value={shop.work_hours} onChange={(e) => setShop({ ...shop, work_hours: e.target.value })} /></Field></div>
       <Err>{err}</Err>

@@ -7,6 +7,7 @@ import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { ADDRESS_ICONS, CITIES } from './MobileCheckout'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
@@ -211,7 +212,7 @@ function AddressSheet({ address, profile, isMain, onClose, onSave, onRemove }) {
       <Field label="Telefon" err={tried && errors.phone}>
         <span className={`${input(tried && errors.phone)} flex items-center gap-2`}>
           <span className="font-semibold">+998</span>
-          <input value={f.phone} onChange={set('phone')} inputMode="numeric" placeholder="90 123 45 67" className="min-w-0 flex-1 bg-transparent outline-none" />
+          <PhoneInput className="min-w-0 flex-1 border-0 bg-transparent px-0" value={f.phone} onChange={(v) => set('phone')({ target: { value: extractUzLocalDigits(v) } })} valueMode="local" placeholder="+998 90 123 45 67" />
         </span>
       </Field>
       <div className="grid grid-cols-2 gap-2">

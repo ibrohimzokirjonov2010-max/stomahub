@@ -8,23 +8,29 @@ import { useCart } from '../../cart'
 import { BrandLogo, CountBadge, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
+import { useMarket } from '../../buyerApi'
+import { products as devices } from '../../jihozData'
+import { masters } from '../../ustalarData'
+import { seminars } from '../../seminarsData'
+import { products as uniforms } from '../../formaData'
+import { useCatalogVersion } from '../../recordSync'
 
 const kat = (n) => `/images/kategoriyalar/${n}.jpg`
 const FADE = 'radial-gradient(ellipse 62% 58% at 58% 52%, #000 62%, transparent 100%)'
 
 const CATS = [
-  { id: 'material', name: 'Stomatologik materiallar', count: '1 245 mahsulot', to: '/marketplace?cat=komp', icon: Syringe, tone: 'bg-[#e3f5f3] text-sea', image: kat('kat-terapiya'), pos: '58% 64%', keys: 'kompozit bond sement adgeziv plomba' },
-  { id: 'implant', name: 'Implantlar', count: '856 mahsulot', to: '/marketplace?cat=impl', icon: ImplantIcon, tone: 'bg-[#e4f6ec] text-[#22a06b]', image: kat('kat-implant'), pos: '78% 60%', keys: 'implant abutment' },
-  { id: 'instrument', name: 'Instrumentlar', count: '1 032 mahsulot', to: '/marketplace?cat=asb', icon: ProbeIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-asbob'), pos: '92% 55%', keys: 'asbob ko‘zgu zond pinset' },
-  { id: 'uskuna', name: 'Uskunalar', count: '412 mahsulot', to: '/jihozlar', icon: Armchair, tone: 'bg-[#fdeee3] text-[#e8772e]', image: kat('kat-uskuna'), pos: '50% 50%', keys: 'jihoz kreslo unit rentgen avtoklav' },
-  { id: 'endo', name: 'Endodontiya', count: '623 mahsulot', to: '/marketplace?cat=endo', icon: ToothIcon, tone: 'bg-[#fde8ef] text-[#e04f7d]', image: kat('kat-endo'), pos: '25% 60%', keys: 'kanal fayl apekslokator endomotor' },
-  { id: 'orto', name: 'Ortodontiya', count: '498 mahsulot', to: '/marketplace', icon: BracesIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-orto'), pos: '72% 55%', keys: 'breket elayner kappa' },
-  { id: 'lab', name: 'Laboratoriya materiallari', count: '534 mahsulot', to: '/marketplace', icon: FlaskConical, tone: 'bg-[#e4f6ec] text-[#22a06b]', image: '/images/seminars/teeth.jpg', pos: '50% 50%', photo: true, keys: 'laboratoriya gips mum keramika protez' },
-  { id: 'forma', name: 'Stomatologik forma', count: '765 mahsulot', to: '/forma', icon: Shirt, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', image: '/images/forma/folded.jpg', pos: '50% 45%', photo: true, keys: 'forma kiyim xalat scrubs' },
-  { id: 'seminar', name: 'Seminarlar', count: '248 tadbir', to: '/seminarlar', icon: GraduationCap, tone: 'bg-[#fdf3dc] text-[#d99a00]', art: SeminarArt, keys: 'seminar kurs master-klass ta’lim' },
-  { id: 'qism', name: 'Ehtiyot qismlar', count: '312 mahsulot', to: '/marketplace?cat=uch', icon: Settings, tone: 'bg-[#fde8ef] text-[#e04f7d]', image: '/images/market/p5.jpg', pos: '50% 50%', contain: true, keys: 'uchlik turbina ehtiyot qism' },
-  { id: 'xizmat', name: 'Xizmatlar', count: '186 xizmat', to: '/ustalar', icon: BriefcaseBusiness, tone: 'bg-[#e3f5f3] text-sea', art: ServiceArt, keys: 'usta servis ta’mir o‘rnatish' },
-  { id: 'boshqa', name: 'Boshqa kategoriyalar', count: '320 mahsulot', icon: LayoutGrid, tone: 'bg-[#eef2f6] text-[#4a5b72]', art: MoreArt, more: true, keys: 'gigiyena jarrohlik ortopediya ortiqcha kitob' },
+  { id: 'material', name: 'Stomatologik materiallar', count: '0 mahsulot', to: '/marketplace?cat=komp', icon: Syringe, tone: 'bg-[#e3f5f3] text-sea', image: kat('kat-terapiya'), pos: '58% 64%', keys: 'kompozit bond sement adgeziv plomba' },
+  { id: 'implant', name: 'Implantlar', count: '0 mahsulot', to: '/marketplace?cat=impl', icon: ImplantIcon, tone: 'bg-[#e4f6ec] text-[#22a06b]', image: kat('kat-implant'), pos: '78% 60%', keys: 'implant abutment' },
+  { id: 'instrument', name: 'Instrumentlar', count: '0 mahsulot', to: '/marketplace?cat=asb', icon: ProbeIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-asbob'), pos: '92% 55%', keys: 'asbob ko‘zgu zond pinset' },
+  { id: 'uskuna', name: 'Uskunalar', count: '0 mahsulot', to: '/jihozlar', icon: Armchair, tone: 'bg-[#fdeee3] text-[#e8772e]', image: kat('kat-uskuna'), pos: '50% 50%', keys: 'jihoz kreslo unit rentgen avtoklav' },
+  { id: 'endo', name: 'Endodontiya', count: '0 mahsulot', to: '/marketplace?cat=endo', icon: ToothIcon, tone: 'bg-[#fde8ef] text-[#e04f7d]', image: kat('kat-endo'), pos: '25% 60%', keys: 'kanal fayl apekslokator endomotor' },
+  { id: 'orto', name: 'Ortodontiya', count: '0 mahsulot', to: '/marketplace', icon: BracesIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-orto'), pos: '72% 55%', keys: 'breket elayner kappa' },
+  { id: 'lab', name: 'Laboratoriya materiallari', count: '0 mahsulot', to: '/marketplace', icon: FlaskConical, tone: 'bg-[#e4f6ec] text-[#22a06b]', image: '/images/seminars/teeth.jpg', pos: '50% 50%', photo: true, keys: 'laboratoriya gips mum keramika protez' },
+  { id: 'forma', name: 'Stomatologik forma', count: '0 mahsulot', to: '/forma', icon: Shirt, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', image: '/images/forma/folded.jpg', pos: '50% 45%', photo: true, keys: 'forma kiyim xalat scrubs' },
+  { id: 'seminar', name: 'Seminarlar', count: '0 tadbir', to: '/seminarlar', icon: GraduationCap, tone: 'bg-[#fdf3dc] text-[#d99a00]', art: SeminarArt, keys: 'seminar kurs master-klass ta’lim' },
+  { id: 'qism', name: 'Ehtiyot qismlar', count: '0 mahsulot', to: '/marketplace?cat=uch', icon: Settings, tone: 'bg-[#fde8ef] text-[#e04f7d]', image: '/images/market/p5.jpg', pos: '50% 50%', contain: true, keys: 'uchlik turbina ehtiyot qism' },
+  { id: 'xizmat', name: 'Xizmatlar', count: '0 xizmat', to: '/ustalar', icon: BriefcaseBusiness, tone: 'bg-[#e3f5f3] text-sea', art: ServiceArt, keys: 'usta servis ta’mir o‘rnatish' },
+  { id: 'boshqa', name: 'Boshqa kategoriyalar', count: '0 mahsulot', icon: LayoutGrid, tone: 'bg-[#eef2f6] text-[#4a5b72]', art: MoreArt, more: true, keys: 'gigiyena jarrohlik ortopediya ortiqcha kitob' },
 ]
 
 const OTHERS = [
@@ -45,17 +51,42 @@ const MENU = [
 ]
 
 export default function MobileKategoriyalar() {
+  useCatalogVersion()
+  const market = useMarket()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
 
+  const counts = useMemo(() => {
+    const mp = market.products || []
+    const n = (cat) => mp.filter((p) => p.cat === cat).length
+    return {
+      material: n('komp') + n('bond'),
+      implant: n('impl'),
+      instrument: n('asb'),
+      uskuna: devices.length,
+      endo: n('endo'),
+      orto: 0,
+      lab: 0,
+      forma: uniforms.length,
+      seminar: seminars.length,
+      qism: n('uch'),
+      xizmat: masters.length,
+      boshqa: 0,
+    }
+  }, [market.products])
   const list = useMemo(() => {
+    const withCount = CATS.map((c) => {
+      const n = counts[c.id] ?? 0
+      const unit = c.id === 'seminar' ? 'tadbir' : c.id === 'xizmat' ? 'xizmat' : 'mahsulot'
+      return { ...c, count: `${n} ${unit}` }
+    })
     const s = q.trim().toLowerCase()
-    if (!s) return CATS
-    return CATS.filter((c) => `${c.name} ${c.keys}`.toLowerCase().includes(s))
-  }, [q])
+    if (!s) return withCount
+    return withCount.filter((c) => `${c.name} ${c.keys}`.toLowerCase().includes(s))
+  }, [q, counts])
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef8f7_0%,#f6faf9_40%,#f6faf9_100%)] pb-[86px]">

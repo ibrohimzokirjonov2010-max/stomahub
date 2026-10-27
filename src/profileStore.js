@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { cancelMyOrder, fetchMyOrders } from './buyerApi'
 import { supabase } from './supabaseClient'
 import { currentUid, isDemoUser, onAccount, uploadAvatar } from './recordSync'
+import { looksLikeDemoName } from './demoPurge'
 
 const KEY = 'stomahub-profile'
 
@@ -13,13 +14,7 @@ export function addr(id, kind, name, phone, district, street, extra = '', city =
   return { id, kind, tag, name, phone, city, district, street, extra, address: `${place}${street}${extra ? `, ${extra}` : ''}` }
 }
 
-export const COURSES = [
-  { id: 'endo', title: 'Endodontiya asoslari', about: 'Kanal davolashning zamonaviy usullari va klinik protokollar.', author: 'Dr. Sardor Ismailov', role: 'Endodontist', avatar: '/images/surplus/u4.jpg', lessons: 12, done: 8, hours: 8, cme: 6, price: 750000, image: '/images/seminar-2.jpg', pos: 'object-[16%_center]', certDate: '' },
-  { id: 'impl', title: 'Implantologiya', about: 'Implantologiyaning asosiy tamoyillari, jarrohlik protokollari va reabilitatsiya.', author: 'Dr. Azizbek Karimov', role: 'Implantolog', avatar: '/images/surplus/seller.jpg', lessons: 15, done: 6, hours: 10, cme: 8, price: 1500000, image: '/images/seminar-1.jpg', pos: 'object-[22%_center]', certDate: '' },
-  { id: 'orto', title: 'Ortodontiya asoslari', about: 'Tish qo‘yilishi, breket tizimlari va davolash rejasi tuzish.', author: 'Dr. Nilufar Abdullayeva', role: 'Ortodont', avatar: '/images/surplus/u3.jpg', lessons: 12, done: 3, hours: 7, cme: 5, price: 650000, image: '/images/seminars/aligner.jpg', pos: 'object-center', certDate: '' },
-  { id: 'estet', title: 'Estetik stomatologiya', about: 'Veneerlar, kompozit restavratsiyalar va g‘alaba qiluvchi tabassum dizayni.', author: 'Dr. Jahongir Rahimov', role: 'Stomatolog-estetist', avatar: '/images/surplus/u5.jpg', lessons: 10, done: 10, hours: 6, cme: 6, price: 950000, image: '/images/seminars/smile.jpg', pos: 'object-center', certDate: '12-oktabr 2026' },
-  { id: 'paro', title: 'Parodontologiya', about: 'Milk kasalliklari diagnostikasi va davolash strategiyalari.', author: 'Dr. Madina Xolmatova', role: 'Parodontolog', avatar: '/images/surplus/u6.jpg', lessons: 8, done: 8, hours: 5, cme: 4, price: 480000, image: '/images/seminar-4.jpg', pos: 'object-[18%_center]', certDate: '3-sentabr 2026' },
-]
+export const COURSES = []
 
 export const courseDone = (profile, c) => {
   const stored = profile.courseDone?.[c.id]
@@ -80,6 +75,10 @@ function read() {
 }
 
 let state = read()
+if (looksLikeDemoName(state.name)) {
+  state = { ...state, name: '', avatar: state.avatar?.includes('avatar.jpg') ? '' : state.avatar }
+  try { localStorage.setItem(KEY, JSON.stringify({ ...state, avatar: '' })) } catch { /* ignore */ }
+}
 
 function write(next, opts = {}) {
   state = { ...state, ...next }
@@ -408,7 +407,7 @@ async function hydrateProfile(nextUid) {
     accountLive: true,
     loggedOut: false,
     syncError: '',
-    name: profile?.name || state.name,
+    name: (profile?.name && !looksLikeDemoName(profile.name) ? profile.name : (looksLikeDemoName(state.name) ? '' : (profile?.name || state.name))) || profile?.name || '',
     role: profile?.specialty || state.role,
     clinic: profile?.clinic || clinicRow?.name || '',
     city: profile?.city || state.city,

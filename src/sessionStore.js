@@ -48,11 +48,15 @@ export async function refreshSession() {
     commit({ status: 'anon', user: null, profile: null, error: '' })
     return state
   }
-  const { data, error } = await supabase.from('profiles').select('id,role,name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle()
+  let { data, error } = await supabase.from('profiles').select('id,role,name,full_name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle()
+  if (error && /full_name/i.test(error.message || '')) {
+    ;({ data, error } = await supabase.from('profiles').select('id,role,name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle())
+  }
+  const profile = data ? { ...data, full_name: data.full_name || data.name || '' } : null
   commit({
     status: 'authed',
     user: session.user,
-    profile: data || null,
+    profile,
     error: error ? error.message : '',
   })
   return state
@@ -68,7 +72,7 @@ function cleanRole(role) {
   return role === 'organizer' || role === 'seller' ? role : 'customer'
 }
 
-export async function ensureProfile({ role, name, phone, specialty, email, forceRole = false } = {}) {
+export async function ensureProfile({ role, name, fullName, phone, specialty, email, forceRole = false } = {}) {
   if (!supabase) return { ok: false, error: 'Supabase sozlanmagan' }
   if (!state.user) await refreshSession()
   if (!state.user) return { ok: false, error: 'Avval kiring' }
@@ -77,8 +81,10 @@ export async function ensureProfile({ role, name, phone, specialty, email, force
   const chosen = role === 'organizer' || role === 'customer' || role === 'seller' ? role : (meta.role === 'organizer' ? 'organizer' : 'customer')
   const { data: existing, error: readError } = await supabase.from('profiles').select('id,role').eq('id', uid).maybeSingle()
   if (readError) return { ok: false, error: readError.message }
+  const displayName = (fullName || name || meta.full_name || meta.name || '').trim()
   const patch = {
-    name: name || meta.name || undefined,
+    name: displayName || undefined,
+    full_name: displayName || undefined,
     email: email || state.user.email || undefined,
     specialty: specialty || meta.specialty || undefined,
     updated_at: new Date().toISOString(),
@@ -89,26 +95,39 @@ export async function ensureProfile({ role, name, phone, specialty, email, force
     const row = {
       id: uid,
       role: cleanRole(chosen),
-      name: name || meta.name || '',
+      name: displayName || '',
+      full_name: displayName || '',
       email: email || state.user.email || '',
       specialty: specialty || meta.specialty || '',
       phone: phone || meta.phone || null,
       updated_at: new Date().toISOString(),
     }
     let { error } = await supabase.from('profiles').insert(row)
+    if (error && /full_name/i.test(error.message || '')) {
+      const { full_name: _drop, ...rest } = row
+      ;({ error } = await supabase.from('profiles').insert(rest))
+    }
     if (error && /duplicate|unique/i.test(error.message || '') && row.phone) {
       row.phone = null
-      ;({ error } = await supabase.from('profiles').insert(row))
+      const retry = { ...row }
+      delete retry.full_name
+      ;({ error } = await supabase.from('profiles').insert(retry))
     }
     if (error && error.code !== '23505') return { ok: false, error: error.message }
-  } else if ((forceRole && existing.role !== 'seller') || !existing.role) {
+  } else {
     // a seller account is never silently demoted by a customer/organizer login form
     const nextRole = cleanRole(chosen)
-    if (existing.role !== nextRole) {
-      const { error } = await supabase.from('profiles').update({ role: nextRole, ...patch }).eq('id', uid)
+    const canChangeRole = forceRole && existing.role !== 'seller'
+    const rolePatch = (canChangeRole && existing.role !== nextRole) ? { role: nextRole } : {}
+    const body = { ...patch, ...rolePatch }
+    if (Object.keys(body).length) {
+      let { error } = await supabase.from('profiles').update(body).eq('id', uid)
+      // full_name column may be absent until migration 0017 — retry without it
+      if (error && /full_name/i.test(error.message || '')) {
+        const { full_name: _drop, ...rest } = body
+        ;({ error } = await supabase.from('profiles').update(rest).eq('id', uid))
+      }
       if (error) return { ok: false, error: error.message }
-    } else if (Object.keys(patch).length) {
-      await supabase.from('profiles').update(patch).eq('id', uid)
     }
   }
   await refreshSession()

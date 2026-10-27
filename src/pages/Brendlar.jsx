@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import { useMarket } from '../buyerApi'
 
 const n = (v) => v.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
@@ -21,42 +22,48 @@ const countries = {
 }
 
 const brands = [
-  { name: '3M', mark: '3M', color: '#e10600', country: 'us', count: 450, to: '/marketplace?brand=3M' },
-  { name: 'Dentsply Sirona', mark: 'Dentsply\nSirona', color: '#1c1c1c', country: 'de', count: 1240, to: '/marketplace?brand=Dentsply' },
-  { name: 'Ivoclar', mark: 'ivoclar', color: '#00a3a1', country: 'li', count: 980, to: '/jihozlar?brand=Ivoclar' },
-  { name: 'Straumann', mark: 'straumann', color: '#111111', country: 'ch', count: 860, to: '/marketplace?brand=Straumann' },
-  { name: 'Nobel Biocare', mark: 'Nobel\nBiocare', color: '#d0121a', country: 'ch', count: 720, to: '/marketplace' },
-  { name: 'Zimmer Biomet', mark: 'ZIMMER\nBIOMET', color: '#1d4e89', country: 'us', count: 680, to: '/marketplace' },
-  { name: 'Coltene', mark: 'COLTENE', color: '#1a2744', country: 'ch', count: 520, to: '/marketplace' },
-  { name: 'Kerr', mark: 'Kerr', color: '#111111', country: 'us', count: 610, to: '/marketplace?brand=Kerr' },
-  { name: 'GC', mark: 'GC', color: '#e10600', country: 'jp', count: 590, to: '/marketplace?brand=GC' },
-  { name: 'Tokuyama', mark: 'Tokuyama', color: '#1a4f8b', country: 'jp', count: 430, to: '/marketplace' },
-  { name: 'Fanta Dental', mark: 'fanta', color: '#0b8a95', country: 'it', count: 380, to: '/marketplace' },
-  { name: 'Ultradent', mark: 'ULTRADENT', color: '#f26b1f', country: 'us', count: 550, to: '/marketplace' },
-  { name: 'Mectron', mark: 'mectron', color: '#222222', country: 'it', count: 320, to: '/marketplace' },
-  { name: 'NSK', mark: 'NSK', color: '#163a7a', country: 'jp', count: 790, to: '/marketplace?brand=NSK' },
-  { name: 'W&H', mark: 'W&H', color: '#4b5563', country: 'at', count: 410, to: { pathname: '/marketplace', search: '?brand=W&H' } },
-  { name: 'Vatech', mark: 'vatech', color: '#e10600', country: 'kr', count: 360, to: '/marketplace' },
-  { name: 'Planmeca', mark: 'PLANMECA', color: '#163a7a', country: 'fi', count: 280, to: '/jihozlar?brand=Planmeca' },
-  { name: 'Osstem', mark: 'OSSTEM', color: '#f26b1f', country: 'kr', count: 690, to: '/marketplace' },
-  { name: 'Mindray', mark: 'mindray', color: '#e10600', country: 'cn', count: 240, to: '/marketplace' },
-  { name: 'Angelus', mark: 'angelus', color: '#111111', country: 'br', count: 310, to: '/marketplace' },
+  { name: '3M', mark: '3M', color: '#e10600', country: 'us', count: 0, to: '/marketplace?brand=3M' },
+  { name: 'Dentsply Sirona', mark: 'Dentsply\nSirona', color: '#1c1c1c', country: 'de', count: 0, to: '/marketplace?brand=Dentsply' },
+  { name: 'Ivoclar', mark: 'ivoclar', color: '#00a3a1', country: 'li', count: 0, to: '/jihozlar?brand=Ivoclar' },
+  { name: 'Straumann', mark: 'straumann', color: '#111111', country: 'ch', count: 0, to: '/marketplace?brand=Straumann' },
+  { name: 'Nobel Biocare', mark: 'Nobel\nBiocare', color: '#d0121a', country: 'ch', count: 0, to: '/marketplace' },
+  { name: 'Zimmer Biomet', mark: 'ZIMMER\nBIOMET', color: '#1d4e89', country: 'us', count: 0, to: '/marketplace' },
+  { name: 'Coltene', mark: 'COLTENE', color: '#1a2744', country: 'ch', count: 0, to: '/marketplace' },
+  { name: 'Kerr', mark: 'Kerr', color: '#111111', country: 'us', count: 0, to: '/marketplace?brand=Kerr' },
+  { name: 'GC', mark: 'GC', color: '#e10600', country: 'jp', count: 0, to: '/marketplace?brand=GC' },
+  { name: 'Tokuyama', mark: 'Tokuyama', color: '#1a4f8b', country: 'jp', count: 0, to: '/marketplace' },
+  { name: 'Fanta Dental', mark: 'fanta', color: '#0b8a95', country: 'it', count: 0, to: '/marketplace' },
+  { name: 'Ultradent', mark: 'ULTRADENT', color: '#f26b1f', country: 'us', count: 0, to: '/marketplace' },
+  { name: 'Mectron', mark: 'mectron', color: '#222222', country: 'it', count: 0, to: '/marketplace' },
+  { name: 'NSK', mark: 'NSK', color: '#163a7a', country: 'jp', count: 0, to: '/marketplace?brand=NSK' },
+  { name: 'W&H', mark: 'W&H', color: '#4b5563', country: 'at', count: 0, to: { pathname: '/marketplace', search: '?brand=W&H' } },
+  { name: 'Vatech', mark: 'vatech', color: '#e10600', country: 'kr', count: 0, to: '/marketplace' },
+  { name: 'Planmeca', mark: 'PLANMECA', color: '#163a7a', country: 'fi', count: 0, to: '/jihozlar?brand=Planmeca' },
+  { name: 'Osstem', mark: 'OSSTEM', color: '#f26b1f', country: 'kr', count: 0, to: '/marketplace' },
+  { name: 'Mindray', mark: 'mindray', color: '#e10600', country: 'cn', count: 0, to: '/marketplace' },
+  { name: 'Angelus', mark: 'angelus', color: '#111111', country: 'br', count: 0, to: '/marketplace' },
 ]
 
 export default function Brendlar() {
+  const market = useMarket()
   const [q, setQ] = useState('')
   const [letter, setLetter] = useState('all')
   const [country, setCountry] = useState('all')
 
+  const brandsLive = useMemo(() => brands.map((b) => ({
+    ...b,
+    count: (market.products || []).filter((p) => String(p.brand || '').toLowerCase().includes(String(b.name).split(/\s|\n/)[0].toLowerCase())).length,
+  })), [market.products])
+
   const list = useMemo(() => {
     const text = q.trim().toLowerCase()
-    return brands.filter((b) => {
+    return brandsLive.filter((b) => {
       if (country !== 'all' && b.country !== country) return false
       if (letter !== 'all' && b.name[0].toUpperCase() !== letter) return false
       if (text && !b.name.toLowerCase().includes(text)) return false
       return true
     })
-  }, [q, letter, country])
+  }, [q, letter, country, brandsLive])
 
   return (
     <ShopLayout active="brands" search="plain" placeholder="Mahsulot, brend yoki kategoriya qidiring...">
@@ -69,7 +76,7 @@ export default function Brendlar() {
           <div className="flex items-center gap-2 rounded-xl border border-[#e6eef3] bg-white px-3 py-2 shadow-card">
             <Tooth className="size-5 text-sea" />
             <span>
-              <span className="block text-[12px] font-bold text-ink">100+ brend</span>
+              <span className="block text-[12px] font-bold text-ink">{brands.length} brend</span>
               <span className="block text-[11px] text-muted">Rasmiy yetkazib beruvchilar</span>
             </span>
           </div>

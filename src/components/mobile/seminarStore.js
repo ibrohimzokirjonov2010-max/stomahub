@@ -3,7 +3,7 @@ import { registerSale } from '../../hubStore'
 import { bindBlob, touchBlob } from '../../recordSync'
 
 const KEY = 'stomahub-seminars'
-const SEED_SAVED = ['mikroskop-endo', 'aligner']
+const SEED_SAVED = []
 export const SHOWCASE_SAVED = SEED_SAVED
 const listeners = new Set()
 

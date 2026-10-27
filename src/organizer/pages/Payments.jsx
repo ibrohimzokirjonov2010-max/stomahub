@@ -31,36 +31,16 @@ const STATE_META = {
 }
 
 const TABS = [
-  { id: 'all', label: 'Barcha to‘lovlar (1 030)' },
-  { id: 'ok', label: 'Muvaffaqiyatli (950)' },
-  { id: 'wait', label: 'Kutilayotgan (60)' },
-  { id: 'cancel', label: 'Bekor qilingan (20)' },
-  { id: 'refund', label: 'Qaytarilgan (15)' },
+  { id: 'all', label: 'Barcha to‘lovlar' },
+  { id: 'ok', label: 'Muvaffaqiyatli' },
+  { id: 'wait', label: 'Kutilayotgan' },
+  { id: 'cancel', label: 'Bekor qilingan' },
+  { id: 'refund', label: 'Qaytarilgan' },
 ]
 
-const DESIGN = [
-  { id: 'ST2026-001', when: '24-noy 2026', time: '10:24', who: 'Aliyeva Mohira', clinic: 'Stoma Clinic', seminar: 'Implantologiya: nazariya va amaliyot', sum: 2500000, method: 'Payme', state: 'ok', phone: '+998 90 123 45 67', email: 'm.aliyeva@mail.uz', ticket: 'VIP chipta', face: 0 },
-  { id: 'ST2026-002', when: '23-noy 2026', time: '18:11', who: 'Karimov Sardar', clinic: 'Dental Pro', seminar: 'Endodontiya: kanal davolash', sum: 1200000, method: 'Click', state: 'ok', phone: '+998 91 234 56 78', email: 's.karimov@mail.uz', ticket: 'Standart chipta', face: 1 },
-  { id: 'ST2026-003', when: '22-noy 2026', time: '16:45', who: 'Ismoilova Dilnoza', clinic: 'City Dent', seminar: 'Oral jarrohlik: amaliy ko‘nikmalar', sum: 800000, method: 'Uzum', state: 'wait', phone: '+998 93 345 67 89', email: 'd.ismoilova@mail.uz', ticket: 'Student chipta', face: 2 },
-  { id: 'ST2026-004', when: '21-noy 2026', time: '14:20', who: 'Raximov Behzod', clinic: 'Perfect Smile', seminar: 'Bolalar stomatologiyasi', sum: 1000000, method: 'Paynet', state: 'cancel', phone: '+998 94 456 78 90', email: 'b.rahimov@mail.uz', ticket: 'Guruh chipta', face: 3 },
-  { id: 'ST2026-005', when: '20-noy 2026', time: '13:40', who: 'Yusupova Sevinch', clinic: 'Stomatolog+', seminar: 'Estetik stomatologiya', sum: 2500000, method: 'Payme', state: 'ok', phone: '+998 90 567 89 01', email: 's.yusupova@mail.uz', ticket: 'VIP chipta', face: 4 },
-  { id: 'ST2026-006', when: '20-noy 2026', time: '11:05', who: 'Nodirov Jamshid', clinic: 'Smile Dent', seminar: 'Implantologiya: nazariya va amaliyot', sum: 1200000, method: 'Click', state: 'refund', phone: '+998 93 678 90 12', email: 'j.nodirov@mail.uz', ticket: 'Standart chipta', face: 5 },
-  { id: 'ST2026-007', when: '19-noy 2026', time: '17:22', who: 'Tursunova Malika', clinic: 'Dental Care', seminar: 'Endodontiya: kanal davolash', sum: 800000, method: 'Uzum', state: 'ok', phone: '+998 91 789 01 23', email: 'm.tursunova@mail.uz', ticket: 'Student chipta', face: 6 },
-  { id: 'ST2026-008', when: '18-noy 2026', time: '15:18', who: 'Mirzayev Azizbek', clinic: 'Regale Clinic', seminar: 'Oral jarrohlik: amaliy ko‘nikmalar', sum: 1000000, method: 'Paynet', state: 'ok', phone: '+998 94 890 12 34', email: 'a.mirzayev@mail.uz', ticket: 'Guruh chipta', face: 7 },
-]
+const DESIGN = []
 
-const MOBILE_ROWS = [
-  { n: 1, init: 'AM', who: 'Aliyeva Mohira', phone: '+998 90 123 45 67', sum: 300000, via: 'Online', state: 'paid' },
-  { n: 2, init: 'KB', who: 'Karimov Bekzod', phone: '+998 91 234 56 78', sum: 500000, via: 'Online', state: 'paid' },
-  { n: 3, init: 'TD', who: 'Toirov Dilshod', phone: '+998 93 345 67 89', sum: 300000, via: 'Naqd / joyida', state: 'paid' },
-  { n: 4, init: 'SM', who: 'Saydova Malika', phone: '+998 90 456 78 90', sum: 300000, via: 'Online', state: 'paid' },
-  { n: 5, init: 'UJ', who: 'Usmonov Javohir', phone: '+998 91 567 89 01', sum: 500000, via: 'Online', state: 'wait' },
-  { n: 6, init: 'RS', who: 'Raximova Sevara', phone: '+998 93 678 90 12', sum: 300000, via: 'Naqd / joyida', state: 'paid' },
-  { n: 7, init: 'JA', who: 'Jalilov Akmal', phone: '+998 90 789 01 23', sum: 300000, via: 'Online', state: 'paid' },
-  { n: 8, init: 'ED', who: 'Eshmatova Dildora', phone: '+998 91 890 12 34', sum: 500000, via: 'Online', state: 'paid' },
-  { n: 9, init: 'NS', who: 'Normatov Sardor', phone: '+998 93 901 23 45', sum: 300000, via: 'Naqd / joyida', state: 'paid' },
-  { n: 10, init: 'QN', who: 'Qodirova Nilufar', phone: '+998 90 012 34 56', sum: 300000, via: 'Online', state: 'wait' },
-]
+const MOBILE_ROWS = []
 
 const SEMINARS = ['Implantologiya', 'Endodontiya', 'Oral jarrohlik', 'Bolalar', 'Estetik']
 

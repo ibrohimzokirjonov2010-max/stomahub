@@ -13,6 +13,7 @@ import {
 } from '../profileStore'
 import { demoBadgeProps, isDemoPayments, linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
 import { signOut, useSession } from '../sessionStore'
+import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Ortoped stomatolog', 'Stomatolog', 'Terapevt', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba', 'Klinika egasi']
 const YEARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '15', '20', '25', '30']
@@ -503,7 +504,7 @@ function PersonalCard({ draft, editing, setEditing, setForm, onSave, busy }) {
           <input disabled={!editing} className={field} value={draft.name} onChange={set('name')} />
         </label>
         <label className="block text-[12.5px] font-semibold text-[#12263a]">Telefon
-          <input disabled={!editing} className={field} value={draft.phone} onChange={set('phone')} placeholder="90 123 45 67" />
+          <PhoneInput disabled={!editing} className={`mt-1.5 h-11 ${!editing ? 'opacity-60' : ''}`} inputClassName="text-[14px]" value={draft.phone} onChange={(v) => setForm((f) => ({ ...(f || draft), phone: extractUzLocalDigits(v) }))} valueMode="local" placeholder="+998 90 123 45 67" />
         </label>
         <label className="block text-[12.5px] font-semibold text-[#12263a]">Email
           <input disabled={!editing} className={field} value={draft.email} onChange={set('email')} placeholder="email@example.com" />
@@ -572,7 +573,7 @@ function ClinicCard({ draft, editing, setEditing, setForm, onSave, onPhoto, busy
                 <input className={field} value={draft.name} onChange={set('name')} placeholder="Klinika nomi" />
                 <input className={field} value={draft.address} onChange={set('address')} placeholder="Manzil" />
                 <input className={field} value={draft.hours} onChange={set('hours')} placeholder="09:00–19:00" />
-                <input className={field} value={draft.phone} onChange={set('phone')} placeholder="+998 …" />
+                <PhoneInput className="h-11" value={draft.phone} onChange={(v) => setForm((f) => ({ ...(f || draft), phone: extractUzLocalDigits(v) }))} valueMode="local" placeholder="+998 90 123 45 67" />
                 <input className={field} value={draft.website} onChange={set('website')} placeholder="https://" />
                 <button type="button" disabled={busy} onClick={onSave} className="mt-1 h-10 rounded-xl bg-[#0F766E] px-4 text-[13.5px] font-semibold text-white">Saqlash</button>
               </>
@@ -744,7 +745,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
             {ADDRESS_KINDS.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <input className={field} placeholder="Ism" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input className={field} placeholder="Telefon" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 9) })} />
+          <PhoneInput className="h-11" placeholder="+998 90 123 45 67" value={form.phone} onChange={(v) => setForm({ ...form, phone: extractUzLocalDigits(v) })} valueMode="local" />
           <input className={field} placeholder="Shahar" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
           <input className={field} placeholder="Tuman" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
           <input className={field} placeholder="Ko‘cha, uy" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} />
@@ -891,7 +892,7 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
       {walletForm && (
         <div className="mt-3 grid gap-2 rounded-xl border border-[#d7e5e3] bg-[#f8fbfb] p-3 sm:grid-cols-2">
           <p className="sm:col-span-2 text-[13px] font-semibold text-[#12263a]">{walletForm.provider === 'click' ? 'Click' : 'Payme'} — demo bog‘lash</p>
-          <input className={field} placeholder="Telefon (9 raqam)" value={walletForm.phone} onChange={(e) => setWalletForm({ ...walletForm, phone: e.target.value.replace(/\D/g, '').slice(0, 9) })} />
+          <PhoneInput className="h-11" placeholder="+998 90 123 45 67" value={walletForm.phone} onChange={(v) => setWalletForm({ ...walletForm, phone: extractUzLocalDigits(v) })} valueMode="local" />
           <input className={field} placeholder="Nom (ixtiyoriy)" value={walletForm.label} onChange={(e) => setWalletForm({ ...walletForm, label: e.target.value })} />
           <label className="flex items-center gap-2 text-[13px]">
             <input type="checkbox" checked={!!walletForm.setDefault} onChange={(e) => setWalletForm({ ...walletForm, setDefault: e.target.checked })} /> Asosiy qilish

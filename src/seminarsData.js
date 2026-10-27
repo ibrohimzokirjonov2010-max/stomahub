@@ -15,64 +15,7 @@ export const seminarChips = [
 
 const catLabel = Object.fromEntries(seminarChips.map((c) => [c.key, c.label]))
 
-const DEMO_SEMINARS = [
-  {
-    id: 'implant-toj', cat: 'impl', day: '24', mon: 'OKT', weekday: 'Juma', monthKey: '2026-10',
-    title: 'Implantologiya: implantdan tojgacha',
-    text: 'Diagnostika, jarrohlik protokoli, implant protezlash',
-    city: 'Toshkent', place: 'EMU Universiteti', time: '09:00 – 18:00', hours: '8 soat',
-    speaker: { name: 'Dr. Sardor Raximov', role: 'Implantolog, PhD', avatar: '/images/surplus/u5.jpg' },
-    cme: 8, left: 18, seats: 30, price: 1200000, format: 'Offline + jonli efir', image: pic('teeth'), mine: true,
-  },
-  {
-    id: 'mikroskop-endo', cat: 'endo', day: '28', mon: 'OKT', weekday: 'Seshanba', monthKey: '2026-10',
-    title: 'Mikroskop yordamida endodontik davolash',
-    text: 'Mikroskopda ishlash protokoli va klinik holatlar',
-    city: 'Samarqand', place: 'Hyatt Regency', time: '09:00 – 17:00', hours: '7 soat',
-    speaker: { name: 'Dr. Malika Karimova', role: 'Endodontist', avatar: '/images/surplus/u1.jpg' },
-    cme: 6, left: 12, seats: 25, price: 850000, format: 'Offline', image: pic('micro'),
-  },
-  {
-    id: 'sinus-lifting', cat: 'surg', day: '30', mon: 'OKT', weekday: 'Chorshanba', monthKey: '2026-10',
-    title: 'Sinus lifting va vertikal augmentatsiya',
-    text: 'Amaliyot va jonli jarrohlik ko‘rsatmalari',
-    city: 'Toshkent', place: 'Nexus Clinic', time: '09:00 – 18:00', hours: '8 soat',
-    speaker: { name: 'Dr. Javohir Ahmedov', role: 'Jarroh, PhD', avatar: '/images/surplus/u4.jpg' },
-    cme: 8, left: 8, seats: 20, price: 2500000, format: 'Offline', image: pic('surgery'),
-  },
-  {
-    id: 'kompozit-old', cat: 'estet', day: '31', mon: 'OKT', weekday: 'Juma', monthKey: '2026-10',
-    title: 'Kompozit restavratsiya: oldingi tishlar',
-    text: 'To‘g‘ridan-to‘g‘ri va bilvosita restavratsiya texnikalari',
-    city: 'Toshkent', place: 'Dentoshon Center', time: '09:00 – 17:00', hours: '7 soat',
-    speaker: { name: 'Dr. Kamola Abdullayeva', role: 'Estetik stomatolog', avatar: '/images/surplus/u3.jpg' },
-    cme: 5, left: 20, seats: 30, price: 1000000, format: 'Offline', image: pic('smile'),
-  },
-  {
-    id: 'aligner', cat: 'orto', day: '02', mon: 'NOY', weekday: 'Dushanba', monthKey: '2026-11',
-    title: 'Aligner terapiya: case selection',
-    text: 'Klinik holatlar va davolash rejasi',
-    city: 'Toshkent', place: 'Joy Congress Hall', time: '10:00 – 18:00', hours: '7 soat',
-    speaker: { name: 'Dr. Ferrukh Khaydarov', role: 'Ortodontist', avatar: '/images/surplus/seller.jpg' },
-    cme: 5, left: 25, seats: 40, price: 900000, format: 'Offline', image: pic('aligner'),
-  },
-  {
-    id: 'raqamli-ortopediya', cat: 'other', day: '15', mon: 'NOY', weekday: 'Yakshanba', monthKey: '2026-11',
-    title: 'Raqamli ortopediya',
-    text: 'Skaner, dizayn va frezerlashning klinik protokoli',
-    city: 'Toshkent', place: 'Nexus Clinic', time: '10:00 – 17:00', hours: '6 soat',
-    speaker: { name: 'Dr. Sevara Ahmedova', role: 'Ortoped', avatar: '/images/surplus/u6.jpg' },
-    cme: 5, left: 16, seats: 30, price: 1100000, format: 'Offline', image: '/images/seminar-3.jpg', mine: true,
-  },
-  {
-    id: 'raqamli-implant', cat: 'impl', day: '28', mon: 'NOY', weekday: 'Shanba', monthKey: '2026-11',
-    title: 'Raqamli implantologiya va skanerlar',
-    text: 'Intraoral skaner va raqamli jarrohlik shabloni',
-    city: 'Samarqand', place: 'Hyatt Regency', time: '10:00 – 18:00', hours: '7 soat',
-    speaker: { name: 'Dr. Aziz Karimov', role: 'Implantolog, jarroh', avatar: '/images/surplus/seller.jpg' },
-    cme: 6, left: 14, seats: 24, price: 1000000, format: 'Offline + jonli efir', image: '/images/hero-implant.jpg',
-  },
-]
+const DEMO_SEMINARS = []
 
 export const monthOrder = [
   { key: '2026-10', label: 'Oktabr 2026' },
@@ -156,8 +99,8 @@ export function buildSeminarPage(s) {
     name: s.speaker?.name || 'Ma’ruzachi',
     role: s.speaker?.role || '',
     avatar: s.speaker?.avatar || '/images/avatar.jpg',
-    rating: 4.8,
-    reviews: 48,
+    rating: Number(s.speaker?.rating) || 0,
+    reviews: Number(s.speaker?.reviews) || 0,
     lines: ['Klinik amaliyot va o‘qitish', s.city, `${s.cme || 6} ballik dastur muallifi`],
   }
 

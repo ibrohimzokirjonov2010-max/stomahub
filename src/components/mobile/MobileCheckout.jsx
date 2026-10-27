@@ -16,6 +16,7 @@ import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
 import { PROMOS } from './MobileCart'
 import { profileStore, useProfile } from '../../profileStore'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 export const CITIES = {
   Toshkent: ['Yunusobod', 'Chilonzor', 'Mirzo Ulug‘bek', 'Yakkasaroy', 'Mirobod', 'Shayxontohur', 'Sergeli', 'Uchtepa', 'Yashnobod', 'Olmazor', 'Bektemir'],
@@ -127,7 +128,7 @@ export default function MobileCheckout() {
   const fmtPhone = [phone.slice(0, 2), phone.slice(2, 5), phone.slice(5, 7), phone.slice(7, 9)].filter(Boolean).join(' ')
   const errors = {
     name: form.name.trim().length < 3 && 'Ism va familiyani kiriting',
-    phone: phone.length !== 9 && 'Raqamni to‘liq kiriting',
+    phone: phone.length !== 9 && PHONE_INCOMPLETE_MSG,
     address: mode === 'courier' && form.address.trim().length < 5 && 'Aniq manzilni kiriting',
   }
   const cardDigits = cardNo.num.replace(/\D/g, '')
@@ -253,13 +254,17 @@ export default function MobileCheckout() {
               <Head icon={MapPin} title="Yetkazib berish ma’lumotlari" text="Buyurtmangiz qayerga yetkazilsin?" />
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Field f="name" icon={UserRound} label="Ism va familiya" err={tried && errors.name}>
-                  <input value={form.name} onChange={(e) => patch('name', e.target.value)} autoComplete="name" placeholder="Ibrohim Zokirjonov" className={inp} />
+                  <input value={form.name} onChange={(e) => patch('name', e.target.value)} autoComplete="name" placeholder="Ism Familiya" className={inp} />
                 </Field>
-                <Field f="phone" icon={Phone} label="Telefon raqami" err={tried && errors.phone}>
-                  <span className="flex items-center gap-1">
-                    <span className="text-[13px] text-[#0d2a4a]">+998</span>
-                    <input inputMode="tel" autoComplete="tel-national" value={fmtPhone} onChange={(e) => patch('phone', e.target.value)} placeholder="90 123 45 67" className={inp} />
-                  </span>
+                                <Field f="phone" icon={Phone} label="Telefon raqami" err={tried && errors.phone}>
+                    <PhoneInput
+                      className="h-10 rounded-xl border border-[#e2e9ec] bg-white px-3"
+                      value={form.phone}
+                      onChange={(v) => patch('phone', extractUzLocalDigits(v))}
+                      valueMode="local"
+                      invalid={!!(tried && errors.phone)}
+                      placeholder="+998 90 123 45 67"
+                    />
                 </Field>
                 <Field icon={Building} label="Shahar" chevron>
                   <span className="block truncate text-[13px] text-[#0d2a4a]">{form.city}</span>

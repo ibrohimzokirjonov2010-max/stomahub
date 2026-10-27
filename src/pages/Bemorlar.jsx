@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import { addBemor, CITIES, patchBemor, removeBemor, SOURCES, STATUSES, statusClass, useBemorlar } from '../bemorData'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 export default function Bemorlar() {
   const all = useBemorlar()
@@ -204,7 +205,7 @@ export default function Bemorlar() {
             </div>
           </section>
 
-          {current && <Side patient={current} onVisit={(date) => patchBemor(current.id, { next: date, visits: [{ date, kind: 'Qabul', note: 'Yangi qabul', doctor: 'Dr. Ibrohim' }, ...(current.visits || [])] })} />}
+          {current && <Side patient={current} onVisit={(date) => patchBemor(current.id, { next: date, visits: [{ date, kind: 'Qabul', note: 'Yangi qabul', doctor: '' }, ...(current.visits || [])] })} />}
         </div>
       </div>
       {open && <AddModal onClose={() => setOpen(false)} />}
@@ -306,7 +307,7 @@ function AddModal({ onClose }) {
   const toggle = (name) => setF((s) => ({ ...s, flags: s.flags.includes(name) ? s.flags.filter((x) => x !== name) : [...s.flags, name] }))
 
   const save = () => {
-    if (!f.first.trim() || !f.last.trim() || !f.phone.trim() || !f.birth || !f.city) {
+    if (!f.first.trim() || !f.last.trim() || !isCompleteUzPhone(f.phone) || !f.birth || !f.city) {
       setErr(true)
       return
     }
@@ -314,7 +315,7 @@ function AddModal({ onClose }) {
     addBemor({
       id,
       name: `${f.last.trim()} ${f.first.trim()}`,
-      phone: f.phone.trim().startsWith('+') ? f.phone.trim() : `+998 ${f.phone.trim()}`,
+      phone: toE164(f.phone) || f.phone.trim(),
       birth: f.birth.split('-').reverse().join('.'),
       age: '',
       gender: f.gender,
@@ -367,10 +368,15 @@ function AddModal({ onClose }) {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <Field label="Telefon raqami" required bad={bad('phone')}>
-            <div className={`flex h-9 items-center rounded-lg border px-2 ${bad('phone') ? 'border-sale' : 'border-line'}`}>
-              <span className="mr-1 text-[12px]">🇺🇿 +998</span>
-              <input value={f.phone} onChange={(e) => set('phone', e.target.value)} placeholder="90 123 45 67" className="w-full bg-transparent text-[12.5px] outline-none" />
-            </div>
+            <PhoneInput
+              className={`h-9 rounded-lg px-2 ${bad('phone') ? 'border-sale' : 'border-line'}`}
+              inputClassName="text-[12.5px]"
+              value={f.phone}
+              onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))}
+              valueMode="e164"
+              invalid={bad('phone')}
+              placeholder="+998 90 123 45 67"
+            />
           </Field>
           <Field label="Tug‘ilgan sana" required bad={bad('birth')}>
             <label className={`flex h-9 items-center rounded-lg border px-2 ${bad('birth') ? 'border-sale' : 'border-line'}`}>

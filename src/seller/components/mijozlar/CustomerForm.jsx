@@ -4,6 +4,7 @@ import { insertRow, updateRow, useAsync } from '../../api'
 import { Btn, Input, Textarea, Select, Err, toast } from '../ui'
 import Modal from '../shell/Modal'
 import { KINDS, REGIONS, TAGS } from './constants'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 const blank = { kind: 'klinika', name: '', contact_person: '', phone: '+998 ', region: '', city: '', address: '', stir: '', tags: [], note: '' }
 const H = ({ n, icon: I, children }) => <div className="mb-1.5 flex items-center gap-2 text-[13px] font-semibold text-[#0F766E]"><I className="size-4" />{n}. {children}</div>
@@ -34,7 +35,7 @@ export default function CustomerForm({ open, onClose, edit, onSaved }) {
         <div><H n={2} icon={Building2}>{label}</H><Input icon={Building2} value={v.name} onChange={set('name')} maxLength={120} placeholder={`${label}ni kiriting...`} /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><H n={3} icon={UserRound}>Mas’ul shaxs</H><Input value={v.contact_person} onChange={set('contact_person')} maxLength={80} placeholder="Mas’ul shaxs F.I.Sh..." /></div>
-          <div><H n={4} icon={Phone}>Telefon</H><Input type="tel" inputMode="tel" value={v.phone} onChange={set('phone')} maxLength={17} placeholder="+998 90 123 45 67" /></div>
+          <div><H n={4} icon={Phone}>Telefon</H><PhoneInput className="h-11" value={v.phone} onChange={(val) => set('phone')(toE164(val) || extractUzLocalDigits(val))} valueMode="e164" placeholder="+998 90 123 45 67" /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><H n={5} icon={Map}>Viloyat</H><Select value={v.region} onChange={(r) => setV((s) => ({ ...s, region: r, city: REGIONS[r]?.length === 1 ? REGIONS[r][0] : '' }))} options={Object.keys(REGIONS)} placeholder="Viloyatni tanlang" /></div>

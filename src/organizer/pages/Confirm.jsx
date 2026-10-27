@@ -19,15 +19,7 @@ const PHOTOS = [
   { id: 'h4', src: '/images/organizer/confirm/hall-4.jpg' },
 ]
 
-const PEOPLE = [
-  { name: 'Aliyeva Mohira', phone: '+998 90 123 45 67', time: '21.10.2026, 09:12', avatar: '/images/bemorlar/bemor-mohira.jpg' },
-  { name: 'Karimov Bekzod', phone: '+998 91 234 56 78', time: '21.10.2026, 09:18', avatar: '/images/seller-1.jpg' },
-  { name: 'Toirov Dilshod', phone: '+998 93 345 67 89', time: '21.10.2026, 09:21', avatar: '/images/ustalar/usta-dilshod.jpg' },
-  { name: 'Saydova Malika', phone: '+998 90 456 78 90', time: '21.10.2026, 09:25', avatar: '/images/bemorlar/bemor-malika.jpg' },
-  { name: 'Usmonov Javohir', phone: '+998 91 567 89 01', time: '21.10.2026, 09:27', avatar: '/images/ustalar/usta-jasur.jpg' },
-  { name: 'Karimova Nilufar', phone: '+998 97 210 33 45', time: '21.10.2026, 09:31', avatar: '/images/forma/woman-navy.jpg' },
-  { name: 'Rahimov Sardor', phone: '+998 93 778 12 06', time: '21.10.2026, 09:36', avatar: '/images/ustalar/usta-sardor.jpg' },
-]
+const PEOPLE = []
 
 const NOTES = [
   'Zal rasmlari, ishtirokchilar ro‘yxati va sertifikatlar yuklangandan keyin to‘lov so‘rovini yuborish mumkin.',
@@ -36,14 +28,7 @@ const NOTES = [
   'Tekshiruv odatda 1–3 ish kuni davom etadi.',
 ]
 
-const FACTS = [
-  { icon: Calendar, k: 'Sana', v: '21 oktabr 2026, 09:00 — 18:00' },
-  { icon: MapPin, k: 'Manzil', v: 'Toshkent, O‘zbekiston' },
-  { icon: Building2, k: 'Zal', v: 'Tashkent City Kongress Markazi' },
-  { icon: Users, k: 'Ishtirokchilar', v: '50 kishi' },
-  { icon: Ticket, k: 'Chipta narxi', v: som(350000) },
-  { icon: Wallet, k: 'Jami daromad', v: som(17500000) },
-]
+const FACTS = []
 
 const card = 'rounded-2xl border border-[#e6f1ef] bg-white shadow-[0_1px_2px_rgb(16_48_48/0.04)]'
 

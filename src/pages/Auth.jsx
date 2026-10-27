@@ -6,6 +6,7 @@ import { retryHub } from '../hubStore'
 import { supabase } from '../supabaseClient'
 import { flashToast } from '../components/FlashToast'
 import { ensureProfile, intendedRole, setIntendedRole, useSession } from '../sessionStore'
+import PhoneInput, { extractUzLocalDigits, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Sotuvchi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
 
@@ -58,7 +59,7 @@ const COPY = {
     errId: 'Telefon yoki emailni kiriting',
     errPass: 'Parol kamida 6 ta belgidan iborat bo‘lsin',
     errName: 'Ism familiyani kiriting',
-    errPhone: 'Telefon raqamini to‘liq kiriting',
+    errPhone: 'Telefon raqam to‘liq emas',
     errEmail: 'Email manzilini to‘g‘ri kiriting',
     errSpec: 'Mutaxassislikni tanlang',
     errMatch: 'Parollar mos kelmadi',
@@ -112,7 +113,7 @@ const COPY = {
     errId: 'Введите телефон или email',
     errPass: 'Пароль должен быть не короче 6 символов',
     errName: 'Введите имя и фамилию',
-    errPhone: 'Введите телефон полностью',
+    errPhone: 'Номер телефона неполный',
     errEmail: 'Введите корректный email',
     errSpec: 'Выберите специальность',
     errMatch: 'Пароли не совпадают',
@@ -166,7 +167,7 @@ const COPY = {
     errId: 'Enter a phone number or email',
     errPass: 'Use at least 6 characters',
     errName: 'Enter your full name',
-    errPhone: 'Enter the full phone number',
+    errPhone: 'Phone number is incomplete',
     errEmail: 'Enter a valid email',
     errSpec: 'Choose a specialty',
     errMatch: 'Passwords do not match',
@@ -203,11 +204,6 @@ function safeNext(value) {
   return value
 }
 
-function toLocalPhone(value) {
-  const raw = digits(String(value || ''))
-  const local = raw.startsWith('998') ? raw.slice(3) : raw
-  return local.length === 9 ? local : ''
-}
 
 function Auth({ mode }) {
   const navigate = useNavigate()
@@ -244,22 +240,25 @@ function Auth({ mode }) {
   const destination = (role) => next || (role === 'organizer' ? '/tashkilotchi' : role === 'seller' ? '/sotuvchi' : '/klinika')
 
   const applyAccount = async ({ forceRole } = {}) => {
-    const phoneDigits = digits(phone).replace(/^998/, '').slice(-9)
+    const fullName = name.trim()
+    const e164 = toE164(phone)
     const res = await ensureProfile({
       role: roleIntent,
       forceRole,
-      name: name.trim() || undefined,
+      name: fullName || undefined,
+      fullName: fullName || undefined,
       specialty: spec || undefined,
       email: emailOk(email) ? email.trim() : undefined,
-      phone: phoneDigits.length === 9 ? `+998${phoneDigits}` : undefined,
+      phone: e164 || undefined,
     })
     if (!res.ok) throw new Error(res.error || 'Profil saqlanmadi')
-    const localPhone = toLocalPhone(res.profile?.phone)
+    const localPhone = extractUzLocalDigits(res.profile?.phone)
+    const savedName = res.profile?.full_name || res.profile?.name || fullName || ''
     profileStore.update({
       loggedOut: false,
       accountLive: true,
       lang,
-      name: res.profile?.name || '',
+      name: savedName,
       email: res.profile?.email || session.user?.email || '',
       phone: localPhone,
       role: res.profile?.specialty || '',
@@ -284,11 +283,12 @@ function Auth({ mode }) {
       })()
       return () => { cancel = true }
     }
-    const localPhone = toLocalPhone(session.profile.phone || session.user.user_metadata?.phone)
+    const localPhone = extractUzLocalDigits(session.profile.phone || session.user.user_metadata?.phone)
     profileStore.update({
       loggedOut: false,
+      accountLive: true,
       lang,
-      name: session.profile.name || session.user.user_metadata?.name || '',
+      name: session.profile.full_name || session.profile.name || session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
       email: session.profile.email || session.user.email || '',
       phone: localPhone,
       role: session.profile.specialty || '',
@@ -415,14 +415,15 @@ function Auth({ mode }) {
         }
         return
       }
-      const phoneDigits = digits(raw).replace(/^998/, '').slice(-9)
-      if (phoneDigits.length !== 9) return setErr(t.errId)
-      if (!otpSent) return startPhone(raw)
-      return verifyPhone(raw)
+      const e164Login = toE164(raw)
+      if (!e164Login) return setErr(t.errId)
+      if (!otpSent) return startPhone(e164Login)
+      return verifyPhone(e164Login)
     }
-    const phoneDigits = digits(phone).replace(/^998/, '').slice(-9)
+    const phoneDigits = extractUzLocalDigits(phone)
+    const e164Reg = toE164(phone)
     if (name.trim().length < 3) return setErr(t.errName)
-    if (phoneDigits.length !== 9) return setErr(t.errPhone)
+    if (!e164Reg) return setErr(t.errPhone)
     const emailIssue = emailProblem(email)
     if (emailIssue) { setEmailErr(emailIssue); return setErr(emailIssue) }
     if (!spec) return setErr(t.errSpec)
@@ -436,7 +437,7 @@ function Auth({ mode }) {
       email: email.trim(),
       password: pass,
       options: {
-        data: { name: name.trim(), phone: `+998${phoneDigits}`, specialty: spec, role: roleIntent },
+        data: { name: name.trim(), full_name: name.trim(), phone: e164Reg, specialty: spec, role: roleIntent },
       },
     })
     if (error) {
@@ -527,16 +528,19 @@ function Auth({ mode }) {
             <form onSubmit={submit} className={`mt-5 ${isLogin ? 'space-y-5' : 'space-y-4'}`}>
               {!isLogin && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} />}
               {isLogin ? (
-                <Field label={t.id} icon={UserRound} value={id} onChange={setId} placeholder={t.idPh} big />
+                <LoginIdField label={t.id} value={id} onChange={setId} placeholder={t.idPh} />
               ) : (
                 <div className="grid gap-4 lg:grid-cols-2">
                   <label className="block">
                     <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.phone}</span>
-                    <span className="mt-1.5 flex h-12 items-center rounded-xl border border-[#e3eaee] bg-[#f7f9fa] focus-within:border-[#0F766E]">
-                      <span className="flex h-full items-center gap-1.5 border-r border-[#e3eaee] px-3 text-[14px] text-[#24384d] lg:hidden">+998 <ChevronDown className="size-4 text-[#5c6e80]" /></span>
-                      <Phone className="ml-3 size-[18px] shrink-0 text-[#7d8f99]" />
-                      <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder={t.phonePh} className="min-w-0 flex-1 bg-transparent px-2.5 text-[14px] outline-none placeholder:text-[#9aa9b1]" />
-                    </span>
+                    <PhoneInput
+                      value={phone}
+                      onChange={setPhone}
+                      valueMode="e164"
+                      showIcon
+                      className="mt-1.5 h-12"
+                      placeholder={t.phonePh}
+                    />
                   </label>
                   <div>
                     <Field label={t.email} icon={Mail} value={email} onChange={(v) => { setEmail(v); if (emailErr) setEmailErr(emailProblem(v)) }} onBlur={() => email && setEmailErr(emailProblem(email))} placeholder={t.emailPh} type="email" invalid={!!emailErr} />
@@ -590,7 +594,7 @@ function Auth({ mode }) {
               {info && <p className="text-[13px] font-medium text-[#0F766E]">{info}</p>}
               <button type="submit" disabled={busy} className={`flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0F766E] font-semibold text-white hover:bg-[#0b5f59] disabled:opacity-60 ${isLogin ? 'h-14 text-[17px]' : 'h-[52px] text-[16px]'}`}>
                 {isLogin ? <LogIn className="size-5" /> : <UserPlus className="size-5" />}
-                {isLogin ? (emailFormatOk(id.trim()) || digits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
+                {isLogin ? (emailFormatOk(id.trim()) || extractUzLocalDigits(id).length < 9 ? t.login : (otpSent ? t.code : t.sendCode)) : t.reg}
               </button>
             </form>
 
@@ -652,6 +656,28 @@ export function AuthAside({ t }) {
         </ul>
       </div>
     </aside>
+  )
+}
+
+function LoginIdField({ label, value, onChange, placeholder }) {
+  const emailMode = /[a-zA-Z@]/.test(value || '')
+  if (emailMode) {
+    return (
+      <label className="block">
+        <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
+        <span className="mt-1.5 flex h-14 items-center gap-2.5 rounded-xl border border-[#e3eaee] bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E]">
+          <UserRound className="size-[19px] shrink-0 text-[#7d8f99]" />
+          <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} autoComplete="username" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
+        </span>
+      </label>
+    )
+  }
+  return (
+    <label className="block">
+      <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
+      <PhoneInput value={value} onChange={onChange} valueMode="display" showIcon className="mt-1.5 h-14" placeholder={placeholder} aria-label={label} />
+      <button type="button" className="mt-1.5 text-[12px] font-semibold text-[#0F766E]" onClick={() => onChange('@')}>Email bilan kirish</button>
+    </label>
   )
 }
 

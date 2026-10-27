@@ -16,6 +16,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { downloadIcs } from './MobileSeminar'
 import { register, useSeminarStore } from './seminarStore'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Farg‘ona', 'Qarshi', 'Nukus', 'Urganch', 'Termiz']
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Endodontist', 'Parodontolog', 'Bolalar stomatologi', 'Gigiyenist', 'Talaba']
@@ -105,7 +106,7 @@ function RegView({ id, seminar }) {
   const phone = form.phone.replace(/\D/g, '')
   const errors = {
     name: form.name.trim().length < 3 && 'F.I.Sh kiriting',
-    phone: phone.length !== 9 && 'Raqamni to‘liq kiriting',
+    phone: phone.length !== 9 && PHONE_INCOMPLETE_MSG,
     email: !EMAIL.test(form.email.trim()) && 'Email noto‘g‘ri',
     agree: !agree && 'Shartlarga rozilik bering',
   }
@@ -200,14 +201,18 @@ function RegView({ id, seminar }) {
             <Section icon={UserRound} title="Shaxsiy ma’lumotlar" first />
             <div className="grid grid-cols-2 gap-2.5">
               <Field label="F.I.SH" f="name" err={tried && errors.name}>
-                <input value={form.name} onChange={set('name')} autoComplete="name" placeholder="Ibrohim Zokirjonov" className={input} />
+                <input value={form.name} onChange={set('name')} autoComplete="name" placeholder="Ism Familiya" className={input} />
               </Field>
-              <Field label="Telefon raqami" f="phone" err={tried && errors.phone}>
-                <span className="mt-0.5 flex h-8 items-center gap-1 rounded-lg bg-white px-1.5">
-                  <UzFlag />
-                  <span className="text-[12px] font-medium text-ink">+998</span>
-                  <input inputMode="tel" autoComplete="tel-national" value={fmtPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 9) }))} placeholder="90 123 45 67" className="min-w-0 flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-[#a3b3b9]" />
-                </span>
+                            <Field label="Telefon raqami" f="phone" err={tried && errors.phone}>
+                  <PhoneInput
+                    className="h-9 rounded-xl border border-[#e2e9ec] bg-white px-2.5"
+                    inputClassName="text-[11.5px]"
+                    value={form.phone}
+                    onChange={(v) => setForm((f) => ({ ...f, phone: extractUzLocalDigits(v) }))}
+                    valueMode="local"
+                    invalid={!!(tried && errors.phone)}
+                    placeholder="+998 90 123 45 67"
+                  />
               </Field>
               <Field label="Email manzil" f="email" err={tried && errors.email}>
                 <input type="email" inputMode="email" autoComplete="email" value={form.email} onChange={set('email')} placeholder="example@mail.com" className={input} />

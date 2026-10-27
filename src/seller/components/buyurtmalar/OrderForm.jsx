@@ -8,6 +8,7 @@ import { useMobile } from '../../../useMobile'
 import ProductThumb from '../bosh-sahifa/ProductThumb'
 import { DELIVERY } from './constants'
 import { variantLabel } from '../mahsulotlar/constants'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const H = ({ icon: Icon, n, children, right }) => (
@@ -110,7 +111,7 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
             {newCust ? (
               <div className="grid gap-2 rounded-xl border border-[#E6EEF0] p-3 md:grid-cols-3">
                 <Input placeholder="Klinika yoki ism" value={newCust.name} onChange={(e) => setNewCust({ ...newCust, name: e.target.value })} />
-                <Input placeholder="+998 90 123 45 67" value={newCust.phone} onChange={(e) => setNewCust({ ...newCust, phone: e.target.value })} />
+                <PhoneInput className="h-11" placeholder="+998 90 123 45 67" value={newCust.phone} onChange={(v) => setNewCust({ ...newCust, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" />
                 <div className="flex gap-2"><Input placeholder="Shahar" value={newCust.city || ''} onChange={(e) => setNewCust({ ...newCust, city: e.target.value })} /><button type="button" aria-label="Bekor" onClick={() => setNewCust(null)} className="grid size-[42px] shrink-0 place-items-center rounded-[10px] border border-[#DCE5E7]"><X className="size-4" /></button></div>
               </div>
             ) : cust ? (

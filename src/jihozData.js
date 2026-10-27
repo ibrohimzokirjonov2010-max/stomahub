@@ -57,23 +57,14 @@ const base = (p) => ({
   install: true,
   official: true,
   city: 'Toshkent',
-  rating: 4.8,
-  reviews: 24,
+  rating: 0,
+  reviews: 0,
   feature: 'O‘rnatish va kafolat bilan',
   month: Math.round(p.price / 12 / 1000) * 1000,
   ...p,
 })
 
-const designed = [
-  base({ id: 'sirona-intego', brand: 'Sirona', mark: 'SIRONA', title: 'Dentsply Sirona Intego', cat: 'unit', year: 2024, warranty: 24, feature: 'O‘rnatish va trening bilan', price: 185000000, month: 15420000, image: photo('sirona'), rating: 4.9, reviews: 64 }),
-  base({ id: 'planmeca-promax', brand: 'Planmeca', mark: 'PLANMECA', title: 'Planmeca ProMax 3D Classic', cat: 'cbct', year: 2023, warranty: 24, feature: 'O‘rnatish va kalibrovka', price: 420000000, month: 21000000, image: photo('planmeca'), rating: 4.8, reviews: 41 }),
-  base({ id: 'trios-5', brand: '3shape', mark: '3shape', title: '3Shape TRIOS 5', cat: 'scan', year: 2024, warranty: 24, feature: 'Dasturiy ta’minot kiritilgan', price: 185000000, oldPrice: 215000000, month: 15420000, image: photo('trios'), rating: 4.9, reviews: 57 }),
-  base({ id: 'zeiss-extaro', brand: 'Carl Zeiss', mark: 'ZEISS', title: 'Carl Zeiss Extaro 300', cat: 'micro', year: 2024, warranty: 24, feature: 'O‘rnatish va trening', price: 560000000, month: 28000000, image: photo('zeiss'), rating: 4.9, reviews: 22 }),
-  base({ id: 'kavo-e70', brand: 'KaVo', mark: 'KAVO', title: 'KaVo Estetica E70', cat: 'unit', status: 'used', year: 2021, warranty: 12, feature: 'Texnik ko‘rikdan o‘tgan', price: 120000000, month: 10000000, image: photo('kavo'), rating: 4.6, reviews: 33 }),
-  base({ id: 'melag-31', brand: 'Melag', mark: 'MELAG', title: 'Melag Vacuklav 31 B+', cat: 'autoclave', year: 2024, warranty: 24, feature: 'O‘rnatish va servis', price: 42500000, oldPrice: 49900000, month: 3540000, image: photo('melag'), rating: 4.8, reviews: 39 }),
-  base({ id: 'cattani-ac300', brand: 'Cattani', mark: 'CATTANI', title: 'Cattani AC 300', cat: 'compressor', year: 2023, warranty: 24, feature: 'O‘rnatish kiritilgan', price: 25000000, month: 2080000, image: photo('cattani'), rating: 4.7, reviews: 18 }),
-  base({ id: 'ivoclar-bluephase', brand: 'Ivoclar', mark: 'ivoclar', title: 'Ivoclar Bluephase N', cat: 'lamp', year: 2024, warranty: 24, feature: 'Original mahsulot', price: 8500000, oldPrice: 10400000, month: 710000, image: photo('ivoclar'), rating: 4.8, reviews: 44 }),
-]
+const designed = []
 
 export const fengdan = base({
   id: 'fengdan-ql2028',
@@ -88,8 +79,8 @@ export const fengdan = base({
   price: 68500000,
   oldPrice: 82000000,
   month: 5708000,
-  rating: 4.9,
-  reviews: 48,
+  rating: 0,
+  reviews: 0,
   sold: '220+',
   image: photo('fengdan'),
   gallery: [photo('fengdan'), photo('fengdan-arm'), photo('fengdan-screen'), photo('fengdan-room')],
@@ -133,12 +124,7 @@ export const fengdan = base({
   ],
 })
 
-const similar = [
-  base({ id: 'fengdan-plus', brand: 'Fengdan', mark: 'FENGDAN', title: 'Fengdan QL2028 Plus', cat: 'unit', price: 72000000, image: photo('plus'), rating: 4.8, reviews: 76, feature: 'Kengaytirilgan shifokor bloki' }),
-  base({ id: 'runyes-s600', brand: 'Runyes', mark: 'RUNYES', title: 'Runyes S600', cat: 'unit', price: 58900000, image: photo('runyes'), rating: 4.7, reviews: 28, feature: 'Ixcham klinika uchun' }),
-  base({ id: 'anthos-a7', brand: 'Anthos', mark: 'ANTHOS', title: 'Anthos A7 Plus', cat: 'unit', price: 96000000, image: photo('anthos'), rating: 4.9, reviews: 41, feature: 'Premium ustanovka' }),
-  base({ id: 'diplomat-da370', brand: 'Diplomat', mark: 'DIPLOMAT', title: 'Diplomat ADEPT DA370', cat: 'unit', price: 84500000, image: photo('diplomat'), rating: 4.6, reviews: 19, feature: 'O‘rnatish kiritilgan' }),
-]
+const similar = []
 
 const seeds = [
   ['NSK', 'NSK', 'handpiece', 'NSK Ti-Max Z95L', 4800000, 'ivoclar'],
@@ -165,30 +151,9 @@ const seeds = [
 ]
 
 const cityOf = ['Toshkent', 'Toshkent', 'Samarqand', 'Andijon', 'Buxoro', 'Namangan', 'Farg‘ona']
-const extras = Array.from({ length: 73 }, (_, i) => {
-  const [brand, mark, cat, title, price, image] = seeds[i % seeds.length]
-  const wave = Math.floor(i / seeds.length)
-  const status = i % 8 === 0 ? 'used' : i % 13 === 0 ? 'demo' : 'new'
-  const warranty = [24, 12, 24, 36, 24, 6, 24][i % 7]
-  return base({
-    id: `jihoz-${i + 1}`,
-    brand,
-    mark,
-    title: wave ? `${title} ${wave + 1}` : title,
-    cat,
-    price: price + wave * 1500000,
-    image: photo(image),
-    status,
-    year: status === 'used' ? 2019 + (i % 4) : 2023 + (i % 2),
-    warranty,
-    city: cityOf[i % cityOf.length],
-    rating: [4.6, 4.7, 4.8, 4.9, 4.5][i % 5],
-    reviews: 12 + (i % 40),
-    feature: status === 'used' ? 'Texnik ko‘rikdan o‘tgan' : status === 'demo' ? 'Ko‘rgazma namunasidan' : 'O‘rnatish va kafolat bilan',
-  })
-})
+const extras = []
 
-export const products = [...designed, fengdan, ...similar, ...extras]
+export const products = []
 export const similarIds = similar.map((p) => p.id)
 export const compareSeed = ['sirona-intego', 'planmeca-promax']
 
@@ -221,8 +186,8 @@ export function coverOf(p) {
 
 export const installer = {
   name: 'Sardor Rahimov',
-  rating: 4.9,
-  reviews: 128,
+  rating: 0,
+  reviews: 0,
   city: 'Toshkent',
   brands: ['Fengdan', 'Sirona', 'KaVo'],
   price: 1500000,

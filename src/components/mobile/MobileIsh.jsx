@@ -12,6 +12,7 @@ import { HubTopBar } from './MobileKategoriyalar'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet } from './MobileMutaxassislar'
 import { TYPE_CLS, expText, findJob, jobsStore, useJobs } from './MobileIshlar'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const GRAPH = { full: '6/1', part: 'Yarim kun', shift: '2/2 smena', remote: 'Moslashuvchan' }
 const DUTIES = {
@@ -238,7 +239,7 @@ function ApplySheet({ j, onClose, onDone }) {
       </div>
       <div className="mt-3 flex flex-col gap-2 pb-2">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ism familiya" className={`h-11 rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && !okName ? 'border-sale' : 'border-line'}`} />
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+998 90 123 45 67" className={`h-11 rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && !okPhone ? 'border-sale' : 'border-line'}`} />
+        <PhoneInput value={phone} onChange={setPhone} valueMode="e164" className={`h-11 ${tried && !okPhone ? 'border-sale' : 'border-line'}`} invalid={tried && !okPhone} placeholder="+998 90 123 45 67" />
         {tried && (!okName || !okPhone) && <p className="text-[11.5px] text-sale">Ism va telefon raqamni to‘liq kiriting</p>}
         <p className="mt-1 text-[13px] font-semibold text-ink">Tajribangiz</p>
         <div className="flex flex-wrap gap-2">

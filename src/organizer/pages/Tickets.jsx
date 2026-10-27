@@ -20,35 +20,7 @@ const TYPE_STYLE = {
   users: { icon: Users, bg: '#fdecee', color: '#ef6b6b' },
 }
 
-const MOBILE_SEED = [
-  {
-    id: 'oddiy',
-    name: 'Oddiy',
-    price: 300000,
-    perks: ['Seminarga kirish', 'Qahva-breyk', 'Ishtirok sertifikati'],
-    sold: 28,
-    total: 30,
-    image: '/images/organizer/ticket-hall.jpg',
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 500000,
-    perks: ['Seminarga kirish', 'Qahva-breyk', 'Ishtirok sertifikati', 'Print materiallar', 'Oldingi qatorda joy'],
-    sold: 14,
-    total: 15,
-    image: '/images/organizer/ticket-premium.jpg',
-  },
-  {
-    id: 'vip',
-    name: 'VIP',
-    price: 1000000,
-    perks: ['Seminarga kirish', 'Qahva-breyk', 'Ishtirok sertifikati', 'Print materiallar', 'Oldingi qatorda joy', 'Ma’ruzachi bilan foto'],
-    sold: 0,
-    total: 5,
-    image: '/images/organizer/ticket-vip-table.jpg',
-  },
-]
+const MOBILE_SEED = []
 
 const PILL_TABS = [
   { id: 'types', label: 'Chipta turlari (4)' },

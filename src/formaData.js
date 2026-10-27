@@ -66,16 +66,7 @@ export const tiers = [
   ['100+ dona', 'Maxsus narx'],
 ]
 
-const base = [
-  { id: 'bestex-erkak', title: 'Erkaklar skrab to‘plam', brand: 'Bestex', about: 'Paxta-poliester, qulay va nafas oladi', gender: 'male', cat: 'scrub', fabric: 'cotton', sizes: ['S', 'M', 'L', 'XL'], colors: ['teal', 'navy', 'black'], price: 380000, oldPrice: 450000, off: 15, rating: 4.8, reviews: 120, image: img('man-teal'), fresh: false },
-  { id: 'cherokee-ayol', title: 'Ayollar skrab to‘plam', brand: 'Cherokee', about: 'Stretch mato, antibakterial', gender: 'female', cat: 'scrub', fabric: 'stretch', sizes: ['XS', 'S', 'M', 'L'], colors: ['navy', 'wine', 'black'], price: 420000, rating: 4.8, reviews: 86, image: img('woman-navy') },
-  { id: 'hnl-xalat', title: 'Tibbiy xalat (erkaklar)', brand: 'HNL', about: 'Premium mato, klinika logosi bilan', gender: 'male', cat: 'coat', fabric: 'premium', sizes: ['S', 'M', 'L', 'XL', '2XL'], colors: ['white', 'navy'], price: 520000, rating: 4.7, reviews: 52, image: img('coat') },
-  { id: 'bestex-ayol', title: 'Ayollar skrab to‘plam', brand: 'Bestex', about: 'Stretch mato, nafas oladi', gender: 'female', cat: 'scrub', fabric: 'stretch', sizes: ['XS', 'S', 'M', 'L', 'XL'], colors: ['lilac', 'teal', 'navy'], price: 390000, rating: 4.8, reviews: 95, image: img('woman-lilac') },
-  { id: 'zheng-shoe', title: 'Tibbiy poyabzal', brand: 'Zhengxing', about: 'Ayollar, sirpanmaydigan', gender: 'female', cat: 'shoe', fabric: 'premium', sizes: ['S', 'M', 'L', 'XL'], colors: ['white', 'black'], price: 290000, rating: 4.6, reviews: 73, image: img('clogs') },
-  { id: 'bestex-cap', title: 'Tibbiy qalpoq', brand: 'Bestex', about: 'Paxta, sozlanadigan', gender: 'uni', cat: 'cap', fabric: 'cotton', sizes: ['S', 'M', 'L'], colors: ['navy', 'teal', 'white'], price: 85000, rating: 4.8, reviews: 64, image: img('cap') },
-  { id: 'hnl-apron', title: 'Himoya fartuk', brand: 'HNL', about: 'Suv o‘tkazmaydigan mato', gender: 'uni', cat: 'apron', fabric: 'anti', sizes: ['S', 'M', 'L', 'XL'], colors: ['green', 'navy'], price: 120000, rating: 4.7, reviews: 38, image: img('apron') },
-  { id: 'bestex-bag', title: 'Aksessuarlar (organayzer)', brand: 'Bestex', about: 'Qulay va chidamli', gender: 'uni', cat: 'accessory', fabric: 'premium', sizes: ['M'], colors: ['navy', 'black'], price: 95000, rating: 4.8, reviews: 50, image: img('bag') },
-]
+const base = []
 
 export const premium = {
   id: 'premium-stretch',
@@ -90,9 +81,9 @@ export const premium = {
   price: 389000,
   oldPrice: 450000,
   off: 14,
-  rating: 4.8,
-  reviews: 126,
-  sold: 210,
+  rating: 0,
+  reviews: 0,
+  sold: 0,
   image: img('hero'),
   gallery: [img('hero'), img('back'), img('folded'), img('fabric')],
   fresh: true,
@@ -111,38 +102,9 @@ export const premium = {
   ],
 }
 
-const more = [
-  ['mediform', 'Ayollar skrab to‘plam', 'Mediform', 'female', 'scrub', 'stretch', 320000, 4.7, 64, 'woman-navy'],
-  ['adiform', 'Erkaklar skrab to‘plam', 'Adiform', 'male', 'scrub', 'cotton', 355000, 4.8, 91, 'man-teal'],
-  ['labwear', 'Tibbiy xalat', 'Labwear', 'uni', 'coat', 'premium', 330000, 4.6, 38, 'coat'],
-  ['bestex-bordo', 'Skrab to‘plam Bordo', 'Bestex', 'female', 'scrub', 'stretch', 350000, 4.7, 22, 'woman-lilac'],
-  ['cherokee-flex', 'Skrab to‘plam Flex', 'Cherokee', 'uni', 'scrub', 'stretch', 390000, 4.9, 73, 'woman-navy'],
-  ['dickies-erkak', 'Erkaklar skrab Classic', 'Dickies', 'male', 'scrub', 'cotton', 360000, 4.5, 44, 'man-teal'],
-  ['hnl-ayol-xalat', 'Tibbiy xalat (ayollar)', 'HNL', 'female', 'coat', 'premium', 490000, 4.8, 31, 'coat'],
-  ['bestex-qalpoq-2', 'Jarrohlik qalpoq', 'Bestex', 'uni', 'cap', 'cotton', 79000, 4.6, 28, 'cap'],
-  ['zheng-clog-black', 'Tibbiy poyabzal qora', 'Zhengxing', 'male', 'shoe', 'premium', 310000, 4.7, 40, 'clogs'],
-  ['hnl-fartuk-2', 'Steril fartuk', 'HNL', 'uni', 'apron', 'anti', 145000, 4.5, 19, 'apron'],
-  ['bestex-sumka', 'Navbatchi sumkasi', 'Bestex', 'uni', 'accessory', 'premium', 125000, 4.8, 33, 'bag'],
-  ['cherokee-cap', 'Tibbiy qalpoq', 'Cherokee', 'female', 'cap', 'cotton', 92000, 4.4, 17, 'cap'],
-  ['dickies-ayol', 'Ayollar skrab to‘plam', 'Dickies', 'female', 'scrub', 'anti', 410000, 4.6, 26, 'woman-lilac'],
-  ['labwear-fartuk', 'Laboratoriya fartugi', 'Labwear', 'uni', 'apron', 'anti', 99000, 4.3, 14, 'apron'],
-  ['adiform-xalat', 'Klinik xalat', 'Adiform', 'male', 'coat', 'premium', 470000, 4.7, 21, 'coat'],
-  ['mediform-poyabzal', 'Yengil poyabzal', 'Mediform', 'uni', 'shoe', 'premium', 275000, 4.5, 36, 'clogs'],
-]
+const more = []
 
-export const products = [
-  ...base.map((p, i) => ({ ...p, rank: i, gallery: [p.image, img('folded'), img('fabric')] })),
-  { ...premium, rank: base.length },
-  ...more.map(([id, title, brand, gender, cat, fabric, price, rating, reviews, image], i) => ({
-    id, title, brand, about: 'Klinikada kiyish uchun qulay va chidamli.', gender, cat, fabric,
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['teal', 'navy', 'black'].slice(0, 2 + (i % 2)),
-    price, rating, reviews, image: img(image),
-    gallery: [img(image), img('folded')],
-    fresh: i % 5 === 0,
-    rank: base.length + 1 + i,
-  })),
-]
+export const products = []
 
 export const similarIds = ['mediform', 'adiform', 'labwear', 'hnl-xalat', 'bestex-bordo', 'cherokee-flex']
 
