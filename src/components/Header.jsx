@@ -4,6 +4,7 @@ import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, L
 import { Logo } from './icons'
 import { useCart } from '../cart'
 import { profileStore, useProfile } from '../profileStore'
+import { fetchNotifications } from '../buyerApi'
 import { signOut, useSession } from '../sessionStore'
 
 // variant="home" — bosh sahifa dizayni, variant="shop" — marketplace sahifalari
@@ -20,6 +21,18 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const { pathname } = useLocation()
   const cartFrom = pathname.startsWith('/forma') ? 'forma' : pathname.startsWith('/jihoz') ? 'jihoz' : 'market'
   const [text, setText] = useState('')
+  const [unread, setUnread] = useState(0)
+  useEffect(() => {
+    let alive = true
+    if (session.status === 'authed') {
+      fetchNotifications().then((rows) => {
+        if (!alive) return
+        const n = (rows || []).filter((r) => !r.read_at && !(profile.readNotifs || []).includes(r.id)).length
+        setUnread(n)
+      }).catch(() => {})
+    } else setUnread(0)
+    return () => { alive = false }
+  }, [session.status, profile.readNotifs])
 
   useEffect(() => { setText(''); onQuery?.('') }, [placeholder])
 
@@ -87,14 +100,15 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
 
         {shop ? (
           <>
-            <IconBtn label="Bildirishnomalar">
-              <Bell className="size-[17px]" />
-            </IconBtn>
-            <IconBtn label="Sevimlilar" className="hidden sm:grid"><Heart className="size-[17px]" /></IconBtn>
             <IconBtn label="Savat" onClick={() => navigate('/buyurtma', { state: { from: cartFrom } })}>
               <ShoppingCart className="size-[17px]" />
               {items.length > 0 && <Badge className="bg-sea">{items.length}</Badge>}
             </IconBtn>
+            <IconBtn label="Bildirishnomalar" onClick={() => navigate('/profil')}>
+              <Bell className="size-[17px]" />
+              {unread > 0 && <Badge className="bg-[#e11d48]">{unread > 9 ? '9+' : unread}</Badge>}
+            </IconBtn>
+            <IconBtn label="Sevimlilar" className="hidden sm:grid" onClick={() => navigate('/profil/sevimlilar')}><Heart className="size-[17px]" /></IconBtn>
           </>
         ) : (
           <>
