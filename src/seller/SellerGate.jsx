@@ -15,7 +15,9 @@ export default function SellerGate({ children }) {
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/kirish?next=${next}&role=seller`} replace />
   }
-  if (session.profile?.role !== 'seller') {
+  const role = session.profile?.role
+  const canSell = role === 'seller' || role === 'admin'
+  if (!canSell) {
     return (
       <div className="grid min-h-screen place-items-center bg-[#F4FBFA] px-4">
         <form

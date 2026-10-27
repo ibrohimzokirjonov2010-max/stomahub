@@ -132,6 +132,9 @@ async function run(promise) {
 export const setOrderStatus = (id, status, reason = '') =>
   run(supabase.from('seller_orders').update(status === 'bekor_qilindi' ? { status, cancel_reason: reason } : { status }).eq('id', id).eq('seller_id', uid()).select().single())
 
+export const setTrackingUrl = (id, url) =>
+  run(supabase.rpc('seller_set_tracking_url', { p_order: id, p_url: url || '' }))
+
 export const addProduct = (v) => run(supabase.from('seller_products').insert({
   seller_id: uid(), name: v.name.trim(), sku: v.sku || '', category: v.category || '', price: Number(v.price) || 0, stock: Number(v.stock) || 0, image_url: v.image_url || '',
 }).select().single())

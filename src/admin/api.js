@@ -52,6 +52,8 @@ export const listOrders = (a) => rpc('admin_orders_list', { p_tab: a.tab || 'all
 export const orderDetail = (id) => rpc('admin_order_detail', { p_id: id })
 
 export const fetchEscrow = (a) => rpc('admin_escrow', { p_page: a.page || 1, p_page_size: a.pageSize || 10, p_q: a.q || '' })
+export const releaseEscrow = (id) => rpc('admin_escrow_release', { p_order: id })
+export const refundEscrow = (id, reason = '') => rpc('admin_escrow_refund', { p_order: id, p_reason: reason })
 
 export const listApprovals = (a) => rpc('admin_approvals_list', { p_type: a.type || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 

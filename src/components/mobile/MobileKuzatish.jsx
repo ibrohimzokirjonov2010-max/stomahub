@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Bell, CalendarDays, Check, ChevronRight, CircleX, Headset, House, Menu, MessageCircleMore, MessagesSquare, Phone, ReceiptText,
-  SendHorizontal, ShoppingBag, ShoppingCart, Star, Store, Truck, UserRound,
+  ExternalLink, SendHorizontal, ShoppingBag, ShoppingCart, Star, Store, Truck, UserRound,
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
@@ -70,6 +70,15 @@ export default function MobileKuzatish() {
     const t = setInterval(() => setP((v) => Math.min(0.96, v + 0.006)), 5000)
     return () => clearInterval(t)
   }, [live])
+
+  // Real-time-ish: poll seller status / tracking_url every 8s while on this page
+  useEffect(() => {
+    if (!id) return undefined
+    profileStore.refreshOrders?.()
+    const tmr = setInterval(() => { profileStore.refreshOrders?.() }, 8000)
+    return () => clearInterval(tmr)
+  }, [id])
+
 
   const header = (
     <header className="flex items-center gap-1 px-3 pt-3">
@@ -190,6 +199,21 @@ export default function MobileKuzatish() {
         </section>
 
         <MapCard order={order} p={order.status === 'delivered' ? 1 : p} minutes={minutes} live={live} />
+
+        {order.trackingUrl ? (
+          <section className={`${card} mt-2.5 p-3`}>
+            <p className={`text-[14px] font-bold ${navy}`}>Yandex yetkazish</p>
+            <p className="mt-1 text-[12px] text-[#7a8a9c]">Sotuvchi Yandex Go / Delivery kuzatuv havolasini joylashtirdi.</p>
+            <a
+              href={order.trackingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white"
+            >
+              <ExternalLink className="size-4" /> Yandexda kuzatish
+            </a>
+          </section>
+        ) : null}
 
         <section className={`${card} mt-2.5 flex items-center gap-2.5 p-3`}>
           {contact.photo
