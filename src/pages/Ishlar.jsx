@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Heart, Plus, ChevronDown, MapPin, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import {
   jobs, cities, specs, exps, types, sorts, tips, popularOrder, resumes, resumePhoto,
   expName, typeName, pay, clinicCount,
@@ -20,6 +22,7 @@ export default function Ishlar() {
 }
 
 function Catalog({ query }) {
+  useCatalogVersion()
   const [params] = useSearchParams()
   const [tab, setTab] = useState('jobs')
   const [city, setCity] = useState([])
@@ -138,7 +141,8 @@ function Catalog({ query }) {
               <div className="rounded-xl bg-white p-8 text-center text-[13px] text-muted shadow-card">Bu bo‘limda vakansiya yo‘q. Filtrlarni tozalang yoki vakansiyani saqlang.</div>
             ) : (
               <div className="grid gap-2">
-                {list.map((j) => (
+                {!jobs.length ? <EmptyCatalog title="Ish o‘rinlari bo‘sh" text="Hali ish e’lonlari yo‘q." /> : null}
+      {list.map((j) => (
                   <article key={j.id} className="grid min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-2.5 rounded-xl bg-white p-2.5 shadow-card">
                     <Link to={`/ishlar/${j.id}`} className="relative size-[72px] overflow-hidden rounded-lg">
                       <img src={j.image} alt="" className="size-full object-cover" />

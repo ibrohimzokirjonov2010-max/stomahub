@@ -4,6 +4,7 @@ import {
   ArrowLeft, Activity, UserRound, Calendar, Search, Plus, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Eye, Pencil, Trash2, X, Check,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
 import PersonAvatar from '../components/PersonAvatar'
 import RejaDialog from '../components/RejaDialog'
 import { shiftIso } from '../klinikaData'
@@ -124,7 +125,8 @@ export default function Rejalar() {
                 </tr>
               </thead>
               <tbody>
-                {slice.map((p) => {
+                {!plans.length ? <EmptyCatalog title="Davolash rejalari bo‘sh" text="Hali reja yo‘q. Yangi reja qo‘shing." /> : null}
+      {slice.map((p) => {
                   const pr = progressOf(p)
                   const st = PLAN_STATUS[p.status]
                   const open = () => navigate(`/davolash-rejalari/${p.id}`)

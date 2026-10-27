@@ -15,7 +15,7 @@ export const seminarChips = [
 
 const catLabel = Object.fromEntries(seminarChips.map((c) => [c.key, c.label]))
 
-export const seminars = [
+const DEMO_SEMINARS = [
   {
     id: 'implant-toj', cat: 'impl', day: '24', mon: 'OKT', weekday: 'Juma', monthKey: '2026-10',
     title: 'Implantologiya: implantdan tojgacha',
@@ -78,6 +78,9 @@ export const monthOrder = [
   { key: '2026-10', label: 'Oktabr 2026' },
   { key: '2026-11', label: 'Noyabr 2026' },
 ]
+
+export const seminars = []
+export const DEMO_SEMINARS_LIST = DEMO_SEMINARS
 
 export const mySeminars = seminars.filter((s) => s.mine)
 

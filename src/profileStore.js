@@ -489,6 +489,7 @@ export const useProfile = () => useSyncExternalStore(subscribe, () => state)
 export const allOrders = (s) => s.orders || []
 
 export const profileStore = {
+  get: () => state,
   update: (patch) => write(patch),
   refreshOrders,
   // Faqat "yangi" holatdagi buyurtmani server orqali bekor qiladi

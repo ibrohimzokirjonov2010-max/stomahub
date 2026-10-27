@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Search, SlidersHorizontal, LayoutGrid, LayoutList, Heart, Star, Play, Clock, BookOpen, Award, Headphones, X, FileBadge, Hourglass, BadgeCheck, MonitorPlay } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { directions, levels, formats, prices, sorts, courses, continuing, certificates, why, money } from '../educationData'
 
 export default function EducationRoute() {
@@ -13,6 +15,7 @@ export default function EducationRoute() {
 }
 
 function Education({ headerQuery }) {
+  useCatalogVersion()
   const [local, setLocal] = useState('')
   const [direction, setDirection] = useState('all')
   const [level, setLevel] = useState('all')
@@ -123,7 +126,8 @@ function Education({ headerQuery }) {
           <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">Kurs topilmadi</div>
         ) : view === 'grid' ? (
           <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-            {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
+            {!courses.length ? <EmptyCatalog title="Ta’lim kurslari bo‘sh" text="Hali kurslar qo‘shilmagan." /> : null}
+      {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
           </div>
         ) : (
           <div className="flex flex-col gap-2">

@@ -153,13 +153,15 @@ export function planFor(patient) {
   return { name: 'Davolash rejasi', date: patient.last || '01.10.2026', plan, paid }
 }
 
-let paymentRows = seedPayments
+const DEMO_PAYMENTS = seedPayments
+let paymentRows = []
 const paymentListeners = new Set()
 function emitPayments() {
   paymentListeners.forEach((fn) => fn())
   touchBlob('clinic_payments')
 }
 bindBlob('clinic_payments', {
+  seed: DEMO_PAYMENTS,
   get: () => paymentRows,
   empty: () => [],
   set: (next) => {

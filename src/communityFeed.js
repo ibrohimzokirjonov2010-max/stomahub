@@ -112,7 +112,8 @@ const seed = [
   },
 ]
 
-let state = { posts: seed, liked: new Set(['sardor-implant']), saved: new Set(), likedComments: new Set(), hidden: new Set() }
+const DEMO_COMMUNITY = { posts: seed, liked: ['sardor-implant'], saved: [], likedComments: [], hidden: [] }
+let state = { posts: [], liked: new Set(), saved: new Set(), likedComments: new Set(), hidden: new Set() }
 const subs = new Set()
 let quiet = false
 const set = (next) => {
@@ -121,6 +122,7 @@ const set = (next) => {
   if (!quiet) touchBlob('community')
 }
 bindBlob('community', {
+  seed: DEMO_COMMUNITY,
   get: () => ({
     posts: state.posts,
     liked: [...state.liked],
@@ -132,7 +134,7 @@ bindBlob('community', {
   set: (payload) => {
     quiet = true
     state = {
-      posts: payload?.posts || state.posts,
+      posts: Array.isArray(payload?.posts) ? payload.posts : [],
       liked: new Set(payload?.liked || []),
       saved: new Set(payload?.saved || []),
       hidden: new Set(payload?.hidden || []),

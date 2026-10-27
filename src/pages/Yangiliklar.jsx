@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bookmark, Clock, Eye, MapPin, Send, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { articles, cats, catName, events, people, popular, viewsOf } from '../yangiliklarData'
 
 export default function Yangiliklar() {
@@ -14,6 +16,7 @@ export default function Yangiliklar() {
 }
 
 function Feed({ query }) {
+  useCatalogVersion()
   const [cat, setCat] = useState('all')
   const [hot, setHot] = useState(false)
   const [saved, setSaved] = useState(() => new Set())
@@ -38,6 +41,7 @@ function Feed({ query }) {
 
   return (
     <div className="pb-8 pt-3">
+    {!articles.length ? <EmptyCatalog title="Yangiliklar bo‘sh" text="Hali maqolalar yo‘q." /> : null}
       <h1 className="text-[22px] font-extrabold text-ink">Yangiliklar</h1>
       <p className="mt-0.5 text-[12px] text-muted">Stomatologiya sohasidagi eng so‘nggi yangiliklar, tadbirlar va tahlillar</p>
       <div className="mt-3 flex gap-1.5 overflow-x-auto no-scrollbar">

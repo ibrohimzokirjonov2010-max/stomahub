@@ -8,6 +8,7 @@ import {
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { createOrder } from '../../buyerApi'
+import { createCharge, isDemoPayments } from '../../payments/paymentService'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -36,6 +37,10 @@ const PINS = [
 ]
 const SHOP = 'StomaHub do‘koni — Yakkasaroy, Shota Rustaveli ko‘chasi, 15'
 export const METHODS = {
+  uzcard: ['UZCARD', 'Bank kartasi (demo)'],
+  humo: ['HUMO', 'Bank kartasi (demo)'],
+  click: ['Click', 'Click ilovasi (demo)'],
+  payme: ['Payme', 'Payme ilovasi (demo)'],
   cash: ['Naqd', 'Olganda naqd to‘lash'],
 }
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
@@ -60,7 +65,7 @@ function readOrder() {
 }
 
 export default function MobileCheckout() {
-  const { items, setItems } = useCart()
+  const { items, setItems, cartReady } = useCart()
   const navigate = useNavigate()
   const loc = useLocation()
   const [placed, setPlaced] = useState(() => (loc.state?.done ? readOrder() : null))
@@ -91,7 +96,7 @@ export default function MobileCheckout() {
   const [allSaved, setAllSaved] = useState(false)
   const [showItems, setShowItems] = useState(false)
   const [tried, setTried] = useState(false)
-  const [method, setMethod] = useState('cash')
+  const [method, setMethod] = useState('uzcard')
   const [savedCard, setSavedCard] = useState(() => profile.cards.find((c) => c.id === profile.defaultPay)?.id || profile.cards[0]?.id || '')
   const [months, setMonths] = useState(6)
   const [cardNo, setCardNo] = useState({ num: '', exp: '' })
@@ -135,6 +140,13 @@ export default function MobileCheckout() {
 
   const patch = (k, v) => setForm((f) => ({ ...f, [k]: v, ...(k === 'address' || k === 'district' || k === 'city' ? { saved: '' } : {}) }))
 
+  if (!cartReady) {
+    return (
+      <div className={`${page} grid min-h-screen place-items-center text-[14px] font-semibold text-[#0b8a84]`}>
+        Savat yuklanmoqda…
+      </div>
+    )
+  }
   if (!placed && items.length === 0) return <Navigate to="/buyurtma" replace />
   if (placed) return <Done order={placed} />
 
@@ -164,16 +176,22 @@ export default function MobileCheckout() {
     setPlacing(true)
     setPlaceErr('')
     try {
+      let paymentRef = ''
+      if (method !== 'cash') {
+        const charge = await createCharge({ method: { type: method }, amount: goods, meta: { source: 'mobile-checkout' } })
+        paymentRef = charge.ref
+      }
       const res = await createOrder({
         items, name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
         address: form.address, note: form.note || '', pickup: mode === 'pickup',
+        paymentMethod: method, paymentRef,
       })
       const at = new Date()
       const order = {
         id: (res.orders || []).map((o) => o.code).join(', '),
         at: `${at.getDate()} ${MON[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
         items: items.map((it) => ({ ...it })),
-        goods, fee: 0, discount: 0, total: goods, method: 'cash', months: 0, monthly: 0,
+        goods, fee: 0, discount: 0, total: goods, method, months: 0, monthly: 0, paymentRef, demo: isDemoPayments(),
         mode, eta: ship.range, days: ship.days, name: form.name.trim(), phone,
         address: mode === 'pickup' ? SHOP : `${form.city}, ${form.address}`,
       }
@@ -749,7 +767,7 @@ function Done({ order }) {
           </div>
           <div className="mt-1.5 divide-y divide-line">
             <InfoRow icon={CalendarDays} k="Buyurtma sanasi" v={order.at} />
-            <InfoRow icon={CreditCard} k="To‘lov usuli" v={<span className="flex items-center justify-end gap-2"><span className="scale-[0.8]"><Logo id={order.method} /></span>{order.months ? `${METHODS.nasiya[0]} (${order.months} oy)` : (METHODS[order.method] || METHODS.cash)[0]}</span>} />
+            <InfoRow icon={CreditCard} k="To‘lov usuli" v={<span className="flex items-center justify-end gap-2"><span className="scale-[0.8]"><Logo id={order.method} /></span>{order.months ? `Nasiya (${order.months} oy)` : (METHODS[order.method] || METHODS.cash)[0]}</span>} />
             <InfoRow icon={Truck} k={order.mode === 'pickup' ? 'Olib ketish' : 'Taxminiy yetkazish vaqti'} v={<>{order.eta}<span className="block text-[10.5px] font-normal text-muted">({order.days})</span></>} />
             <InfoRow icon={Coins} k="Jami summa" v={<span className="text-[16px] font-extrabold">{som(order.total)}</span>} />
           </div>

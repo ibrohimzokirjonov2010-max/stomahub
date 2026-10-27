@@ -9,13 +9,14 @@ export const CHAIR_LIST = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3']
 export const TIMES = ['09:00', '10:00', '11:30', '13:00', '14:00', '15:30', '17:00']
 export const PAY_METHODS = ['Naqd', 'Plastik karta', 'Click', 'Payme', 'Bank o‘tkazmasi']
 
-export const DOCTORS = [
+export const DEMO_DOCTORS = [
   { id: 'sardor', name: 'Dr. Sardor Karimov', role: 'Implantolog', photo: face('sardor') },
   { id: 'kamol', name: 'Dr. Kamol Rahimov', role: 'Ortodont', photo: face('anvar') },
   { id: 'malika', name: 'Dr. Malika Yo‘ldosheva', role: 'Endodontist', photo: face('sevara') },
   { id: 'ibrohim', name: 'Dr. Ibrohim', role: 'Stomatolog', photo: '/images/avatar.jpg' },
 ]
-export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DOCTORS[0]
+export const DOCTORS = []
+export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DEMO_DOCTORS.find((d) => d.id === id) || { id: id || 'me', name: 'Shifokor', role: 'Stomatolog', photo: '' }
 
 export const PLAN_STATUS = {
   reja: { label: 'Reja qilingan', bg: '#e8f0ff', color: '#3b6fd8', dot: '#3b82f6' },
@@ -191,7 +192,8 @@ function seed() {
   ]
 }
 
-let plans = seed()
+const DEMO_PLANS = seed()
+let plans = []
 let templates = []
 const listeners = new Set()
 const emit = () => {
@@ -199,6 +201,7 @@ const emit = () => {
   touchBlob('plans')
 }
 bindBlob('plans', {
+  seed: () => ({ plans: DEMO_PLANS, templates: [] }),
   get: () => ({ plans, templates }),
   empty: () => ({ plans: [], templates: [] }),
   set: (payload) => {

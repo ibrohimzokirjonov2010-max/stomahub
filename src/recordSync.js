@@ -41,10 +41,18 @@ export function useCatalogVersion() {
 
 export function bindBlob(kind, api) {
   let seed = null
-  try {
-    seed = structuredClone(api.get())
-  } catch {
-    seed = api.get()
+  if (api.seed !== undefined) {
+    try {
+      seed = structuredClone(typeof api.seed === 'function' ? api.seed() : api.seed)
+    } catch {
+      seed = typeof api.seed === 'function' ? api.seed() : api.seed
+    }
+  } else {
+    try {
+      seed = structuredClone(api.get())
+    } catch {
+      seed = api.get()
+    }
   }
   blobs.set(kind, { ...api, seed })
 }
@@ -115,7 +123,9 @@ async function pullBlobs() {
   applying = true
   for (const [kind, api] of blobs) {
     if (found.has(kind)) api.set(found.get(kind))
-    else if (!demo && typeof api.empty === 'function') api.set(api.empty())
+    else if (demo && api.seed != null) {
+      try { api.set(structuredClone(api.seed)) } catch { api.set(api.seed) }
+    } else if (!demo && typeof api.empty === 'function') api.set(api.empty())
   }
   applying = false
   const missing = [...blobs.keys()].filter((kind) => !found.has(kind))
@@ -162,19 +172,26 @@ export function registerCatalog(kind, list) {
 
 export async function loadCatalog() {
   if (!supabase) return
-  const { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at').limit(5000)
-  if (error || !data?.length) return
+  const { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id').limit(5000)
+  // Real-data: successful fetch (even empty) replaces seed arrays so UI shows empty, not mocks.
+  if (error) {
+    syncError = error.message
+    return
+  }
   const grouped = new Map()
-  data.forEach((row) => {
+  ;(data || []).forEach((row) => {
     if (!grouped.has(row.kind)) grouped.set(row.kind, [])
     grouped.get(row.kind).push(row)
   })
   let changed = false
   targets.forEach(({ kind, list }) => {
-    const rows = grouped.get(kind)
-    if (!rows?.length || !Array.isArray(list)) return
+    if (!Array.isArray(list)) return
+    const rows = grouped.get(kind) || []
     rows.sort((a, b) => (a.sort_at || 0) - (b.sort_at || 0))
-    list.splice(0, list.length, ...rows.map((row) => row.payload))
+    const next = rows.map((row) => row.payload)
+    const same = list.length === next.length && list.every((item, i) => item?.id === next[i]?.id)
+    if (same && list.length === next.length) return
+    list.splice(0, list.length, ...next)
     changed = true
   })
   if (changed) {

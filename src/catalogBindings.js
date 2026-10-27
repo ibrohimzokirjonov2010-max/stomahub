@@ -13,6 +13,7 @@ import { DOCTORS } from './mutaxassislarData'
 import { jobs } from './ishlarData'
 import { certs } from './sertifikatData'
 import { seedPosts } from './communityData'
+import { seminars } from './seminarsData'
 
 registerCatalog('book', books)
 registerCatalog('course', courses)
@@ -28,3 +29,4 @@ registerCatalog('doctor', DOCTORS)
 registerCatalog('job', jobs)
 registerCatalog('certificate', certs)
 registerCatalog('post', seedPosts)
+registerCatalog('seminar', seminars)

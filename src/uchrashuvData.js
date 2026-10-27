@@ -7,13 +7,14 @@ export const FOCUS = '2026-10-22'
 export const WDS = ['Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak']
 export const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktyabr', 'noyabr', 'dekabr']
 
-export const doctors = [
+export const DEMO_DOCTORS_U = [
   { id: 'karimov', name: 'Dr. Karimov', role: 'Implantolog' },
   { id: 'aliyeva', name: 'Dr. Aliyeva', role: 'Terapevt' },
   { id: 'toxtayev', name: 'Dr. To‘xtayev', role: 'Ortoped' },
   { id: 'saidova', name: 'Dr. Saidova', role: 'Gigiyenist' },
   { id: 'ibrohim', name: 'Dr. Ibrohim', role: 'Stomatolog' },
 ]
+export const doctors = []
 
 export const rooms = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3', 'Kreslo 4']
 export const services = ['Konsultatsiya', 'Gigiyena', 'Implant', 'Ortodontik', 'Davolash', 'Nazorat', 'Jarrohlik']
@@ -68,9 +69,11 @@ export const seedVisits = [
   a('2026-10-25', '16:00', 60, 'Usmonov D.', 'bemor-davron', 'Konsultatsiya', 'tasdiq', 'aliyeva', 'Kreslo 2'),
 ]
 
-let visits = seedVisits
+const DEMO_VISITS = seedVisits
+let visits = []
 const listeners = new Set()
 bindBlob('visits', {
+  seed: DEMO_VISITS,
   get: () => visits,
   empty: () => [],
   set: (next) => {

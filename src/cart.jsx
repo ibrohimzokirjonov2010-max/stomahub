@@ -6,7 +6,7 @@ import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordS
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(initialCart)
+  const [items, setItems] = useState([])
   const [reviewing, setReviewing] = useState(false)
   const [cartReady, setCartReady] = useState(false)
 
@@ -34,9 +34,22 @@ export function CartProvider({ children }) {
 
   const add = (product, qty = 1) =>
     setItems((list) => {
-      const found = list.find((it) => it.id === product.id)
-      if (found) return list.map((it) => (it.id === product.id ? { ...it, qty: it.qty + qty } : it))
-      return [...list, { id: product.id, name: product.name, type: product.type, price: product.price, image: product.image, qty, ...(typeof product.seller === 'string' ? { seller: product.seller } : {}) }]
+      const id = product.id
+      const found = list.find((it) => it.id === id)
+      if (found) return list.map((it) => (it.id === id ? { ...it, qty: it.qty + qty } : it))
+      const productId = product.productId || (isUuid(id) ? id : undefined)
+      return [...list, {
+        id,
+        productId,
+        sellerId: product.sellerId || product.seller_id || undefined,
+        name: product.name,
+        type: product.type || product.variant || '',
+        variant: product.variant || '',
+        price: product.price,
+        image: product.image || product.image_url || product.thumbs?.[0] || '',
+        qty,
+        ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
+      }]
     })
 
   const remove = (id) => setItems((list) => list.filter((it) => it.id !== id))
@@ -46,7 +59,7 @@ export function CartProvider({ children }) {
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
 
   return (
-    <CartContext.Provider value={{ items, setItems, add, setQty, remove, clear, count, total, reviewing, openReview: () => setReviewing(true), closeReview: () => setReviewing(false) }}>
+    <CartContext.Provider value={{ items, setItems, add, setQty, remove, clear, count, total, cartReady, reviewing, openReview: () => setReviewing(true), closeReview: () => setReviewing(false) }}>
       {children}
     </CartContext.Provider>
   )

@@ -16,7 +16,8 @@ function read() {
   }
 }
 
-let state = read()
+const DEMO_SEMINARS = { saved: SEED_SAVED, registered: {} }
+let state = { saved: [], registered: {} }
 
 function write(next) {
   state = next
@@ -25,6 +26,7 @@ function write(next) {
   touchBlob('saved_seminars')
 }
 bindBlob('saved_seminars', {
+  seed: DEMO_SEMINARS,
   get: () => ({ saved: state.saved, registered: state.registered }),
   empty: () => ({ saved: [], registered: {} }),
   set: (payload) => {

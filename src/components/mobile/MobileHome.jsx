@@ -9,6 +9,8 @@ import { profileStore, useProfile } from '../../profileStore'
 import { marketProducts, som } from '../../marketData'
 import { useMarket } from '../../buyerApi'
 import { seminars } from '../../seminarsData'
+import { useFeed } from '../../communityFeed'
+import { useCatalogVersion } from '../../recordSync'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast, GiftArt } from './parts'
 
@@ -23,30 +25,6 @@ const QUICK = [
   { to: '/jihozlar', label: 'Laboratoriya', icon: FlaskConical, color: '#7c4ddb', bg: '#efe8fc' },
 ]
 
-const TODAY_SEMINARS = [
-  {
-    id: 'implant-toj', date: '21/10', title: 'Implantologiya: Implantdan tojgacha', image: '/images/hero-implant.jpg',
-    speaker: 'Dr. Sardorbek Rahimov', avatar: '/images/surplus/u5.jpg', city: 'Toshkent', hours: '8 soat', price: 1800000,
-  },
-  {
-    id: 'mikroskop-endo', date: '22/10', title: 'Endodontiyada zamonaviy yondashuvlar', image: '/images/seminar-2.jpg',
-    speaker: 'Dr. Dilnoza Karimova', avatar: '/images/bemorlar/bemor-dilnoza.jpg', city: 'Toshkent', hours: '6 soat', price: 1200000,
-  },
-]
-
-const POSTS = [
-  {
-    id: 'nigora', author: 'Dr. Nigora Saidova', role: 'Stomatolog', time: '2 soat oldin', avatar: '/images/bemorlar/bemor-madina.jpg',
-    text: 'Klinikada raqamli skaner bilan ishlash tajribasi. Juda qulay va aniq natijalar beradi. Sizlarda qanday tajriba?',
-    image: '/images/yangiliklar/yang-scanner.jpg',
-  },
-  {
-    id: 'aziz', author: 'Dr. Aziz Karimov', role: 'Implantolog', time: '3 soat oldin', avatar: '/images/bemorlar/bemor-aziz.jpg',
-    text: '36-tish: surunkali apikal periodontit, mikroskop ostida qayta endodontik davolash. Fikrlaringizni kutaman.',
-    image: '/images/bemorlar/bemor-rvg.jpg',
-  },
-]
-
 const SECTIONS = [
   ...QUICK.map((q) => ({ to: q.to, title: q.label, kind: 'Bo‘lim' })),
   { to: '/klinika', title: 'Mening klinikam', kind: 'Bo‘lim' },
@@ -55,11 +33,33 @@ const SECTIONS = [
 ]
 
 export default function MobileHome() {
+  useCatalogVersion()
   const market = useMarket()
   const deals = market.products.slice(0, 2)
   const { add } = useCart()
   const profile = useProfile()
+  const feed = useFeed()
   const hello = profile.accountLive ? (profile.name?.split(' ')[0] || 'shifokor') : 'mehmon'
+  const todaySeminars = (seminars || []).slice(0, 2).map((s) => ({
+    id: s.id,
+    date: s.dateLabel || s.date || '',
+    title: s.title,
+    image: s.image || s.cover || '/images/hero-implant.jpg',
+    speaker: s.speaker || s.speakers?.[0]?.name || 'Spiker',
+    avatar: s.speakerAvatar || s.speakers?.[0]?.avatar || '/images/avatar.jpg',
+    city: s.city || 'Toshkent',
+    hours: s.hours || s.duration || '',
+    price: s.price || 0,
+  }))
+  const communityPosts = (feed.posts || []).slice(0, 2).map((p) => ({
+    id: p.id,
+    author: p.author || p.name,
+    role: p.role || 'Stomatolog',
+    time: p.time || '',
+    avatar: p.avatar || '/images/avatar.jpg',
+    text: p.body || p.text || p.title || '',
+    image: (p.images && p.images[0]) || '/images/yangiliklar/yang-scanner.jpg',
+  }))
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
@@ -169,7 +169,8 @@ export default function MobileHome() {
         {/* Bugungi seminarlar */}
         <SectionHead title="Bugungi seminarlar" to="/seminarlar" />
         <div className="space-y-2.5">
-          {TODAY_SEMINARS.map((s) => (
+          {!todaySeminars.length && <p className="py-6 text-center text-[12px] text-muted">Bugun seminar yo‘q</p>}
+          {todaySeminars.map((s) => (
             <article key={s.id} className="flex gap-1.5 rounded-2xl bg-white p-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
               <Link to={`/seminarlar/${s.id}`} className="relative mr-0.5 h-[76px] w-[84px] shrink-0 overflow-hidden rounded-xl bg-page">
                 <img src={s.image} alt="" className="size-full object-cover object-top" />
@@ -245,7 +246,8 @@ export default function MobileHome() {
         {/* Hamjamiyat */}
         <SectionHead title="Hamjamiyat" to="/community" />
         <div className="space-y-2.5">
-          {POSTS.map((p) => (
+          {!communityPosts.length && <p className="py-6 text-center text-[12px] text-muted">Hamjamiyatda hali post yo‘q</p>}
+          {communityPosts.map((p) => (
             <Link key={p.id} to="/community" className="flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
               <img src={p.avatar} alt="" className="size-10 shrink-0 rounded-full object-cover" />
               <div className="min-w-0 flex-1">

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { LayoutGrid, Send, Mic, Heart, Star, BadgeCheck, ChevronDown, Plus, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import EmptyCatalog from '../components/EmptyCatalog'
+import { useCatalogVersion } from '../recordSync'
 import { platforms, topics, languages, channels, official, langLabel, subsFull, subsShort } from '../channelsData'
 
 const platformIcon = { all: LayoutGrid, tg: Send, yt: YouTubeMark, ig: InstagramMark, pod: Mic }
@@ -16,6 +18,7 @@ export default function ChannelsRoute() {
 }
 
 function Channels({ query }) {
+  useCatalogVersion()
   const [platform, setPlatform] = useState('all')
   const [topic, setTopic] = useState('all')
   const [lang, setLang] = useState('all')
@@ -93,7 +96,8 @@ function Channels({ query }) {
 
         {list.length ? (
           <div className="mt-3 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-            {list.map((c) => (
+            {!channels.length ? <EmptyCatalog title="Kanallar ro‘yxati bo‘sh" text="Hali kanallar qo‘shilmagan." /> : null}
+      {list.map((c) => (
               <ChannelCard key={c.id} c={c} saved={saved.has(c.id)} joined={!!joined[c.id]} onSave={() => toggleSave(c.id)} onJoin={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))} />
             ))}
           </div>

@@ -13,7 +13,8 @@ const SORTS = [['new', 'Eng yangi'], ['cheap', 'Arzonroq'], ['rich', 'Qimmatroq'
 const EMPTY = { cities: [], min: '', max: '', cond: '', sort: 'new', saved: false }
 export const DEAL_CLS = { sale: 'bg-[#16b07a]', rent: 'bg-[#0b8a95]', job: 'bg-[#0b8a95]' }
 
-let store = { added: [], saved: new Set(['endomotor', 'nsk-turbina']) }
+const DEMO_ADS = { added: [], saved: ['endomotor', 'nsk-turbina'] }
+let store = { added: [], saved: new Set() }
 const subs = new Set()
 const emit = (next) => {
   store = { ...store, ...next }
@@ -21,6 +22,7 @@ const emit = (next) => {
   touchBlob('saved_ads')
 }
 bindBlob('saved_ads', {
+  seed: DEMO_ADS,
   get: () => ({ added: store.added, saved: [...store.saved] }),
   empty: () => ({ added: [], saved: [] }),
   set: (payload) => {
