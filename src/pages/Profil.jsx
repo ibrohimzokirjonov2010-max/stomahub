@@ -226,13 +226,15 @@ function Board({ initial }) {
           <div>
             <h1 className="text-[22px] font-extrabold text-ink">Buyurtmalar</h1>
             <p className="mt-1 text-[13px] text-muted">Do‘kondagi buyurtmalaringiz.</p>
-            {!orders.length && <p className="mt-6 rounded-2xl border border-dashed border-[#d5ebe6] px-4 py-10 text-center text-[13px] text-muted">Hali buyurtma yo‘q.</p>}
+            {profile.ordersStatus === 'loading' && !orders.length && <p className="mt-6 text-center text-[13px] text-muted">Yuklanmoqda…</p>}
+            {profile.ordersStatus === 'error' && <p role="alert" className="mt-4 rounded-xl bg-[#fff4f4] px-4 py-3 text-[13px] text-[#b42318]">{profile.ordersError} <button type="button" onClick={() => profileStore.refreshOrders()} className="ml-2 font-semibold text-sea">Qayta urinish</button></p>}
+            {profile.ordersStatus !== 'loading' && profile.ordersStatus !== 'error' && !orders.length && <p className="mt-6 rounded-2xl border border-dashed border-[#d5ebe6] px-4 py-10 text-center text-[13px] text-muted">Hali buyurtma yo‘q.</p>}
             <ul className="mt-4 divide-y divide-[#eef3f2]">
               {orders.map((order) => (
                 <li key={order.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="text-[14px] font-semibold text-ink">{order.id}</p>
-                    <p className="truncate text-[12px] text-muted">{order.at} · {order.status || 'processing'}</p>
+                    <p className="truncate text-[12px] text-muted">{order.at} · {order.statusLabel || order.status}</p>
                   </div>
                   <p className="shrink-0 text-[13px] font-bold text-ink">{som(order.total || order.goods || 0)}</p>
                 </li>

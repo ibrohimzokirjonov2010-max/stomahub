@@ -86,7 +86,7 @@ export function useMySeminars() {
   const profile = useProfile()
   const own = Object.entries(merged).filter(([, r]) => r?.order).map(([id, r]) => fromStore(id, r)).filter(Boolean)
   const seen = new Set(own.map((s) => s.key))
-  const samples = profile.accountLive || currentUid() ? [] : SEED
+  const samples = []
   const all = [...own, ...samples.filter((s) => !seen.has(s.key))]
   const now = Date.now()
   return {

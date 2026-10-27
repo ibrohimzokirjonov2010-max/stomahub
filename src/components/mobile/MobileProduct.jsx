@@ -5,18 +5,34 @@ import {
   MessageCircle, MapPin, ShoppingCart, X, Send,
 } from 'lucide-react'
 import { useCart } from '../../cart'
-import { productById, sellers, som } from '../../marketData'
+import { productById, som } from '../../marketData'
+import { useMarket } from '../../buyerApi'
 import MobileTabBar from './MobileTabBar'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
 
 export default function MobileProduct() {
   const { id } = useParams()
-  return <ProductView key={id} id={id} />
+  return <ProductGate key={id} id={id} />
+}
+
+function ProductGate({ id }) {
+  const market = useMarket()
+  if (!productById(id)) {
+    return (
+      <div className="grid min-h-screen place-items-center px-6 text-center">
+        <div>
+          <p className="text-[15px] font-semibold text-ink">{market.status === 'loading' || market.status === 'idle' ? 'Mahsulot yuklanmoqda…' : market.status === 'error' ? market.error : 'Mahsulot topilmadi yoki sotuvdan olingan'}</p>
+          <a href="/marketplace" className="mt-3 inline-block text-[14px] font-semibold text-sea">Marketplace’ga qaytish</a>
+        </div>
+      </div>
+    )
+  }
+  return <ProductView id={id} />
 }
 
 function ProductView({ id }) {
   const p = productById(id)
-  const seller = sellers.default
+  const seller = { name: p.seller || 'Sotuvchi', logo: (p.seller || 'S').slice(0, 2).toUpperCase(), about: 'StomaHub sotuvchisi', city: '' }
   const navigate = useNavigate()
   const { add, items, setQty: setCartQty, remove } = useCart()
   const variants = p.variants || [{ label: p.type.match(/\(([^)]+)\)/)?.[1] || p.type, price: p.price, oldPrice: p.oldPrice }]
@@ -59,7 +75,7 @@ function ProductView({ id }) {
   }
 
   const addToCart = () => {
-    add({ id: cartId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0] }, qty)
+    add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0] }, qty)
     setToast(`${qty} ta ${p.name} savatga qo‘shildi`)
   }
 
@@ -112,7 +128,7 @@ function ProductView({ id }) {
         </div>
         <h1 className="mt-1.5 text-[21px] font-bold leading-tight text-ink">{p.name}</h1>
         <div className="mt-1.5 flex items-center gap-2 text-[12.5px] text-muted">
-          <Star className="size-4 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)
+          {p.stock > 0 ? `Omborda ${p.stock} dona` : 'Tugagan'}
           <span className="mx-1 h-3 w-px bg-line" />
           <MessageSquareText className="size-4" /> 128 ta sharh
         </div>
@@ -190,8 +206,7 @@ function ProductView({ id }) {
             <p className="text-[14px] font-bold text-ink">{seller.name}</p>
             <p className="truncate text-[11px] text-muted">{seller.about}</p>
             <p className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] text-muted">
-              <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{seller.rating}</b> ({seller.reviews})
-              <MapPin className="ml-1.5 size-3.5" /> {seller.city}
+              Naqd to‘lov · yetkazishda
             </p>
           </div>
           <button type="button" onClick={() => setChat(true)} className="flex h-10 shrink-0 items-center gap-1 rounded-xl border border-sea/70 px-2.5 text-[11.5px] font-semibold text-sea active:bg-sea-50">

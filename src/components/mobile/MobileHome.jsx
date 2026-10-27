@@ -5,8 +5,9 @@ import {
   FlaskConical, ArrowRight, ChevronRight, MapPin, Clock, FileText, Heart, Star, MoreVertical, X,
 } from 'lucide-react'
 import { useCart } from '../../cart'
-import { useProfile } from '../../profileStore'
-import { productDetail, marketProducts, som } from '../../marketData'
+import { profileStore, useProfile } from '../../profileStore'
+import { marketProducts, som } from '../../marketData'
+import { useMarket } from '../../buyerApi'
 import { seminars } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast, GiftArt } from './parts'
@@ -33,12 +34,6 @@ const TODAY_SEMINARS = [
   },
 ]
 
-const sdr = marketProducts.find((p) => p.id === 'sdr-flow')
-const DEALS = [
-  { id: productDetail.id, brand: productDetail.brand, name: productDetail.name, type: '5 ml', rating: productDetail.rating, reviews: productDetail.reviews, price: productDetail.price, oldPrice: 323500, badge: productDetail.badge, image: productDetail.thumbs[0] },
-  { id: sdr.id, brand: 'Dentsply Sirona', name: sdr.name, type: '2 × 1 g', rating: 4.9, reviews: 124, price: sdr.price, oldPrice: sdr.oldPrice, badge: '-20%', image: sdr.image },
-]
-
 const POSTS = [
   {
     id: 'nigora', author: 'Dr. Nigora Saidova', role: 'Stomatolog', time: '2 soat oldin', avatar: '/images/bemorlar/bemor-madina.jpg',
@@ -60,13 +55,15 @@ const SECTIONS = [
 ]
 
 export default function MobileHome() {
+  const market = useMarket()
+  const deals = market.products.slice(0, 2)
   const { add } = useCart()
   const profile = useProfile()
   const hello = profile.accountLive ? (profile.name?.split(' ')[0] || 'shifokor') : 'mehmon'
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
-  const [liked, setLiked] = useState({})
+  const liked = Object.fromEntries((profile.favProducts || []).map((id) => [id, true]))
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const inputRef = useRef(null)
@@ -74,7 +71,7 @@ export default function MobileHome() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
-    const prods = [productDetail, ...marketProducts]
+    const prods = marketProducts
       .filter((p) => `${p.name} ${p.brand} ${p.type}`.toLowerCase().includes(q))
       .map((p) => ({ to: `/product/${p.id}`, title: p.name, kind: p.brand }))
     const sems = seminars
@@ -205,14 +202,16 @@ export default function MobileHome() {
         </div>
 
         {/* Chegirmadagi mahsulotlar */}
-        <SectionHead title="Chegirmadagi mahsulotlar" to="/aksiyalar" />
+        <SectionHead title="Yangi mahsulotlar" to="/marketplace" />
         <div className="grid grid-cols-2 gap-2.5">
-          {DEALS.map((p) => (
+          {market.status === 'loading' && !deals.length && <p className="col-span-2 py-6 text-center text-[12px] text-muted">Yuklanmoqda…</p>}
+          {market.status !== 'loading' && !deals.length && <p className="col-span-2 py-6 text-center text-[12px] text-muted">Hozircha mahsulot yo‘q</p>}
+          {deals.map((p) => (
             <article key={p.id} className="relative flex flex-col rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-              <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-[#fde7ea] px-1.5 py-0.5 text-[11px] font-bold text-sale">{p.badge}</span>
+              {p.badge && <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-[#fde7ea] px-1.5 py-0.5 text-[11px] font-bold text-sale">{p.badge}</span>}
               <button
                 type="button"
-                onClick={() => setLiked((m) => ({ ...m, [p.id]: !m[p.id] }))}
+                onClick={() => profileStore.toggleFav('favProducts', p.id)}
                 aria-label="Sevimlilarga qo‘shish"
                 aria-pressed={!!liked[p.id]}
                 className="absolute right-2 top-2 z-10 grid size-8 place-items-center rounded-full bg-white text-ink-2"
@@ -233,7 +232,7 @@ export default function MobileHome() {
                     <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)
                   </p>
                   <p className="mt-1 whitespace-nowrap text-[15px] font-extrabold text-ink">{som(p.price)}</p>
-                  <p className="text-[11px] text-muted line-through">{som(p.oldPrice)}</p>
+                  {p.oldPrice ? <p className="text-[11px] text-muted line-through">{som(p.oldPrice)}</p> : null}
                 </div>
                 <button type="button" onClick={() => addToCart(p)} aria-label="Savatga qo‘shish" className="grid size-10 shrink-0 place-items-center rounded-xl bg-sea text-white active:scale-95">
                   <ShoppingCart className="size-[18px]" />

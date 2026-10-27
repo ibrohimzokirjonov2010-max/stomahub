@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { marketProducts, som } from '../../marketData'
+import { useMarket } from '../../buyerApi'
+import { profileStore, useProfile } from '../../profileStore'
 import { ToothIcon } from '../icons'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast, GiftArt, QtyStepper, GoCartButton } from './parts'
@@ -27,25 +29,27 @@ const SORTS = {
 }
 
 const PRICE_MAX = 50000000
-const BRANDS = [...new Set(marketProducts.map((p) => p.brand))]
 const EMPTY = { brands: [], min: 0, max: PRICE_MAX, inStock: true, sale: false }
 const PRICE_PRESETS = [['500 ming gacha', 0, 500000], ['0.5–2 mln', 500000, 2000000], ['2–10 mln', 2000000, 10000000], ['10 mln+', 10000000, PRICE_MAX]]
 
 const groupOfCat = (cat) => GROUPS.find((g) => g.cats.includes(cat))?.key
 
 export default function MobileMarketplace() {
+  const market = useMarket()
+  const BRANDS = [...new Set(market.products.map((p) => p.brand).filter(Boolean))]
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { add, items, setQty, remove } = useCart()
   const qtyOf = (id) => items.find((it) => it.id === id)?.qty || 0
   const dec = (id) => (qtyOf(id) > 1 ? setQty(id, qtyOf(id) - 1) : remove(id))
-  const [group, setGroup] = useState(() => (params.get('cat') ? groupOfCat(params.get('cat')) || null : 'mat'))
+  const [group, setGroup] = useState(() => (params.get('cat') ? groupOfCat(params.get('cat')) || null : null))
   const [query, setQuery] = useState(() => params.get('q') || '')
   const [filters, setFilters] = useState(() => ({ ...EMPTY, brands: params.get('brand') ? [params.get('brand')] : [] }))
   const [sheet, setSheet] = useState(false)
   const [sort, setSort] = useState('cheap')
   const [view, setView] = useState('grid')
-  const [liked, setLiked] = useState({})
+  const profile = useProfile()
+  const liked = Object.fromEntries((profile.favProducts || []).map((id) => [id, true]))
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const inputRef = useRef(null)
@@ -61,14 +65,14 @@ export default function MobileMarketplace() {
       .filter((p) => !f.sale || p.oldPrice)
   }, [])
 
-  const list = useMemo(() => apply(filters, query, group).sort(SORTS[sort].fn), [apply, filters, query, group, sort])
+  const list = useMemo(() => apply(filters, query, group).sort(SORTS[sort].fn), [apply, filters, query, group, sort, market.status])
   const activeCount = (filters.brands.length ? 1 : 0) + (filters.min > 0 || filters.max < PRICE_MAX ? 1 : 0) + (filters.inStock ? 1 : 0) + (filters.sale ? 1 : 0)
 
   const addToCart = (p) => {
     add(p)
     setToast(`${p.name} savatga qo‘shildi`)
   }
-  const toggleLike = (id) => setLiked((m) => ({ ...m, [id]: !m[id] }))
+  const toggleLike = (id) => profileStore.toggleFav('favProducts', id)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#eef7f8] via-page to-page pb-[86px]">
@@ -144,9 +148,13 @@ export default function MobileMarketplace() {
         </div>
 
         {/* Mahsulotlar */}
-        {list.length === 0 ? (
+        {market.status === 'loading' && !list.length ? (
+          <p className="mt-3 rounded-2xl bg-white px-6 py-10 text-center text-[13px] text-muted">Mahsulotlar yuklanmoqda…</p>
+        ) : market.status === 'error' ? (
+          <p className="mt-3 rounded-2xl bg-[#fff4f4] px-6 py-10 text-center text-[13px] text-[#b42318]">{market.error}</p>
+        ) : list.length === 0 ? (
           <div className="mt-3 rounded-2xl bg-white px-6 py-10 text-center shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-            <p className="text-[14px] font-semibold text-ink">Mahsulot topilmadi</p>
+            <p className="text-[14px] font-semibold text-ink">{marketProducts.length ? 'Mahsulot topilmadi' : 'Hozircha sotuvda mahsulot yo‘q'}</p>
             <p className="mt-1 text-[12px] text-muted">Boshqa kategoriya yoki filtrni tanlab ko‘ring</p>
             <button type="button" onClick={() => { setGroup(null); setQuery(''); setFilters(EMPTY) }} className="mt-4 h-10 rounded-xl bg-sea px-5 text-[13px] font-semibold text-white">
               Filtrlarni tozalash

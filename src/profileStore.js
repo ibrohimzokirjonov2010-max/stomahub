@@ -1,10 +1,9 @@
 import { useSyncExternalStore } from 'react'
-import { marketProducts } from './marketData'
+import { cancelMyOrder, fetchMyOrders } from './buyerApi'
 import { supabase } from './supabaseClient'
 import { currentUid, isDemoUser, onAccount, uploadAvatar } from './recordSync'
 
 const KEY = 'stomahub-profile'
-const product = (id) => marketProducts.find((x) => x.id === id)
 
 export const ADDRESS_KINDS = [['home', 'Uy'], ['work', 'Klinika'], ['branch', 'Filial'], ['other', 'Boshqa']]
 
@@ -25,7 +24,7 @@ export const COURSES = [
 export const courseDone = (profile, c) => {
   const stored = profile.courseDone?.[c.id]
   if (profile.accountLive || currentUid()) return Math.min(c.lessons, stored ?? 0)
-  return Math.min(c.lessons, stored ?? c.done)
+  return Math.min(c.lessons, stored ?? 0)
 }
 
 const EMPTY_ACCOUNT = {
@@ -56,66 +55,9 @@ const EMPTY_ACCOUNT = {
   accountLive: false,
 }
 
-const DEFAULT = {
-  name: 'Ibrohim Zokirjonov',
-  role: 'Stomatolog',
-  clinic: 'Smile Dental Clinic',
-  city: 'Toshkent',
-  district: 'Chilonzor',
-  phone: '901234567',
-  email: 'ibrohim@stomahub.uz',
-  avatar: '',
-  lang: 'uz',
-  plus: false,
-  bonus: 125000,
-  loggedOut: false,
-  notif: { orders: true, seminars: true, promo: false, community: true, sound: true },
-  addresses: [
-    addr('uy', 'home', 'Ibrohim Zokirjonov', '901234567', 'Yunusobod', 'Amir Temur ko‘chasi, 25-uy', '12-xonadon'),
-    addr('klinika', 'work', 'Smile Dental Clinic', '977654321', 'Chilonzor', 'Bunyodkor ko‘chasi, 15B-uy', '2-qavat'),
-    addr('uy2', 'home', 'Ibrohim Zokirjonov', '901234567', 'Mirzo Ulug‘bek', 'Mustaqillik prospekti, 88-uy', '45-xonadon'),
-    addr('dentalpro', 'work', 'Dental Pro Clinic', '934567890', 'Shayxontohur', 'Navoiy ko‘chasi, 10-uy', '1-qavat'),
-  ],
-  defaultAddr: 'uy',
-  cards: [
-    { id: 'c1', brand: 'Uzcard', last4: '4521', exp: '08/28', bank: 'Aloqabank' },
-    { id: 'c2', brand: 'Humo', last4: '9034', exp: '03/27', bank: 'Kapitalbank' },
-  ],
-  defaultPay: 'click',
-  wallets: { click: true, payme: true, uzum: false },
-  favCourses: ['impl', 'estet'],
-  favProducts: ['filtek-z550', 'root-zx-mini', 'ti-max-x600l', 'straumann-blx', 'sdr-flow', 'g-cem-one'],
-  favMasters: ['sardor-rahimov', 'dilshod-mavlonov'],
-  orders: [],
-  readNotifs: ['n4'],
-}
-
-const seed = (n, at, lines, status, method = 'click', mode = 'courier') => {
-  const items = lines.map(([id, qty]) => {
-    const x = product(id)
-    return { id: x.id, name: x.name, type: x.type, price: x.price, qty, image: x.image }
-  })
-  const goods = items.reduce((s, it) => s + it.price * it.qty, 0)
-  return {
-    id: `SH-${n}`, at, items, goods, fee: 0, discount: 0, total: goods, method, months: 0, mode, status,
-    eta: status === 'delivered' ? at.split(',')[0] : 'Ertaga', days: '1–2 kun',
-    address: mode === 'pickup' ? 'StomaHub do‘koni, Chilonzor tumani, Bunyodkor ko‘chasi, 14' : 'Toshkent, Chilonzor tumani, Qatortol ko‘chasi, 7-uy',
-  }
-}
-
-export const SEED_ORDERS = [
-  seed(10245, '25 okt, 2026 14:30', [['filtek-z550', 1], ['sdr-flow', 1], ['protaper-gold', 1], ['clearfil-se-bond-2', 1], ['g-cem-one', 1]], 'processing', 'click'),
-  seed(10244, '24 okt, 2026 11:15', [['sdr-flow', 2], ['g-cem-one', 1], ['optibond-fl', 1], ['filtek-z550', 1]], 'shipping', 'payme'),
-  seed(10240, '18 okt, 2026 10:20', [['protaper-gold', 1], ['clearfil-se-bond-2', 1], ['sdr-flow', 1], ['filtek-z550', 1]], 'delivered'),
-  seed(10236, '9 okt, 2026 10:42', [['straumann-blx', 1], ['clearfil-se-bond-2', 1]], 'delivered', 'card'),
-  seed(10228, '30 sen, 2026 18:30', [['filtek-z550', 3]], 'delivered', 'uzum'),
-  seed(10219, '21 sen, 2026 09:15', [['ti-max-x600l', 1], ['g-cem-one', 1]], 'cancelled', 'click'),
-  seed(10211, '12 sen, 2026 14:50', [['optibond-fl', 1], ['sdr-flow', 1]], 'delivered', 'cash', 'pickup'),
-  seed(10203, '2 sen, 2026 12:10', [['woodpecker-uds-e', 1]], 'delivered', 'payme'),
-  seed(10194, '24 avg, 2026 17:40', [['g-cem-one', 2], ['filtek-z550', 1]], 'delivered'),
-  seed(10187, '13 avg, 2026 11:05', [['root-zx-mini', 1]], 'cancelled', 'nasiya'),
-  seed(10172, '30 iyul, 2026 15:25', [['protaper-gold', 1], ['optibond-fl', 1]], 'delivered', 'card'),
-]
+// Mehmon/chiqqan foydalanuvchi uchun bo‘sh profil — soxta ma’lumot yo‘q
+const DEFAULT = { ...EMPTY_ACCOUNT }
+export const SEED_ORDERS = []
 
 const listeners = new Set()
 let applyingRemote = false
@@ -265,15 +207,6 @@ async function syncChildren(uid) {
     })))
     if (error) throw error
   }
-  if (state.orders?.length) {
-    const { error } = await supabase.from('shop_orders').upsert(state.orders.map((order) => ({
-      id: order.id,
-      user_id: uid,
-      status: order.status || 'processing',
-      payload: order,
-    })))
-    if (error) throw error
-  }
 }
 
 async function hydrateProfile(nextUid) {
@@ -340,14 +273,14 @@ async function hydrateProfile(nextUid) {
     }, { remote: true })
     return
   }
-  const [addresses, cards, favs, progress, orders] = await Promise.all([
+  const [addresses, cards, favs, progress] = await Promise.all([
     supabase.from('customer_addresses').select('payload,sort_at').eq('user_id', nextUid).order('sort_at'),
     supabase.from('customer_cards').select('*').eq('user_id', nextUid),
     supabase.from('customer_favorites').select('kind,item_id').eq('user_id', nextUid),
     supabase.from('customer_course_progress').select('course_id,done').eq('user_id', nextUid),
-    supabase.from('shop_orders').select('payload').eq('user_id', nextUid).order('created_at', { ascending: false }),
   ])
-  const failed = [addresses, cards, favs, progress, orders].find((res) => res.error)
+  const orders = { data: [] }
+  const failed = [addresses, cards, favs, progress].find((res) => res.error)
   if (failed) {
     write({ syncError: failed.error.message, accountLive: true, loggedOut: false }, { remote: true })
     return
@@ -379,13 +312,24 @@ async function hydrateProfile(nextUid) {
     favProducts: (favs.data || []).filter((row) => row.kind === 'product').map((row) => row.item_id),
     favCourses: (favs.data || []).filter((row) => row.kind === 'course').map((row) => row.item_id),
     favMasters: (favs.data || []).filter((row) => row.kind === 'master').map((row) => row.item_id),
-    orders: (orders.data || []).map((row) => row.payload),
     readNotifs: prefs.readNotifs || [],
     courseDone,
   }, { remote: true })
 }
 
-onAccount((id) => { hydrateProfile(id) })
+async function refreshOrders() {
+  const uid = currentUid()
+  if (!supabase || !uid) return
+  write({ ordersStatus: 'loading', ordersError: '' }, { remote: true })
+  try {
+    const orders = await fetchMyOrders(uid)
+    write({ orders, ordersStatus: 'ready' }, { remote: true })
+  } catch (e) {
+    write({ ordersStatus: 'error', ordersError: e.message || 'Buyurtmalar yuklanmadi' }, { remote: true })
+  }
+}
+
+onAccount((id) => { hydrateProfile(id).then(() => { if (id) refreshOrders() }) })
 
 const subscribe = (l) => {
   listeners.add(l)
@@ -393,12 +337,18 @@ const subscribe = (l) => {
 }
 
 export const useProfile = () => useSyncExternalStore(subscribe, () => state)
-export const allOrders = (s) => (s.accountLive || currentUid() ? s.orders : [...s.orders, ...SEED_ORDERS])
+export const allOrders = (s) => s.orders || []
 
 export const profileStore = {
   update: (patch) => write(patch),
-  addOrder: (order) => write({ orders: [{ ...order, status: order.status || 'processing' }, ...state.orders.filter((row) => row.id !== order.id)] }),
-  cancelOrder: (id) => write({ orders: state.orders.map((o) => (o.id === id ? { ...o, status: 'cancelled' } : o)) }),
+  refreshOrders,
+  // Faqat "yangi" holatdagi buyurtmani server orqali bekor qiladi
+  cancelOrder: async (id, reason = '') => {
+    const order = state.orders.find((o) => o.id === id || o.dbId === id)
+    if (!order?.dbId) throw new Error('Buyurtma topilmadi')
+    await cancelMyOrder(order.dbId, reason)
+    await refreshOrders()
+  },
   toggleFav: (key, id) => {
     const list = state[key] || []
     write({ [key]: list.includes(id) ? list.filter((x) => x !== id) : [...list, id] })

@@ -24,7 +24,7 @@ export default function MobileKurslarim() {
   const profile = useProfile()
   const enrolled = profile.accountLive
     ? COURSES.filter((c) => profile.favCourses?.includes(c.id) || Object.prototype.hasOwnProperty.call(profile.courseDone || {}, c.id))
-    : COURSES
+    : []
   const rows = enrolled.map((c) => ({ ...c, done: courseDone(profile, c) }))
   const active = rows.filter((c) => c.done < c.lessons)
   const done = rows.filter((c) => c.done === c.lessons)

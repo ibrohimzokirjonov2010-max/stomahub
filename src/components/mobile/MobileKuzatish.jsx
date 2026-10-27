@@ -33,7 +33,7 @@ const ETA_MIN = 35
 
 function hero(order) {
   const pickup = order.mode === 'pickup'
-  if (order.status === 'cancelled') return ['bekor qilindi', 'Buyurtma bekor qilindi. To‘lov 1–3 ish kunida qaytariladi.']
+  if (order.status === 'cancelled') return ['bekor qilindi', 'Buyurtma bekor qilindi.']
   if (order.status === 'delivered') return pickup ? ['olib ketildi', 'Buyurtma do‘kondan olib ketildi. Xaridingiz uchun rahmat!'] : ['yetkazildi', 'Buyurtmangiz manzilga yetkazildi. Xaridingiz uchun rahmat!']
   if (order.status === 'shipping') return pickup ? ['tayyor', 'Buyurtmangiz do‘konda tayyor. Istalgan vaqtda olib ketishingiz mumkin.'] : ['yo‘lda', 'Kuryer buyurtmangizni olib ketmoqda. Tez orada yetib boradi.']
   return ['qabul qilindi', 'Buyurtmangiz muvaffaqiyatli qabul qilindi. Tez orada sizga yetkazib beriladi.']
@@ -94,7 +94,7 @@ export default function MobileKuzatish() {
         {header}
         <div className="px-6 pt-20 text-center">
           <span className={`mx-auto grid size-16 place-items-center rounded-full bg-[#e3f4f1] ${teal}`}><ReceiptText className="size-8" strokeWidth={1.6} /></span>
-          <p className={`mt-3 text-[16px] font-bold ${navy}`}>Buyurtma topilmadi</p>
+          <p className={`mt-3 text-[16px] font-bold ${navy}`}>{profile.ordersStatus === 'loading' ? 'Yuklanmoqda…' : 'Buyurtma topilmadi'}</p>
           <p className="mt-1 text-[12.5px] text-muted">#{id} raqamli buyurtma mavjud emas yoki o‘chirilgan</p>
           <Link to="/profil/buyurtmalar" className="mt-4 inline-flex h-11 items-center rounded-xl bg-[#0b6d73] px-5 text-[14px] font-semibold text-white">Buyurtmalarim</Link>
         </div>
@@ -112,14 +112,18 @@ export default function MobileKuzatish() {
   const date = order.at.slice(0, order.at.lastIndexOf(' '))
   const time = order.at.split(' ').pop()
   const own = profile.orders.some((o) => o.id === order.id)
-  const canCancel = own && order.status === 'processing'
+  const canCancel = own && order.dbStatus === 'yangi'
   const contact = pickup ? SHOP : order.status === 'shipping' || order.status === 'delivered' ? COURIER : OPERATOR
   const extra = order.items.length - 5
 
-  const cancel = () => {
-    profileStore.cancelOrder(order.id)
-    setSheet(null)
-    setToast(`#${order.id} buyurtmasi bekor qilindi`)
+  const cancel = async () => {
+    try {
+      await profileStore.cancelOrder(order.id)
+      setSheet(null)
+      setToast(`#${order.id} buyurtmasi bekor qilindi`)
+    } catch (e) {
+      setToast(e.message || 'Bekor qilib bo‘lmadi')
+    }
   }
   const repeat = () => {
     order.items.forEach((it) => add(it, it.qty))

@@ -101,6 +101,7 @@ import MobileSeminar from './components/mobile/MobileSeminar'
 import MobileSeminarReg from './components/mobile/MobileSeminarReg'
 import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
+import AdminMahsulotlar from './pages/AdminMahsulotlar'
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -198,6 +199,7 @@ export default function App() {
           <Route path="/community/:id" element={<Responsive mobile={<MobilePost />}><Navigate to="/community" replace /></Responsive>} />
           <Route path="/sertifikatlar" element={<Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive>} />
           <Route path="/klinika" element={<CrmGate><Klinika /></CrmGate>} />
+          <Route path="/admin/mahsulotlar" element={<AdminMahsulotlar />} />
           <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil /></Responsive>} />

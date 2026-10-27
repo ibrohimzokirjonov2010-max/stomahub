@@ -35,10 +35,17 @@ const fmt = (d) => `${d.getDate()} ${MON[d.getMonth()]}, ${String(d.getHours()).
 export function timeline(order) {
   const start = parseAt(order.at)
   const stage = STAGE[order.status] ?? 0
+  const hist = Object.fromEntries((order.history || []).map((h) => [h.status, h.at]))
+  const STEP_DB = [['yangi'], ['tayyorlanmoqda', 'tasdiqlandi'], ['yetkazilmoqda'], ['yetkazildi']]
+  const realAt = (i) => {
+    if (i === 0 && order.createdAt) return new Date(order.createdAt)
+    const at = STEP_DB[i].map((k) => hist[k]).find(Boolean)
+    return at ? new Date(at) : null
+  }
   return STEPS.map((label, i) => ({
     label: order.mode === 'pickup' && i === 2 ? 'Tayyor' : order.mode === 'pickup' && i === 3 ? 'Olib ketildi' : label,
     state: i < stage || (stage === 3 && i === 3) ? 'done' : i === stage ? 'current' : 'todo',
-    time: start && i <= stage ? fmt(new Date(start.getTime() + OFFSETS[i] * 60000)) : '',
+    time: i > stage ? '' : order.live ? (realAt(i) ? fmt(realAt(i)) : '') : start ? fmt(new Date(start.getTime() + OFFSETS[i] * 60000)) : '',
   }))
 }
 
@@ -63,10 +70,14 @@ export default function MobileBuyurtmalar() {
     o.items.forEach((it) => add(it, it.qty))
     navigate('/buyurtma', { state: { from: 'profil' } })
   }
-  const cancel = (o) => {
-    profileStore.cancelOrder(o.id)
-    setDetail(null)
-    setToast(`#${o.id} buyurtmasi bekor qilindi`)
+  const cancel = async (o) => {
+    try {
+      await profileStore.cancelOrder(o.id)
+      setDetail(null)
+      setToast(`#${o.id} buyurtmasi bekor qilindi`)
+    } catch (e) {
+      setToast(e.message || 'Bekor qilib bo‘lmadi')
+    }
   }
 
   return (
@@ -88,7 +99,14 @@ export default function MobileBuyurtmalar() {
           })}
         </div>
 
-        {list.length === 0 ? (
+        {profile.ordersStatus === 'loading' && !orders.length ? (
+          <p className="mt-6 text-center text-[13px] text-muted">Buyurtmalar yuklanmoqda…</p>
+        ) : profile.ordersStatus === 'error' ? (
+          <div className="mt-6 rounded-2xl bg-[#fff4f4] p-4 text-center text-[13px] text-[#b42318]">
+            {profile.ordersError}
+            <button type="button" onClick={() => profileStore.refreshOrders()} className="mt-2 block w-full font-semibold text-sea">Qayta urinish</button>
+          </div>
+        ) : list.length === 0 ? (
           <div className="mt-14 text-center">
             <span className={`mx-auto grid size-16 place-items-center rounded-full bg-[#e3f4f1] ${teal}`}><Package className="size-8" strokeWidth={1.6} /></span>
             <p className={`mt-3 text-[15px] font-bold ${navy}`}>{tab === 'active' ? 'Faol buyurtma yo‘q' : tab === 'delivered' ? 'Yetkazilgan buyurtma yo‘q' : 'Bekor qilingan buyurtma yo‘q'}</p>
@@ -105,7 +123,7 @@ export default function MobileBuyurtmalar() {
       {open && (
         <DetailSheet
           order={open}
-          canCancel={open.status === 'processing' && ownIds.includes(open.id)}
+          canCancel={open.dbStatus === 'yangi' && ownIds.includes(open.id)}
           onCancel={() => cancel(open)}
           onTrack={() => track(open)}
           onRepeat={() => repeat(open)}

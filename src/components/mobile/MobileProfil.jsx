@@ -7,7 +7,8 @@ import {
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
-import { ADS, adPrice } from '../../elonlarData'
+import { adPrice } from '../../elonlarData'
+import { fetchBonusLog, fetchNotifications, markNotificationsRead, useRemote } from '../../buyerApi'
 import { COURSES, allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
 import { signOut } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
@@ -24,20 +25,9 @@ const navy = 'text-[#0d2a4a]'
 const LANGS = [['uz', 'O‘zbekcha'], ['ru', 'Русский'], ['en', 'English']]
 const ROLES = ['Stomatolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba']
 
-const NOTIFS = [
-  { id: 'n1', icon: Truck, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Buyurtma #SH-10244 yo‘lda', text: 'Kuryer bugun 14:00–18:00 oralig‘ida yetkazadi', time: '10 daqiqa oldin', to: '/buyurtma/kuzatish/SH-10244' },
-  { id: 'n2', icon: CalendarDays, tone: 'bg-[#efe9fc] text-[#7c4ddb]', title: 'Seminar eslatmasi', text: '“Zamonaviy endodontiya” seminari 3 kundan keyin boshlanadi', time: '2 soat oldin', to: '/seminarlar' },
-  { id: 'n3', icon: Percent, tone: 'bg-[#fdeee3] text-[#e8772e]', title: 'Kompozitlarga −20% chegirma', text: 'Filtek Z550 XT va boshqa kompozitlar aksiyada', time: 'Kecha', to: '/aksiyalar' },
-  { id: 'n4', icon: Gift, tone: 'bg-[#e5f6ec] text-[#16a34a]', title: '+18 000 bonus qo‘shildi', text: '#SH-10241 buyurtmasi uchun bonus hisobingizga tushdi', time: '18 okt', open: 'bonus' },
-]
-
-const BONUS_LOG = [
-  ['#SH-10241 buyurtmasi uchun', 18000, '18 okt'],
-  ['Seminar ro‘yxati uchun', 25000, '10 okt'],
-  ['#SH-10236 to‘lovida ishlatildi', -40000, '9 okt'],
-  ['#SH-10228 buyurtmasi uchun', 22000, '30 sen'],
-  ['Ro‘yxatdan o‘tish bonusi', 100000, '1 iyl'],
-]
+const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
+const when = (iso) => { const d = new Date(iso); return `${d.getDate()} ${MON[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
+const toNote = (r) => ({ id: r.id, icon: r.kind === 'order' ? Truck : Gift, tone: r.kind === 'order' ? 'bg-[#e6f0fc] text-[#1f6fd1]' : 'bg-[#e5f6ec] text-[#16a34a]', title: r.title, text: r.body, time: when(r.created_at), to: r.link || '', readAt: r.read_at })
 
 const FAQ = [
   ['Buyurtma qancha vaqtda yetkaziladi?', 'Toshkent bo‘ylab 1–2 kun ichida bepul, viloyatlarga 2–4 kun ichida yetkazamiz. Do‘kondan o‘zingiz ham olib ketishingiz mumkin.'],
@@ -80,13 +70,17 @@ export default function MobileProfil() {
   const fileRef = useRef(null)
 
   const orders = allOrders(profile)
-  const notes = profile.accountLive ? [] : NOTIFS
-  const myAds = profile.accountLive ? added : [...added, ...ADS.filter((a) => a.seller === 'smile')]
+  const [notifTick, setNotifTick] = useState(0)
+  const notifRes = useRemote(() => (profile.accountLive ? fetchNotifications() : Promise.resolve([])), [profile.accountLive, notifTick])
+  const bonusRes = useRemote(() => (profile.accountLive ? fetchBonusLog() : Promise.resolve([])), [profile.accountLive])
+  const notes = notifRes.data.map(toNote)
+  const readIds = [...notes.filter((n) => n.readAt).map((n) => n.id), ...(profile.readNotifs || [])]
+  const myAds = added
   const favCount = profile.favProducts.length + seminars.saved.length + profile.favCourses.length + (profile.accountLive ? 0 : savedAds.size)
   const mySem = useMySeminars()
   const semCount = mySem.upcoming.length + mySem.past.length
   const myCourseCount = profile.accountLive ? new Set([...(profile.favCourses || []), ...Object.keys(profile.courseDone || {})]).size : COURSES.length
-  const unread = notes.filter((n) => !profile.readNotifs.includes(n.id)).length
+  const unread = notes.filter((n) => !readIds.includes(n.id)).length
   const displayName = profile.name || (profile.accountLive ? 'Ism kiritilmagan' : 'Mehmon')
   const close = () => setSheet(null)
 
@@ -115,7 +109,7 @@ export default function MobileProfil() {
     ],
     [
       { id: 'addresses', icon: MapPin, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Manzillarim', text: 'Yetkazib berish manzillari', go: () => navigate('/profil/manzillar') },
-      { id: 'payments', icon: CreditCard, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'To‘lov usullari', text: 'Saqlangan kartalar va to‘lovlar', go: () => navigate('/profil/tolov-usullari') },
+      { id: 'payments', icon: CreditCard, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'To‘lov usullari', text: 'Naqd to‘lov — mahsulotni olganda', go: () => navigate('/profil/tolov-usullari') },
       { id: 'notif', icon: Bell, tone: 'bg-[#fff4e0] text-[#e8a20c]', title: 'Bildirishnomalar', text: 'Yangiliklar va xabarlar' },
       { id: 'lang', icon: Globe, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Til', text: LANGS.find((l) => l[0] === profile.lang)?.[1] },
       { id: 'help', icon: CircleQuestionMark, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Yordam', text: 'Savollar va qo‘llab-quvvatlash' },
@@ -218,10 +212,10 @@ export default function MobileProfil() {
 
       {sheet === 'edit' && <EditSheet profile={profile} onPick={() => fileRef.current?.click()} onClose={close} onSaved={() => { close(); setToast('Profil ma’lumotlari saqlandi') }} />}
       {sheet === 'ads' && <AdsSheet ads={myAds} onClose={close} />}
-      {sheet === 'bonus' && <BonusSheet bonus={profile.bonus} log={profile.accountLive ? [] : BONUS_LOG} onClose={close} />}
+      {sheet === 'bonus' && <BonusSheet bonus={profile.bonus} log={bonusRes.data.map((r) => [r.reason, r.amount, when(r.created_at)])} error={bonusRes.error} onClose={close} />}
       {sheet === 'plus' && <PlusSheet plus={profile.plus} onClose={close} onToast={setToast} />}
       {sheet === 'notif' && <NotifSheet notif={profile.notif} onClose={close} />}
-      {sheet === 'inbox' && <InboxSheet items={notes} read={profile.readNotifs} onClose={close} onOpen={(n) => (n.to ? navigate(n.to) : setSheet(n.open))} />}
+      {sheet === 'inbox' && <InboxSheet items={notes} read={readIds} loading={notifRes.loading} error={notifRes.error} onMark={(ids) => markNotificationsRead(ids).then(() => setNotifTick((t) => t + 1), () => {})} onClose={close} onOpen={(n) => (n.to ? navigate(n.to) : setSheet(n.open))} />}
       {sheet === 'lang' && <LangSheet lang={profile.lang} onClose={close} onToast={setToast} />}
       {sheet === 'help' && <HelpSheet onClose={close} />}
       {sheet === 'clinic' && (
@@ -396,7 +390,7 @@ function AdsSheet({ ads, onClose }) {
   )
 }
 
-function BonusSheet({ bonus, log, onClose }) {
+function BonusSheet({ bonus, log, error, onClose }) {
   return (
     <BottomSheet title="Bonus balans" onClose={onClose} footer={<Link to="/marketplace" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white"><ShoppingBag className="size-[18px]" /> Xarid qilish</Link>}>
       <div className="mt-3 rounded-2xl bg-[linear-gradient(110deg,#0b8a7a,#14a394)] p-4 text-white">
@@ -417,7 +411,8 @@ function BonusSheet({ bonus, log, onClose }) {
           </li>
         ))}
       </ul>
-      {!log?.length && <p className="py-6 text-center text-[13px] text-muted">Bonus tarixi yo‘q. Xarid va seminarlardan keyin shu yerda ko‘rinadi.</p>}
+      {error && <p role="alert" className="py-3 text-center text-[13px] text-[#b42318]">{error}</p>}
+      {!error && !log?.length && <p className="py-6 text-center text-[13px] text-muted">Bonus tarixi yo‘q. Xarid va seminarlardan keyin shu yerda ko‘rinadi.</p>}
     </BottomSheet>
   )
 }
@@ -493,20 +488,20 @@ function NotifSheet({ notif, onClose }) {
   )
 }
 
-function InboxSheet({ items, read, onClose, onOpen }) {
+function InboxSheet({ items, read, loading, error, onMark, onClose, onOpen }) {
   const unread = items.filter((n) => !read.includes(n.id))
   return (
     <BottomSheet title="Bildirishnomalar" onClose={onClose}>
       <div className="flex items-center justify-between">
         <p className="text-[12px] text-muted">{unread.length ? `${unread.length} ta o‘qilmagan` : 'Hammasi o‘qilgan'}</p>
-        {unread.length > 0 && <button type="button" onClick={() => profileStore.update({ readNotifs: items.map((n) => n.id) })} className="text-[12px] font-semibold text-sea">Barchasini o‘qildi deb belgilash</button>}
+        {unread.length > 0 && <button type="button" onClick={() => onMark(unread.map((n) => n.id))} className="text-[12px] font-semibold text-sea">Barchasini o‘qildi deb belgilash</button>}
       </div>
       <ul className="mt-2 flex flex-col gap-1.5">
         {items.map((n) => {
           const isNew = !read.includes(n.id)
           return (
             <li key={n.id}>
-              <button type="button" onClick={() => { profileStore.update({ readNotifs: [...new Set([...read, n.id])] }); onOpen(n) }} className={`flex w-full items-start gap-3 rounded-2xl p-2.5 text-left ${isNew ? 'bg-[#eef8f6]' : ''}`}>
+              <button type="button" onClick={() => { if (isNew) onMark([n.id]); if (n.to) onOpen(n) }} className={`flex w-full items-start gap-3 rounded-2xl p-2.5 text-left ${isNew ? 'bg-[#eef8f6]' : ''}`}>
                 <span className={`grid size-10 shrink-0 place-items-center rounded-full ${n.tone}`}><n.icon className="size-[18px]" /></span>
                 <span className="min-w-0 flex-1">
                   <span className={`flex items-center gap-1.5 text-[13px] font-semibold ${navy}`}>{n.title} {isNew && <span className="size-2 shrink-0 rounded-full bg-sale" />}</span>
@@ -518,7 +513,9 @@ function InboxSheet({ items, read, onClose, onOpen }) {
           )
         })}
       </ul>
-      {!items.length && <p className="py-8 text-center text-[13px] text-muted">Bildirishnomalar yo‘q. Yangi buyurtma yoki seminar bo‘lsa, shu yerda chiqadi.</p>}
+      {loading && !items.length && <p className="py-8 text-center text-[13px] text-muted">Yuklanmoqda…</p>}
+      {error && <p role="alert" className="py-4 text-center text-[13px] text-[#b42318]">{error}</p>}
+      {!loading && !error && !items.length && <p className="py-8 text-center text-[13px] text-muted">Bildirishnomalar yo‘q. Yangi buyurtma yoki seminar bo‘lsa, shu yerda chiqadi.</p>}
     </BottomSheet>
   )
 }

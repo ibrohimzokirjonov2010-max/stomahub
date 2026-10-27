@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown, Search, Check } from 'lucide-react'
-import { categoryCounts, brands } from '../../marketData'
+import { categoryCounts as CATS, marketProducts } from '../../marketData'
+import { useMarket } from '../../buyerApi'
 
 function Box({ title, children }) {
   const [open, setOpen] = useState(true)
@@ -37,7 +38,11 @@ export default function FilterPanel({ filters, setFilters }) {
       return { ...f, [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] }
     })
 
-  const shownBrands = brands
+  useMarket()
+  const categoryCounts = CATS.map(([key, label]) => [key, label, key === 'all' ? marketProducts.length : marketProducts.filter((p) => p.cat === key).length])
+  const brandMap = {}
+  marketProducts.forEach((p) => { if (p.brand) brandMap[p.brand] = (brandMap[p.brand] || 0) + 1 })
+  const shownBrands = Object.entries(brandMap)
     .filter(([b]) => b.toLowerCase().includes(brandQuery.toLowerCase()))
     .slice(0, showAll ? undefined : 8)
 
@@ -92,13 +97,10 @@ export default function FilterPanel({ filters, setFilters }) {
       </Box>
 
       <Box title="Mavjudligi">
-        <CheckRow label="Omborda bor" count={986} checked={filters.inStock} onChange={() => setFilters((f) => ({ ...f, inStock: !f.inStock }))} />
-        <CheckRow label="Buyurtma asosida" count={262} checked={false} onChange={() => {}} />
+        <CheckRow label="Omborda bor" count={marketProducts.filter((p) => Number(p.stock) > 0).length} checked={filters.inStock} onChange={() => setFilters((f) => ({ ...f, inStock: !f.inStock }))} />
+        <CheckRow label="Buyurtma asosida" count={marketProducts.filter((p) => !(Number(p.stock) > 0)).length} checked={false} onChange={() => {}} />
       </Box>
 
-      <Box title="Rasmiy distribyutor">
-        <CheckRow label="Faqat rasmiy" count={427} checked={filters.official} onChange={() => setFilters((f) => ({ ...f, official: !f.official }))} />
-      </Box>
     </aside>
   )
 }

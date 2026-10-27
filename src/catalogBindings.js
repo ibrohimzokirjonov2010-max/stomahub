@@ -1,5 +1,4 @@
 import { registerCatalog } from './recordSync'
-import { marketProducts } from './marketData'
 import { books } from './booksData'
 import { courses } from './educationData'
 import { articles } from './yangiliklarData'
@@ -15,7 +14,6 @@ import { jobs } from './ishlarData'
 import { certs } from './sertifikatData'
 import { seedPosts } from './communityData'
 
-registerCatalog('product', marketProducts)
 registerCatalog('book', books)
 registerCatalog('course', courses)
 registerCatalog('article', articles)

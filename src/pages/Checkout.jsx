@@ -8,9 +8,8 @@ import ShopLayout from '../components/market/ShopLayout'
 import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
-import { receiveStock } from '../omborData'
+import { createOrder } from '../buyerApi'
 
-const SHIP_FEE = 25000
 
 const CITIES = {
   Toshkent: ['Yunusobod tumani', 'Chilonzor tumani', 'Mirzo Ulug‘bek tumani', 'Yakkasaroy tumani', 'Mirobod tumani', 'Shayxontohur tumani', 'Sergeli tumani', 'Uchtepa tumani', 'Yashnobod tumani', 'Bektemir tumani', 'Olmazor tumani'],
@@ -23,12 +22,7 @@ const CITIES = {
 }
 
 const METHODS = [
-  { id: 'click', title: 'Click', text: 'Click orqali to‘lov', hint: 'Tavsiya etiladi', pay: 'https://my.click.uz/services/pay' },
-  { id: 'payme', title: 'Payme', text: 'Payme orqali to‘lov', pay: 'https://payme.uz' },
-  { id: 'uzum', title: 'Uzum', text: 'Uzum orqali to‘lov', pay: 'https://uzum.uz' },
-  { id: 'card', title: 'Bank kartasi', text: 'Visa, Mastercard, Humo' },
-  { id: 'cash', title: 'Naqd to‘lov', text: 'Yetkazishda naqd' },
-  { id: 'installment', title: 'Muddatli to‘lov', text: 'Uzum nasiya / Bank' },
+  { id: 'cash', title: 'Naqd to‘lov', text: 'Mahsulotni olganda naqd to‘lanadi', hint: 'Yagona usul' },
 ]
 
 const ORIGIN = {
@@ -45,13 +39,13 @@ export default function Checkout() {
   const { items, total, clear } = useCart()
   const profile = useProfile()
   const [step, setStep] = useState(1)
-  const [method, setMethod] = useState('click')
+  const [method, setMethod] = useState('cash')
   const [shipMode, setShipMode] = useState('courier')
   const [form, setForm] = useState({
     name: '',
     phone: '',
     city: 'Toshkent',
-    district: '',
+    district: CITIES.Toshkent?.[0] || '',
     address: '',
     note: '',
     saved: '',
@@ -84,14 +78,19 @@ export default function Checkout() {
       ...current,
       name: profile.name || '',
       phone: profile.phone || '',
-      city: addr?.city || profile.city || current.city || 'Toshkent',
+      city: CITIES[addr?.city || profile.city] ? (addr?.city || profile.city) : (current.city || 'Toshkent'),
       district: addr?.district || profile.district || '',
       address: addr?.address || '',
       saved: addr?.id || '',
     }))
   }, [profile.accountLive])
 
-  const ship = shipMode === 'courier' ? SHIP_FEE : 0
+  useEffect(() => {
+    const list = CITIES[form.city] || []
+    if (list.length && !list.includes(form.district)) setForm((f) => ({ ...f, district: list[0] }))
+  }, [form.city, form.district])
+
+  const ship = 0 // yetkazish narxi sotuvchi bilan kelishiladi
   const goods = total
   const grand = Math.max(0, goods + ship - discount)
   const pay = METHODS.find((m) => m.id === method) || METHODS[0]
@@ -103,11 +102,6 @@ export default function Checkout() {
     if (!token) {
       setPromoMsg('Promokodni kiriting')
       setDiscount(0)
-      return
-    }
-    if (token === 'SH10') {
-      setDiscount(Math.round(goods * 0.1))
-      setPromoMsg('Promokod qo‘llandi')
       return
     }
     setDiscount(0)
@@ -127,51 +121,37 @@ export default function Checkout() {
     setStep((n) => Math.min(3, n + 1))
   }
 
-  const finish = (openLink) => {
+  const [busy, setBusy] = useState(false)
+  const finish = async () => {
     if (!agree) {
       setError('Oferta shartlari bilan tanishib chiqishingiz kerak.')
       return
     }
+    if (busy) return
     setError('')
-    if (openLink && pay.pay) window.open(pay.pay, '_blank', 'noopener,noreferrer')
-    const id = orderId
-    const at = new Date()
-    const months = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
-    const order = {
-      id,
-      at: `${at.getDate()} ${months[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
-      items: items.map((it) => ({ ...it })),
-      goods,
-      fee: ship,
-      discount,
-      total: grand,
-      method: pay.id,
-      months: 0,
-      mode: shipMode === 'courier' ? 'courier' : 'pickup',
-      eta: '1–2 kun',
-      days: '1–2 kun',
-      name: form.name.trim(),
-      phone: form.phone,
-      address: shipMode === 'courier' ? `${form.city}, ${form.address}` : 'Do‘kondan olib ketish',
+    setBusy(true)
+    try {
+      const res = await createOrder({
+        items,
+        name: form.name.trim(),
+        phone: form.phone,
+        city: [form.city, form.district].filter(Boolean).join(', '),
+        address: form.address,
+        note: form.note || '',
+        pickup: shipMode !== 'courier',
+      })
+      const codes = (res.orders || []).map((o) => o.code).join(', ')
+      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice }
+      clear()
+      profileStore.refreshOrders?.()
+      setPayOpen(false)
+      setPlaced(snap)
+      if (invoice) downloadInvoice(snap)
+    } catch (e) {
+      setError(e.message || 'Buyurtma yuborilmadi. Qayta urinib ko‘ring.')
+    } finally {
+      setBusy(false)
     }
-    profileStore.addOrder(order)
-    const snap = {
-      id,
-      items: order.items,
-      goods,
-      ship,
-      discount,
-      grand,
-      method: pay,
-      form: { ...form },
-      shipMode,
-      invoice,
-    }
-    if (items.length) receiveStock(items)
-    clear()
-    setPayOpen(false)
-    setPlaced(snap)
-    if (invoice) downloadInvoice(snap)
   }
 
   const confirm = () => {
@@ -181,8 +161,7 @@ export default function Checkout() {
       return
     }
     setError('')
-    if (pay.pay) setPayOpen(true)
-    else finish(false)
+    finish()
   }
 
   return (
@@ -296,7 +275,7 @@ export default function Checkout() {
           orderId={orderId}
           onClose={() => setPayOpen(false)}
           onOther={() => { setPayOpen(false); setStep(2) }}
-          onPay={() => finish(true)}
+          onPay={() => finish()}
         />
       )}
     </ShopLayout>
@@ -402,7 +381,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         <h2 className="text-[16px] font-bold">Yetkazish usuli</h2>
         <p className="mt-0.5 text-[12px] text-muted">Sizga qulay yetkazish usulini tanlang</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="1–2 kun" price={`${SHIP_FEE.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`} />
+          <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="Narx sotuvchi bilan" price="Kelishiladi" />
           <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘ziroq olib ketish" meta="Bepul" />
         </div>
       </section>
@@ -577,7 +556,7 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
           </div>
           {promoOpen && (
             <div className="flex gap-1">
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="SH10" className="h-9 min-w-0 flex-1 rounded-lg border border-[#e6ebf2] px-2 text-[12px] outline-none" />
+              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Promokod" className="h-9 min-w-0 flex-1 rounded-lg border border-[#e6ebf2] px-2 text-[12px] outline-none" />
               <button type="button" onClick={applyPromo} className="h-9 rounded-lg px-2 text-[12px] font-semibold text-sea">OK</button>
             </div>
           )}
@@ -597,7 +576,7 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
       {step < 3 ? (
         <div className="flex gap-2 rounded-2xl bg-[#eefbf6] p-3 text-[12px] text-[#157a45]">
           <Truck className="mt-0.5 size-4 shrink-0" />
-          <p><b>Yetkazish haqida.</b> Toshkent shahri bo‘ylab 1–2 kun ichida yetkazib beriladi. Boshqa hududlar uchun muddatlar operator tomonidan tasdiqlanadi.</p>
+          <p><b>Yetkazish haqida.</b> Yetkazish narxi va muddatini sotuvchi buyurtmani tasdiqlaganda siz bilan kelishadi. To‘lov naqd, mahsulotni olganingizda.</p>
         </div>
       ) : (
         <div className="flex gap-2 rounded-2xl bg-[#eefbf6] p-3 text-[12px] text-[#157a45]">
