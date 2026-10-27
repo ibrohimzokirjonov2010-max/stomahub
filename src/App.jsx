@@ -101,7 +101,8 @@ import MobileSeminar from './components/mobile/MobileSeminar'
 import MobileSeminarReg from './components/mobile/MobileSeminarReg'
 import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
-import AdminMahsulotlar from './pages/AdminMahsulotlar'
+import { adminRoutes } from './admin/routes'
+import ShotHarness from './admin/pages/ShotHarness'
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -139,6 +140,9 @@ export default function App() {
           <Route path="/ortiqcha" element={<Responsive mobile={<MobileSurplus />}><ShopLayout active="surplus" search="icon" placeholder="Ortiqcha materiallar ichidan qidiring..."><Surplus /></ShopLayout></Responsive>} />
           <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
           {sellerRoutes}
+          {adminRoutes}
+          <Route path="/admin-shot" element={<ShotHarness />} />
+          <Route path="/admin-shot/:sec" element={<ShotHarness />} />
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<Dashboard />} />
             <Route path="seminarlar" element={<Seminars />} />
@@ -199,7 +203,6 @@ export default function App() {
           <Route path="/community/:id" element={<Responsive mobile={<MobilePost />}><Navigate to="/community" replace /></Responsive>} />
           <Route path="/sertifikatlar" element={<Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive>} />
           <Route path="/klinika" element={<CrmGate><Klinika /></CrmGate>} />
-          <Route path="/admin/mahsulotlar" element={<AdminMahsulotlar />} />
           <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil section="addresses" /></Responsive>} />
