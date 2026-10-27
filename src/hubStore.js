@@ -668,8 +668,9 @@ export function toPublic(s) {
 export function publicRecords(s = state) {
   const source = Array.isArray(s.catalog) ? s.catalog : s.seminars
   const extra = source.filter((x) => x.published && x.status !== 'qoralama').map(toPublic)
-  const ids = new Set(extra.map((x) => x.id))
-  return [...CATALOG.filter((x) => !ids.has(x.id)), ...extra]
+  // Real-data mode: once hub hydrated from Supabase, never merge sample seminarsData seeds.
+  if (s.ready || s.catalog?.length || s.seminars?.length) return extra
+  return CATALOG.map((x) => ({ ...x }))
 }
 
 export function publicRecord(id, s = state) {

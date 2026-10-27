@@ -208,6 +208,7 @@ export const deals = [
   },
 ].map((d) => ({ ...d, seller: d.seller || sellerOf(d.brand), images: d.images || [d.image] }))
 
-export const catalog = deals.filter((d) => d.list !== false)
+export const getCatalog = () => deals.filter((d) => d.list !== false)
+export const catalog = getCatalog() // initial; prefer getCatalog() after loadCatalog
 export const getDeal = (id) => deals.find((d) => d.id === id)
-export const others = (id) => catalog.filter((d) => d.id !== id).slice(0, 4)
+export const others = (id) => getCatalog().filter((d) => d.id !== id).slice(0, 4)
