@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, RefreshCw, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis } from 'lucide-react'
-import { useSellerData, setOrderStatus, updateRow, netOf, useAsync } from '../api'
+import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, RefreshCw, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink } from 'lucide-react'
+import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Menu, Err } from '../components/ui'
 import Empty from '../components/shell/Empty'
@@ -32,12 +32,13 @@ export default function BuyurtmaDetail() {
   const [sp, setSp] = useSearchParams()
   const o = data.orders.find((x) => x.id === id)
   const [note, setNote] = useState('')
+  const [trackUrl, setTrackUrl] = useState('')
   const [cancel, setCancel] = useState(false)
   const [reason, setReason] = useState(REASONS[0])
   const [other, setOther] = useState('')
   const a = useAsync()
   const { shop } = useOutletContext() || {}
-  useEffect(() => { if (o) setNote(o.internal_note || '') }, [o?.id, o?.internal_note]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (o) { setNote(o.internal_note || ''); setTrackUrl(o.tracking_url || '') } }, [o?.id, o?.internal_note, o?.tracking_url]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (sp.get('cancel')) { setCancel(true); sp.delete('cancel'); setSp(sp, { replace: true }) } }, [sp, setSp])
 
   if (data.loading) return <div className={`${card} h-64 animate-pulse`} />
@@ -56,6 +57,7 @@ export default function BuyurtmaDetail() {
   const write = () => { if (!phoneOk) { toast('Telefon raqami buyurtma tasdiqlangandan keyin ko‘rinadi'); return } location.href = `sms:${o.customer_phone.replace(/\s/g, '')}` }
   const call = () => { if (!phoneOk) { toast('Telefon raqami buyurtma tasdiqlangandan keyin ko‘rinadi'); return } location.href = `tel:${o.customer_phone.replace(/\s/g, '')}` }
   const saveNote = () => a.go(() => updateRow('seller_orders', o.id, { internal_note: note.slice(0, 500) }), () => toast('Ichki izoh saqlandi'))
+  const saveTrack = () => a.go(() => setTrackingUrl(o.id, trackUrl.trim()), () => toast(trackUrl.trim() ? 'Yandex kuzatuv havolasi saqlandi' : 'Kuzatuv havolasi olib tashlandi'))
   const doCancel = () => a.go(() => setOrderStatus(o.id, 'bekor_qilindi', reason === 'Boshqa sabab' ? other.trim() || reason : reason), () => { toast('Buyurtma bekor qilindi, qoldiq qaytarildi'); setCancel(false) })
   const deliv = DELIVERY.find((d) => d[0] === o.delivery_method)?.[1] || 'Kuryer orqali yetkazish'
 
@@ -102,7 +104,7 @@ export default function BuyurtmaDetail() {
             <div className="grid grid-cols-4 divide-x divide-[#EEF3F4] border-b border-[#EEF3F4] pb-4 text-[12.5px] text-[#5C6E80]">
               <div className="pr-3">Buyurtma raqami<div className="mt-1 flex items-center gap-2 text-[17px] font-bold text-[#10283F]">{o.code}<button type="button" aria-label="Nusxalash" onClick={copy}><Copy className="size-4 text-[#5C6E80]" /></button></div></div>
               <div className="px-4">Sana<div className="mt-1 text-[17px] font-bold text-[#10283F]">{dmy(o.created_at)}</div>{hm(o.created_at)}</div>
-              <div className="px-4">To‘lov usuli<div className="mt-1 flex items-center gap-2"><Wallet className="size-5 text-[#0F766E]" /><div><b className="text-[15px] text-[#10283F]">Naqd</b><br />Yetkazilganda</div></div></div>
+              <div className="px-4">To‘lov usuli<div className="mt-1 flex items-center gap-2"><Wallet className="size-5 text-[#0F766E]" /><div><b className="text-[15px] text-[#10283F]">{(o.payment_method || 'cash').toUpperCase()}</b><br />{o.payment_status === 'paid' || o.payment_status === 'released' ? 'To‘langan' : o.payment_method === 'cash' ? 'Yetkazilganda' : (o.payment_status || 'kutilmoqda')}</div></div></div>
               <div className="pl-4">Holat<div className="mt-2"><OrderBadge status={o.status} /></div></div>
             </div>
             <div className="pt-5">{cancelled ? <div className="rounded-lg bg-[#F3F5F6] p-3 text-[13px] text-[#3D4E5F]"><b>Bekor qilingan.</b> Sabab: {o.cancel_reason || '—'}</div> : stepper(false)}</div>
@@ -149,6 +151,23 @@ export default function BuyurtmaDetail() {
             <div className="flex gap-2 rounded-lg bg-[#F0FDFA] p-3 text-[12px] text-[#3D4E5F]"><Info className="size-5 shrink-0 text-[#0F766E]" /><div><b className="text-[#10283F]">To‘lov naqd pulda amalga oshiriladi.</b><br />Xaridordan to‘lov yetkazilganda qabul qilinadi.</div></div>
           </div>
         </div>
+
+        <div className={`${card} mt-3 p-4`}>
+          <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#0F766E]"><Link2 className="size-4" />Yandex yetkazish havolasi</h3>
+          <p className="mt-1 text-[12.5px] text-[#5C6E80]">Yandex Go / Yandex Delivery kuzatuv havolasini joylashtiring. Xaridor “Buyurtmani kuzatish”da ochadi.</p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={trackUrl}
+              onChange={(e) => setTrackUrl(e.target.value)}
+              placeholder="https://go.yandex/... yoki https://yandex.uz/..."
+              className="h-11 flex-1 rounded-xl border border-[#DCE5E7] px-3 text-[13px] outline-none focus:border-[#0F766E]"
+              disabled={!open}
+            />
+            <Btn disabled={!open || a.busy} onClick={saveTrack}>Saqlash</Btn>
+            {trackUrl && <a href={trackUrl} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[#DCE5E7] px-3 text-[13px] font-semibold text-[#0F766E]"><ExternalLink className="size-4" />Ochish</a>}
+          </div>
+        </div>
+
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className={`${card} p-4`}><h3 className="flex items-center gap-2 text-[14px] font-bold text-[#0F766E]"><FileText className="size-4" />Izoh (xaridor)</h3><div className="mt-2 min-h-[42px] rounded-lg border border-[#E6EEF0] px-3 py-2.5 text-[13px] text-[#3D4E5F]">{o.note || 'Izoh qoldirilmagan.'}</div></div>
           <div className={`${card} p-4`}><h3 className="flex items-center gap-2 text-[14px] font-bold text-[#0F766E]"><FileText className="size-4" />Ichki izoh (sotuvchi)</h3><Textarea rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Faqat siz ko‘rasiz" className="mt-2" />{note !== (o.internal_note || '') && <Btn size="sm" className="mt-2" disabled={a.busy} onClick={saveNote}>Saqlash</Btn>}</div>

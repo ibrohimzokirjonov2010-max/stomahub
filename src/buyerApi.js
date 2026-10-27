@@ -104,11 +104,12 @@ const fmt = (iso) => {
 }
 
 export async function fetchMyOrders(uid) {
-  const { data, error } = await supabase
-    .from('seller_orders')
-    .select('id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)')
-    .eq('buyer_id', uid)
-    .order('created_at', { ascending: false })
+  const full = 'id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
+  const basic = 'id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
+  let { data, error } = await supabase.from('seller_orders').select(full).eq('buyer_id', uid).order('created_at', { ascending: false })
+  if (error && /payment_status|tracking_url|payment_ref/.test(error.message || '')) {
+    ;({ data, error } = await supabase.from('seller_orders').select(basic).eq('buyer_id', uid).order('created_at', { ascending: false }))
+  }
   if (error) throw new Error(friendlySupabaseError(error))
   return (data || []).map((o) => {
     const items = (o.seller_order_items || []).map((it) => ({ id: it.product_id || it.id, name: it.name, type: it.variant || '', price: Number(it.price), qty: it.qty, image: it.image_url }))
@@ -122,6 +123,7 @@ export async function fetchMyOrders(uid) {
       status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
       history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
       name: o.customer_name, phone: o.customer_phone, address: [o.city, o.address].filter(Boolean).join(', '),
+      trackingUrl: o.tracking_url || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
     }
   })
 }

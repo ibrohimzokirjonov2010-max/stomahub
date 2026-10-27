@@ -1,11 +1,26 @@
 /**
- * StomaHub payment service — DEMO mode.
- * Swap `createCharge` / provider adapters when Click & Payme merchant keys arrive.
+ * StomaHub payment service.
+ * Demo mode when Click/Payme env vars are absent on the server.
  * Never accept or persist full PAN or CVV here.
  */
 
-export const PAYMENT_MODE = 'demo' // 'demo' | 'live'
-export const isDemoPayments = () => PAYMENT_MODE !== 'live'
+let cachedMode = null
+
+export async function detectPaymentMode() {
+  if (cachedMode) return cachedMode
+  try {
+    const [click, payme] = await Promise.all([
+      fetch('/api/click').then((r) => r.json()).catch(() => ({ configured: false })),
+      fetch('/api/payme').then((r) => r.json()).catch(() => ({ configured: false })),
+    ])
+    cachedMode = click.configured || payme.configured ? 'live' : 'demo'
+  } catch {
+    cachedMode = 'demo'
+  }
+  return cachedMode
+}
+
+export const isDemoPayments = () => (cachedMode || 'demo') !== 'live'
 
 export const CARD_BRANDS = ['UZCARD', 'HUMO']
 export const WALLET_PROVIDERS = [
@@ -27,7 +42,6 @@ export function tokenizeCardInput({ brand, number, exp, setDefault = false }) {
     last4: digits.slice(-4),
     exp: expNorm,
     isDefault: !!setDefault,
-    // cvv intentionally never accepted or returned
   }
 }
 
@@ -45,21 +59,40 @@ export function linkWalletInput({ provider, phone, label = '', setDefault = fals
 }
 
 /**
- * Simulated charge. Live adapters will replace this body.
- * @returns {{ ok: true, mode: 'demo', ref: string }}
+ * Create a charge.
+ * - demo: local simulated success (used when Click/Payme keys absent)
+ * - click/payme live: returns redirect/invoice refs; actual confirm is via merchant callbacks
  */
 export async function createCharge({ method, amount, currency = 'UZS', meta = {} }) {
   if (!amount || amount < 0) throw new Error('Summa noto‘g‘ri')
-  if (PAYMENT_MODE === 'live') {
-    // Future: route to clickAdapter / paymeAdapter / cardAcquirer based on method.type
-    throw new Error('Live gateway hali ulanmagan — merchant kalitlari kutilmoqda')
+  const type = method?.type || method || 'unknown'
+  const mode = await detectPaymentMode()
+
+  if (mode === 'live' && (type === 'click' || type === 'payme')) {
+    // Invoice is finalized after Click/Payme callback writes payment_transactions.
+    // Frontend still places the order with payment_ref; provider confirms later.
+    return {
+      ok: true,
+      mode: 'live',
+      pending: true,
+      ref: `${type.toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
+      method: type,
+      amount,
+      currency,
+      meta,
+      hint: type === 'click'
+        ? 'Click callback /api/click/complete to‘lovni tasdiqlaydi'
+        : 'Payme PerformTransaction /api/payme to‘lovni tasdiqlaydi',
+    }
   }
+
+  // Demo card / cash-style simulation
   await new Promise((r) => setTimeout(r, 350))
   return {
     ok: true,
     mode: 'demo',
     ref: `DEMO-${Date.now().toString(36).toUpperCase()}`,
-    method: method?.type || 'unknown',
+    method: type,
     amount,
     currency,
     meta,
@@ -67,5 +100,5 @@ export async function createCharge({ method, amount, currency = 'UZS', meta = {}
 }
 
 export function demoBadgeProps() {
-  return { label: 'Demo rejim', title: 'To‘lovlar simulyatsiya qilinadi. Merchant kalitlari keyin ulanadi.' }
+  return { label: 'Demo rejim', title: 'To‘lovlar simulyatsiya qilinadi. Merchant kalitlari ulansa Click/Payme avtomatik ishlaydi.' }
 }
