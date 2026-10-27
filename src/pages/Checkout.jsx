@@ -9,6 +9,7 @@ import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
+import { createCharge, demoBadgeProps, isDemoPayments } from '../payments/paymentService'
 
 
 const CITIES = {
@@ -22,7 +23,11 @@ const CITIES = {
 }
 
 const METHODS = [
-  { id: 'cash', title: 'Naqd to‘lov', text: 'Mahsulotni olganda naqd to‘lanadi', hint: 'Yagona usul' },
+  { id: 'uzcard', title: 'UZCARD', text: 'Bank kartasi orqali (demo)', hint: 'Demo' },
+  { id: 'humo', title: 'HUMO', text: 'Bank kartasi orqali (demo)', hint: 'Demo' },
+  { id: 'click', title: 'Click', text: 'Click ilovasi orqali (demo)', hint: 'Demo' },
+  { id: 'payme', title: 'Payme', text: 'Payme ilovasi orqali (demo)', hint: 'Demo' },
+  { id: 'cash', title: 'Naqd to‘lov', text: 'Mahsulotni olganda naqd to‘lanadi', hint: 'Olganda' },
 ]
 
 const ORIGIN = {
@@ -39,7 +44,7 @@ export default function Checkout() {
   const { items, total, clear } = useCart()
   const profile = useProfile()
   const [step, setStep] = useState(1)
-  const [method, setMethod] = useState('cash')
+  const [method, setMethod] = useState('uzcard')
   const [shipMode, setShipMode] = useState('courier')
   const [form, setForm] = useState({
     name: '',
@@ -131,6 +136,11 @@ export default function Checkout() {
     setError('')
     setBusy(true)
     try {
+      let paymentRef = ''
+      if (method !== 'cash') {
+        const charge = await createCharge({ method: { type: method }, amount: goods, meta: { source: 'checkout' } })
+        paymentRef = charge.ref
+      }
       const res = await createOrder({
         items,
         name: form.name.trim(),
@@ -139,9 +149,11 @@ export default function Checkout() {
         address: form.address,
         note: form.note || '',
         pickup: shipMode !== 'courier',
+        paymentMethod: method,
+        paymentRef,
       })
       const codes = (res.orders || []).map((o) => o.code).join(', ')
-      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice }
+      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice, paymentRef, demo: isDemoPayments() }
       clear()
       profileStore.refreshOrders?.()
       setPayOpen(false)

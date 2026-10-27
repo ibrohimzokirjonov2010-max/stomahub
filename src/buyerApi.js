@@ -70,20 +70,24 @@ export function useMarket() {
 // ---- checkout -----------------------------------------------------------------------
 export const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''))
 
-export async function createOrder({ items, name, phone, city, address, note, pickup }) {
+export async function createOrder({ items, name, phone, city, address, note, pickup, paymentMethod = 'cash', paymentRef = '' }) {
   if (!supabase) throw new Error('Supabase sozlanmagan')
   const bad = items.filter((it) => !isUuid(it.productId || it.id))
   if (bad.length) throw new Error(`Bu mahsulot sotuvda emas: ${bad.map((b) => b.name).join(', ')}. Savatdan olib tashlang.`)
+  const pay = String(paymentMethod || 'cash').toLowerCase()
+  const allowed = new Set(['cash', 'naqd', 'uzcard', 'humo', 'click', 'payme', 'card'])
+  if (!allowed.has(pay)) throw new Error('To‘lov usuli qo‘llab-quvvatlanmaydi')
   const { data, error } = await supabase.rpc('buyer_create_order', {
     payload: {
-      name, phone, city, address, note: note || '', payment_method: 'cash',
+      name, phone, city, address, note: note || '', payment_method: pay === 'naqd' ? 'cash' : pay,
+      payment_ref: paymentRef || '',
       delivery_method: pickup ? 'olib_ketish' : 'kuryer',
       items: items.map((it) => ({ product_id: it.productId || it.id, qty: it.qty, variant: it.variant || '' })),
     },
   })
   if (error) throw new Error(friendlySupabaseError(error))
   loadMarketProducts()
-  return data?.orders || []
+  return { orders: data?.orders || [], payment_method: data?.payment_method || pay, payment_ref: data?.payment_ref || paymentRef }
 }
 
 // ---- buyer orders ---------------------------------------------------------------------
@@ -102,7 +106,7 @@ const fmt = (iso) => {
 export async function fetchMyOrders(uid) {
   const { data, error } = await supabase
     .from('seller_orders')
-    .select('id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)')
+    .select('id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)')
     .eq('buyer_id', uid)
     .order('created_at', { ascending: false })
   if (error) throw new Error(friendlySupabaseError(error))
@@ -113,7 +117,7 @@ export async function fetchMyOrders(uid) {
     const discount = Number(o.discount_amount) || 0
     return {
       id: o.code, dbId: o.id, live: true, at: fmt(o.created_at), createdAt: o.created_at, items, goods, fee, discount,
-      total: Math.max(0, goods + fee - discount), method: 'cash', months: 0,
+      total: Math.max(0, goods + fee - discount), method: o.payment_method || 'cash', months: 0,
       mode: o.delivery_method === 'olib_ketish' ? 'pickup' : 'courier',
       status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
       history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
