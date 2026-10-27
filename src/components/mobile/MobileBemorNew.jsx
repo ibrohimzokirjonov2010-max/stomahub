@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, X, Camera, UserRound, Phone, ChevronDown, CalendarDays, Mars, Venus, UsersRound, MapPin, Mail, Megaphone, FileText, Save, Check } from 'lucide-react'
 import { CITIES, addBemor, useBemorlar } from '../../bemorData'
 import { isoToDots } from './bemorParts'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const CODES = ['+998', '+7', '+992', '+996']
 const SOURCES = ['Telegram / Instagram', 'Do‘st tavsiyasi', 'Reklama', 'Klinika', 'Boshqa']
@@ -124,7 +125,7 @@ export default function MobileBemorNew() {
               {f.code}<ChevronDown className="size-3.5 text-muted" />
               <select value={f.code} onChange={set('code')} aria-label="Davlat kodi" className="absolute inset-0 opacity-0">{CODES.map((c) => <option key={c}>{c}</option>)}</select>
             </label>
-            <input value={f.phone} onChange={(e) => setF((s) => ({ ...s, phone: fmtPhone(e.target.value) }))} inputMode="tel" placeholder="90 123 45 67" autoComplete="tel-national" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted" />
+            <PhoneInput className="min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none" inputClassName="text-[14px]" value={f.phone} onChange={(v) => setF((s) => ({ ...s, phone: extractUzLocalDigits(v) }))} valueMode="local" placeholder="+998 90 123 45 67" />
           </div>
         </Field>
 

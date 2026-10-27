@@ -11,6 +11,7 @@ import { BottomSheet } from './MobileSeminars'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet, CallSheet } from './MobileMutaxassislar'
 import { Pick } from './MobileIshlar'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const CAT_ICONS = { all: LayoutGrid, kreslo: Armchair, rentgen: ScanLine, ornatish: Wrench, tamir: Cog, konsult: MessagesSquare }
 const PRICES = [['', 'Narx'], ['200000', '200 ming gacha'], ['300000', '300 ming gacha'], ['500000', '500 ming gacha']]
@@ -233,7 +234,7 @@ export function OrderSheet({ m, service, onClose, onDone }) {
       </div>
       {tried && errs.time && <p className="mt-1 text-[11.5px] text-sale">Vaqtni tanlang</p>}
       <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Klinika manzili" className={`mt-3 ${field(tried && errs.address)}`} />
-      <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+998 90 123 45 67" className={`mt-2 ${field(tried && errs.phone)}`} />
+      <PhoneInput value={phone} onChange={setPhone} valueMode="e164" className={`mt-2 ${field(tried && errs.phone)}`} invalid={tried && errs.phone} placeholder="+998 90 123 45 67" />
       {tried && !ok && <p className="mt-1 text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
       <div className="h-2" />
     </BottomSheet>
@@ -266,7 +267,7 @@ function RequestSheet({ onClose, onDone }) {
       <textarea value={problem} onChange={(e) => setProblem(e.target.value)} rows={3} placeholder="Nima bo‘ldi? Masalan: turbina shovqin qilyapti" className={`mt-3 w-full resize-none rounded-xl border px-3 py-2.5 text-[13.5px] outline-none focus:border-sea ${tried && errs.problem ? 'border-sale' : 'border-line'}`} />
       <div className="mt-2 grid grid-cols-2 gap-2">
         <select value={city} onChange={(e) => setCity(e.target.value)} aria-label="Shahar" className={field(false)}>{USTA_CITIES.map((c) => <option key={c}>{c}</option>)}</select>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+998 90 123 45 67" className={field(tried && errs.phone)} />
+        <PhoneInput value={phone} onChange={setPhone} valueMode="e164" className={field(tried && errs.phone)} invalid={tried && errs.phone} placeholder="+998 90 123 45 67" />
       </div>
       <button type="button" aria-pressed={urgent} onClick={() => setUrgent((v) => !v)} className="mt-2 flex h-12 w-full items-center justify-between rounded-xl border border-line px-3 text-[13px] font-medium text-ink">
         <span className="flex items-center gap-2"><Zap className="size-4 text-[#f59e0b]" /> Shoshilinch (bugun kerak)</span>

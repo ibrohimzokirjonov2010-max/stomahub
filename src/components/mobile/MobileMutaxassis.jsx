@@ -11,6 +11,7 @@ import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet, CallSheet, Stars, useFav } from './MobileMutaxassislar'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const TABS = [['info', 'Ma’lumot', UserRound], ['services', 'Xizmatlar', ToothIcon], ['works', 'Ishlar', ImageIcon], ['reviews', 'Sharhlar', MessageSquareText]]
 const TIMES = ['09:00', '10:30', '12:00', '14:00', '15:30', '17:00']
@@ -272,8 +273,8 @@ function BookSheet({ d, service, onClose, onDone }) {
       </div>
       {tried && !time && <p className="mt-1 text-[11.5px] text-sale">Vaqtni tanlang</p>}
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ismingiz" className={`mt-4 h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && name.trim().length < 2 ? 'border-sale' : 'border-line'}`} />
-      <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+998 90 123 45 67" className={`mt-2 h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && !okPhone ? 'border-sale' : 'border-line'}`} />
-      {tried && !okPhone && <p className="mt-1 text-[11.5px] text-sale">Telefon raqamni to‘liq kiriting</p>}
+      <PhoneInput value={phone} onChange={setPhone} valueMode="e164" className={`mt-2 h-11 w-full ${tried && !okPhone ? 'border-sale' : 'border-line'}`} invalid={tried && !okPhone} placeholder="+998 90 123 45 67" />
+      {tried && !okPhone && <p className="mt-1 text-[11.5px] text-sale">Telefon raqam to‘liq emas</p>}
       <div className="h-2" />
     </BottomSheet>
   )

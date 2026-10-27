@@ -16,7 +16,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const profile = useProfile()
   const session = useSession()
   const authed = session.status === 'authed' || profile.accountLive
-  const remoteName = session.profile?.name || ''
+  const remoteName = session.profile?.full_name || session.profile?.name || ''
   const localName = profile.accountLive ? (profile.name || '') : ''
   const rawName = authed ? (localName || remoteName || '') : ''
   const who = !authed ? 'Mehmon' : (looksLikeDemoName(rawName) && remoteName && !looksLikeDemoName(remoteName) ? remoteName : (rawName || remoteName || 'Shifokor'))

@@ -7,6 +7,7 @@ import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const CAT_ICONS = { all: LayoutGrid, uskuna: Armchair, material: ToothIcon, klinika: Building2, ish: BriefcaseBusiness, asbob: Wrench }
 const SORTS = [['new', 'Eng yangi'], ['cheap', 'Arzonroq'], ['rich', 'Qimmatroq'], ['views', 'Ko‘p ko‘rilgan']]
@@ -285,7 +286,7 @@ function PostAdSheet({ onClose, onDone }) {
             ? <input value={f.priceMax} onChange={set('priceMax')} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.price)} />
             : <select value={f.cond} onChange={set('cond')} aria-label="Holati" className={field(false)}><option>Yangi</option><option>Ishlatilgan</option></select>}
           <select value={f.city} onChange={set('city')} aria-label="Shahar" className={field(false)}>{AD_CITIES.map((c) => <option key={c}>{c}</option>)}</select>
-          <input value={f.phone} onChange={set('phone')} inputMode="tel" placeholder="+998 90 123 45 67" className={field(errs.phone)} />
+          <PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" />
         </div>
         {tried && !ok && <p className="text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
       </div>

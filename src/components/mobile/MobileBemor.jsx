@@ -9,6 +9,7 @@ import { MobileToast } from './parts'
 import { BottomSheet } from './MobileSeminars'
 import { Lightbox } from './MobileCommunity'
 import { DOCTORS, Face, MSTATUS, STATUS_TABS, TOOTH_STATES, TeethChart, Tooth, fmtDate, isoToDots, todayDots, toothName } from './bemorParts'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const TABS = [['umumiy', 'Umumiy'], ['tish', 'Tish kartasi'], ['reja', 'Rejalar'], ['tashrif', 'Tashriflar'], ['tolov', 'To‘lovlar'], ['rentgen', 'Rentgen']]
 const KINDS = ['Konsultatsiya', 'Davolash', 'Professional gigiyena', 'Implant', 'Ortodontiya', 'Protezlash', 'Tish olish']
@@ -418,7 +419,10 @@ function EditSheet({ p, onClose, onDone }) {
     <BottomSheet title="Tahrirlash" onClose={onClose} footer={<button type="button" onClick={save} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Saqlash</button>}>
       <div className="mt-2 flex flex-col gap-2 pb-2">
         <label className="text-[12px] text-muted">Ism, familiya<input value={f.name} onChange={set('name')} className={`mt-1 ${input(tried && errs.name)}`} /></label>
-        <label className="text-[12px] text-muted">Telefon<input value={f.phone} onChange={set('phone')} inputMode="tel" className={`mt-1 ${input(tried && errs.phone)}`} /></label>
+        <label className="text-[12px] text-muted">Telefon
+          <PhoneInput className={`mt-1 ${input(tried && errs.phone)}`} value={f.phone} onChange={(v) => setF((s) => ({ ...s, phone: toE164(v) || extractUzLocalDigits(v) }))} valueMode="e164" invalid={tried && errs.phone} />
+          {tried && errs.phone && <p className="mt-1 text-[11px] text-sale">{PHONE_INCOMPLETE_MSG}</p>}
+        </label>
         <label className="text-[12px] text-muted">Email<input type="email" value={f.email} onChange={set('email')} className={`mt-1 ${input(false)}`} /></label>
         <label className="text-[12px] text-muted">Shahar<select value={f.city} onChange={set('city')} className={`mt-1 ${input(false)} bg-white`}>{CITIES.map((c) => <option key={c}>{c}</option>)}</select></label>
         <label className="text-[12px] text-muted">Manzil<input value={f.address} onChange={set('address')} className={`mt-1 ${input(false)}`} /></label>

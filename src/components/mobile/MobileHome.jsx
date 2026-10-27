@@ -15,6 +15,7 @@ import { seminarCard } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast } from './parts'
 import { initialsOf, looksLikeDemoName } from '../../demoPurge'
+import { useSession } from '../../sessionStore'
 
 const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays, color: '#14a39a', bg: '#e3f6f3' },
@@ -40,8 +41,9 @@ export default function MobileHome() {
   const deals = market.products.slice(0, 2)
   const { add } = useCart()
   const profile = useProfile()
+  const session = useSession()
   const feed = useFeed()
-  const rawHello = profile.accountLive ? (profile.name || '') : ''
+  const rawHello = profile.accountLive ? (profile.name || session.profile?.full_name || session.profile?.name || '') : (session.profile?.full_name || session.profile?.name || '')
   const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (rawHello.split(' ')[0] || 'shifokor'))
   const hub = useHub()
   const todaySeminars = publicRecords(hub).slice(0, 2).map((raw) => {

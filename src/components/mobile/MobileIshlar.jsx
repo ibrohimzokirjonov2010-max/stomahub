@@ -9,6 +9,7 @@ import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { BracesIcon } from './MobileBooks'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const SPEC_ICONS = { terapevt: ToothIcon, ortoped: Stethoscope, assistent: UserRound, texnik: FlaskConical, admin: ClipboardList, ortodont: BracesIcon, jarroh: Scissors, bolalar: Baby, gigiyenist: Sparkles }
 const SPEC_LABEL = { terapevt: 'Stomatolog-terapevt', ortoped: 'Ortoped', assistent: 'Assistent', texnik: 'Tish texniki', admin: 'Ma’mur', ortodont: 'Ortodont', jarroh: 'Jarroh', bolalar: 'Bolalar', gigiyenist: 'Gigiyenist' }
@@ -263,7 +264,7 @@ function PostJobSheet({ onClose, onDone }) {
           <input value={f.max} onChange={set('max')} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.pay)} />
         </div>
         {tried && errs.pay && <p className="text-[11.5px] text-sale">Maosh oralig‘ini to‘g‘ri kiriting</p>}
-        <input value={f.phone} onChange={set('phone')} inputMode="tel" placeholder="+998 90 123 45 67" className={field(errs.phone)} />
+        <PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" />
         <textarea value={f.about} onChange={set('about')} rows={3} placeholder="Qisqacha tavsif (ixtiyoriy)" className="w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] outline-none focus:border-sea" />
         {tried && !ok && <p className="text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
       </div>

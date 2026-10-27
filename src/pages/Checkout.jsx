@@ -10,6 +10,7 @@ import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
 import { createCharge, demoBadgeProps, isDemoPayments } from '../payments/paymentService'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG } from '../components/PhoneInput'
 
 
 const CITIES = {
@@ -339,11 +340,13 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
             </div>
           </Field>
           <Field label="Telefon" required>
-            <div className={`${input} flex items-center gap-2 px-2`}>
-              <Flag />
-              <span className="text-[13px] font-semibold text-ink">+998</span>
-              <input className="h-full min-w-0 flex-1 bg-transparent outline-none" value={form.phone} placeholder="90 123 45 67" onChange={(e) => patch('phone', e.target.value)} />
-            </div>
+            <PhoneInput
+              className="h-10 rounded-xl border border-line bg-white px-3"
+              value={form.phone}
+              onChange={(v) => patch('phone', extractUzLocalDigits(v))}
+              valueMode="local"
+              placeholder="+998 90 123 45 67"
+            />
           </Field>
           <Field label="Shahar" required>
             <Select value={form.city} onChange={(city) => {

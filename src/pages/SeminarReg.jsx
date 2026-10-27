@@ -11,6 +11,7 @@ import { cardBrand, cvvRequired, validateCard } from '../cardCheck'
 import { useCountdown } from '../payBits'
 import LiveQr from '../components/LiveQr'
 import { tashkentWhen } from '../time'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const PAY = {
   click: 'https://my.click.uz/services/pay',
@@ -145,12 +146,15 @@ export default function SeminarReg() {
                   </span>
                 </Field>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Telefon raqami" required>
-                    <span className="flex h-11 items-center gap-2 rounded-xl border border-line px-2">
-                      <span className="grid h-7 w-8 place-items-center rounded bg-[#f4f7fb] text-[14px]">🇺🇿</span>
-                      <span className="text-[13px] font-semibold text-ink-2">+998</span>
-                      <input value={form.phone} onChange={set('phone')} placeholder="90 123 45 67" className="w-full bg-transparent text-[13px] outline-none" inputMode="tel" />
-                    </span>
+                                    <Field label="Telefon raqami" required>
+                    <PhoneInput
+                      className="h-11 rounded-xl border border-line px-2"
+                      inputClassName="text-[13px]"
+                      value={form.phone}
+                      onChange={(v) => setForm((f) => ({ ...f, phone: extractUzLocalDigits(v) }))}
+                      valueMode="local"
+                      placeholder="+998 90 123 45 67"
+                    />
                   </Field>
                   <Field label="Email manzil" required>
                     <span className="flex h-11 items-center gap-2 rounded-xl border border-line px-3">

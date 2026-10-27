@@ -4,6 +4,7 @@ import Modal from '../shell/Modal'
 import { Btn, Field, Input, Select, Checkbox, Toggle, Err, toast } from '../ui'
 import { insertRow, updateRow, logActivity } from '../../api'
 import { PERMS, ROLES, ROLE_LABEL, DEFAULT_PERMS } from './constants'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 export default function StaffForm({ edit, branches, onClose, permsOnly }) {
   const [v, setV] = useState(() => edit ? { ...edit } : { name: '', phone: '+998 ', role: 'Operator', permissions: DEFAULT_PERMS.Operator, branch_id: '', active: true })
@@ -12,7 +13,7 @@ export default function StaffForm({ edit, branches, onClose, permsOnly }) {
   const toggle = (k) => set('permissions', v.permissions.includes(k) ? v.permissions.filter((x) => x !== k) : [...v.permissions, k])
   const save = async () => {
     if (!v.name.trim()) return setErr('Ism familiyani kiriting.')
-    if (v.phone.replace(/\D/g, '').length < 12) return setErr('Telefon raqamni to‘liq kiriting.')
+    if (!isCompleteUzPhone(v.phone)) return setErr(PHONE_INCOMPLETE_MSG)
     const row = { name: v.name.trim(), phone: v.phone.trim(), role: v.role, permissions: v.permissions, branch_id: v.branch_id || null, active: v.active }
     setBusy(true); const r = edit ? await updateRow('seller_staff', edit.id, row) : await insertRow('seller_staff', row); setBusy(false)
     if (!r.ok) return setErr(r.error || 'Saqlanmadi.')
@@ -28,7 +29,7 @@ export default function StaffForm({ edit, branches, onClose, permsOnly }) {
       footer={<div className="grid grid-cols-2 gap-3"><Btn variant="outline" onClick={onClose}>Bekor qilish</Btn><Btn icon={edit ? Save : UserPlus} disabled={busy} onClick={save}>{edit ? 'Saqlash' : 'Xodimni qo‘shish'}</Btn></div>}>
       <div className="space-y-4">
         {!permsOnly && <>
-          <div className="grid gap-3 md:grid-cols-2"><Field label="Ism familiya"><Input value={v.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Aliyev Javohir" /></Field><Field label="Telefon raqam"><Input icon={Phone} value={v.phone} onChange={(e) => set('phone', e.target.value)} inputMode="tel" /></Field></div>
+          <div className="grid gap-3 md:grid-cols-2"><Field label="Ism familiya"><Input value={v.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Aliyev Javohir" /></Field><Field label="Telefon raqam"><PhoneInput className="h-11" value={v.phone} onChange={(val) => set('phone', toE164(val) || extractUzLocalDigits(val))} valueMode="e164" /></Field></div>
           <div className="grid gap-3 md:grid-cols-2"><Field label="Lavozim"><Select value={v.role} onChange={(x) => setV((s) => ({ ...s, role: x, permissions: edit ? s.permissions : DEFAULT_PERMS[x] }))} options={ROLES.map((r) => [r, ROLE_LABEL[r]])} /></Field><Field label="Filial"><Select value={v.branch_id || ''} onChange={(x) => set('branch_id', x)} options={[['', 'Filial tanlanmagan'], ...branches.map((b) => [b.id, b.name])]} /></Field></div>
         </>}
         {perms}

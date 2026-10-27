@@ -17,6 +17,7 @@ import {
   chairsFromSettings, shiftIso, weekday, label, avatarOf,
 } from '../klinikaData'
 import { scrubClinicBoard } from '../demoPurge'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
 const DEFAULT_SETTINGS = { name: '', city: '', open: '09:00', close: '18:00', phone: '', address: '', website: '', chair_count: 0 }
@@ -765,7 +766,7 @@ function BookingDialog({ initial, visits, chairs = DEFAULT_CHAIRS, onClose, onSa
       <div className="space-y-3">
         <Field label="Bemor ismi familiyasi"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Bemor ismi" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Telefon"><input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+          <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
           <Field label="Jinsi"><GenderPick value={form.female} onChange={(v) => set('female', v)} /></Field>
         </div>
         <Field label="Xizmat"><select value={form.service} onChange={(e) => set('service', e.target.value)} className={input}>{SERVICES.map((s) => <option key={s}>{s}</option>)}</select></Field>
@@ -802,7 +803,7 @@ function PatientDialog({ onClose, onSave }) {
       <div className="space-y-3">
         <Field label="Ism familiya"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Bemor ismi" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Telefon"><input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+          <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
           <Field label="Jinsi"><GenderPick value={form.female} onChange={(v) => set('female', v)} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -840,7 +841,7 @@ function SettingsDialog({ value, onClose, onSave }) {
           </select>
         </Field>
         <Field label="Manzil"><input value={form.address || ''} onChange={(e) => set('address', e.target.value)} placeholder="Ko‘cha, uy" className={input} /></Field>
-        <Field label="Telefon"><input value={form.phone || ''} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 123 45 67" className={input} /></Field>
+        <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone || ''} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
         <Field label="Veb-sayt"><input value={form.website || ''} onChange={(e) => set('website', e.target.value)} placeholder="https://" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Ish boshlanishi"><input type="time" value={form.open} onChange={(e) => set('open', e.target.value)} className={input} /></Field>

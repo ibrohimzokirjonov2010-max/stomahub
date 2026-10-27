@@ -18,6 +18,7 @@ import { useSeminarStore } from './seminarStore'
 import { useMySeminars } from './MobileSeminarlarim'
 import { useAds } from './MobileElonlar'
 import { CITIES } from './MobileCheckout'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const AVATAR = '/images/yangiliklar/yang-sardor.jpg'
 const card = 'rounded-2xl bg-white shadow-[0_1px_6px_rgb(11_31_58/0.06)]'
@@ -260,7 +261,7 @@ function SignIn({ profile, onDone, toast, closeToast }) {
   const submit = (e) => {
     e.preventDefault()
     if (!sent) {
-      if (digits.length !== 9) return setErr('Telefon raqamini to‘liq kiriting')
+      if (digits.length !== 9) return setErr('Telefon raqam to‘liq emas')
       setErr('')
       setSent(true)
       return
@@ -277,10 +278,14 @@ function SignIn({ profile, onDone, toast, closeToast }) {
         <h1 className={`mt-3 text-center text-[20px] font-bold ${navy}`}>Hisobingizga kiring</h1>
         <p className="mt-1 text-center text-[12.5px] text-ink-2">Buyurtmalar, seminarlar va bonuslaringiz shu yerda saqlanadi</p>
         <label className="mt-5 block text-[12px] font-medium text-ink-2">Telefon raqami</label>
-        <div className={`mt-1 flex h-12 items-center gap-2 rounded-xl border px-3 ${err && !sent ? 'border-sale' : 'border-line'}`}>
-          <span className="text-[14px] font-semibold text-ink">+998</span>
-          <input value={digits} onChange={(e) => { setPhone(e.target.value); setSent(false) }} inputMode="numeric" placeholder="90 123 45 67" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none" />
-        </div>
+        <PhoneInput
+          className={`mt-1 h-12 ${err && !sent ? 'border-sale' : 'border-line'}`}
+          value={digits}
+          onChange={(v) => { setPhone(extractUzLocalDigits(v)); setSent(false) }}
+          valueMode="local"
+          invalid={!!(err && !sent)}
+          placeholder="+998 90 123 45 67"
+        />
         {sent && (
           <>
             <label className="mt-3 block text-[12px] font-medium text-ink-2">SMS kod ({fmtPhone(digits)} raqamiga yuborildi)</label>
