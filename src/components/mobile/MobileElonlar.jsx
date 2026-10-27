@@ -14,7 +14,7 @@ const SORTS = [['new', 'Eng yangi'], ['cheap', 'Arzonroq'], ['rich', 'Qimmatroq'
 const EMPTY = { cities: [], min: '', max: '', cond: '', sort: 'new', saved: false }
 export const DEAL_CLS = { sale: 'bg-[#16b07a]', rent: 'bg-[#0b8a95]', job: 'bg-[#0b8a95]' }
 
-const DEMO_ADS = { added: [], saved: ['endomotor', 'nsk-turbina'] }
+const DEMO_ADS = { added: [], saved: [] }
 let store = { added: [], saved: new Set() }
 const subs = new Set()
 const emit = (next) => {

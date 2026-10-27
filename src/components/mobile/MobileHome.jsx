@@ -44,7 +44,13 @@ export default function MobileHome() {
   const session = useSession()
   const feed = useFeed()
   const rawHello = profile.accountLive ? (profile.name || session.profile?.full_name || session.profile?.name || '') : (session.profile?.full_name || session.profile?.name || '')
-  const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (rawHello.split(' ')[0] || 'shifokor'))
+  // Uzbek convention: «Familiya Ism» → greet with Ism (2nd word); single token stays as-is
+  const helloName = (() => {
+    const parts = String(rawHello || '').trim().split(/\s+/).filter(Boolean)
+    if (!parts.length) return ''
+    return parts.length >= 2 ? parts[1] : parts[0]
+  })()
+  const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()
   const todaySeminars = publicRecords(hub).slice(0, 2).map((raw) => {
     const s = seminarCard(raw)

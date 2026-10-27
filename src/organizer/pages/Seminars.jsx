@@ -29,21 +29,14 @@ function monthOf(date) {
 }
 
 const TABS = [
-  { id: 'all', label: 'Barchasi', n: 8 },
-  { id: 'rejalashtirilgan', label: 'Rejalashtirilgan', n: 3 },
-  { id: 'jarayonda', label: 'Jarayonda', n: 2 },
-  { id: 'yakunlangan', label: 'Yakunlangan', n: 3 },
-  { id: 'bekor', label: 'Bekor qilingan', n: 0 },
+  { id: 'all', label: 'Barchasi' },
+  { id: 'rejalashtirilgan', label: 'Rejalashtirilgan' },
+  { id: 'jarayonda', label: 'Jarayonda' },
+  { id: 'yakunlangan', label: 'Yakunlangan' },
+  { id: 'bekor', label: 'Bekor qilingan' },
 ]
 
-const MOBILE = [
-  { id: 'implant-nov', cat: 'Implantologiya', title: 'Implantologiya: amaliy kurs', date: '21 oktabr 2026, 09:00 – 18:00', place: 'Toshkent City Kongress Markazi', sold: 42, seats: 50, status: 'faol', image: '/images/seminars/teeth.jpg', pos: 'center 30%' },
-  { id: 'endo', cat: 'Stomatologiya', title: 'Zamonaviy endodontiya', date: '15 noyabr 2026, 09:00 – 17:00', place: 'Hilton Toshkent', sold: 28, seats: 40, status: 'faol', image: '/images/seminars/micro.jpg', pos: 'center' },
-  { id: 'oral', cat: 'Protetika', title: 'Raqamli protetika', date: '10 dekabr 2026, 09:00 – 17:00', place: 'Toshkent City Kongress Markazi', sold: 0, seats: 50, status: 'qoralama', image: '/images/seminars/aligner.jpg', pos: 'center' },
-  { id: 'estetik', cat: 'Diagnostika', title: '3D diagnostika va rejalashtirish', date: '12 sentabr 2026, 09:00 – 16:00', place: 'Toshkent Medical Park', sold: 50, seats: 50, status: 'otgan', image: '/images/channels/cbct.jpg', pos: 'center' },
-  { id: 'bolalar', cat: 'Bolalar', title: 'Bolalar stomatologiyasi', date: '2 sentabr 2026, 09:00 – 16:00', place: 'Hilton Toshkent', sold: 36, seats: 36, status: 'otgan', image: '/images/channels/kids.jpg', pos: 'center' },
-  { id: 'raqamli', cat: 'Implantologiya', title: 'Raqamli implantologiya', date: '18 iyun 2026, 09:00 – 17:00', place: 'Samarqand', sold: 80, seats: 80, status: 'otgan', image: '/images/hero-implant.jpg', pos: 'center' },
-]
+const MOBILE = []
 
 const MSTATUS = {
   faol: { label: 'Faol', dot: '#22a34a', text: '#1a9a48' },

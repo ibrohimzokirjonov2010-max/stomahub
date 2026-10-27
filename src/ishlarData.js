@@ -67,58 +67,7 @@ const job = (p) => ({
   cityLabel: cityName[p.city],
 })
 
-export const jobs = [
-  job({
-    id: 'ortodont-smile', rank: 0, title: 'Ortodont stomatolog', clinic: 'Smile Dental Clinic', logo: 'SD',
-    city: 'toshkent', district: 'Yunusobod', type: 'full', exp: 'y3', expLabel: '3+ yil',
-    min: 12000000, max: 18000000, posted: '2 kun oldin', spec: 'ortodont', top: true, image: img('ish-smile'),
-    about: 'Zamonaviy klinikada ortoped stomatolog kerak. Implant va protez yo‘nalishida tajribali shifokor.',
-  }),
-  job({
-    id: 'terapevt-dentacare', rank: 1, title: 'Terapevt stomatolog', clinic: 'DentaCare', logo: 'DC',
-    city: 'toshkent', district: 'Chilonzor', type: 'full', exp: 'y1', expLabel: '1–3 yil',
-    min: 8000000, max: 12000000, posted: '1 kun oldin', spec: 'terapevt', image: img('ish-dentacare'),
-    about: 'Klinikamizga terapevt stomatolog kerak. Zamonaviy jihozlar, doimiy bemorlar oqimi.',
-  }),
-  job({
-    id: 'bolalar-family', rank: 2, title: 'Bolalar stomatologi', clinic: 'Family Dental', logo: 'FD',
-    city: 'toshkent', district: 'Mirzo Ulug‘bek', type: 'full', exp: 'y3', expLabel: '3+ yil',
-    min: 10000000, max: 15000000, posted: '3 kun oldin', spec: 'bolalar', image: img('ish-family'),
-    about: 'Bolalar bilan ishlash tajribasiga ega, mehribon va mas’uliyatli shifokor izlaymiz.',
-  }),
-  job({
-    id: 'jarroh-implant', rank: 3, title: 'Jarroh-implantolog', clinic: 'Implant Plus', logo: 'IP',
-    city: 'toshkent', district: 'Shayxontohur', type: 'full', exp: 'y5', expLabel: '5+ yil',
-    min: 18000000, max: 25000000, posted: '4 kun oldin', spec: 'jarroh', image: img('ish-implant'),
-    about: 'Tajribali jarroh kerak. Straumann/Nobel tizimlari bilan ishlash tajribasi afzal.',
-  }),
-  job({
-    id: 'assistent-city', rank: 4, title: 'Stomatolog assistent', clinic: 'City Dental', logo: 'CD',
-    city: 'toshkent', district: 'Olmazor', type: 'shift', exp: 'none', expLabel: 'Tajriba talab qilinmaydi',
-    min: 4000000, max: 6000000, posted: '1 hafta oldin', spec: 'assistent', image: img('ish-assistant'),
-    about: 'Stomatolog assistenti lavozimiga qizlar tanlov. O‘qitish mavjud.',
-  }),
-  job({
-    id: 'ortodont-newsmile', rank: 5, title: 'Ortodont', clinic: 'NewSmile', logo: 'NS',
-    city: 'toshkent', district: 'Yakkasaroy', type: 'full', exp: 'y3', expLabel: '3–5 yil',
-    min: 15000000, max: 22000000, posted: '1 hafta oldin', spec: 'ortodont', image: img('ish-newsmile'),
-    about: 'Estetik ortodontiya yo‘nalishida tajribali shifokor izlaymiz.',
-  }),
-  job({
-    id: 'admin-andijon', rank: 20, title: 'Stomatologiya klinikasi administratori kerak', clinic: 'Stomatologiya klinikasi', clinicLine: 'Stomatologiya klinikasi (OLX e‘loni)', logo: 'SK', verified: true, postedFact: 'Bugun',
-    city: 'andijon', district: 'Semashko', type: 'full', exp: 'none', expLabel: 'Tajriba talab etilmaydi',
-    min: 3000000, max: 3500000, posted: 'Bugun joylashtirildi', spec: 'admin', image: img('ish-reception'),
-    about: 'Andijon shahridagi ish beruvchi stomatologiya klinikasi administrator lavozimiga xodim qidirmoqda. Ish turi: to‘liq stavka. Maosh: 3 000 000 – 3 500 000 UZS.',
-    original: 'Andijon shahar semashko kochasi. Kompyuter da yaxshi ishlay olishi kerak.',
-    source: 'OLX',
-    sourceUrl: 'https://www.olx.uz/obyavlenie/rabota/stomatologiyaga-administrator-kerak-ID4w5Hn.html',
-    phone: '+998 74 223 45 67',
-    address: 'Andijon shahar, Semashko ko‘chasi',
-    gallery,
-    requirements: ['Kompyuterda ishlay olish', 'Muloqot madaniyati', 'Tajriba talab etilmaydi'],
-    benefits: ['To‘liq ish kuni', 'Barqaror grafik', 'Klinika ichida o‘qitish'],
-  }),
-]
+export const jobs = []
 
 const named = [
   ...Array(11).fill('Smile Dental Clinic'),
@@ -178,14 +127,7 @@ cityPlan.forEach((city, i) => {
   }))
 })
 
-export const resumes = [
-  ['Madina Karimova', 'Terapevt stomatolog', 'Toshkent', '3 yil', '10 000 000 so‘m'],
-  ['Jasur Toshpo‘latov', 'Jarroh-implantolog', 'Toshkent', '6 yil', '20 000 000 so‘m'],
-  ['Dilnoza Aliyeva', 'Ortodont', 'Samarqand', '4 yil', '14 000 000 so‘m'],
-  ['Aziza Rahimova', 'Bolalar stomatologi', 'Andijon', '2 yil', '9 000 000 so‘m'],
-  ['Bekzod Nurmatov', 'Ortoped', 'Toshkent', '5 yil', '16 000 000 so‘m'],
-  ['Malika Saidova', 'Gigiyenist', 'Farg‘ona', '1 yil', '6 000 000 so‘m'],
-].map(([name, role, city, exp, salary], i) => ({ id: `cv-${i}`, name, role, city, exp, salary }))
+export const resumes = []
 
 export function getJob(id) {
   return jobs.find((j) => j.id === id) || null

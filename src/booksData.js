@@ -50,28 +50,9 @@ export const sorts = {
   fresh: 'Yangi',
 }
 
-export const books = [
-  { id: 'misch', title: 'Contemporary Implant Dentistry', author: 'Carl E. Misch', year: 2021, pages: 1040, lang: 'en', rating: 4.9, reviews: 328, price: 420000, formats: ['print', 'pdf'], cats: ['impl'], publisher: 'quintessence', stock: 'stock', badge: 'best', cover: c('misch'), isbn: '978-0-323-07845-0', blurb: 'Implant rejalash, suyak va protezlash bosqichlari. 1-bob — bemor tanlash va diagnostika.' },
-  { id: 'pathways', title: 'Pathways of the Pulp', author: 'Kenneth M. Hargreaves', year: 2021, pages: 616, lang: 'en', rating: 4.8, reviews: 196, price: 480000, oldPrice: 600000, off: 20, formats: ['print', 'pdf'], cats: ['endo'], publisher: 'elsevier', stock: 'stock', cover: c('pathways'), isbn: '978-0-323-74514-5', blurb: 'Pulpa biologiyasi, kanal tayyorlash va obturatsiya. Namuna: 4-bob, ishchi uzunlik.' },
-  { id: 'fixed', title: 'Fundamentals of Fixed Prosthodontics', author: 'Herbert T. Shillingburg', year: 2019, pages: 772, lang: 'en', rating: 4.7, reviews: 172, price: 450000, formats: ['print', 'pdf'], cats: ['ortoped'], publisher: 'quintessence', stock: 'stock', cover: c('fixed'), isbn: '978-0-86715-475-7', blurb: 'Qattiq protez: preparatsiya, izolyatsiya va sementlash protokollari.' },
-  { id: 'proffit', title: 'Proffit Ortodontiya', author: 'William R. Proffit', year: 2018, pages: 352, lang: 'en', rating: 4.8, reviews: 185, price: 520000, formats: ['print', 'pdf'], cats: ['orto'], publisher: 'elsevier', stock: 'stock', cover: c('proffit'), isbn: '978-0-323-08917-3', blurb: 'O‘sish, tishlov va davolash mexanikasi. Namuna: diagnostika bo‘limi.' },
-  { id: 'terapiya', title: 'Terapevtik stomatologiya', author: 'A. R. Rizayev', year: 2022, pages: 540, lang: 'uz', rating: 4.9, reviews: 62, price: 250000, formats: ['pdf'], cats: ['terapiya'], publisher: 'stomamedia', stock: 'stock', badge: 'new', cover: c('terapiya'), isbn: '978-9943-7711-2-8', blurb: 'Kariyes, pulpit va restavratsiya bo‘yicha o‘zbek tilidagi qo‘llanma.' },
-  { id: 'netter', title: 'Atlas of Human Anatomy', author: 'Frank H. Netter', year: 2022, pages: 640, lang: 'en', rating: 4.9, reviews: 214, price: 390000, formats: ['print', 'pdf'], cats: ['anatomy', 'atlas'], publisher: 'elsevier', stock: 'stock', cover: c('netter'), isbn: '978-0-323-39322-5', blurb: 'Bosh va bo‘yin anatomiyasi, chaynash mushaklari va nervlar.' },
-  { id: 'lindhe', title: 'Clinical Periodontology and Implant Dentistry', author: 'Jan Lindhe, Niklaus Lang', year: 2015, pages: 1680, lang: 'en', rating: 4.7, reviews: 154, price: 510000, oldPrice: 600000, off: 15, formats: ['print', 'pdf'], cats: ['surgery', 'impl'], publisher: 'quintessence', stock: 'stock', cover: c('perio'), isbn: '978-0-470-67501-4', blurb: 'Parodont va implant atrofi to‘qimalari. Klinik holatlar to‘plami.' },
-  { id: 'endosurg', title: 'Endodontic Surgery', author: 'Domenico Ricucci', year: 2020, pages: 480, lang: 'en', rating: 4.8, reviews: 98, price: 470000, formats: ['print', 'pdf'], cats: ['endo', 'surgery'], publisher: 'quintessence', stock: 'preorder', cover: c('endosurg'), isbn: '978-1-85097-289-1', blurb: 'Apikal jarrohlik, retrograd to‘ldirish va mikroskop ostida ishlash.' },
-  { id: 'atlas', title: 'Atlas of Dental Implantology', author: 'Myron Nevins, Hom-Lay Wang', year: 2021, pages: 592, lang: 'en', rating: 4.9, reviews: 128, price: 450000, formats: ['print', 'pdf'], cats: ['impl', 'atlas'], publisher: 'quintessence', stock: 'stock', cover: c('book-atlas'), isbn: '978-1-78698-087-0', blurb: 'Atlas of Dental Implantology — implantologiya sohasidagi eng nufuzli va amaliy atlaslardan biri.', featured: true },
-  { id: 'cohen', title: 'Endodontiya: klinik qo‘llanma', author: 'M. Karimova', year: 2023, pages: 286, lang: 'uz', rating: 4.6, reviews: 41, price: 180000, formats: ['pdf'], cats: ['endo'], publisher: 'stomamedia', stock: 'stock', cover: c('pathways'), isbn: '978-9943-5501-4-2', blurb: 'Kanal topish va obturatsiya bo‘yicha qisqa qo‘llanma.' },
-  { id: 'ortho-ru', title: 'Ортодонтия: основы', author: 'Л. С. Персин', year: 2019, pages: 410, lang: 'ru', rating: 4.5, reviews: 77, price: 310000, formats: ['print'], cats: ['orto'], publisher: 'other', stock: 'stock', cover: c('proffit'), isbn: '978-5-9704-4988-1', blurb: 'Ortodontik tashxis va apparatlar haqida rus tilidagi darslik.' },
-  { id: 'springer-surg', title: 'Oral and Maxillofacial Surgery', author: 'Lars Andersson', year: 2016, pages: 920, lang: 'en', rating: 4.6, reviews: 63, price: 690000, formats: ['print', 'pdf'], cats: ['surgery'], publisher: 'springer', stock: 'preorder', cover: c('endosurg'), isbn: '978-1-119-00548-1', blurb: 'Og‘iz va yuz-jag‘ jarrohligi bo‘yicha klinik atlas.' },
-  { id: 'smile-uz', title: 'Estetik restavratsiya atlasi', author: 'K. Abdulayeva', year: 2024, pages: 220, lang: 'uz', rating: 4.8, reviews: 29, price: 210000, formats: ['pdf'], cats: ['terapiya', 'atlas'], publisher: 'stomamedia', stock: 'stock', badge: 'new', cover: c('terapiya'), isbn: '978-9943-8802-1-6', blurb: 'Qatlamli kompozit va tabiiy shaffoflik bo‘yicha amaliy atlas.' },
-  { id: 'anatomy-ru', title: 'Анатомия головы и шеи', author: 'М. Р. Сапин', year: 2017, pages: 360, lang: 'ru', rating: 4.4, reviews: 52, price: 160000, formats: ['print'], cats: ['anatomy'], publisher: 'other', stock: 'stock', cover: c('netter'), isbn: '978-5-9704-4012-3', blurb: 'Bosh va bo‘yin anatomiyasi, stomatologlar uchun qisqartirilgan kurs.' },
-]
+export const books = []
 
-export const library = [
-  { id: 'lib-impl', title: 'Implantologiya asoslari', author: 'Dr. S. Raximov', size: '180 MB', cover: c('misch') },
-  { id: 'lib-endo', title: 'Endodontiya atlasi', author: 'Dr. M. Karimova', size: '240 MB', cover: c('pathways') },
-  { id: 'lib-est', title: 'Estetik restavratsiya', author: 'Dr. K. Abdulayeva', size: '120 MB', cover: c('terapiya') },
-]
+export const library = []
 
 export const perks = ['Yuqori sifatli rasmlar', 'Klinik holatlar', 'Bosqichma-bosqich protokol']
 
@@ -82,14 +63,7 @@ export const featured = books.find((b) => b.featured)
 export const pubName = { quintessence: 'Quintessence', elsevier: 'Elsevier', springer: 'Springer', stomamedia: 'StomaMedia', other: 'Boshqa' }
 export const langLong = { uz: 'O‘zbekcha', ru: 'Ruscha', en: 'Inglizcha' }
 
-export const shelf = [
-  { id: 'rel-perio', title: 'Clinical Periodontology', author: 'Lang & Lindhe', year: 2015, pages: 1480, lang: 'en', rating: 4.8, reviews: 90, price: 420000, formats: ['print', 'pdf'], cats: ['surgery'], publisher: 'quintessence', stock: 'stock', cover: c('book-perio'), isbn: '978-1-118-88962-7', blurb: 'Parodont va implant atrofi to‘qimalari bo‘yicha klinik darslik.' },
-  { id: 'rel-endo', title: 'Endodontic Microsurgery', author: 'Taschieri', year: 2019, pages: 420, lang: 'en', rating: 4.7, reviews: 64, price: 380000, formats: ['print', 'pdf'], cats: ['endo'], publisher: 'quintessence', stock: 'stock', cover: c('book-endo'), isbn: '978-1-85097-178-8', blurb: 'Mikroskop ostida endodontik jarrohlik.' },
-  { id: 'rel-est', title: 'Esthetic Restorative Dentistry', author: 'Ritter, Boushell', year: 2018, pages: 610, lang: 'en', rating: 4.8, reviews: 71, price: 395000, formats: ['print', 'pdf'], cats: ['terapiya'], publisher: 'elsevier', stock: 'stock', cover: c('book-esthetic'), isbn: '978-0-323-47833-5', blurb: 'Estetik restavratsiya va tabiiy shaffoflik.' },
-  { id: 'rel-omfs', title: 'Oral and Maxillofacial Surgery', author: 'Miloro', year: 2016, pages: 980, lang: 'en', rating: 4.6, reviews: 58, price: 510000, formats: ['print', 'pdf'], cats: ['surgery'], publisher: 'springer', stock: 'stock', cover: c('book-omfs'), isbn: '978-1-119-00548-1', blurb: 'Og‘iz va yuz-jag‘ jarrohligi bo‘yicha klinik qo‘llanma.' },
-  { id: 'rel-anat', title: 'Dental Anatomy', author: 'Nelson', year: 2020, pages: 340, lang: 'en', rating: 4.7, reviews: 44, price: 320000, formats: ['print', 'pdf'], cats: ['anatomy'], publisher: 'elsevier', stock: 'stock', cover: c('book-anatomy'), isbn: '978-0-323-67243-6', blurb: 'Tish anatomiyasi va okklyuzion yuzalar.' },
-  { id: 'klinik', title: 'Stomatologiya klinik amaliyotda', author: 'Dr. Azizbek Rahimov', year: 2026, pages: 320, lang: 'uz', rating: 4.9, reviews: 36, price: 180000, formats: ['pdf'], cats: ['terapiya'], publisher: 'stomamedia', stock: 'stock', cover: c('book-klinik'), isbn: '978-9943-1001-8-2', blurb: 'Diagnostika, davolash va zamonaviy yondashuvlar.' },
-]
+export const shelf = []
 
 export function getBook(id) {
   return books.find((b) => b.id === id) || shelf.find((b) => b.id === id) || null
@@ -115,13 +89,7 @@ export function productOf(book) {
         : book.blurb,
     more: 'Nashr rasmiy manbadan. Qog‘oz nusxa Toshkent bo‘ylab 1–2 kunda yetkaziladi, elektron nusxa to‘lovdan so‘ng ochiladi.',
     toc,
-    reviews: book.id === 'atlas' ? [
-      { name: 'Dr. Azizbek', role: 'Implantolog', date: '12 mar 2024', stars: 5, photo: c('book-azizbek'), text: 'Juda yaxshi atlas. Rasmlar sifati ajoyib, amaliyotda foydali ma’lumotlar ko‘p.' },
-      { name: 'Dr. Madina', role: 'Stomatolog', date: '28 fev 2024', stars: 4, photo: c('book-madina'), text: 'Implantologiya bilan shug‘ullanuvchilar uchun majburiy kitob. Tavsiya qilaman!' },
-    ] : [
-      { name: 'Dr. Azizbek', role: 'Shifokor', date: '12 mar 2024', stars: 5, photo: c('book-azizbek'), text: 'Amaliyotda foydali, rasmlar tushunarli.' },
-      { name: 'Dr. Madina', role: 'Stomatolog', date: '28 fev 2024', stars: 4, photo: c('book-madina'), text: 'Kutubxonada turadigan kitob. Tavsiya qilaman.' },
-    ],
+    reviews: [],
     similar,
   }
 }

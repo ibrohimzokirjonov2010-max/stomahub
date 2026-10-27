@@ -11,20 +11,7 @@ import { upsertPromo, useHub } from '../../hubStore'
 const APOST = '\u2018'
 const SO = `so${APOST}m`
 
-const ROWS0 = [
-  { id: 1, code: 'STOMAHUB20', kind: 'foiz', value: 20, used: 86, limit: 200, from: '1-noy', to: '30-noy 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 2, code: 'IMPLANT10', kind: 'foiz', value: 10, used: 45, limit: 100, from: '1-noy', to: '24-noy 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 3, code: 'STUDENT50', kind: 'foiz', value: 50, used: 38, limit: 50, from: '1-noy', to: '24-noy 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 4, code: 'EARLYBIRD', kind: 'foiz', value: 30, used: 120, limit: 150, from: '1-okt', to: '15-noy 2026', status: 'yakun', seminar: 'implant-nov' },
-  { id: 5, code: 'GROUPS', kind: 'foiz', value: 15, used: 27, limit: 100, from: '1-noy', to: '24-noy 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 6, code: 'VIP2026', kind: 'summa', value: 200000, used: 18, limit: 50, from: '1-noy', to: '24-noy 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 7, code: 'PARTNER', kind: 'summa', value: 100000, used: 12, limit: 100, from: '1-noy', to: '30-dek 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 8, code: 'NEWYEAR', kind: 'foiz', value: 25, used: 0, limit: 200, from: '1-yan', to: '31-yan 2027', status: 'reja', seminar: 'implant-nov' },
-  { id: 9, code: 'INFLUENCER', kind: 'summa', value: 150000, used: 9, limit: 50, from: '1-noy', to: '24-noy 2026', status: 'faol', seminar: 'implant-nov' },
-  { id: 10, code: 'ORALCARE', kind: 'foiz', value: 15, used: 0, limit: 100, from: '1-noy', to: '24-noy 2026', status: 'nofaol', seminar: 'implant-nov' },
-  { id: 11, code: 'ENDO15', kind: 'foiz', value: 15, used: 11, limit: 80, from: '1-noy', to: '24-noy 2026', status: 'faol', seminar: 'endo' },
-  { id: 12, code: 'SPRING', kind: 'foiz', value: 10, used: 40, limit: 40, from: '1-mar', to: '31-mar 2026', status: 'yakun', seminar: 'estetik' },
-]
+const ROWS0 = []
 
 const STATUS = { faol: 'Faol', yakun: 'Yakunlangan', reja: 'Rejalashtirilgan', nofaol: 'Nofaol' }
 const TONE = {

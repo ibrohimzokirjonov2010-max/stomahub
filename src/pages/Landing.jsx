@@ -316,7 +316,13 @@ function Frame({ children }) {
 
 function PhoneHome({ compact = false, tall = false }) {
   const session = useSession()
-  const firstName = session.status === 'authed' ? String(session.profile?.name || session.profile?.fullName || session.user?.user_metadata?.name || '').trim().split(/\s+/)[0] : ''
+  const firstName = (() => {
+    if (session.status !== 'authed') return ''
+    const parts = String(session.profile?.full_name || session.profile?.name || session.profile?.fullName || session.user?.user_metadata?.name || '').trim().split(/\s+/).filter(Boolean)
+    if (!parts.length) return ''
+    // Uzbek «Familiya Ism» → greet with Ism
+    return parts.length >= 2 ? parts[1] : parts[0]
+  })()
   return (
     <Frame>
       <div className="px-3 pb-2 pt-3">

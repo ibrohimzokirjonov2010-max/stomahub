@@ -64,9 +64,9 @@ export const surplusDetail = {
   condition: 'Yopiq',
   state: 'Yangi',
   expiry: '10/2028',
-  rating: 4.9,
-  reviews: 12,
-  views: 256,
+  rating: 0,
+  reviews: 0,
+  views: 0,
   price: 850000,
   oldPrice: 1200000,
   short: 'Sifatli universal kompozit. Rang: A2. Yopiq, ishlatilmagan. Klinikamizda ortib qolgan, arzon narxda sotaman.',
@@ -94,14 +94,14 @@ export const surplusDetail = {
   seller: {
     name: 'Shifokor',
     avatar: img('seller'),
-    rating: 4.9,
-    reviews: 28,
-    deals: 56,
+    rating: 0,
+    reviews: 0,
+    deals: 0,
     city: 'Toshkent',
     place: 'Klinika',
     reply: '5 daqiqa ichida',
     telegram: 'https://t.me/',
-    phone: '+998 90 123 45 67',
+    phone: '',
   },
 }
 
@@ -156,7 +156,7 @@ function fromItem(item) {
       place: 'Klinika',
       reply: '10 daqiqa ichida',
       telegram: 'https://t.me/',
-      phone: '+998 90 123 45 67',
+      phone: '',
     },
   }
 }

@@ -23,43 +23,6 @@ const DESK_TABS = [
 
 const MOBILE_TABS = DESK_TABS.filter((t) => t.id !== 'msg')
 
-const IMPLANT = {
-  id: 'implant',
-  topic: 'Implantologiya',
-  title: 'Implantologiya: nazariya va amaliyot',
-  mobileTitle: 'Implantologiya: amaliy kurs',
-  when: '21 oktabr 2026, 09:00 – 18:00',
-  dateLabel: '21 oktabr 2026',
-  timeLabel: '09:00 – 18:00',
-  place: 'Tashkent City Kongress Markazi',
-  mobilePlace: 'Toshkent City Kongress Markazi',
-  city: 'Toshkent, O‘zbekiston',
-  venueLines: ['Tashkent City', 'Kongress Markazi'],
-  mobileVenue: ['Toshkent City', 'Kongress Markazi'],
-  image: '/images/seminars/teeth.jpg',
-  venueImage: '/images/seminars/hotel.jpg',
-  sold: 42,
-  seats: 50,
-  revenue: 17500000,
-  mobileRevenue: 10000000,
-  checked: 42,
-  hours: 16,
-  minPeople: 20,
-  description: 'Implantologiya sohasidagi zamonaviy yondashuvlar, jarrohlik protokollari va amaliy mashg‘ulotlar. Nazariy bilim va amaliy tajribani birlashtirgan ikki kunlik intensiv seminar.',
-  mobileDescription: 'Implantologiya bo‘yicha amaliy kurs. Nazariya va amaliyot uyg‘unligi. Professional ma’ruzachilar, jonli o‘rgatish usullari va real klinik holatlar.',
-  bring: ['Noutbuk yoki planshet', 'Stomatologik lupalar (ixtiyoriy)', 'Shaxsiy ish qurollari', 'Qulay kiyim va oyoq kiyim', 'Bloknot va ruchka'],
-  refundPeople: 42,
-  refundSum: 8400000,
-  speakers: [
-    { name: 'Dr. Azizbek Karimov', specialty: 'Implantolog', bio: 'Implantologiya bo‘yicha 15 yillik tajriba', avatar: '/images/bemorlar/bemor-sardor.jpg' },
-    { name: 'Dr. Malika Saidova', specialty: 'Parodontolog', bio: 'Jarrohlik va yumshoq to‘qima mutaxassisi', avatar: '/images/bemorlar/bemor-malika.jpg' },
-  ],
-  mobileSpeakers: [
-    { name: 'Karimov Behzod', role: 'Implantolog', avatar: '/images/bemorlar/bemor-aziz.jpg' },
-    { name: 'Aliyeva Mohira', role: 'Oral jarroh', avatar: '/images/bemorlar/bemor-mohira.jpg' },
-  ],
-}
-
 const cx = (...a) => a.filter(Boolean).join(' ')
 
 function modelFor(id, seminars = []) {

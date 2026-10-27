@@ -1,13 +1,13 @@
 /** Mobile Ishtirokchilar tab — values copied from the 390px artboard. */
 
 export const MOBILE_SEMINAR = {
-  topic: 'Implantologiya',
-  title: 'Implantologiya: amaliy kurs',
-  when: '21 oktabr 2026, 09:00 – 18:00',
-  place: 'Toshkent City Kongress Markazi',
+  topic: '',
+  title: '',
+  when: '',
+  place: '',
   image: '/images/seminars/smile.jpg',
-  going: 42,
-  seats: 50,
+  going: 0,
+  seats: 0,
 }
 
 const TINTS = [
@@ -44,32 +44,7 @@ const SHOWN = [
 const EXTRA_GIVEN = ['Shahzod', 'Madina', 'Otabek', 'Kamola', 'Aziza', 'Bobur', 'Jasur', 'Nilufar', 'Bekzod', 'Dilshod']
 const EXTRA_FAMILY = ['Ergashev', 'Nazarova', 'Soliyev', 'Abdullayeva', 'Hamidov', 'Karimova', 'Yuldasheva', 'Rahimova', 'Qodirov', 'Saidov']
 
-export const MOBILE_PEOPLE = (() => {
-  const rows = SHOWN.map((p, i) => ({
-    id: i + 1,
-    initials: p[0],
-    name: p[1],
-    phone: p[2],
-    ticket: p[3],
-    pay: p[4],
-    tint: TINTS[i % TINTS.length],
-  }))
-  for (let i = 0; i < 30; i++) {
-    const g = EXTRA_GIVEN[i % EXTRA_GIVEN.length]
-    const f = EXTRA_FAMILY[i % EXTRA_FAMILY.length]
-    const name = `${f} ${g}`
-    rows.push({
-      id: rows.length + 1,
-      initials: `${f[0]}${g[0]}`,
-      name,
-      phone: `+998 9${i % 10} ${String(200 + i).padStart(3, '0')} ${String(10 + (i % 80)).padStart(2, '0')} ${String(10 + (i % 70)).padStart(2, '0')}`,
-      ticket: i % 4 === 0 ? 'VIP' : 'Standart',
-      pay: 'paid',
-      tint: TINTS[(i + 3) % TINTS.length],
-    })
-  }
-  return rows
-})()
+export const MOBILE_PEOPLE = []
 
 export const FACE = {
   1: '/images/seller-2.jpg',

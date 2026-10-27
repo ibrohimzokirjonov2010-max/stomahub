@@ -15,6 +15,9 @@ import { certs } from './sertifikatData'
 import { seedPosts } from './communityData'
 import { seminars } from './seminarsData'
 
+const EMPTY_CONSULTATIONS = []
+const EMPTY_LABS = []
+
 registerCatalog('book', books)
 registerCatalog('course', courses)
 registerCatalog('article', articles)
@@ -30,3 +33,6 @@ registerCatalog('job', jobs)
 registerCatalog('certificate', certs)
 registerCatalog('post', seedPosts)
 registerCatalog('seminar', seminars)
+
+registerCatalog('consultation', EMPTY_CONSULTATIONS)
+registerCatalog('lab', EMPTY_LABS)
