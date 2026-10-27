@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Heart, ShoppingCart, Star, CircleCheck } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
+import { flushProfile, profileStore, useProfile } from '../../profileStore'
 
 export function SaleBadge({ badge, className = '' }) {
   if (!badge) return null
@@ -14,12 +15,25 @@ export function SaleBadge({ badge, className = '' }) {
   )
 }
 
-export function LikeButton({ className = '' }) {
-  const [liked, setLiked] = useState(false)
+export function LikeButton({ className = '', productId = '', favKey = 'favProducts' }) {
+  const profile = useProfile()
+  const list = profile[favKey] || []
+  const [local, setLocal] = useState(false)
+  const liked = productId ? list.map(String).includes(String(productId)) : local
   return (
     <button
-      onClick={(e) => { e.preventDefault(); setLiked(!liked) }}
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (productId) {
+          profileStore.toggleFav(favKey, productId)
+          flushProfile().catch(() => {})
+        } else {
+          setLocal(!local)
+        }
+      }}
       aria-label="Sevimlilarga qo‘shish"
+      aria-pressed={liked}
       className={`grid size-6 place-items-center rounded-full text-ink-2 transition hover:bg-page ${className}`}
     >
       <Heart className={`size-[15px] ${liked ? 'fill-sale text-sale' : ''}`} strokeWidth={1.7} />
@@ -60,7 +74,7 @@ export default function ProductCard({ product }) {
   return (
     <Link to={`/product/${p.id}`} className="group relative flex flex-col rounded-xl bg-white p-2.5 shadow-card transition hover:shadow-md">
       <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />
-      <LikeButton className="absolute right-1.5 top-1.5 z-10" />
+      <LikeButton productId={product.id} className="absolute right-1.5 top-1.5 z-10" />
       <div className="mt-3 h-[66px] overflow-hidden">
         <img src={p.image} alt={p.name} className="mx-auto h-full object-contain transition group-hover:scale-105" />
       </div>

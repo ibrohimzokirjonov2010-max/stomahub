@@ -96,7 +96,7 @@ export default function ShopSidebar({ active = 'all', open, onClose, flush = fal
       >
         <div className="flex items-center justify-between px-4 pb-2 pt-4">
           <Link to="/" aria-label="StomaHub" onClick={onClose} className="inline-flex">
-            <img src="/images/logo.png" alt="" className="h-10 w-auto" />
+            <img src="/images/stomahub-logo-desktop.png" alt="StomaHub" className="h-10 w-auto" />
           </Link>
           <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-xl text-[#17324d] hover:bg-[#f3faf8] lg:hidden" aria-label="Yopish">
             <X className="size-5" />
@@ -116,7 +116,7 @@ export default function ShopSidebar({ active = 'all', open, onClose, flush = fal
               onNavigate={onClose}
             />
           ))}
-          <Item to="/profil" icon={UserRound} label="Profil" onClick={onClose} />
+          <Item to="/profil" icon={UserRound} label="Profil" active={active === "profil"} onClick={onClose} />
         </nav>
 
         <div className="border-t border-[#e7eef3] px-3 py-3">
