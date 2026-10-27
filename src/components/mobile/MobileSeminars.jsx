@@ -48,7 +48,7 @@ export function SeminarTopBar({ onCalendar, onBell }) {
   const navigate = useNavigate()
   const btn = 'relative grid size-10 place-items-center rounded-full bg-[#e6f4f3] text-sea'
   return (
-    <header className="flex items-center justify-between">
+    <header className="app-topbar sticky top-0 z-30 -mx-3.5 -mt-3 flex items-center justify-between bg-[#f6f9fb]/95 px-3.5 pb-1 backdrop-blur">
       <BrandLogo />
       <div className="flex items-center gap-2">
         <button type="button" onClick={onCalendar} aria-label="Mening seminarlarim" className={btn}><CalendarDays className="size-[19px]" /></button>
@@ -58,7 +58,6 @@ export function SeminarTopBar({ onCalendar, onBell }) {
         </button>
         <button type="button" onClick={onBell} aria-label="Bildirishnomalar" className={btn}>
           <Bell className="size-[19px]" />
-          <span className="absolute right-2 top-2 size-2 rounded-full bg-sale ring-2 ring-[#e6f4f3]" />
         </button>
       </div>
     </header>

@@ -358,61 +358,87 @@ body {
   .org-with-side { grid-template-columns: minmax(0, 1fr) 300px; }
 }
 
-/* Telefon: status bar va pastki menyu. Kompyuter (768px+) ga tegmaydi. */
+/* Telefon: status bar / home indicator. --safe-*-sim: Playwright emulyatsiya. */
+:root {
+  --safe-top-sim: 0px;
+  --safe-bottom-sim: 0px;
+}
+
+.app-topbar {
+  /* padding fills the status-bar zone; stick at top:0 so we do not double-count */
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px), var(--safe-top-sim));
+  background: inherit;
+}
+.app-topbar.sticky.top-0 {
+  top: 0 !important;
+}
+.app-topbar.sticky.top-0::before {
+  display: none;
+}
+
+.safe-overlay-top {
+  top: calc(0.875rem + max(env(safe-area-inset-top, 0px), var(--safe-top-sim))) !important;
+}
+
+.app-action-bar {
+  padding-bottom: max(0.625rem, calc(0.625rem + env(safe-area-inset-bottom, 0px)), calc(0.625rem + var(--safe-bottom-sim)));
+}
+
 @media (max-width: 767.98px) {
   html[data-bleed="0"] body {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: 0;
   }
 
   .sticky.top-0 {
-    top: env(safe-area-inset-top, 0px) !important;
+    top: max(env(safe-area-inset-top, 0px), var(--safe-top-sim)) !important;
   }
   .sticky.top-0::before {
     content: "";
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(env(safe-area-inset-top, 0px) * -1);
-    height: env(safe-area-inset-top, 0px);
+    top: calc(max(env(safe-area-inset-top, 0px), var(--safe-top-sim)) * -1);
+    height: max(env(safe-area-inset-top, 0px), var(--safe-top-sim));
     background: inherit;
     pointer-events: none;
   }
 
-  html[data-bleed="1"] .min-h-screen > .relative > .absolute.top-3\.5 {
-    top: calc(14px + env(safe-area-inset-top, 0px)) !important;
-  }
-
+  html[data-chrome="app"] .app-action-bar,
   html[data-chrome="app"] .fixed.bottom-\[62px\] {
-    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(var(--bottom-nav-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim))) !important;
     z-index: 45;
   }
   html[data-chrome="app"] .fixed.bottom-\[76px\] {
-    bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 12px) !important;
+    bottom: calc(var(--bottom-nav-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim)) + 12px) !important;
   }
 
-  html[data-chrome="bar"] .min-h-screen:has(.fixed.bottom-\[62px\]) .app-tabbar,
-  html[data-chrome="bar"] .min-h-screen:has(.fixed.bottom-0.z-30) .app-tabbar {
+  html[data-chrome="bar"] .app-tabbar {
     display: none !important;
   }
+  html[data-chrome="bar"] .app-action-bar,
   html[data-chrome="bar"] .fixed.bottom-\[62px\] {
     bottom: 0 !important;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(12px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim))) !important;
     z-index: 45;
   }
   html[data-chrome="bar"] .fixed.bottom-0.z-30 {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(12px + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim))) !important;
     z-index: 45;
   }
 
-  html[data-chrome="app"] .min-h-screen,
-  html[data-chrome="bar"] .min-h-screen {
-    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px) !important;
+  html[data-chrome="app"] .min-h-screen {
+    padding-bottom: calc(var(--bottom-nav-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim)) + 16px) !important;
   }
+  html[data-chrome="app"] .min-h-screen:has(.app-action-bar),
   html[data-chrome="app"] .min-h-screen:has(.fixed.bottom-\[62px\]) {
-    padding-bottom: calc(var(--bottom-nav-h) + var(--action-bar-h) + env(safe-area-inset-bottom, 0px) + 16px) !important;
+    padding-bottom: calc(var(--bottom-nav-h) + var(--action-bar-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim)) + 16px) !important;
   }
+  html[data-chrome="bar"] .min-h-screen {
+    padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim)) + 16px) !important;
+  }
+  html[data-chrome="bar"] .min-h-screen:has(.app-action-bar),
   html[data-chrome="bar"] .min-h-screen:has(.fixed.bottom-\[62px\]),
   html[data-chrome="bar"] .min-h-screen:has(.fixed.bottom-0.z-30) {
-    padding-bottom: calc(var(--action-bar-h) + env(safe-area-inset-bottom, 0px) + 16px) !important;
+    padding-bottom: calc(var(--action-bar-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim)) + 16px) !important;
   }
 }

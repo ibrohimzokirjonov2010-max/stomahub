@@ -26,14 +26,22 @@ export default function SurplusItem() {
   const related = similarFor(id)
   const [img, setImg] = useState(0)
   const [showPhone, setShowPhone] = useState(false)
-  const n = d.images.length
-  const s = d.seller
-  const off = d.oldPrice ? Math.round((1 - d.price / d.oldPrice) * 100) : 0
+  const n = d?.images?.length || 0
+  const s = d?.seller
+  const off = d?.oldPrice ? Math.round((1 - d.price / d.oldPrice) * 100) : 0
 
   useEffect(() => {
     setImg(0)
     setShowPhone(false)
   }, [id])
+
+  if (!d) {
+    return (
+      <div className="px-4 py-16 text-center">
+        <p className="text-[16px] font-bold text-ink">E’lon topilmadi</p>
+      </div>
+    )
+  }
 
   return (
     <div className="pb-6 pt-2.5 lg:pl-1">

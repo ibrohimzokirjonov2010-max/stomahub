@@ -29,20 +29,7 @@ const country = {
 }
 
 // expiry — "OO/YYYY". discount — dizayndagi yorliq, hisobdan farq qilsa beriladi
-const raw = [
-  ['filtek-z350-xt', 'Filtek Z350 XT', 'Kompozit (4 g)', '3M', 'komp', '10/2027', 'Toshkent', 'Dr. Nodira', 4.9, 12, 850000, 1200000, 'Yopiq', '-29%'],
-  ['optibond-fl', 'OptiBond FL Bonding (8 ml)', '', 'Kerr', 'bond', '10/2028', 'Samarqand', 'Dr. Azizbek', 4.9, 9, 1000000, 1250000, 'Yopiq', '-20%'],
-  ['sdr-flow', 'SDR flow+ Bulk fill', 'Kompozit (2 g)', 'Dentsply', 'komp', '05/2027', 'Toshkent', 'Dr. Malika', 4.9, 15, 382000, 450000, 'Yopiq', '-15%'],
-  ['protaper-gold', 'ProTaper Gold', 'Endodontik fayllar (6 dona)', 'Dentsply', 'instr', '12/2028', 'Buxoro', 'Dr. Sardor', 4.8, 8, 900000, 1200000, 'Yopiq', '-25%'],
-  ['straumann-blt', 'Straumann BLT Implant', '(4.1 × 10 mm)', 'Straumann', 'impl', '11/2029', 'Toshkent', 'Dr. Kamol', 4.9, 6, 3850000, 4700000, 'Yopiq', '-18%'],
-  ['gc-fuji-plus', 'GC Fuji PLUS', 'Sement (15 g)', 'GC', 'sement', '09/2027', 'Toshkent', 'Dr. Dilshod', 4.7, 10, 950000, null, 'Yopiq', null],
-  ['nsk-ti-max', 'NSK Ti-Max X600L', 'Uchlik (turbina)', 'NSK', 'instr', '10/2028', 'Toshkent', 'Dr. Shaxzod', 4.9, 14, 4650000, 5650000, 'Yopiq', '-25%'],
-  ['woodpecker-eq-v', 'Woodpecker EQ-V', 'Apeks lokator', 'Woodpecker', 'other', '07/2027', 'Toshkent', 'Dr. Nilufar', 4.8, 7, 2450000, 3500000, 'Yopiq', '-30%'],
-  ['clearfil-se-bond-2', 'Clearfil SE Bond 2', 'Bonding to‘plami', 'Kuraray', 'bond', '03/2027', 'Namangan', 'Dr. Umid', 4.7, 6, 1520000, 1900000, 'Ochilgan', '-20%'],
-  ['ultracain-ds-forte', 'Ultracain D-S forte', 'Anestezik (100 karpula)', 'Septodont', 'anes', '06/2027', 'Toshkent', 'Dr. Sarvinoz', 4.8, 11, 420000, null, 'Yopiq', null],
-  ['g-aenial-achord', 'G-aenial A’CHORD', 'Kompozit (4 g)', 'GC', 'komp', '12/2027', 'Toshkent', 'Dr. Behzod', 4.9, 9, 1100000, 1500000, 'Yopiq', '-27%'],
-  ['woodpecker-uds-e', 'Woodpecker UDS-E', 'Ultrasonik skaler', 'Woodpecker', 'other', '12/2027', 'Andijon', 'Dr. Feruza', 4.8, 5, 1950000, null, 'Yopiq', null],
-]
+const raw = []
 
 export const surplusItems = raw.map(([id, name, type, brand, cat, expiry, city, seller, rating, reviews, price, oldPrice, condition, discount], i) => ({
   id, name, type, brand, cat, expiry, city, rating, reviews, price, oldPrice, condition,
@@ -117,13 +104,7 @@ export const surplusDetail = {
   },
 }
 
-export const similarSurplus = [
-  { id: 'filtek-a2-lot', name: 'Filtek Z350 XT', type: 'Kompozit (A2)', brand: '3M', price: 800000, oldPrice: 1000000, discount: '-20%', condition: 'Yopiq', city: 'Toshkent', image: img('i1'), cat: 'komp', expiry: '10/2028', rating: 4.8, reviews: 9, seller: { name: 'Dr. Nodira', avatar: img('u1') } },
-  { id: 'optibond-fl', name: 'OptiBond FL', type: 'Bonding (8 ml)', brand: 'Kerr', price: 950000, oldPrice: 1250000, condition: 'Yopiq', city: 'Samarqand', image: img('i2'), cat: 'bond', expiry: '10/2028', rating: 4.9, reviews: 9, seller: { name: 'Dr. Azizbek', avatar: img('u2') } },
-  { id: 'sdr-similar', name: 'SDR flow+', type: 'Kompozit (2 g)', brand: 'Dentsply', price: 370000, oldPrice: 450000, discount: '-18%', condition: 'Yopiq', city: 'Buxoro', image: img('i3'), cat: 'komp', expiry: '05/2027', rating: 4.8, reviews: 11, seller: { name: 'Dr. Malika', avatar: img('u3') } },
-  { id: 'protaper-similar', name: 'ProTaper Gold', type: 'Endodontik fayllar', brand: 'Dentsply', price: 900000, oldPrice: 1200000, condition: 'Yopiq', city: 'Toshkent', image: img('i4'), cat: 'instr', expiry: '12/2028', rating: 4.8, reviews: 8, seller: { name: 'Dr. Sardor', avatar: img('u4') } },
-  { id: 'gc-fuji-plus', name: 'GC Fuji PLUS', type: 'Sement (15 g)', brand: 'GC', price: 950000, oldPrice: 1250000, discount: '-25%', condition: 'Yopiq', city: 'Toshkent', image: img('i6'), cat: 'sement', expiry: '09/2027', rating: 4.7, reviews: 10, seller: { name: 'Dr. Dilshod', avatar: img('u6') } },
-]
+export const similarSurplus = []
 
 function fromItem(item) {
   const opened = item.condition === 'Ochilgan'
@@ -180,12 +161,14 @@ function fromItem(item) {
 }
 
 export function getSurplusDetail(id) {
-  if (!id || id === surplusDetail.id) return surplusDetail
+  if (!id) return null
+  if (id === surplusDetail.id && surplusItems.some((p) => p.id === id)) return surplusDetail
   const item = surplusItems.find((p) => p.id === id) || similarSurplus.find((p) => p.id === id)
-  return item ? fromItem(item) : surplusDetail
+  return item ? fromItem(item) : null
 }
 
 export function similarFor(id) {
+  if (!surplusItems.length) return []
   if (!id || id === surplusDetail.id) return similarSurplus
   return surplusItems
     .filter((p) => p.id !== id)

@@ -14,7 +14,7 @@ const isActive = (pathname, match) => match.some((m) => (m === '/' ? pathname ==
 export default function MobileTabBar() {
   const { pathname } = useLocation()
   return (
-    <nav className="app-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+    <nav className="app-tabbar fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[max(env(safe-area-inset-bottom,0px),var(--safe-bottom-sim))] backdrop-blur md:hidden">
       <ul className="grid h-[var(--bottom-nav-h)] grid-cols-5">
         {TABS.map(({ to, label, icon: Icon, match }) => {
           const active = isActive(pathname, match)

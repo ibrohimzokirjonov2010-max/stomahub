@@ -20,6 +20,7 @@ const BAR = [
   /^\/ortiqcha\/[^/]+$/,
   /^\/buyurtma$/,
   /^\/buyurtma\/rasmiylashtirish$/,
+  /^\/seminarlar\/[^/]+$/,
   /^\/seminarlar\/[^/]+\/royxat$/,
   /^\/kitoblar\/[^/]+\/oqish$/,
   /^\/bemorlar\/[^/]+$/,

@@ -8,11 +8,12 @@ import { useCart } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { marketProducts, som } from '../../marketData'
 import { useMarket } from '../../buyerApi'
-import { seminars } from '../../seminarsData'
 import { useFeed } from '../../communityFeed'
 import { useCatalogVersion } from '../../recordSync'
+import { publicRecords, useHub } from '../../hubStore'
+import { seminarCard } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
-import { MobileTopBar, MobileToast, GiftArt } from './parts'
+import { MobileTopBar, MobileToast } from './parts'
 
 const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays, color: '#14a39a', bg: '#e3f6f3' },
@@ -40,17 +41,21 @@ export default function MobileHome() {
   const profile = useProfile()
   const feed = useFeed()
   const hello = profile.accountLive ? (profile.name?.split(' ')[0] || 'shifokor') : 'mehmon'
-  const todaySeminars = (seminars || []).slice(0, 2).map((s) => ({
-    id: s.id,
-    date: s.dateLabel || s.date || '',
-    title: s.title,
-    image: s.image || s.cover || '/images/hero-implant.jpg',
-    speaker: s.speaker || s.speakers?.[0]?.name || 'Spiker',
-    avatar: s.speakerAvatar || s.speakers?.[0]?.avatar || '/images/avatar.jpg',
-    city: s.city || 'Toshkent',
-    hours: s.hours || s.duration || '',
-    price: s.price || 0,
-  }))
+  const hub = useHub()
+  const todaySeminars = publicRecords(hub).slice(0, 2).map((raw) => {
+    const s = seminarCard(raw)
+    return {
+      id: s.id,
+      date: s.dateLabel || s.date || '',
+      title: s.title,
+      image: s.image || s.cover || '/images/hero-implant.jpg',
+      speaker: s.speaker?.name || 'Spiker',
+      avatar: s.speaker?.avatar || '/images/avatar.jpg',
+      city: s.city || 'Toshkent',
+      hours: s.hours || s.duration || '',
+      price: s.price || 0,
+    }
+  })
   const communityPosts = (feed.posts || []).slice(0, 2).map((p) => ({
     id: p.id,
     author: p.author || p.name,
@@ -74,12 +79,12 @@ export default function MobileHome() {
     const prods = marketProducts
       .filter((p) => `${p.name} ${p.brand} ${p.type}`.toLowerCase().includes(q))
       .map((p) => ({ to: `/product/${p.id}`, title: p.name, kind: p.brand }))
-    const sems = seminars
+    const sems = publicRecords(hub)
       .filter((s) => s.title.toLowerCase().includes(q))
       .map((s) => ({ to: `/seminarlar/${s.id}`, title: s.title, kind: 'Seminar' }))
     const secs = SECTIONS.filter((s) => s.title.toLowerCase().includes(q))
     return [...secs, ...sems, ...prods].slice(0, 7)
-  }, [query])
+  }, [query, hub])
 
   const addToCart = (p) => {
     add({ id: p.id, name: p.name, type: p.type, price: p.price, image: p.image })
@@ -153,18 +158,6 @@ export default function MobileHome() {
           ))}
         </nav>
 
-        {/* Bonus banner */}
-        <Link to="/aksiyalar" className="mt-3 flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[#d9f2ef] to-[#e8f7f5] py-2.5 pl-1 pr-2.5">
-          <GiftArt className="h-[66px] w-[82px] shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-semibold text-ink">Marketplace’da</p>
-            <p className="whitespace-nowrap text-[17px] font-extrabold leading-tight tracking-tight text-sea">10 000 so‘m bonus</p>
-            <p className="text-[10px] leading-snug text-ink-2">Birinchi xaridingizda foydalaning!</p>
-          </div>
-          <span className="flex h-9 shrink-0 items-center gap-1 rounded-xl bg-sea px-3 text-[12px] font-semibold text-white shadow-[0_4px_12px_rgb(11_138_149/0.3)]">
-            Batafsil <ArrowRight className="size-4" />
-          </span>
-        </Link>
 
         {/* Bugungi seminarlar */}
         <SectionHead title="Bugungi seminarlar" to="/seminarlar" />
