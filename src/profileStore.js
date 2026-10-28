@@ -506,3 +506,20 @@ export const profileStore = {
   },
   setCourseDone: (id, n) => write({ courseDone: { ...state.courseDone, [id]: n } }),
 }
+
+// Real learning stats from the user's Supabase progress + certificates.
+export const learningStats = (profile, catalog = []) => {
+  const done = profile?.courseDone || {}
+  let hours = 0, completed = 0, current = 0
+  Object.entries(done).forEach(([id, n]) => {
+    if (!(n > 0)) return
+    const c = catalog.find((x) => String(x.id) === String(id)) || COURSES.find((x) => String(x.id) === String(id))
+    const lessons = Number(c?.lessons) || 0
+    const total = Number(c?.hours) || parseFloat(String(c?.duration || '').replace(',', '.')) || 0
+    if (lessons && total) hours += (Math.min(n, lessons) / lessons) * total
+    if (lessons && n >= lessons) completed += 1
+    else current += 1
+  })
+  const certificates = (profile?.certificates || []).length
+  return { hours: Math.round(hours), completed, certificates, current, any: hours > 0 || completed + current + certificates > 0 }
+}
