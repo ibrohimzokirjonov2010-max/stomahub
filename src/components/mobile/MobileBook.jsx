@@ -51,8 +51,8 @@ function BookView({ id }) {
 
   const view = productOf(b)
   const doc = readerOf(b)
-  const chapters = doc.chapters.map((ch, i) => ({ ...ch, pages: (doc.chapters[i + 1]?.page || doc.pages + 1) - ch.page }))
-  const gallery = b.id === 'atlas' ? view.gallery : [b.cover, img('book-spread'), img('book-page')]
+  const chapters = b.toc?.length ? b.toc.map((t, i) => ({ id: `t${i}`, title: `${i + 1}-bob. ${t}`, page: undefined })) : doc.chapters.map((ch, i) => ({ ...ch, pages: (doc.chapters[i + 1]?.page || doc.pages + 1) - ch.page }))
+  const gallery = b.gallery?.length || b.id === 'atlas' ? view.gallery : [b.cover, img('book-spread'), img('book-page')]
   const price = bookPrice(b, fmt)
   const cartId = bookCartId(b, fmt)
   const inCart = items.some((it) => it.id === cartId)
@@ -103,9 +103,9 @@ function BookView({ id }) {
           <p className="mt-2 flex items-center gap-1.5 text-[12px] text-ink-2"><UserRound className="size-3.5 shrink-0" /> <span className="truncate">{b.author}</span></p>
           <p className="mt-1.5 flex items-center gap-1 text-[11.5px] text-ink-2">
             <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{b.rating}</b>
-            <button type="button" onClick={() => setSheet('reviews')} className="text-muted">({reviews.length + b.reviews - 2} ta sharh)</button>
+            <button type="button" onClick={() => setSheet('reviews')} className="text-muted">({Math.max(0, reviews.length + (b.reviews || 0))} ta sharh)</button>
             <span className="mx-1 h-3 w-px bg-line" />
-            <Eye className="size-3.5 text-muted" /> <span className="text-muted">{(views / 1000).toFixed(1)}K</span>
+            {views > 0 && <><Eye className="size-3.5 text-muted" /> <span className="text-muted">{(views / 1000).toFixed(1)}K</span></>}
           </p>
           {b.formats.length > 1 && (
             <div className="mt-2 grid grid-cols-2 rounded-lg bg-[#e8f1f2] p-0.5">
@@ -115,6 +115,7 @@ function BookView({ id }) {
             </div>
           )}
           <p className="mt-2 whitespace-nowrap text-[22px] font-extrabold tracking-tight text-[#0b6d73]">{money(price)}</p>
+          {b.price == null ? <p className="mt-2 rounded-xl bg-[#e8f1f2] px-3 py-2 text-[11.5px] leading-snug text-ink-2">Narx sotuvchi bilan kelishiladi</p> : <>
           <button type="button" onClick={buy} className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white active:scale-[0.98]">
             <ShoppingCart className="size-[18px]" /> Sotib olish
           </button>
@@ -126,6 +127,7 @@ function BookView({ id }) {
               {inCart ? <Check className="size-[18px]" /> : <ShoppingCart className="size-[18px]" />}
             </button>
           </div>
+          </>}
         </div>
       </div>
 
@@ -161,7 +163,7 @@ function BookView({ id }) {
       </Card>
 
       {/* Sharhlar */}
-      <Card icon={MessageCircle} title={`Sharhlar (${reviews.length + b.reviews - 2})`} action={<button type="button" onClick={() => setSheet('reviews')} className="text-[12px] font-semibold text-[#0b6d73]">Barchasini ko‘rish</button>}>
+      <Card icon={MessageCircle} title={`Sharhlar (${Math.max(0, reviews.length + (b.reviews || 0))})`} action={<button type="button" onClick={() => setSheet('reviews')} className="text-[12px] font-semibold text-[#0b6d73]">Barchasini ko‘rish</button>}>
         <Review r={reviews[0]} onMore={() => setSheet('reviews')} />
       </Card>
 
@@ -226,7 +228,7 @@ function ChapterList({ chapters, onOpen }) {
         <button key={ch.id} type="button" onClick={() => onOpen(ch.children?.[0]?.page || ch.page)} className="flex h-[42px] items-center gap-2.5 border-b border-line/70 text-left last:border-0">
           <span className="w-[50px] shrink-0 rounded-full bg-[#e6f4f3] py-0.5 text-center text-[10.5px] font-semibold text-[#0b6d73]">{chapterNo(ch.title) ? `${chapterNo(ch.title)}-bob` : 'Bob'}</span>
           <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">{chapterName(ch.title)}</span>
-          <span className="shrink-0 text-[11px] text-muted">{ch.pages} bet</span>
+          {ch.pages > 0 && <span className="shrink-0 text-[11px] text-muted">{ch.pages} bet</span>}
           <ChevronRight className="size-4 shrink-0 text-muted" />
         </button>
       ))}

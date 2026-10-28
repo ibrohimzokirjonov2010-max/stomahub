@@ -56,7 +56,8 @@ export const library = []
 
 export const perks = ['Yuqori sifatli rasmlar', 'Klinik holatlar', 'Bosqichma-bosqich protokol']
 
-export const money = (n) => som(n)
+export const priceless = (b) => b == null || b.price == null || b.price === ''
+export const money = (n) => (n == null || n === '' ? 'Narxi kelishiladi' : som(n))
 
 export const featured = books.find((b) => b.featured)
 
@@ -72,17 +73,17 @@ export function getBook(id) {
 const atlasToc = ['Basics of Implant Therapy', 'Treatment Planning', 'Surgical Procedures', 'Hard and Soft Tissue Management', 'Prosthetic Considerations', 'Clinical Cases']
 
 export function productOf(book) {
-  const pdf = book.id === 'atlas' ? 295000 : Math.max(90000, Math.round(book.price * 0.66))
-  const toc = book.id === 'atlas' ? atlasToc : ['Kirish', 'Diagnostika', 'Davolash', 'Klinik holatlar', 'Asoratlar', 'Xulosa']
+  const pdf = priceless(book) || !book.formats?.includes('pdf') ? null : book.id === 'atlas' ? 295000 : Math.max(90000, Math.round(book.price * 0.66))
+  const toc = Array.isArray(book.toc) && book.toc.length ? book.toc : book.id === 'atlas' ? atlasToc : ['Kirish', 'Diagnostika', 'Davolash', 'Klinik holatlar', 'Asoratlar', 'Xulosa']
   const similar = book.id === 'atlas'
     ? shelf.filter((b) => b.id.startsWith('rel-'))
     : books.filter((b) => b.id !== book.id).slice(0, 5)
   return {
-    category: 'Stomatologiya',
+    category: book.category || 'Stomatologiya',
     pdf,
     binding: book.formats.includes('print') ? 'Qattiq muqova' : 'Elektron',
-    gallery: book.id === 'atlas' ? [c('book-atlas'), c('book-spread'), c('book-page'), c('book-spread')] : [book.cover, book.cover, book.cover],
-    about: book.id === 'atlas'
+    gallery: Array.isArray(book.gallery) && book.gallery.length ? book.gallery : book.id === 'atlas' ? [c('book-atlas'), c('book-spread'), c('book-page'), c('book-spread')] : [book.cover, book.cover, book.cover],
+    about: book.about ? book.about : book.id === 'atlas'
       ? 'Atlas of Dental Implantology — implantologiya sohasidagi eng nufuzli va amaliy atlaslardan biri. Ushbu kitobda dental implantlar bo‘yicha jarrohlik va protezik bosqichlar yuqori sifatli klinik rasmlar, bosqichma-bosqich izohlar va real klinik holatlar asosida ko‘rsatilgan. Talabalar, shifokorlar va implantologlar uchun muhim qo‘llanma.'
       : book.id === 'klinik'
         ? 'Ushbu kitob stomatologiya sohasidagi asosiy klinik holatlar, ularning diagnostikasi va zamonaviy davolash usullarini batafsil yoritadi. Har bir bob amaliy misollar, rasmlar va bosqichma-bosqich tavsiyalar bilan boyitilgan. Talabalar, rezidentlar va amaliyotchi shifokorlar uchun kundalik qo‘llanma.'

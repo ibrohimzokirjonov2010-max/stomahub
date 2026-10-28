@@ -1,0 +1,324 @@
+{
+  "seller": {
+    "shop_name": "StomaHub",
+    "name": "StomaHub",
+    "role": "seller",
+    "seller_status": "approved"
+  },
+  "products": [
+    {
+      "slug": "01-kompozit",
+      "sku": "SH-KMP-01",
+      "name": "Kompozit plomba to‘plami (A1, A2, A3, A3.5, 4×4 g)",
+      "price": 420000,
+      "category": "Restavratsion materiallar",
+      "unit": "to‘plam",
+      "description": "Yorug‘lik bilan qotadigan kompozit plomba materiallari to‘plami. To‘plamga to‘rtta eng ko‘p ishlatiladigan rang — A1, A2, A3 va A3.5 kiradi, har biri 4 g li shpritsda. Old va yon tishlarni restavratsiya qilishda rangni tishga moslab tanlash imkonini beradi. Shpritslar qadoqda alohida joylashtirilgan va rang belgisi aniq ko‘rinadi.",
+      "specs": [
+        [
+          "Ranglar",
+          "A1, A2, A3, A3.5"
+        ],
+        [
+          "Hajmi",
+          "4 × 4 g (4 ta shprits)"
+        ],
+        [
+          "Qadoq",
+          "Shprits"
+        ],
+        [
+          "Qotish usuli",
+          "Fotopolimer lampa yordamida"
+        ]
+      ]
+    },
+    {
+      "slug": "02-k-fayllar",
+      "sku": "SH-KF-1540",
+      "name": "Endodontik K-fayllar №15–40 (6 dona, steril)",
+      "price": 95000,
+      "category": "Endodontik asboblar",
+      "unit": "quti",
+      "description": "Ildiz kanallarini qo‘lda ishlash uchun K-tipidagi endodontik fayllar. Qutida №15 dan №40 gacha 6 ta o‘lcham, har bir fayl rangli tutqich bilan belgilangan. Fayllar steril holda yetkaziladi va kanalni topish, kengaytirish hamda shakllantirish bosqichlarida qo‘llaniladi.",
+      "specs": [
+        [
+          "Turi",
+          "K-fayl (qo‘l asbobi)"
+        ],
+        [
+          "O‘lchamlar",
+          "№15–40"
+        ],
+        [
+          "Soni",
+          "6 dona"
+        ],
+        [
+          "Holati",
+          "Steril"
+        ]
+      ]
+    },
+    {
+      "slug": "03-turbina",
+      "sku": "SH-TRB-LED",
+      "name": "LED turbinali nakonechnik (3 ta suv purkagich)",
+      "price": 2450000,
+      "category": "Uskunalar",
+      "unit": "dona",
+      "description": "Yuqori tezlikli turbinali nakonechnik, ish maydonini yoritish uchun LED chiroq bilan jihozlangan. Uchta suv purkagich bor bo‘lib, bor va tishni bir tekis sovutadi. Kariyes bo‘shlig‘ini ochish, eski plombani olib tashlash va tishni preparatsiya qilishda ishlatiladi.",
+      "specs": [
+        [
+          "Turi",
+          "Turbinali (yuqori tezlikli) nakonechnik"
+        ],
+        [
+          "Yoritish",
+          "LED"
+        ],
+        [
+          "Suv purkagichlar",
+          "3 ta"
+        ]
+      ]
+    },
+    {
+      "slug": "04-fotopolimer-lampa",
+      "sku": "SH-LMP-1200",
+      "name": "Simsiz fotopolimer lampa (LED, 1200 mW/sm²)",
+      "price": 1350000,
+      "category": "Uskunalar",
+      "unit": "dona",
+      "description": "Kompozit va boshqa yorug‘likda qotadigan materiallarni polimerlash uchun simsiz LED lampa. Nur quvvati 1200 mW/sm². Zaryadlash stendi bilan birga yetkaziladi, sim bo‘lmagani uchun og‘iz bo‘shlig‘ining istalgan qismida qulay ishlatiladi. Ko‘zni himoya qiluvchi to‘q sariq qalqoni bor.",
+      "specs": [
+        [
+          "Yorug‘lik manbai",
+          "LED"
+        ],
+        [
+          "Nur quvvati",
+          "1200 mW/sm²"
+        ],
+        [
+          "Ta’minot",
+          "Akkumulyator (simsiz)"
+        ],
+        [
+          "To‘plamda",
+          "Zaryadlash stendi, himoya qalqoni"
+        ]
+      ]
+    },
+    {
+      "slug": "05-nitril-qolqop",
+      "sku": "SH-NTR-M100",
+      "name": "Nitril qo‘lqoplar (100 dona, M o‘lcham)",
+      "price": 85000,
+      "category": "Himoya vositalari",
+      "unit": "quti",
+      "description": "Bir martalik nitril tekshiruv qo‘lqoplari, M o‘lcham. Qutida 100 dona. Nitril lateks tutmaydi, shuning uchun lateksga sezgir shifokor va bemorlar uchun ham mos. Qo‘lga zich o‘tiradi va asboblar bilan ishlashda sezgirlikni saqlaydi.",
+      "specs": [
+        [
+          "Material",
+          "Nitril (lateks yo‘q)"
+        ],
+        [
+          "O‘lcham",
+          "M"
+        ],
+        [
+          "Soni",
+          "100 dona"
+        ],
+        [
+          "Ishlatish",
+          "Bir martalik"
+        ]
+      ]
+    },
+    {
+      "slug": "06-solak-sorgich",
+      "sku": "SH-SLK-100",
+      "name": "Bir martalik so‘lak so‘rg‘ichlar (100 dona)",
+      "price": 45000,
+      "category": "Sarflanadigan materiallar",
+      "unit": "qadoq",
+      "description": "Davolash vaqtida og‘iz bo‘shlig‘idan so‘lak va suvni so‘rib olish uchun bir martalik so‘rg‘ichlar. Egiluvchan trubka kerakli shaklda turadi, uchidagi qopqoq shilliq qavatni so‘rilib qolishdan saqlaydi. Qadoqda 100 dona.",
+      "specs": [
+        [
+          "Soni",
+          "100 dona"
+        ],
+        [
+          "Ishlatish",
+          "Bir martalik"
+        ],
+        [
+          "Shakli",
+          "Egiluvchan, shaklini saqlaydi"
+        ]
+      ]
+    },
+    {
+      "slug": "07-apeks-lokator",
+      "sku": "SH-APX-01",
+      "name": "Apeks lokator (rangli ekran)",
+      "price": 3200000,
+      "category": "Uskunalar",
+      "unit": "dona",
+      "description": "Ildiz kanalining ishchi uzunligini elektron usulda aniqlash uchun apeks lokator. Rangli ekranda fayl uchining apeksga nisbatan holati shkala ko‘rinishida ko‘rsatiladi. Endodontik davolashda rentgen tasvirga qo‘shimcha nazorat vositasi sifatida qo‘llaniladi. Lab qisqichi, fayl ushlagich va ulash simlari bilan yetkaziladi.",
+      "specs": [
+        [
+          "Ekran",
+          "Rangli"
+        ],
+        [
+          "Vazifasi",
+          "Ildiz kanali ishchi uzunligini aniqlash"
+        ],
+        [
+          "To‘plamda",
+          "Lab qisqichi, fayl ushlagich, simlar"
+        ]
+      ]
+    },
+    {
+      "slug": "08-alginat",
+      "sku": "SH-ALG-500",
+      "name": "Alginat qolip massasi (500 g)",
+      "price": 110000,
+      "category": "Yordamchi materiallar",
+      "unit": "qadoq",
+      "description": "Tish va jag‘lardan qolip (ottisk) olish uchun alginat massa. Kukun suv bilan aralashtirilib, qolip qoshig‘iga solinadi. Diagnostik modellar, vaqtinchalik protezlar va ortodontik modellar tayyorlashda ishlatiladi. Qadoq og‘irligi 500 g.",
+      "specs": [
+        [
+          "Og‘irligi",
+          "500 g"
+        ],
+        [
+          "Shakli",
+          "Kukun (suv bilan aralashtiriladi)"
+        ],
+        [
+          "Vazifasi",
+          "Qolip (ottisk) olish"
+        ]
+      ]
+    },
+    {
+      "slug": "09-diagnostika-toplami",
+      "sku": "SH-DGN-3",
+      "name": "Diagnostika to‘plami: oyna, zond, pinset (zanglamas po‘lat)",
+      "price": 150000,
+      "category": "Instrumentlar",
+      "unit": "to‘plam",
+      "description": "Og‘iz bo‘shlig‘ini ko‘rikdan o‘tkazish uchun asosiy uchta asbob: stomatologik oyna, zond va pinset. Asboblar zanglamas po‘latdan tayyorlangan, qayta ishlash va sterilizatsiyaga mo‘ljallangan. Har kungi qabul uchun zarur to‘plam.",
+      "specs": [
+        [
+          "Tarkibi",
+          "Oyna, zond, pinset"
+        ],
+        [
+          "Material",
+          "Zanglamas po‘lat"
+        ],
+        [
+          "Ishlatish",
+          "Ko‘p martalik (sterilizatsiya qilinadi)"
+        ]
+      ]
+    },
+    {
+      "slug": "10-ultratovush-skaler",
+      "sku": "SH-SCL-5",
+      "name": "Ultratovushli skaler (5 ta nasadka)",
+      "price": 2900000,
+      "category": "Uskunalar",
+      "unit": "dona",
+      "description": "Tish toshi va karashlarni ultratovush yordamida olib tashlash uchun skaler. Suv idishi o‘rnatilgan, quvvat va suv oqimi boshqaruv tugmasi orqali sozlanadi. To‘plamda 5 ta nasadka va oyoq pedali bor. Professional gigiena va parodontologik muolajalarda ishlatiladi.",
+      "specs": [
+        [
+          "Ishlash usuli",
+          "Ultratovush"
+        ],
+        [
+          "Nasadkalar",
+          "5 ta"
+        ],
+        [
+          "To‘plamda",
+          "Qo‘l qismi, oyoq pedali, suv idishi"
+        ]
+      ]
+    }
+  ],
+  "books": [
+    {
+      "id": "terapevtik-stomatologiya-2004",
+      "file": "kitob-01-terapevtik.png",
+      "title": "Terapevtik stomatologiya",
+      "author": "M.F. Ziyayeva, R.N. Bahodirova",
+      "year": 2004,
+      "pages": 288,
+      "lang": "uz",
+      "script": "Lotin",
+      "place": "Toshkent",
+      "publisher": "other",
+      "publisherName": "",
+      "cats": [
+        "terapiya"
+      ],
+      "category": "Terapevtik stomatologiya",
+      "formats": [
+        "print"
+      ],
+      "price": null,
+      "stock": "stock",
+      "rating": 0,
+      "reviews": 0,
+      "isbn": "",
+      "blurb": "Kariyes, plomba materiallari, tish kasalliklarining belgilari va davolash usullari bo‘yicha o‘quv qo‘llanma.",
+      "about": "M.F. Ziyayeva va R.N. Bahodirova muallifligidagi «Terapevtik stomatologiya» o‘quv qo‘llanmasi (Toshkent, 2004, 288 bet, lotin yozuvida). Kitobda tish kariyesi, plomba materiallari, tish kasalliklarining klinik belgilari va ularni davolash usullari yoritilgan. Stomatologiya talabalari va amaliyotchi shifokorlar uchun.",
+      "toc": [
+        "Tish kariyesi",
+        "Plomba materiallari",
+        "Tish kasalliklarining belgilari",
+        "Davolash usullari"
+      ]
+    },
+    {
+      "id": "ortopedik-stomatologiya-propedevtikasi-2006",
+      "file": "kitob-02-ortopedik.png",
+      "title": "Ortopedik stomatologiya propedevtikasi",
+      "author": "prof. X.I. Irsaliyev",
+      "year": 2006,
+      "pages": 214,
+      "lang": "uz",
+      "script": "Kirill",
+      "place": "Toshkent",
+      "publisher": "other",
+      "publisherName": "Yangiyo‘l poligraf servis",
+      "cats": [
+        "ortoped"
+      ],
+      "category": "Ortopedik stomatologiya",
+      "formats": [
+        "print"
+      ],
+      "price": null,
+      "stock": "stock",
+      "rating": 0,
+      "reviews": 0,
+      "isbn": "",
+      "blurb": "Protez materiallari, jag‘ tuzilishi va ortoped stomatolog ish joyi bo‘yicha o‘quv qo‘llanma.",
+      "about": "Professor X.I. Irsaliyevning «Ortopedik stomatologiya propedevtikasi» o‘quv qo‘llanmasi (Toshkent, «Yangiyo‘l poligraf servis», 2006, 214 bet, kirill yozuvida). Kitobda protez materiallari, jag‘ va tish qatorlarining tuzilishi hamda ortoped stomatolog ish joyini tashkil etish masalalari ko‘rib chiqilgan.",
+      "toc": [
+        "Protez materiallari",
+        "Jag‘ tuzilishi",
+        "Ortoped stomatolog ish joyi"
+      ],
+      "titleOriginal": "Ортопедик стоматология пропедевтикаси"
+    }
+  ]
+}
