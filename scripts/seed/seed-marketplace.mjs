@@ -92,7 +92,9 @@ async function main() {
   // 4. books (Kitoblar)
   if (!SKIP_BOOKS) {
     for (const [i, b] of seed.books.entries()) {
-      const gallery = await upload(files(`book-${b.id}`), 'books', b.id)
+      let local
+      try { local = files(`book-${b.id}`) } catch (e) { console.warn(`skip book ${b.id}: ${e.message}`); continue }
+      const gallery = await upload(local, 'books', b.id)
       const { file, ...rest } = b
       const payload = { ...rest, cover: gallery[0], gallery, seller: 'StomaHub', sellerId }
       log(`upsert book ${b.id} — ${b.title} (price ${b.price ?? 'Narxi kelishiladi'})`)
