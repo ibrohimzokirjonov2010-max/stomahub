@@ -1,3 +1,4 @@
+import OnboardingChecklist from '../Onboarding'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -175,7 +176,7 @@ function Quick({ icon: Icon, label, onClick }) {
 
 function SeminarRow({ s, navigate }) {
   const st = SEAT[s.seat]
-  const pct = Math.round((s.sold / s.seats) * 100)
+  const pct = s.seats ? Math.min(100, Math.round(((s.sold || 0) / s.seats) * 100)) : 0
   return (
     <li className="flex items-center gap-2.5 px-3 py-1.5">
       <div className="relative h-[50px] w-[150px] shrink-0 overflow-hidden rounded-[10px]">
@@ -230,8 +231,6 @@ function Desktop() {
   const hub = useHub()
   const navigate = useNavigate()
   const [banner, setBanner] = useState(true)
-  const [range, setRange] = useState('1-yan, 2026 — 31-dek, 2026')
-  const [rangeOpen, setRangeOpen] = useState(false)
   const [metric, setMetric] = useState('Ishtirokchilar soni')
   const [unit, setUnit] = useState('So‘mda')
   const [activity, setActivity] = useState(false)
@@ -268,24 +267,13 @@ function Desktop() {
           <p className="mt-0.5 text-[13px] text-[#6e868c]">Seminarlaringiz umumiy ko‘rinishi va asosiy ko‘rsatkichlar</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <div className="relative">
-            <button type="button" onClick={() => setRangeOpen((v) => !v)} className="flex h-10 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 text-[12.5px] font-medium text-[#1c4a5a]">
-              <Calendar className="size-4 text-[var(--color-org-teal)]" /> {range} <ChevronDown className="size-3.5 text-[#8aa4a8]" />
-            </button>
-            {rangeOpen && (
-              <ul className="absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-                {['1-yan, 2026 — 31-dek, 2026', 'Shu oy', 'So‘nggi 90 kun', 'Shu yil'].map((o) => (
-                  <li key={o}><button type="button" className="block w-full px-3 py-1.5 text-left text-[12.5px] hover:bg-[#f4fbfa]" onClick={() => { setRange(o); setRangeOpen(false) }}>{o}</button></li>
-                ))}
-              </ul>
-            )}
-          </div>
           <Btn to="/tashkilotchi/seminarlar/yangi"><Plus className="size-4" /> Yangi seminar yaratish</Btn>
         </div>
       </div>
+      <OnboardingChecklist />
 
       <section className="grid grid-cols-2 gap-3 min-[1180px]:grid-cols-4">
-        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(totals.seminars)} delta={`+${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length}`} hint="rejalashtirilgan" />
+        <DashKpi icon={GraduationCap} label="Jami seminarlar" value={String(totals.seminars)} delta="" hint={`${hub.seminars.filter((s) => s.status === 'rejalashtirilgan').length} ta rejalashtirilgan`} />
         <DashKpi icon={Users} label="Jami ishtirokchilar" value={String(hub.participants.length)} delta="" hint="ro‘yxatdagilar" />
         <DashKpi icon={Wallet} label="Umumiy tushum" value={som(revenue)} delta="" hint="muvaffaqiyatli to‘lovlar" />
         <DashKpi icon={Award} label="Berilgan sertifikatlar" value={String(hub.certs.filter((c) => c.state === 'done').length)} delta="" hint="berilgan" />
@@ -422,6 +410,7 @@ function Mobile() {
     <div className="-mt-1 pb-1">
       <p className="text-[13px] leading-tight text-[#7e9398]">Assalomu alaykum,</p>
       <h1 className="mt-0.5 text-[24px] font-bold leading-none tracking-tight text-[#143044]">{hello}</h1>
+      <div className="mt-3"><OnboardingChecklist compact /></div>
       <p className="mt-1 text-[12.5px] text-[#8aa0a4]">Bugun ham muvaffaqiyatli kun bo‘lsin!</p>
 
       {next ? <Link to={`/tashkilotchi/seminarlar/${next.id}`} className="mt-3 block rounded-2xl border border-[#e7f2f0] bg-white p-2.5 shadow-[0_8px_24px_rgb(20_60_60/0.04)]">

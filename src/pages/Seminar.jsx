@@ -132,7 +132,14 @@ function detail(d) {
     about: d.about,
     learn: d.learn,
     // Narxga kiradiganlar — faqat tashkilotchi chiptalarga yozgan bandlar
-    includes: [...new Set(d.plans.flatMap((p) => p.perks || []))],
+    includes: d.includesList?.length ? d.includesList : [...new Set(d.plans.flatMap((p) => p.perks || []))],
+    audience: d.audience || [],
+    practice: d.practice || '',
+    refundPolicy: d.refundPolicy || '',
+    liveSurgery: d.liveSurgery || '',
+    cmeLine: d.cmeLine || '',
+    regClosed: !!d.regClosed,
+    earlyUntil: plan.earlyUntil || '',
     schedule: d.schedule.map(([time, text]) => [time, text, '']),
     organizer: !!d.organizer,
     venue: { ...d.venue, lines: d.organizer ? [] : [[Building2, 'Konferens-zal'], [Car, 'Avtoturargoh mavjud']] },
@@ -161,7 +168,7 @@ export default function Seminar() {
     )
   }
   const v = detail(d)
-  const cancelled = !!d.cancelled
+  const cancelled = !!d.cancelled || !!v.regClosed
   const left = v.seats - v.taken
   const regTo = `/seminarlar/${d.id}/royxat`
 
@@ -249,7 +256,7 @@ export default function Seminar() {
 
         <div className="sticky top-[46px] z-10 flex gap-1 overflow-x-auto rounded-xl bg-white px-1 shadow-card no-scrollbar">
           {[
-            ['about', 'Seminar haqida'], v.schedule.length && ['program', 'Dastur'], v.learn.length && ['learn', 'Nimalarni o‘rganasiz?'], !v.organizer && ['who', 'Kimlar uchun?'],
+            ['about', 'Seminar haqida'], v.schedule.length && ['program', 'Dastur'], v.learn.length && ['learn', 'Nimalarni o‘rganasiz?'], (!v.organizer || v.audience.length) && ['who', 'Kimlar uchun?'],
             v.includes.length && ['price', 'Narxga nimalar kiradi?'], ['place', 'Manzil'], ['reviews', 'Sharhlar'], ['faq', 'FAQ'],
           ].filter(Boolean).map(([key, label]) => (
             <button key={key} type="button" onClick={() => go(key)} className={`h-9 shrink-0 px-2.5 text-[12px] font-semibold ${tab === key ? 'text-sea' : 'text-ink-2'}`} style={{ boxShadow: tab === key ? 'inset 0 -2px 0 #0b8a95' : 'none' }}>{label}</button>
@@ -309,10 +316,19 @@ export default function Seminar() {
           </section>
         </div>
 
-        {!v.organizer && <section id="sem-who" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
+        {(v.practice || v.liveSurgery || v.cmeLine) && <section id="sem-practice" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
+          <h2 className="text-[15px] font-bold">Amaliyot va sertifikat</h2>
+          <ul className="mt-2 space-y-1.5 text-[12.5px] text-ink">
+            {v.practice && <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> {v.practice}</li>}
+            {v.liveSurgery && <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> Jonli jarrohlik: {v.liveSurgery}</li>}
+            {v.cmeLine && <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> Sertifikat: {v.cmeLine}</li>}
+          </ul>
+        </section>}
+
+        {(!v.organizer || v.audience.length > 0) && <section id="sem-who" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
           <h2 className="text-[15px] font-bold">Kimlar uchun?</h2>
           <div className="mt-2 flex flex-wrap gap-2">
-            {['Stomatolog-jarrohlar', 'Ortoped stomatologlar', 'Implantologiyani boshlayotganlar', 'Rezident va ordinatorlar', 'Klinika rahbarlari'].map((t) => (
+            {(v.organizer ? v.audience : ['Stomatolog-jarrohlar', 'Ortoped stomatologlar', 'Implantologiyani boshlayotganlar', 'Rezident va ordinatorlar', 'Klinika rahbarlari']).map((t) => (
               <span key={t} className="rounded-full bg-[#f3f6fa] px-3 py-1 text-[12px] font-medium text-ink-2">{t}</span>
             ))}
           </div>
@@ -329,7 +345,7 @@ export default function Seminar() {
       <aside className="min-w-0 space-y-3">
         <section id="sem-price" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
           <div className="flex gap-2">
-            <span className="rounded-lg bg-[#fde8e8] px-2.5 py-1 text-[12px] font-bold text-[#dc2626]">{cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'}</span>
+            <span className="rounded-lg bg-[#fde8e8] px-2.5 py-1 text-[12px] font-bold text-[#dc2626]">{v.regClosed ? 'Yakunlangan' : cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'}</span>
             <span className="rounded-lg border border-[#fbd5d5] px-2.5 py-1 text-[12px] font-semibold text-[#dc2626]">{left} ta o‘rin qoldi</span>
           </div>
           {v.oldPrice > v.price && <p className="mt-3 text-[12px] text-muted line-through">{som(v.oldPrice)}</p>}
@@ -337,6 +353,7 @@ export default function Seminar() {
             <b className="text-[24px] leading-tight">{som(v.price)}</b>
             {v.off && <span className="rounded-md bg-[#fde8e8] px-1.5 py-0.5 text-[12px] font-bold text-[#dc2626]">{v.off}</span>}
           </div>
+          {v.earlyUntil && <p className="mt-1 text-[11.5px] font-semibold text-sea">Early bird narxi {v.earlyUntil.split('-').reverse().join('.')} gacha amal qiladi</p>}
           {v.includes.length > 0 && <p className="mt-3 text-[12px] font-semibold text-ink">Narxga nimalar kiradi?</p>}
           <ul className="mt-1.5 space-y-1.5">
             {v.includes.map((t) => <li key={t} className="flex items-center gap-2 text-[12.5px] text-ink"><Check className="size-4 text-sea" /> {t}</li>)}
@@ -412,7 +429,7 @@ export default function Seminar() {
       </aside>
 
       {shot !== null && <Lightbox images={v.gallery} index={shot} onIndex={setShot} onClose={() => setShot(null)} />}
-      {note && <Dialog title={NOTES[note][0]} onClose={() => setNote(null)}><p className="text-[13px] leading-relaxed text-ink-2">{NOTES[note][1]}</p></Dialog>}
+      {note && <Dialog title={NOTES[note][0]} onClose={() => setNote(null)}><p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-2">{note === 'refund' && v.refundPolicy ? v.refundPolicy : NOTES[note][1]}</p></Dialog>}
       {profile && (
         <Dialog title={v.speaker.name} onClose={() => setProfile(false)}>
           <div className="flex gap-3">

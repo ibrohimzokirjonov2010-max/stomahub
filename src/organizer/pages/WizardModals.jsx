@@ -94,16 +94,22 @@ export function TicketModal({ open, onClose, onSave }) {
   const [color, setColor] = useState(TICKET_COLORS[0])
   const [icon, setIcon] = useState('ticket')
   const [active, setActive] = useState(true)
+  const [early, setEarly] = useState('')
+  const [earlyUntil, setEarlyUntil] = useState('')
   const [err, setErr] = useState('')
   useEffect(() => {
     if (!open) return
-    setName(''); setPrice(''); setSeats(''); setNote(''); setColor(TICKET_COLORS[0]); setIcon('ticket'); setActive(true); setErr('')
+    setName(''); setPrice(''); setSeats(''); setNote(''); setColor(TICKET_COLORS[0]); setIcon('ticket'); setActive(true); setEarly(''); setEarlyUntil(''); setErr('')
   }, [open])
   if (!open) return null
   const save = () => {
     if (!name.trim() || !Number(price) || !Number(seats)) { setErr('Nom, narx va joylar sonini kiriting'); return }
+    if (early || earlyUntil) {
+      if (!Number(early) || !earlyUntil) { setErr('Early bird uchun narx va muddatni birga kiriting'); return }
+      if (Number(early) >= Number(price)) { setErr('Early bird narxi asosiy narxdan arzon bo‘lishi kerak'); return }
+    }
     const perks = note.split('\n').map((l) => l.replace(/^[•\-\s]+/, '').trim()).filter(Boolean)
-    onSave({ id: `t${Date.now()}`, name: name.trim(), price: Number(price), seats: Number(seats), perks, active, color, icon, basic: false })
+    onSave({ id: `t${Date.now()}`, name: name.trim(), price: Number(price), seats: Number(seats), perks, active, color, icon, basic: false, earlyPrice: Number(early) || 0, earlyUntil: early ? earlyUntil : '' })
   }
   return (
     <Overlay onClose={onClose} width={400}>
@@ -125,6 +131,17 @@ export function TicketModal({ open, onClose, onSave }) {
             <Lab req>Joylar soni</Lab>
             <input className={box} value={seats} onChange={(e) => setSeats(e.target.value.replace(/\D/g, ''))} />
           </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3 rounded-xl bg-[#f6fbfa] p-2.5">
+          <label className="block">
+            <Lab>Early bird narxi</Lab>
+            <input className={box} inputMode="numeric" value={early ? Number(early).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') : ''} onChange={(e) => setEarly(e.target.value.replace(/\D/g, ''))} placeholder="Ixtiyoriy" />
+          </label>
+          <label className="block">
+            <Lab>Qaysi sanagacha</Lab>
+            <input type="date" className={box} value={earlyUntil} onChange={(e) => setEarlyUntil(e.target.value)} />
+          </label>
+          <p className="col-span-2 text-[11px] leading-snug text-[#6e868c]">Belgilangan sanadan keyin narx avtomatik asosiy narxga o‘tadi.</p>
         </div>
         <label className="block">
           <Lab>Tavsif</Lab>
@@ -166,6 +183,34 @@ export function TicketModal({ open, onClose, onSave }) {
   )
 }
 
+/** Ma’ruzachi: tajriba, klinika, sertifikatlar, ilmiy daraja — links ichida { kind: 'meta' } bo‘lib saqlanadi. */
+export function speakerPayload(f) {
+  const links = (f.links || []).filter((l) => typeof l === 'string' && l.trim() && l.trim() !== 'https://')
+  const meta = { kind: 'meta', years: String(f.years || '').trim(), clinic: String(f.clinic || '').trim(), certs: String(f.certs || '').trim(), degree: String(f.degree || '').trim() }
+  return {
+    id: f.id || `s${Date.now()}`, name: f.name.trim(), role: f.role.trim(), city: (f.city || '').trim(), bio: f.bio || '', avatar: f.avatar || '/images/avatar.jpg',
+    links: [...links, meta], years: meta.years, clinic: meta.clinic, certs: meta.certs, degree: meta.degree,
+  }
+}
+
+export const DEGREES = ['', 'Shifokor-stomatolog', 'Rezidentura', 'PhD (fan nomzodi)', 'DSc (fan doktori)', 'Dotsent', 'Professor']
+
+export function SpeakerExtraFields({ f, setF }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <label><Lab>Tajriba (yil)</Lab><input className={box} inputMode="numeric" value={f.years} onChange={(e) => setF({ ...f, years: e.target.value.replace(/\D/g, '').slice(0, 2) })} placeholder="12" /></label>
+      <label><Lab>Klinika</Lab><input className={box} value={f.clinic} onChange={(e) => setF({ ...f, clinic: e.target.value })} placeholder="Klinika nomi" /></label>
+      <label>
+        <Lab>Ilmiy daraja</Lab>
+        <select className={box} value={f.degree} onChange={(e) => setF({ ...f, degree: e.target.value })}>
+          {DEGREES.map((d) => <option key={d} value={d}>{d || 'Tanlang'}</option>)}
+        </select>
+      </label>
+      <label><Lab>Sertifikatlar</Lab><input className={box} value={f.certs} onChange={(e) => setF({ ...f, certs: e.target.value })} placeholder="ITI, Straumann, Nobel…" /></label>
+    </div>
+  )
+}
+
 export function SpeakerModal({ open, onClose, onSave, photo }) {
   const [f, setF] = useState({
     name: '',
@@ -175,6 +220,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
     avatar: photo,
     links: ['https://', 'https://'],
     net: 'web',
+    years: '', clinic: '', certs: '', degree: '',
   })
   const [err, setErr] = useState('')
   useEffect(() => {
@@ -187,13 +233,15 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
       avatar: photo,
       links: ['https://', 'https://'],
       net: 'web',
+      years: '', clinic: '', certs: '', degree: '',
     })
     setErr('')
   }, [open, photo])
   if (!open) return null
   const save = () => {
     if (f.name.trim().length < 3 || !f.role.trim()) { setErr('Ism-familiya va lavozimni kiriting'); return }
-    onSave({ id: `s${Date.now()}`, name: f.name.trim(), role: f.role.trim(), city: f.city.trim(), bio: f.bio, avatar: f.avatar, links: f.links })
+    if (f.years && (!/^\d{1,2}$/.test(String(f.years)) || Number(f.years) > 60)) { setErr('Tajriba yillarini to‘g‘ri kiriting (0–60)'); return }
+    onSave(speakerPayload(f))
   }
   return (
     <Overlay onClose={onClose} width={560}>
@@ -213,6 +261,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
           <label><Lab req>Ism-familiya</Lab><input className={box} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
           <label><Lab req>Lavozim</Lab><input className={box} value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })} /></label>
         </div>
+        <SpeakerExtraFields f={f} setF={setF} />
         <label className="block">
           <Lab>Tavsif</Lab>
           <span className="relative block">
@@ -252,11 +301,11 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
 }
 
 export function PromoModal({ open, onClose, onSave }) {
-  const [f, setF] = useState({ code: 'EARLYBIRD', kind: 'foiz', value: '20', from: '2026-11-01', to: '2026-11-15', limit: '100', active: true })
+  const [f, setF] = useState({ code: '', kind: 'foiz', value: '', from: '', to: '', limit: '', active: true })
   const [err, setErr] = useState('')
   useEffect(() => {
     if (!open) return
-    setF({ code: 'EARLYBIRD', kind: 'foiz', value: '20', from: '2026-11-01', to: '2026-11-15', limit: '100', active: true })
+    setF({ code: '', kind: 'foiz', value: '', from: '', to: '', limit: '', active: true })
     setErr('')
   }, [open])
   if (!open) return null
