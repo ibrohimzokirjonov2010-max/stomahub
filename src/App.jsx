@@ -5,6 +5,7 @@ import './catalogBindings'
 import { CartProvider } from './cart'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
+import MetaPixelRoute from './components/MetaPixelRoute'
 import { Privacy, Terms } from './pages/Legal'
 import Marketplace from './pages/Marketplace'
 import Product from './pages/Product'
@@ -124,6 +125,7 @@ export default function App() {
   return (
     <CartProvider>
       <BrowserRouter>
+        <MetaPixelRoute />
         <MobileChrome />
         <IntakeDialog />
         <FlashToast />
