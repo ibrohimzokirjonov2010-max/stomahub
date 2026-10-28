@@ -235,7 +235,7 @@ function SurplusView({ id }) {
         text={toast}
         onClose={closeToast}
         bottom={140}
-        action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
+        action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
       />
       <MobileTabBar />
     </div>

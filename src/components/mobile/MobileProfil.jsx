@@ -138,7 +138,7 @@ export default function MobileProfil() {
           <BrandLogo />
           <div className="flex">
             <button type="button" onClick={() => navigate('/kategoriyalar')} aria-label="Qidirish" className={`grid size-10 place-items-center rounded-full ${navy}`}><Search className="size-[22px]" /></button>
-            <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'profil' } })} aria-label="Savat" className={`relative grid size-10 place-items-center rounded-full ${navy}`}>
+            <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'profil' } })} aria-label="Savat" className={`relative grid size-10 place-items-center rounded-full ${navy}`}>
               <ShoppingCart className="size-[22px]" />
               {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
             </button>

@@ -106,7 +106,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
 
         {shop ? (
           <>
-            <IconBtn label="Savat" onClick={() => navigate('/buyurtma', { state: { from: cartFrom } })}>
+            <IconBtn label="Savat" onClick={() => navigate('/savatcha', { state: { from: cartFrom } })}>
               <ShoppingCart className="size-[17px]" />
               {items.length > 0 && <Badge className="bg-sea">{items.length}</Badge>}
             </IconBtn>
@@ -119,7 +119,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
         ) : (
           <>
             <IconBtn label="Sevimlilar" className="hidden sm:grid"><Heart className="size-[17px]" /></IconBtn>
-            <IconBtn label="Savat" onClick={() => navigate('/buyurtma')}>
+            <IconBtn label="Savat" onClick={() => navigate('/savatcha')}>
               <ShoppingCart className="size-[17px]" />
               {count > 0 && <Badge className="bg-brand">{count}</Badge>}
             </IconBtn>

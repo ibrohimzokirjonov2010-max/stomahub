@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { BadgeCheck, Bookmark, Briefcase, ChevronRight, Clock, FileText, MapPin, Share2, Stethoscope, X } from 'lucide-react'
-import { catName, getArticle, longDate, people, relatedOf, sectionsOf } from '../yangiliklarData'
+import { authorOf, catName, getArticle, longDate, relatedOf, sectionsOf } from '../yangiliklarData'
 
 export default function Yangilik() {
   const { id } = useParams()
@@ -15,7 +15,7 @@ export default function Yangilik() {
     return <div className="py-16 text-center text-[14px] text-muted">Maqola topilmadi. <Link to="/yangiliklar" className="text-sea">Yangiliklar</Link></div>
   }
 
-  const person = people[article.author]
+  const person = authorOf(article)
   const sections = sectionsOf(article)
   const related = relatedOf(article)
   const go = (sid) => {
@@ -90,7 +90,7 @@ export default function Yangilik() {
                   <span className="grid size-7 place-items-center rounded-full bg-sea text-[13px] font-bold text-white">{i + 1}</span>
                   {s.title}
                 </h2>
-                {s.body.map((p) => <p key={p} className="mt-2 text-[13px] leading-relaxed text-ink-2">{p}</p>)}
+                {(s.body || []).map((p) => <p key={p} className="mt-2 text-[13px] leading-relaxed text-ink-2">{p}</p>)}
                 {i === 0 && article.figure && <img src={article.figure} alt="" className="mt-3 h-40 w-full rounded-xl object-cover" />}
               </section>
             ))}

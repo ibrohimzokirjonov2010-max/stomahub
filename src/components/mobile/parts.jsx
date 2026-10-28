@@ -25,7 +25,7 @@ export function MobileTopBar({ onSearch, onBell, search = true }) {
             <Search className="size-[19px]" />
           </button>
         )}
-        <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-ink">
+        <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-ink">
           <ShoppingCart className="size-[21px]" />
           {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
         </button>
@@ -57,7 +57,7 @@ export function GoCartButton({ className = '', big = false }) {
   return (
     <button
       type="button"
-      onClick={() => navigate('/buyurtma', { state: { from: 'market' } })}
+      onClick={() => navigate('/savatcha', { state: { from: 'market' } })}
       className={`flex items-center justify-center gap-1.5 rounded-xl bg-[#e9e4fd] font-semibold text-[#7c4ddb] active:scale-[0.98] ${big ? 'text-[15px]' : 'text-[12.5px]'} ${className}`}
     >
       <ShoppingBag className={big ? 'size-5' : 'size-4'} strokeWidth={1.9} /> O‘tish
