@@ -834,7 +834,7 @@ function SettingsDialog({ value, onClose, onSave }) {
           </select>
         </Field>
         <Field label="Manzil"><input value={form.address || ''} onChange={(e) => set('address', e.target.value)} placeholder="Ko‘cha, uy" className={input} /></Field>
-        <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => { set('lat', lat); set('lng', lng); if (geo?.street) set('address', [geo.city, geo.street].filter(Boolean).join(', ')) }} />
+        <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => { set('lat', lat); set('lng', lng); if (geo?.city && CITY_LIST.includes(geo.city)) set('city', geo.city); if (geo?.street) set('address', [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ')) }} />
         <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone || ''} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
         <Field label="Veb-sayt"><input value={form.website || ''} onChange={(e) => set('website', e.target.value)} placeholder="https://" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">

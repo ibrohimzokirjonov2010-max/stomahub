@@ -85,7 +85,7 @@ export default function Sozlamalar() {
       <Field label="Do‘kon nomi"><Input icon={Store} value={shop.name} onChange={(e) => setShop({ ...shop, name: e.target.value })} /></Field>
       <Field label="Telefon raqam"><PhoneInput className="h-11" value={shop.phone} onChange={(v) => setShop({ ...shop, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
       <Field label="Manzil"><Input icon={MapPin} value={shop.address} onChange={(e) => setShop({ ...shop, address: e.target.value })} placeholder="Shahar, tuman, ko‘cha" /></Field>
-      <MapPicker lat={shop.lat} lng={shop.lng} onChange={({ lat, lng, geo }) => setShop((x) => ({ ...x, lat, lng, ...(geo?.street ? { address: [geo.city, geo.district !== 'Markaz' ? `${geo.district} tumani` : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
+      <MapPicker lat={shop.lat} lng={shop.lng} onChange={({ lat, lng, geo }) => setShop((x) => ({ ...x, lat, lng, ...(geo?.street ? { address: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
       <div className="grid grid-cols-2 gap-3"><Field label="Ish kunlari"><Input icon={CalendarDays} value={shop.work_days} onChange={(e) => setShop({ ...shop, work_days: e.target.value })} /></Field><Field label="Ish vaqti"><Input icon={Clock} value={shop.work_hours} onChange={(e) => setShop({ ...shop, work_hours: e.target.value })} /></Field></div>
       <Err>{err}</Err>
     </div>

@@ -574,7 +574,7 @@ function ClinicCard({ draft, editing, setEditing, setForm, onSave, onPhoto, busy
               <>
                 <input className={field} value={draft.name} onChange={set('name')} placeholder="Klinika nomi" />
                 <input className={field} value={draft.address} onChange={set('address')} placeholder="Manzil" />
-                <MapPicker lat={draft.lat} lng={draft.lng} onChange={({ lat, lng, geo }) => setForm((d) => ({ ...(d || draft), lat, lng, ...(geo?.display ? { address: [geo.city, geo.street].filter(Boolean).join(', ') } : {}) }))} />
+                <MapPicker lat={draft.lat} lng={draft.lng} onChange={({ lat, lng, geo }) => setForm((d) => ({ ...(d || draft), lat, lng, ...(geo?.display ? { address: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
                 <input className={field} value={draft.hours} onChange={set('hours')} placeholder="09:00–19:00" />
                 <PhoneInput className="h-11" value={draft.phone} onChange={(v) => setForm((f) => ({ ...(f || draft), phone: extractUzLocalDigits(v) }))} valueMode="local" placeholder="+998 90 123 45 67" />
                 <input className={field} value={draft.website} onChange={set('website')} placeholder="https://" />

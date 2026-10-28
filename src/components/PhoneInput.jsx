@@ -40,6 +40,7 @@ export default function PhoneInput({
   showIcon = false,
   invalid = false,
   disabled = false,
+  bare = false,
   placeholder = `${PHONE_PREFIX} 90 123 45 67`,
   id,
   name,
@@ -118,7 +119,7 @@ export default function PhoneInput({
 
   return (
     <span
-      className={`flex items-center gap-2 rounded-xl border bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${
+      className={bare ? `flex min-w-0 flex-1 items-center ${disabled ? 'opacity-60' : ''}` : `flex items-center gap-2 rounded-xl border bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${
         invalid ? 'border-[#d14343]' : 'border-[#e3eaee]'
       } ${disabled ? 'opacity-60' : ''} ${className}`}
     >

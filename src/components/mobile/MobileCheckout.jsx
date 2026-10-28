@@ -259,7 +259,8 @@ export default function MobileCheckout() {
                 </Field>
                                 <Field f="phone" icon={Phone} label="Telefon raqami" err={tried && errors.phone}>
                     <PhoneInput
-                      className="h-10 rounded-xl border border-[#e2e9ec] bg-white px-3"
+                      bare
+                      inputClassName="text-[13px] text-[#0d2a4a]"
                       value={form.phone}
                       onChange={(v) => patch('phone', extractUzLocalDigits(v))}
                       valueMode="local"

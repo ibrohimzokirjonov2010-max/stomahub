@@ -212,7 +212,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
             </label>
           </div>
           <Field label="Zal manzili" icon={MapPin} value={form.place} onChange={(v) => set({ place: v })} />
-          <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district !== 'Markaz' ? `${geo.district} tumani` : '', geo.street].filter(Boolean).join(', ') } : {}) })} />
+          <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) })} />
           <div className="grid grid-cols-2 gap-2">
             <Field label="Kredit soati" icon={FileText} value={form.hours} onChange={(v) => set({ hours: v.replace(/\D/g, '') })} />
             <Field label="Minimal ishtirokchi soni" icon={Users} value={form.min} onChange={(v) => set({ min: v.replace(/\D/g, '') })} />
