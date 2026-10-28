@@ -477,17 +477,640 @@
       "blurb": "Kariyes, plomba materiallari, tish kasalliklarining belgilari va davolash usullari bo‘yicha o‘quv qo‘llanma.",
       "about": "M.F. Ziyayeva va R.N. Bahodirova muallifligidagi «Terapevtik stomatologiya» o‘quv qo‘llanmasi (Toshkent, 2004, 288 bet, lotin yozuvida). Kitobda tish kariyesi, plomba materiallari, tish kasalliklarining klinik belgilari va ularni davolash usullari yoritilgan. Stomatologiya talabalari va amaliyotchi shifokorlar uchun.",
       "toc": [
-        "Tish kariyesi",
-        "Plomba materiallari",
-        "Tish kasalliklarining belgilari",
-        "Davolash usullari"
+        "I bob. STOMATOLOGIYA VA TISH VRACHLIGI RIVOJLANISHINING ASOSIY TARIXIY BOSQICHLARI. TERAPEVTIK STOMATOLOGIYA FANINING VAZIFASI VA FANNING RIVOJLANISHIGA XISSA QO‘SHGAN OLIMLAR",
+        "II bob. TISH TO‘QIMALARINING GISTOLOGIK VA ANATOMIK TUZILISHLARI",
+        "III bob. TERAPEVTIK STOMATOLOGIYA XONASINING JIHOZLANISHI",
+        "IV bob. TISH QATTIQ TO‘QIMASINING KARIYES TABIATIGA EGA BO‘LMAGAN KASALLIKLARI",
+        "V bob. TISHLAR KARIYESI",
+        "VI bob. TISH PULPASI VA UNING YALLIG‘LANISHI",
+        "VII bob. PERIODONTIT. PERIODONT TO‘QIMASINING ANATOMIK VA GISTOLOGIK TUZILISHI",
+        "VIII bob. PARADONTOLOGIYA TO‘G‘RISIDA UMUMIY TUSHUNCHA, TERMINOLOGIYA",
+        "IX bob. OG‘IZ BO‘SHLIG‘I SHILLIQ QAVATI (PARDA) NING O‘ZIGA XOS XUSUSIYATLARI, TUZILISHI, VAZIFA (FUNKSIYA)SI",
+        "X bob. TIBBIYOT ETIKASI VA DEONTOLOGIYASI TO‘G‘RISIDAGI MA’LUMOTLAR"
       ],
       "pdf": {
         "file": "Terapevtik-stomatologiya-Ziyayeva-Bahodirova-2004.pdf",
         "name": "Terapevtik-stomatologiya_Ziyayeva-Bahodirova_2004.pdf",
         "pages": 288,
         "previewPages": 20
-      }
+      },
+      "contents": [
+        {
+          "title": "Soz boshi",
+          "page": 3,
+          "level": 1
+        },
+        {
+          "title": "I bob. STOMATOLOGIYA VA TISH VRACHLIGI RIVOJLANISHINING ASOSIY TARIXIY BOSQICHLARI. TERAPEVTIK STOMATOLOGIYA FANINING VAZIFASI VA FANNING RIVOJLANISHIGA XISSA QO‘SHGAN OLIMLAR",
+          "page": 4,
+          "level": 0
+        },
+        {
+          "title": "1. Stomatologiya va tish shifokorligi to‘g‘risida tushuncha",
+          "page": 4,
+          "level": 1
+        },
+        {
+          "title": "2. Stomatologiya va tish shifokorligi rivojlanishning asosiy tarixiy bosqichlari",
+          "page": 4,
+          "level": 1
+        },
+        {
+          "title": "3. Terapevtik stomatologiya bo‘limlari",
+          "page": 7,
+          "level": 1
+        },
+        {
+          "title": "II bob. TISH TO‘QIMALARINING GISTOLOGIK VA ANATOMIK TUZILISHLARI",
+          "page": 9,
+          "level": 0
+        },
+        {
+          "title": "1. Og‘iz bo‘shlig‘i va tishning gistologik tuzilishi",
+          "page": 9,
+          "level": 1
+        },
+        {
+          "title": "2. Tishlarning anatomik tuzilishi",
+          "page": 14,
+          "level": 1
+        },
+        {
+          "title": "Tish toji burchagi belgisi",
+          "page": 14,
+          "level": 1
+        },
+        {
+          "title": "Tish ildizining belgisi",
+          "page": 14,
+          "level": 1
+        },
+        {
+          "title": "Toj belgisi",
+          "page": 15,
+          "level": 1
+        },
+        {
+          "title": "III bob. TERAPEVTIK STOMATOLOGIYA XONASINING JIHOZLANISHI",
+          "page": 20,
+          "level": 0
+        },
+        {
+          "title": "Stomatologik moslamalar",
+          "page": 23,
+          "level": 1
+        },
+        {
+          "title": "Karioz kovaklarni charxlashning umumiy va xususiy usullari",
+          "page": 28,
+          "level": 1
+        },
+        {
+          "title": "Karioz kovaklarni kavlashning umumiy va xususiy usullari",
+          "page": 28,
+          "level": 1
+        },
+        {
+          "title": "1-sinfdagi kovaklarning shakllantirish",
+          "page": 31,
+          "level": 1
+        },
+        {
+          "title": "2-sinfdagi kovaklarni shakllantirish",
+          "page": 31,
+          "level": 1
+        },
+        {
+          "title": "3-sinf kovagini shakllantirish",
+          "page": 32,
+          "level": 1
+        },
+        {
+          "title": "4-sinf kovaklarini, chuqur va atipik kovaklarni shakllantirish",
+          "page": 33,
+          "level": 1
+        },
+        {
+          "title": "5-sinfdagi kovaklarni shakllantirish",
+          "page": 33,
+          "level": 1
+        },
+        {
+          "title": "Chuqur va tipik karioz kovaklarni shakllantirish, pulpa shtiftlari va ularning ahamiyati",
+          "page": 33,
+          "level": 1
+        },
+        {
+          "title": "Kovakni charxlab shakl berishda bo‘ladigan xato va asoratlar",
+          "page": 34,
+          "level": 1
+        },
+        {
+          "title": "Plomba materiallari",
+          "page": 35,
+          "level": 1
+        },
+        {
+          "title": "Stomatologik plomba materiallarining tasnifi",
+          "page": 35,
+          "level": 1
+        },
+        {
+          "title": "Fosfat-sement ildiz kanalini plombalash uchun",
+          "page": 36,
+          "level": 1
+        },
+        {
+          "title": "IV bob. TISH QATTIQ TO‘QIMASINING KARIYES TABIATIGA EGA BO‘LMAGAN KASALLIKLARI",
+          "page": 40,
+          "level": 0
+        },
+        {
+          "title": "V bob. TISHLAR KARIYESI",
+          "page": 50,
+          "level": 0
+        },
+        {
+          "title": "Kariyesning joylashishi va tarqalishi",
+          "page": 50,
+          "level": 1
+        },
+        {
+          "title": "Etiologiyasi va patoginezi",
+          "page": 51,
+          "level": 1
+        },
+        {
+          "title": "Yuza kariyes",
+          "page": 53,
+          "level": 1
+        },
+        {
+          "title": "O‘rta kariyes",
+          "page": 53,
+          "level": 1
+        },
+        {
+          "title": "Chuqur kariyes",
+          "page": 54,
+          "level": 1
+        },
+        {
+          "title": "Har xil bosqichdagi kariyes kasalligini davolash usullari",
+          "page": 54,
+          "level": 1
+        },
+        {
+          "title": "Har xil bosqichdagi kariyes kasalligini davolashda shifokorning tutadigan yo‘li (taktikasi)",
+          "page": 59,
+          "level": 1
+        },
+        {
+          "title": "Kariyes kasalligini oldini olish chora-tadbirlari (profilaktika)",
+          "page": 61,
+          "level": 1
+        },
+        {
+          "title": "VI bob. TISH PULPASI VA UNING YALLIG‘LANISHI",
+          "page": 66,
+          "level": 0
+        },
+        {
+          "title": "Tish pulpasini anotomik, gistologik tuzilishi va fiziologiya (vazifa) si",
+          "page": 66,
+          "level": 1
+        },
+        {
+          "title": "Yoshga va tish, yuz-jag‘ kasalliklari hamda organizmning umumiy kasalliklariga bog‘liq bo‘lgan pulpadagi o‘zgarishlar",
+          "page": 71,
+          "level": 1
+        },
+        {
+          "title": "Pulpitlar kelib chiqish sabablari — etiologiyasi",
+          "page": 72,
+          "level": 1
+        },
+        {
+          "title": "Pulpitlarning tasniflari",
+          "page": 75,
+          "level": 1
+        },
+        {
+          "title": "Pulpitning rivojlanishi — patogenezi",
+          "page": 78,
+          "level": 1
+        },
+        {
+          "title": "Har xil shakldagi pulpitlarning patologik anatomiyasi",
+          "page": 82,
+          "level": 1
+        },
+        {
+          "title": "Har xil pulpitlarning klinikasi",
+          "page": 85,
+          "level": 1
+        },
+        {
+          "title": "Mustaqil tayyorgarlik uchun sinov savollari",
+          "page": 103,
+          "level": 1
+        },
+        {
+          "title": "Pulpitlarni davolash tarixi to‘g‘risida qisqacha ma’lumot",
+          "page": 103,
+          "level": 1
+        },
+        {
+          "title": "Pulpitni davolashdan ko‘zlangan maqsadlar",
+          "page": 105,
+          "level": 1
+        },
+        {
+          "title": "Pulpitlarni davolash usullari, ko‘rsatma va qarshi ko‘rsatmalar",
+          "page": 105,
+          "level": 1
+        },
+        {
+          "title": "Yallig‘langan pulpani hayotiyligini saqlab qolishda qo‘llanadigan davolash usullari",
+          "page": 112,
+          "level": 1
+        },
+        {
+          "title": "Pulpani olib tashlash yo‘li bilan pulpitlarni davolash (jarrohlik) usullari. Ko‘rsatma va qarshi ko‘rsatmalar",
+          "page": 123,
+          "level": 1
+        },
+        {
+          "title": "Pulpani og‘riqsizlantirib, vital usulda diatermokoagulyatsiya qo‘llab yoki qo‘llamasdan olib tashlash bilan pulpitlarni davolash usullari. Ko‘rsatma va qarshi ko‘rsatmalar",
+          "page": 126,
+          "level": 1
+        },
+        {
+          "title": "Yod-elektroforez yo‘li bilan ildiz pulpani kuydirish usuli",
+          "page": 140,
+          "level": 1
+        },
+        {
+          "title": "Pulpitlarni tashhislash va davolashda kelib chiqishi mumkin bo‘lgan xatolar va ular oqibatida kelib chiqadigan asoratlar",
+          "page": 152,
+          "level": 1
+        },
+        {
+          "title": "VII bob. PERIODONTIT. PERIODONT TO‘QIMASINING ANATOMIK VA GISTOLOGIK TUZILISHI",
+          "page": 157,
+          "level": 0
+        },
+        {
+          "title": "Periodontitning kelib chiqish sabablari (etiologiyasi) va rivojlanishi (patogenezi)",
+          "page": 162,
+          "level": 1
+        },
+        {
+          "title": "Periodontitning rivojlanishi (patogenezi)",
+          "page": 164,
+          "level": 1
+        },
+        {
+          "title": "Periodontitning patologik anatomiyasi",
+          "page": 164,
+          "level": 1
+        },
+        {
+          "title": "Tasnif (klassifikatsiya)",
+          "page": 168,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir periodontitlarning klinikasi",
+          "page": 168,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir yiringli periodontit (per. Acuta purulenta)",
+          "page": 169,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir marginal periodontit (per. Acuta marginalis)",
+          "page": 172,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir cho‘qqi, apikal periodontit (per. Acuta apicalis)",
+          "page": 172,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir yiringli periodontit (per. Acuta purulenta)",
+          "page": 173,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir periodontitlarni tashhisi va qiyosiy tashhisi",
+          "page": 174,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir periodontitlarni davolash usullari",
+          "page": 176,
+          "level": 1
+        },
+        {
+          "title": "O‘tkir medikamentozli (toksik-zaxarlanish) periodontitning intoksikasiya davrini davolash",
+          "page": 178,
+          "level": 1
+        },
+        {
+          "title": "Surunkali periodontitlarning klinik kechishlari",
+          "page": 180,
+          "level": 1
+        },
+        {
+          "title": "Surunkali periodontitlarni tashhislash, qiyosiy tashhislash",
+          "page": 188,
+          "level": 1
+        },
+        {
+          "title": "Davolash usullari",
+          "page": 190,
+          "level": 1
+        },
+        {
+          "title": "Terapevtik va jarrohlik davolash usullari",
+          "page": 196,
+          "level": 1
+        },
+        {
+          "title": "Periodontit bilan og‘rigan bemorlarni davolash jarayonida qo‘yilishi mumkin bo‘lgan xatoliklar va ular oqibatida kelib chiqadigan asoratlar",
+          "page": 198,
+          "level": 1
+        },
+        {
+          "title": "Tish kariyes kovagini borlar bilan ishlov berganda bo‘lishi mumkin bo‘lgan xatolar va ular oqibatida kelib chiqadigan asoratlar",
+          "page": 198,
+          "level": 1
+        },
+        {
+          "title": "Tish kanallarini tozalash, ulardan chiriklarni olib tashlash jarayonida uchraydigan xatolar va kelib chikadigan asoratlar",
+          "page": 198,
+          "level": 1
+        },
+        {
+          "title": "Tish kanali (lari) ni plombalash jarayonida bo‘lishi mumkin bo‘lgan xatolar va kelib chiqadigan asoratlar",
+          "page": 199,
+          "level": 1
+        },
+        {
+          "title": "Xroniointoksikasiya holatining kechishi, tashhisi va davolash usullari",
+          "page": 200,
+          "level": 1
+        },
+        {
+          "title": "Xroniosepsis holatining kechishi, tashhisi, davolash usullari va bu holatlarning oldini olish chora-tadbirlari (profilaktika)",
+          "page": 200,
+          "level": 1
+        },
+        {
+          "title": "Hujayra destruksiyasi",
+          "page": 203,
+          "level": 1
+        },
+        {
+          "title": "O‘choqli infeksiya sababli rivojlanadigan kasalliklarni klinik ko‘rinishlari",
+          "page": 204,
+          "level": 1
+        },
+        {
+          "title": "Ularni tashhislash va tekshirish usullari",
+          "page": 206,
+          "level": 1
+        },
+        {
+          "title": "VIII bob. PARADONTOLOGIYA TO‘G‘RISIDA UMUMIY TUSHUNCHA, TERMINOLOGIYA",
+          "page": 209,
+          "level": 0
+        },
+        {
+          "title": "Tarixiy ma’lumotlar",
+          "page": 209,
+          "level": 1
+        },
+        {
+          "title": "Paradontning anatomik va gistologik tuzilishi, fiziologiyasi",
+          "page": 211,
+          "level": 1
+        },
+        {
+          "title": "Milkning gistologik tuzilishi",
+          "page": 212,
+          "level": 1
+        },
+        {
+          "title": "Qon tomirlar bilan ta’minlanishi",
+          "page": 216,
+          "level": 1
+        },
+        {
+          "title": "Innervatsiyasi",
+          "page": 216,
+          "level": 1
+        },
+        {
+          "title": "Paradontning vazifalari",
+          "page": 217,
+          "level": 1
+        },
+        {
+          "title": "Paradont kasalliklarining tarqalish darajasi, tasnifi",
+          "page": 218,
+          "level": 1
+        },
+        {
+          "title": "Tasnifi — klassifikatsiyasi",
+          "page": 218,
+          "level": 1
+        },
+        {
+          "title": "Paradont kasalliklari (morbus parodontaus)",
+          "page": 218,
+          "level": 1
+        },
+        {
+          "title": "Paradont kasalliklarini kelib chiqish sabablari (etiologiya) va rivojlanishi (patogenez)",
+          "page": 219,
+          "level": 1
+        },
+        {
+          "title": "Bemorlarni tekshirish usullari",
+          "page": 222,
+          "level": 1
+        },
+        {
+          "title": "Gingivitlarning klinikasi, tashhisi va qiyosiy tashhisi",
+          "page": 226,
+          "level": 1
+        },
+        {
+          "title": "Paradontitning klinikasi, tashhisi va qiyosii tashhisi",
+          "page": 231,
+          "level": 1
+        },
+        {
+          "title": "Paradontozning klinikasi, tashhisi va qiyosiy tashhisi",
+          "page": 237,
+          "level": 1
+        },
+        {
+          "title": "Paradontning idiopatik kasalliklarining klinikasi, tashhisi, qiyosii tashhisi",
+          "page": 239,
+          "level": 1
+        },
+        {
+          "title": "Paradontomalar",
+          "page": 242,
+          "level": 1
+        },
+        {
+          "title": "Paradont kasalliklarini mahalliy va umumiy davolash usullari",
+          "page": 243,
+          "level": 1
+        },
+        {
+          "title": "Mahalliy davolash",
+          "page": 244,
+          "level": 1
+        },
+        {
+          "title": "Paradont kasalliklarini umumiy davolash usullari",
+          "page": 250,
+          "level": 1
+        },
+        {
+          "title": "Fizioterapevtik davolash usullari",
+          "page": 254,
+          "level": 1
+        },
+        {
+          "title": "O‘rta va og‘ir surunkali paradontitlarni davolash chizmasi",
+          "page": 254,
+          "level": 1
+        },
+        {
+          "title": "Paradontoz bilan og‘rigan bemorlarni davolash chizmasi",
+          "page": 255,
+          "level": 1
+        },
+        {
+          "title": "Paradont kasalliklarini oldini olish- profilaktika chora-tadbirlari",
+          "page": 257,
+          "level": 1
+        },
+        {
+          "title": "Paradontologik yordami tashkil etish, dispanserizatsiya",
+          "page": 258,
+          "level": 1
+        },
+        {
+          "title": "IX bob. OG‘IZ BO‘SHLIG‘I SHILLIQ QAVATI (PARDA) NING O‘ZIGA XOS XUSUSIYATLARI, TUZILISHI, VAZIFA (FUNKSIYA)SI",
+          "page": 260,
+          "level": 0
+        },
+        {
+          "title": "Og‘iz shilliq qavatining gistologii tuzilishi (oshq)",
+          "page": 262,
+          "level": 1
+        },
+        {
+          "title": "Xususiy og‘iz shilliq pardasi (lam. propria)",
+          "page": 262,
+          "level": 1
+        },
+        {
+          "title": "Og‘iz bo‘shlig‘ining fiziologiyasi",
+          "page": 265,
+          "level": 1
+        },
+        {
+          "title": "Patologik jarayonlar",
+          "page": 266,
+          "level": 1
+        },
+        {
+          "title": "Og‘iz bushlig‘i shilliq (pardasi) qavatida uchraidigan jarohatlar — morfologik elementlar",
+          "page": 267,
+          "level": 1
+        },
+        {
+          "title": "Og‘iz bo‘shlig‘i shilliq qavati kasalliklarini tasnifi (klassifikasiya)",
+          "page": 270,
+          "level": 1
+        },
+        {
+          "title": "Og‘iz bo‘shlig‘i shilliq qavati kasalliklari bilan og‘rigan bemorlarni tekshirish usullari",
+          "page": 271,
+          "level": 1
+        },
+        {
+          "title": "X bob. TIBBIYOT ETIKASI VA DEONTOLOGIYASI TO‘G‘RISIDAGI MA’LUMOTLAR",
+          "page": 275,
+          "level": 0
+        },
+        {
+          "title": "Shifokorlik deontologiyasining ayrim bo‘limlari — elementlari",
+          "page": 277,
+          "level": 1
+        },
+        {
+          "title": "Shifokor va bemor",
+          "page": 277,
+          "level": 1
+        },
+        {
+          "title": "Shifokor va bemor qarindosh-urug‘lar",
+          "page": 279,
+          "level": 1
+        },
+        {
+          "title": "Tibbiyot xodimlari orasida deontologiya elementlari",
+          "page": 279,
+          "level": 1
+        },
+        {
+          "title": "Deontologiya va davolash maskanining ishini uyushtirish",
+          "page": 280,
+          "level": 1
+        },
+        {
+          "title": "Ilmiy-texnik yuksalish va deontologiya",
+          "page": 281,
+          "level": 1
+        },
+        {
+          "title": "Klinik tibbiyot deontologiya",
+          "page": 281,
+          "level": 1
+        },
+        {
+          "title": "Tibbiyot hujjatlari va deontologiya",
+          "page": 281,
+          "level": 1
+        },
+        {
+          "title": "Shifokorlik siri — tibbiyotda sir saqlash",
+          "page": 282,
+          "level": 1
+        },
+        {
+          "title": "Shifokor xatolari",
+          "page": 283,
+          "level": 1
+        },
+        {
+          "title": "Ilmiy-tekshirish ishlarida deontologiya",
+          "page": 283,
+          "level": 1
+        }
+      ]
     },
     {
       "id": "ortopedik-stomatologiya-propedevtikasi-2006",
@@ -516,9 +1139,15 @@
       "blurb": "Protez materiallari, jag‘ tuzilishi va ortoped stomatolog ish joyi bo‘yicha o‘quv qo‘llanma.",
       "about": "Professor X.I. Irsaliyevning «Ortopedik stomatologiya propedevtikasi» o‘quv qo‘llanmasi (Toshkent, «Yangiyo‘l poligraf servis», 2006, 216 bet, kirill yozuvida). Kitobda protez materiallari, jag‘ va tish qatorlarining tuzilishi hamda ortoped stomatolog ish joyini tashkil etish masalalari ko‘rib chiqilgan.",
       "toc": [
-        "Protez materiallari",
-        "Jag‘ tuzilishi",
-        "Ortoped stomatolog ish joyi"
+        "Ортопедик стоматология фанининг пропедевтикаси",
+        "Ортопедик стоматология фани",
+        "Ортопедик стоматология фанини ривожиланиш тарихи",
+        "1. Тиш-жағ тизимини аъзолари",
+        "2. Тиш-жағ тизимини анатомияси, гистологияси ва физиологияси",
+        "3. Тиш-жағ тизимининг ҳаракат функцияси",
+        "4. Ортопедик стоматология клиникасида беморларни текшириш усуллари",
+        "5. Ортопед стоматолог хонасини ва тиш техник лабораториясини ташкиллаштириш",
+        "6. Ортопедик стоматологияда ишлатиладиган хом ашёлар"
       ],
       "titleOriginal": "Ортопедик стоматология пропедевтикаси",
       "pdf": {
@@ -526,7 +1155,63 @@
         "name": "Ortopedik-stomatologiya-propedevtikasi_Irsaliyev_2006.pdf",
         "pages": 216,
         "previewPages": 20
-      }
+      },
+      "contents": [
+        {
+          "title": "Ортопедик стоматология фанининг пропедевтикаси",
+          "page": 6,
+          "printed": 5,
+          "level": 0
+        },
+        {
+          "title": "Ортопедик стоматология фани",
+          "page": 6,
+          "printed": 5,
+          "level": 1
+        },
+        {
+          "title": "Ортопедик стоматология фанини ривожиланиш тарихи",
+          "page": 7,
+          "printed": 6,
+          "level": 1
+        },
+        {
+          "title": "1. Тиш-жағ тизимини аъзолари",
+          "page": 10,
+          "printed": 9,
+          "level": 1
+        },
+        {
+          "title": "2. Тиш-жағ тизимини анатомияси, гистологияси ва физиологияси",
+          "page": 13,
+          "printed": 12,
+          "level": 1
+        },
+        {
+          "title": "3. Тиш-жағ тизимининг ҳаракат функцияси",
+          "page": 54,
+          "printed": 53,
+          "level": 1
+        },
+        {
+          "title": "4. Ортопедик стоматология клиникасида беморларни текшириш усуллари",
+          "page": 67,
+          "printed": 66,
+          "level": 1
+        },
+        {
+          "title": "5. Ортопед стоматолог хонасини ва тиш техник лабораториясини ташкиллаштириш",
+          "page": 87,
+          "printed": 86,
+          "level": 1
+        },
+        {
+          "title": "6. Ортопедик стоматологияда ишлатиладиган хом ашёлар",
+          "page": 93,
+          "printed": 92,
+          "level": 1
+        }
+      ]
     }
   ]
 }

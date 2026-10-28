@@ -1,90 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Bookmark, List, ChevronDown, ChevronLeft, ChevronRight, Moon, Sun, Trash2 } from 'lucide-react'
-import { getBook, readerOf, flatReader } from '../../booksData'
-import { loadBlob, saveBlob, currentUid } from '../../recordSync'
+import { ArrowLeft, Bookmark, ChevronDown, ChevronLeft, ChevronRight, List, Lock, Moon, Sun, Trash2, ZoomIn, ZoomOut } from 'lucide-react'
+import { getBook } from '../../booksData'
+import { useCatalogVersion } from '../../recordSync'
 import { MobileToast } from './parts'
 import { BottomSheet } from './MobileSeminars'
-
-const MIN = 13
-const MAX = 20
-const keyOf = (id) => `stomahub-read-${id}`
-
-const readerState = {}
-
-function load(id) {
-  if (readerState[id]) return readerState[id]
-  try {
-    return JSON.parse(localStorage.getItem(keyOf(id))) || {}
-  } catch {
-    return {}
-  }
-}
+import { PageView, ZOOM_MAX, ZOOM_MIN, bookFacts, sectionAt, useReaderAccess, useReaderPrefs } from '../reader/bookReader'
 
 export default function MobileReader() {
   const { id } = useParams()
-  return <ReaderView key={id} id={id} />
-}
-
-function ReaderView({ id }) {
+  useCatalogVersion()
   const book = getBook(id)
-  const navigate = useNavigate()
-  const [params] = useSearchParams()
-  const doc = book ? readerOf(book) : null
-  const rows = useMemo(() => (doc ? flatReader(doc) : []), [doc])
-  const saved = useMemo(() => load(id), [id])
-
-  const [page, setPage] = useState(() => Number(params.get('page')) || saved.page || doc?.start || 1)
-  const [size, setSize] = useState(saved.size || 15)
-  const [night, setNight] = useState(!!saved.night)
-  const [marks, setMarks] = useState(() => (currentUid() ? [] : (saved.marks || doc?.marks.map((m) => m.page) || [])))
-  const [readerReady, setReaderReady] = useState(() => !currentUid())
-  const [sheet, setSheet] = useState(null)
-  const [toast, setToast] = useState('')
-  const closeToast = useCallback(() => setToast(''), [])
-
-  const idx = Math.max(0, rows.findLastIndex((r) => r.page <= page))
-  const current = rows[idx]
-  const chapter = current && (current.parent ? doc.chapters.find((c) => c.id === current.parent) : doc.chapters.find((c) => c.id === current.id))
-  const view = current && (doc.pagesOf[current.id] || doc.pagesOf[chapter?.children?.[0]?.id])
-  const marked = marks.includes(page)
-
-  useEffect(() => {
-    let stop = false
-    if (!currentUid()) return undefined
-    loadBlob('reader').then((payload) => {
-      if (stop) return
-      const savedRemote = payload?.[id]
-      if (savedRemote) {
-        readerState[id] = savedRemote
-        if (savedRemote.page) setPage(savedRemote.page)
-        if (savedRemote.size) setSize(savedRemote.size)
-        if (savedRemote.night != null) setNight(!!savedRemote.night)
-        if (savedRemote.marks) setMarks(savedRemote.marks)
-      }
-      setReaderReady(true)
-    })
-    return () => { stop = true }
-  }, [id])
-
-  useEffect(() => {
-    const next = { page, size, night, marks }
-    readerState[id] = next
-    try {
-      localStorage.setItem(keyOf(id), JSON.stringify(next))
-    } catch { /* xotira yopiq */ }
-    if (readerReady && currentUid()) saveBlob('reader', { ...readerState })
-  }, [id, page, size, night, marks, readerReady])
-
-  const asked = Number(params.get('page'))
-  useEffect(() => {
-    if (asked) setPage(asked)
-  }, [asked])
-
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [current?.id])
-
   if (!book) {
     return (
       <div className="grid min-h-screen place-items-center bg-white px-6 text-center">
@@ -95,170 +21,118 @@ function ReaderView({ id }) {
       </div>
     )
   }
+  return <ReaderView key={id} book={book} />
+}
 
-  const back = () => (window.history.length > 1 ? navigate(-1) : navigate(`/kitoblar/${id}`))
-  const go = (p) => setPage(Math.min(doc.pages, Math.max(1, p)))
-  const toggleMark = () => {
-    setMarks((l) => (l.includes(page) ? l.filter((p) => p !== page) : [...l, page].sort((a, b) => a - b)))
-    setToast(marked ? 'Xatcho‘p olib tashlandi' : `${page}-betga xatcho‘p qo‘yildi`)
-  }
-  const chapterSub = chapter?.children?.length
-    ? chapter.children.map((c) => c.title.replace(/^[\d.]+\s*/, '')).join(', ')
-    : `${chapter?.page}-betdan boshlanadi`
-  const pct = ((page - 1) / (doc.pages - 1)) * 100
+function ReaderView({ book }) {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const facts = useMemo(() => bookFacts(book), [book])
+  const reader = useReaderAccess(book)
+  const asked = Number(params.get('page')) || 0
+  const st = useReaderPrefs(book.id, facts.total, asked)
+  const { page, setPage, zoom, night, marks } = st
+  const [sheet, setSheet] = useState(null)
+  const [toast, setToast] = useState('')
+  const closeToast = useCallback(() => setToast(''), [])
+  const full = reader.access === 'yes'
+  const free = facts.preview.length
+  const section = sectionAt(facts.contents, page)
+  const marked = marks.includes(page)
 
-  const t = night
-    ? { page: 'bg-[#0f1a22]', card: 'bg-[#16252f] border-[#22343f]', head: 'text-[#e3edf2]', text: 'text-[#b9c8d1]', muted: 'text-[#7f95a3]', bar: 'bg-[#16252f] border-[#22343f]', btn: 'text-[#b9c8d1]' }
-    : { page: 'bg-[#f6faf9]', card: 'bg-white border-line/70', head: 'text-[#0d3b3f]', text: 'text-[#3d4f5f]', muted: 'text-muted', bar: 'bg-white border-line/60', btn: 'text-ink' }
+  useEffect(() => { window.scrollTo(0, 0) }, [page])
+
+  const go = (p) => { setPage(p); setSheet(null) }
+  const mark = () => { st.toggleMark(); setToast(marked ? 'Xatcho‘p olib tashlandi' : `${page}-bet xatcho‘pga qo‘shildi`) }
+
+  const dark = night
+  const tools = [
+    [ZoomOut, 'Kichraytirish', st.zoomOut, false, zoom <= ZOOM_MIN],
+    [ZoomIn, 'Kattalashtirish', st.zoomIn, false, zoom >= ZOOM_MAX],
+    [night ? Sun : Moon, night ? 'Kunduzgi' : 'Tungi rejim', () => st.setNight(!night), night],
+    [Bookmark, 'Xatcho‘p', mark, marked],
+    ...(facts.contents.length || marks.length ? [[List, 'Mundarija', () => setSheet('toc'), false]] : []),
+  ]
 
   return (
-    <div className={`min-h-screen pb-[150px] transition-colors ${t.page}`}>
-      <header className={`sticky top-0 z-20 flex items-center gap-2 border-b px-2 py-2.5 ${t.bar}`}>
-        <button type="button" onClick={back} aria-label="Orqaga" className={`grid size-10 shrink-0 place-items-center rounded-full ${t.btn}`}><ArrowLeft className="size-[22px]" /></button>
-        <div className="min-w-0 flex-1 text-center">
-          <p className={`truncate text-[15px] font-bold ${t.head}`}>{doc.title}</p>
-          <p className={`truncate text-[11.5px] ${t.muted}`}>{doc.author}</p>
+    <div className={`min-h-screen pb-[calc(124px+env(safe-area-inset-bottom))] ${dark ? 'bg-[#0f1a22] text-[#e3edf2]' : 'bg-[#f3f8f7] text-ink'}`}>
+      <header className={`sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] ${dark ? 'border-[#22343f] bg-[#0f1a22]' : 'border-line/60 bg-white'}`}>
+        <div className="flex items-center gap-2 px-3 py-2">
+          <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`/kitoblar/${book.id}`))} aria-label="Orqaga" className="grid size-10 shrink-0 place-items-center rounded-full"><ArrowLeft className="size-[22px]" /></button>
+          <div className="min-w-0 flex-1 text-center">
+            <h1 data-testid="reader-title" className="truncate text-[15px] font-bold leading-tight">{facts.title}</h1>
+            <p data-testid="reader-author" className="truncate text-[11.5px] opacity-70">{[facts.author, facts.year].filter(Boolean).join(' · ')}</p>
+          </div>
+          <button type="button" onClick={mark} aria-label="Xatcho‘p" aria-pressed={marked} className="grid size-10 shrink-0 place-items-center rounded-full"><Bookmark className={`size-[22px] ${marked ? 'fill-[#0b6d73] text-[#0b6d73]' : ''}`} /></button>
         </div>
-        <button type="button" onClick={() => setSheet('marks')} aria-label="Xatcho‘plar" className={`relative grid size-10 shrink-0 place-items-center rounded-full ${t.btn}`}>
-          <Bookmark className={`size-[21px] ${marked ? 'fill-[#0b6d73] text-[#0b6d73]' : ''}`} />
-          {marks.length > 0 && <span className="absolute right-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-sea text-[9px] font-bold text-white">{marks.length}</span>}
-        </button>
+        {section && (
+          <button type="button" onClick={() => setSheet('toc')} className={`flex w-full items-center gap-2 border-t px-4 py-1.5 text-left text-[12px] ${dark ? 'border-[#22343f]' : 'border-line/50'}`}>
+            <List className="size-4 shrink-0 text-[#0b6d73]" /><span className="min-w-0 flex-1 truncate opacity-80">{section.title}</span><ChevronDown className="size-4 shrink-0 opacity-60" />
+          </button>
+        )}
       </header>
 
-      <div className="px-3.5 pt-3">
-        <button type="button" onClick={() => setSheet('toc')} className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left ${t.card}`}>
-          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${night ? 'bg-[#1d3a40] text-[#5fd0c4]' : 'bg-[#e6f4f3] text-[#0b6d73]'}`}><List className="size-5" /></span>
-          <span className="min-w-0 flex-1">
-            <span className={`block text-[13.5px] font-bold leading-snug ${t.head}`}>{chapter?.title}</span>
-            <span className={`mt-0.5 block truncate text-[11.5px] ${t.muted}`}>{chapterSub}</span>
-          </span>
-          <ChevronDown className={`size-5 shrink-0 ${t.muted}`} />
-        </button>
+      {!full && free > 0 && page <= free && (
+        <p className={`mx-3 mt-2 rounded-lg px-3 py-1.5 text-center text-[11.5px] ${dark ? 'bg-[#16252f]' : 'bg-[#e6f4f3] text-[#0b5b60]'}`}>Bepul namuna: 1–{free} bet · to‘liq kitob {facts.total} bet</p>
+      )}
 
-        {view && (
-          <article className="px-1 pt-4" style={{ fontSize: size }}>
-            <h2 className={`text-[1.3em] font-extrabold leading-tight ${t.head}`}>{view.title}</h2>
-            <p className={`mt-2 leading-[1.65] ${t.text}`}>{view.lead}</p>
+      <main className="overflow-x-auto px-2 pt-2">
+        <PageView book={book} facts={facts} page={page} zoom={zoom} night={night} reader={reader} />
+      </main>
 
-            {view.figure && (
-              <figure className={`mt-4 overflow-hidden rounded-2xl border ${t.card}`}>
-                <img src={view.figure} alt={view.caption} className="w-full bg-white" />
-                {view.labels && (
-                  <div className="grid grid-cols-4 gap-1 px-1.5 py-2">
-                    {view.labels.map((l) => <span key={l} className={`text-center text-[10.5px] font-medium leading-tight ${t.text}`}>{l}</span>)}
-                  </div>
-                )}
-                {view.caption && <figcaption className={`border-t px-3 py-2 text-center text-[11.5px] italic ${t.muted} ${night ? 'border-[#22343f]' : 'border-line/60'}`}>{view.caption}</figcaption>}
-              </figure>
-            )}
+      <div className="mt-3 grid grid-cols-2 gap-2 px-3">
+        <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)} className={`flex h-11 items-center justify-center gap-1 rounded-xl border text-[13.5px] font-semibold disabled:opacity-40 ${dark ? 'border-[#22343f] bg-[#16252f]' : 'border-line bg-white'}`}><ChevronLeft className="size-4" /> Oldingi</button>
+        <button type="button" disabled={page >= facts.total} onClick={() => setPage(page + 1)} className="flex h-11 items-center justify-center gap-1 rounded-xl bg-[#0b6d73] text-[13.5px] font-semibold text-white disabled:opacity-40">Keyingi bet <ChevronRight className="size-4" /></button>
+      </div>
 
-            {view.after && <p className={`mt-4 leading-[1.65] ${t.text}`}>{view.after}</p>}
-            {view.body?.map((p) => <p key={p} className={`mt-3 leading-[1.65] ${t.text}`}>{p}</p>)}
+      <nav className={`fixed inset-x-0 bottom-0 z-40 rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(11_31_58/0.08)] ${dark ? 'border-[#22343f] bg-[#0f1a22]' : 'border-line/60 bg-white'}`}>
+        <div className="flex items-center gap-3 px-4 pt-3">
+          <input type="range" min={1} max={Math.max(1, facts.total)} value={page} onChange={(e) => setPage(Number(e.target.value))} aria-label="Sahifa" className="h-1.5 min-w-0 flex-1 accent-[#0b6d73]" />
+          <span data-testid="reader-progress" className="shrink-0 text-[12.5px] font-semibold tabular-nums">{page} / {facts.total} bet</span>
+        </div>
+        <div className="grid px-1 pb-1.5 pt-1" style={{ gridTemplateColumns: `repeat(${tools.length}, minmax(0, 1fr))` }}>
+          {tools.map(([Icon, label, onClick, on, off]) => (
+            <button key={label} type="button" onClick={onClick} disabled={off} aria-pressed={on} className={`flex flex-col items-center gap-0.5 py-1.5 text-[10.5px] font-medium disabled:opacity-35 ${on ? 'text-[#0b6d73]' : ''}`}>
+              <Icon className={`size-[22px] ${on && label === 'Xatcho‘p' ? 'fill-[#0b6d73]' : ''}`} strokeWidth={1.7} />{label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
-            {view.nextKicker && <h2 className={`mt-5 text-[1.3em] font-extrabold leading-tight ${t.head}`}>{view.nextKicker}</h2>}
-            {view.nextLead && <p className={`mt-2 leading-[1.65] ${t.text}`}>{view.nextLead}</p>}
-            {(view.points || (view.point ? [view.point] : [])).map((pt) => (
-              <div key={pt.n} className={`mt-2.5 flex gap-3 rounded-2xl border p-3 ${t.card}`}>
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#0b6d73] text-[14px] font-bold text-white">{pt.n}</span>
-                <span className="min-w-0">
-                  <b className={`block text-[0.95em] ${t.head}`}>{pt.title}</b>
-                  <span className={`mt-0.5 block text-[0.88em] leading-snug ${t.text}`}>{pt.body}</span>
-                </span>
+      {sheet === 'toc' && (
+        <BottomSheet title={`Mundarija · ${facts.total} bet`} onClose={() => setSheet(null)}>
+          {marks.length > 0 && (
+            <div className="px-4 pb-2">
+              <p className="pb-1 text-[12px] font-semibold text-muted">Xatcho‘plar</p>
+              <div className="flex flex-wrap gap-1.5">
+                {marks.map((p) => (
+                  <span key={p} className="inline-flex items-center rounded-full bg-[#e6f4f3] text-[12px] font-semibold text-[#0b5b60]">
+                    <button type="button" onClick={() => go(p)} className="py-1 pl-3 pr-1">{p}-bet</button>
+                    <button type="button" aria-label="O‘chirish" onClick={() => st.setMarks((l) => l.filter((x) => x !== p))} className="py-1 pl-1 pr-2"><Trash2 className="size-3.5" /></button>
+                  </span>
+                ))}
               </div>
-            ))}
-
-            <div className="mt-6 flex gap-2">
-              <button type="button" disabled={idx === 0} onClick={() => go(rows[idx - 1].page)} className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl border text-[13px] font-semibold disabled:opacity-40 ${t.card} ${t.btn}`}>
-                <ChevronLeft className="size-4" /> Oldingi
-              </button>
-              <button type="button" disabled={idx === rows.length - 1} onClick={() => go(rows[idx + 1].page)} className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white disabled:opacity-40">
-                Keyingi bo‘lim <ChevronRight className="size-4" />
-              </button>
             </div>
-          </article>
-        )}
-      </div>
-
-      <div className={`fixed inset-x-0 bottom-0 z-30 rounded-t-3xl border-t px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-6px_20px_rgb(11_31_58/0.08)] ${t.bar}`}>
-        <div className="flex items-center gap-3">
-          <input
-            type="range"
-            min={1}
-            max={doc.pages}
-            value={page}
-            onChange={(e) => go(Number(e.target.value))}
-            aria-label="Sahifa"
-            className="reader-range h-1.5 flex-1 cursor-pointer appearance-none rounded-full accent-[#0b6d73]"
-            style={{ background: `linear-gradient(90deg,#0b6d73 ${pct}%,${night ? '#2c3f4b' : '#dbe5e9'} ${pct}%)` }}
-          />
-          <span className={`shrink-0 text-[12.5px] font-semibold tabular-nums ${t.head}`}>{page} / {doc.pages} bet</span>
-        </div>
-        <div className="mt-2.5 grid grid-cols-5 gap-1">
-          <Tool label="Kichikroq" disabled={size <= MIN} onClick={() => setSize((s) => Math.max(MIN, s - 1))} night={night}><span className="text-[15px] font-bold">A<sup className="text-[10px]">−</sup></span></Tool>
-          <Tool label="Kattaroq" disabled={size >= MAX} onClick={() => setSize((s) => Math.min(MAX, s + 1))} night={night}><span className="text-[18px] font-bold">A<sup className="text-[11px]">+</sup></span></Tool>
-          <Tool label={night ? 'Kunduzgi' : 'Tungi rejim'} active={night} onClick={() => setNight(!night)} night={night}>{night ? <Sun className="size-5" /> : <Moon className="size-5" />}</Tool>
-          <Tool label="Xatcho‘p" active={marked} onClick={toggleMark} night={night}><Bookmark className={`size-5 ${marked ? 'fill-current' : ''}`} /></Tool>
-          <Tool label="Mundarija" onClick={() => setSheet('toc')} night={night}><List className="size-5" /></Tool>
-        </div>
-      </div>
-
-      {sheet && (
-        <BottomSheet title={sheet === 'toc' ? 'Mundarija' : 'Xatcho‘plar'} onClose={() => setSheet(null)}>
-          <div className="mt-2 grid grid-cols-2 rounded-xl bg-[#eef3f5] p-1">
-            {[['toc', 'Mundarija'], ['marks', `Xatcho‘plar (${marks.length})`]].map(([k, l]) => (
-              <button key={k} type="button" onClick={() => setSheet(k)} className={`h-9 rounded-lg text-[12.5px] font-semibold ${sheet === k ? 'bg-white text-sea shadow-[0_1px_2px_rgb(11_31_58/0.1)]' : 'text-ink-2'}`}>{l}</button>
-            ))}
-          </div>
-          {sheet === 'toc' ? (
-            <div className="mt-2 flex flex-col pb-2">
-              {rows.map((r) => {
-                const on = r.id === current?.id
-                return (
-                  <button key={r.id} type="button" onClick={() => { go(r.page); setSheet(null) }} className={`flex min-h-[44px] items-center gap-2 rounded-xl px-2 text-left ${r.parent ? 'pl-6' : ''} ${on ? 'bg-sea-50' : ''}`}>
-                    <span className={`min-w-0 flex-1 text-[13px] ${r.parent ? 'text-ink-2' : 'font-semibold text-ink'} ${on ? '!text-sea' : ''}`}>{r.title}</span>
-                    <span className="shrink-0 text-[11.5px] text-muted">{r.page}</span>
-                  </button>
-                )
-              })}
-            </div>
-          ) : marks.length ? (
-            <div className="mt-2 flex flex-col gap-2 pb-2">
-              {marks.map((p) => {
-                const r = rows[Math.max(0, rows.findLastIndex((x) => x.page <= p))]
-                return (
-                  <div key={p} className="flex items-center gap-2 rounded-xl border border-line p-2.5">
-                    <Bookmark className="size-4 shrink-0 fill-sea text-sea" />
-                    <button type="button" onClick={() => { go(p); setSheet(null) }} className="min-w-0 flex-1 text-left">
-                      <span className="block truncate text-[13px] font-semibold text-ink">{r?.title}</span>
-                      <span className="text-[11.5px] text-muted">{p}-bet</span>
-                    </button>
-                    <button type="button" onClick={() => setMarks((l) => l.filter((x) => x !== p))} aria-label="O‘chirish" className="grid size-8 place-items-center text-muted"><Trash2 className="size-4" /></button>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <p className="py-8 text-center text-[12.5px] text-muted">Hali xatcho‘p yo‘q. Pastdagi “Xatcho‘p” tugmasini bosing.</p>
           )}
+          <ul data-testid="reader-toc" className="px-2 pb-4">
+            {facts.contents.map((r) => {
+              const locked = !full && r.page > free
+              const here = section?.id === r.id
+              return (
+                <li key={r.id}>
+                  <button type="button" onClick={() => go(r.page)} className={`flex w-full items-start gap-2 rounded-lg py-2 text-left ${r.level ? 'pl-6 pr-2 text-[12.5px] text-ink-2' : 'px-2 text-[13px] font-bold text-ink'} ${here ? 'bg-[#e6f4f3]' : ''}`}>
+                    <span className="min-w-0 flex-1 leading-snug">{r.title}</span>
+                    {locked && <Lock className="mt-0.5 size-3.5 shrink-0 text-muted" />}
+                    <span className="shrink-0 tabular-nums text-muted">{r.page}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </BottomSheet>
       )}
 
       <MobileToast text={toast} onClose={closeToast} bottom={140} />
     </div>
-  )
-}
-
-function Tool({ label, active, disabled, onClick, night, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={active}
-      className={`flex h-[54px] flex-col items-center justify-center gap-0.5 rounded-xl text-[10.5px] font-medium transition disabled:opacity-35 ${active ? 'bg-[#0b6d73] text-white' : night ? 'text-[#b9c8d1]' : 'text-ink'}`}
-    >
-      <span className="grid h-6 place-items-center">{children}</span>
-      {label}
-    </button>
   )
 }
