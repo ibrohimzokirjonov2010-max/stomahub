@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+import MapPicker, { MapPreview } from '../components/MapPicker'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   BadgeCheck, Bell, Building2, Camera, Check, CreditCard, Download, Globe,
@@ -572,6 +574,7 @@ function ClinicCard({ draft, editing, setEditing, setForm, onSave, onPhoto, busy
               <>
                 <input className={field} value={draft.name} onChange={set('name')} placeholder="Klinika nomi" />
                 <input className={field} value={draft.address} onChange={set('address')} placeholder="Manzil" />
+                <MapPicker lat={draft.lat} lng={draft.lng} onChange={({ lat, lng, geo }) => setForm((d) => ({ ...(d || draft), lat, lng, ...(geo?.display ? { address: [geo.city, geo.street].filter(Boolean).join(', ') } : {}) }))} />
                 <input className={field} value={draft.hours} onChange={set('hours')} placeholder="09:00–19:00" />
                 <PhoneInput className="h-11" value={draft.phone} onChange={(v) => setForm((f) => ({ ...(f || draft), phone: extractUzLocalDigits(v) }))} valueMode="local" placeholder="+998 90 123 45 67" />
                 <input className={field} value={draft.website} onChange={set('website')} placeholder="https://" />
@@ -581,6 +584,7 @@ function ClinicCard({ draft, editing, setEditing, setForm, onSave, onPhoto, busy
               <>
                 <p className="text-[15px] font-bold text-[#12263a]">{draft.name || '—'}</p>
                 <p className="flex items-start gap-2 text-[13px] text-[#5b6b7d]"><MapPin className="mt-0.5 size-3.5 shrink-0 text-[#0F766E]" />{draft.address || '—'}</p>
+                {draft.lat != null && <MapPreview lat={draft.lat} lng={draft.lng} />}
                 <p className="text-[13px] text-[#5b6b7d]">Ish vaqti: {draft.hours || '—'}</p>
                 <p className="flex items-center gap-2 text-[13px] text-[#5b6b7d]"><Phone className="size-3.5 text-[#0F766E]" />{draft.phone || '—'}</p>
                 {draft.website && <a href={draft.website} target="_blank" rel="noreferrer" className="text-[13px] font-semibold text-[#0F766E]">{draft.website}</a>}
@@ -728,6 +732,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
             <p className="mt-2 text-[13.5px] font-bold text-[#12263a]">{a.name}</p>
             <p className="mt-1 text-[12.5px] text-[#5b6b7d]">{fmtPhone(a.phone)}</p>
             <p className="mt-1 text-[12.5px] text-[#5b6b7d]">{a.city}, {a.address}</p>
+            {a.lat != null && <MapPreview lat={a.lat} lng={a.lng} />}
             {a.id !== profile.defaultAddr && (
               <button type="button" className="mt-2 text-[12px] font-semibold text-[#0F766E]" onClick={() => { profileStore.update({ defaultAddr: a.id }); flushProfile() }}>Asosiy qilish</button>
             )}

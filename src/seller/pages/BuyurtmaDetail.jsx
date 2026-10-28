@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, RefreshCw, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink } from 'lucide-react'
 import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync } from '../api'
@@ -11,14 +12,15 @@ import { OrderBadge } from './Buyurtmalar'
 import { O_LABEL, O_NEXT, O_FLOW, DELIVERY, showPhone, phoneOf } from '../components/buyurtmalar/constants'
 
 const REASONS = ['Mahsulot omborda qolmagan', 'Xaridor bekor qilishni so‘radi', 'Xaridor bilan bog‘lanib bo‘lmadi', 'Manzil noto‘g‘ri', 'Boshqa sabab']
-const mapUrl = (a) => `https://yandex.uz/maps/?text=${encodeURIComponent(a)}`
+const mapUrl = (a, o) => { const g = o?.lat != null ? { lat: o.lat, lng: o.lng } : parseGeo(a); return g.lat != null ? osmUrl(g.lat, g.lng) : `https://yandex.uz/maps/?text=${encodeURIComponent(g.text)}` }
+const addrText = (a) => parseGeo(a).text
 
 function printWaybill(o, shop) {
   const w = window.open('', '_blank', 'width=800,height=900')
   if (!w) { toast('Brauzer yangi oynani blokladi'); return }
   const rows = o.items.map((it, i) => `<tr><td>${i + 1}</td><td>${it.name}${it.variant ? ` (${it.variant})` : ''}</td><td>${it.qty}</td><td>${num(it.price)}</td><td>${num(it.price * it.qty)}</td></tr>`).join('')
   w.document.write(`<html><head><title>Nakladnoy ${o.code}</title><style>body{font-family:sans-serif;padding:32px;color:#10283F}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{border:1px solid #ccd;padding:6px 8px;text-align:left;font-size:13px}h1{color:#0F766E}</style></head><body>
-  <h1>Nakladnoy № ${o.code}</h1><p>Sana: ${dmy(o.created_at)} ${hm(o.created_at)}<br>Sotuvchi: ${shop || ''}<br>Xaridor: ${o.customer_name || ''} ${o.customer_phone || ''}<br>Manzil: ${o.address || ''}</p>
+  <h1>Nakladnoy № ${o.code}</h1><p>Sana: ${dmy(o.created_at)} ${hm(o.created_at)}<br>Sotuvchi: ${shop || ''}<br>Xaridor: ${o.customer_name || ''} ${o.customer_phone || ''}<br>Manzil: ${addrText(o.address) || ''}</p>
   <table><tr><th>#</th><th>Mahsulot</th><th>Soni</th><th>Narx (so‘m)</th><th>Jami (so‘m)</th></tr>${rows}</table>
   <p>Mahsulotlar: ${som(o.subtotal)}<br>Chegirma: ${som(o.discount_amount || 0)}<br>Yetkazish: ${som(o.delivery_fee || 0)}<br><b>Jami: ${som(netOf(o) + Number(o.delivery_fee || 0))}</b><br>To‘lov: naqd pul, yetkazilganda</p>
   <p style="margin-top:48px">Topshirdi: ____________ &nbsp;&nbsp; Qabul qildi: ____________</p><script>print()</script></body></html>`)
@@ -128,7 +130,7 @@ export default function BuyurtmaDetail() {
                     <div className="flex gap-2"><UserRound className="size-4 text-[#0F766E]" /><div>Mas’ul shaxs<div className="text-[13.5px] text-[#10283F]">{o.contact_person || o.customer_name || '—'}</div></div></div>
                     <div className="flex gap-2"><Phone className="size-4 text-[#0F766E]" /><div>Telefon<div className="text-[13.5px] text-[#10283F]">{phoneOf(o)}</div></div></div>
                   </div>
-                  <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[#5C6E80]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div className="flex-1">Manzil<div className="text-[12.5px] text-[#3D4E5F]">{o.address || '—'}</div></div>{o.address && <a href={mapUrl(o.address)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-[#DCE5E7] px-3 py-2 text-[12px] font-semibold text-[#0F766E]"><Navigation className="size-3.5" />Xaritada ko‘rish</a>}</div>
+                  <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[#5C6E80]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div className="flex-1">Manzil<div className="text-[12.5px] text-[#3D4E5F]">{addrText(o.address) || '—'}</div><MapPreview lat={o.lat ?? parseGeo(o.address).lat} lng={o.lng ?? parseGeo(o.address).lng} /></div>{o.address && <a href={mapUrl(o.address, o)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-[#DCE5E7] px-3 py-2 text-[12px] font-semibold text-[#0F766E]"><Navigation className="size-3.5" />Xaritada ko‘rish</a>}</div>
                 </div>
               </div>
             </div>
@@ -195,7 +197,7 @@ export default function BuyurtmaDetail() {
           </div>
           <div className={`${card} p-3`}>
             <h3 className="flex items-center gap-2 text-[15px] font-bold"><MapPin className="size-5 text-[#0F766E]" />Yetkazib berish manzili</h3>
-            <div className="mt-2 flex gap-2"><div className="flex flex-1 gap-2 rounded-lg border border-[#CCFBF1] bg-[#F0FDFA] p-2.5 text-[12px] text-[#3D4E5F]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div>{o.address || '—'}<div className="text-[#5C6E80]">{deliv}</div></div></div>{o.address && <a href={mapUrl(o.address)} target="_blank" rel="noreferrer" className="flex w-[118px] items-center justify-center gap-1 rounded-lg bg-[#F3F7F7] text-[12px] text-[#0F766E]"><MapPin className="size-4" />Xaritada ko‘rish</a>}</div>
+            <div className="mt-2 flex gap-2"><div className="flex flex-1 gap-2 rounded-lg border border-[#CCFBF1] bg-[#F0FDFA] p-2.5 text-[12px] text-[#3D4E5F]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div>{addrText(o.address) || '—'}<div className="text-[#5C6E80]">{deliv}</div><MapPreview lat={o.lat ?? parseGeo(o.address).lat} lng={o.lng ?? parseGeo(o.address).lng} /></div></div>{o.address && <a href={mapUrl(o.address, o)} target="_blank" rel="noreferrer" className="flex w-[118px] items-center justify-center gap-1 rounded-lg bg-[#F3F7F7] text-[12px] text-[#0F766E]"><MapPin className="size-4" />Xaritada ko‘rish</a>}</div>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <div className={`${card} p-3 text-[12px] text-[#5C6E80]`}><h3 className="mb-1.5 flex items-center gap-1.5 text-[14px] font-bold text-[#10283F]"><Banknote className="size-5 text-[#0F766E]" />To‘lov ma’lumotlari</h3><b className="text-[13px] text-[#10283F]">Naqd pul</b><br />Buyurtma mijozga yetkazilganda naqd pulda to‘lanadi.</div>

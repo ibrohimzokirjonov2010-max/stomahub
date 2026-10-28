@@ -122,7 +122,7 @@ export async function fetchMyOrders(uid) {
       mode: o.delivery_method === 'olib_ketish' ? 'pickup' : 'courier',
       status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
       history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
-      name: o.customer_name, phone: o.customer_phone, address: [o.city, o.address].filter(Boolean).join(', '),
+      name: o.customer_name, phone: o.customer_phone, address: [o.city, String(o.address || '').replace(/\s*\[geo:[^\]]+\]/, '')].filter(Boolean).join(', '), lat: o.lat ?? (String(o.address || '').match(/\[geo:(-?[\d.]+),/) || [])[1] ?? null, lng: o.lng ?? (String(o.address || '').match(/\[geo:[^,]+,(-?[\d.]+)\]/) || [])[1] ?? null,
       trackingUrl: o.tracking_url || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
     }
   })

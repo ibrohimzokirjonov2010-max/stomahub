@@ -8,10 +8,10 @@ const KEY = 'stomahub-profile'
 
 export const ADDRESS_KINDS = [['home', 'Uy'], ['work', 'Klinika'], ['branch', 'Filial'], ['other', 'Boshqa']]
 
-export function addr(id, kind, name, phone, district, street, extra = '', city = 'Toshkent') {
+export function addr(id, kind, name, phone, district, street, extra = '', city = 'Toshkent', lat = null, lng = null) {
   const tag = ADDRESS_KINDS.find((k) => k[0] === kind)[1]
   const place = city === 'Toshkent' || district !== 'Markaz' ? `${district} tumani, ` : ''
-  return { id, kind, tag, name, phone, city, district, street, extra, address: `${place}${street}${extra ? `, ${extra}` : ''}` }
+  return { id, kind, tag, name, phone, city, district, street, extra, lat, lng, address: `${place}${street}${extra ? `, ${extra}` : ''}` }
 }
 
 export const COURSES = []

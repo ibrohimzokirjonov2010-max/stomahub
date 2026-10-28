@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Award, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown,
@@ -393,6 +394,7 @@ export default function Wizard() {
                       <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.address} onChange={(e) => set({ address: e.target.value })} />
                     </span>
                   </label>
+                    <MapPicker lat={form.lat} lng={form.lng} height={220} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { address: geo.street, ...(geo.city ? { city: geo.city } : {}) } : {}) })} />
                 </div>
                 <label className="relative block h-[108px] cursor-pointer overflow-hidden rounded-xl bg-[#f4fbfa]">
                   {form.placeImg ? <img src={form.placeImg} alt="" className="size-full object-cover" /> : <span className="grid size-full place-items-center text-[12px] text-[#8aa0a4]">Manzil rasmi yo‘q</span>}

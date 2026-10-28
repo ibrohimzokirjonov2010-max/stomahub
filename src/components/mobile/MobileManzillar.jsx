@@ -5,6 +5,7 @@ import { useCart } from '../../cart'
 import { ADDRESS_KINDS, addr, profileStore, useProfile } from '../../profileStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
+import MapPicker, { MapPreview } from '../MapPicker'
 import { BottomSheet } from './MobileSeminars'
 import { ADDRESS_ICONS, CITIES } from './MobileCheckout'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
@@ -108,6 +109,7 @@ export default function MobileManzillar() {
                 <p className={`mt-2.5 truncate text-[16px] font-bold ${navy}`}>{a.name || profile.name}</p>
                 <p className="mt-1.5 flex items-center gap-2.5 text-[13px] text-[#5b6b7d]"><Phone className={`size-4 shrink-0 ${teal}`} /> {fmtPhone(a.phone || profile.phone)}</p>
                 <p className="mt-1 flex items-start gap-2.5 text-[13px] leading-snug text-[#5b6b7d]"><MapPin className={`mt-0.5 size-4 shrink-0 ${teal}`} /> {a.city}, {a.address}</p>
+              {a.lat != null && <MapPreview lat={a.lat} lng={a.lng} />}
               </article>
             )
           })}
@@ -165,6 +167,8 @@ function AddressSheet({ address, profile, isMain, onClose, onSave, onRemove }) {
     district: a?.district || CITIES.Toshkent[0],
     street: a?.street || (a ? a.address.replace(`${a.district} tumani, `, '') : ''),
     extra: a?.extra || '',
+    lat: a?.lat ?? null,
+    lng: a?.lng ?? null,
   }))
   const [main, setMain] = useState(isMain || !profile.addresses.length)
   const [tried, setTried] = useState(false)
@@ -177,7 +181,7 @@ function AddressSheet({ address, profile, isMain, onClose, onSave, onRemove }) {
   const submit = () => {
     setTried(true)
     if (Object.values(errors).some(Boolean)) return
-    onSave(addr(a?.id || `a${Date.now()}`, f.kind, f.name.trim(), f.phone, f.district, f.street.trim(), f.extra.trim(), f.city), main)
+    onSave(addr(a?.id || `a${Date.now()}`, f.kind, f.name.trim(), f.phone, f.district, f.street.trim(), f.extra.trim(), f.city, f.lat, f.lng), main)
   }
 
   return (
@@ -210,11 +214,20 @@ function AddressSheet({ address, profile, isMain, onClose, onSave, onRemove }) {
         <input value={f.name} onChange={set('name')} placeholder="Ism yoki klinika nomi" className={input(tried && errors.name)} />
       </Field>
       <Field label="Telefon" err={tried && errors.phone}>
-        <span className={`${input(tried && errors.phone)} flex items-center gap-2`}>
-          <span className="font-semibold">+998</span>
-          <PhoneInput className="min-w-0 flex-1 border-0 bg-transparent px-0" value={f.phone} onChange={(v) => set('phone')({ target: { value: extractUzLocalDigits(v) } })} valueMode="local" placeholder="+998 90 123 45 67" />
-        </span>
+        <PhoneInput className={input(tried && errors.phone)} inputClassName="bg-transparent outline-none" value={f.phone} onChange={(v) => set('phone')({ target: { value: extractUzLocalDigits(v) } })} valueMode="local" />
       </Field>
+      <p className="mt-3 text-[12px] font-medium text-ink-2">Xaritada belgilang</p>
+      <MapPicker lat={f.lat} lng={f.lng} onChange={({ lat, lng, geo }) => setF((v) => {
+        const n = { ...v, lat, lng }
+        if (!geo) return n
+        const city = Object.keys(CITIES).find((c) => geo.city && (geo.city.includes(c) || c.includes(geo.city.split(' ')[0])))
+        if (city) { n.city = city; n.district = CITIES[city][0] }
+        const list = CITIES[n.city] || []
+        const d = list.find((x) => geo.district && geo.district.toLowerCase().startsWith(x.toLowerCase().slice(0, 5)))
+        if (d) n.district = d
+        if (geo.street) n.street = geo.street
+        return n
+      })} />
       <div className="grid grid-cols-2 gap-2">
         <Field label="Shahar">
           <select value={f.city} onChange={(e) => setF((v) => ({ ...v, city: e.target.value, district: CITIES[e.target.value][0] }))} className={input()}>
