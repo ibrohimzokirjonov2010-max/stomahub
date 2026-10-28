@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { withGeo, parseGeo } from './components/MapPicker'
 import { cancelMyOrder, fetchMyOrders } from './buyerApi'
 import { supabase } from './supabaseClient'
 import { currentUid, isDemoUser, onAccount, uploadAvatar } from './recordSync'
@@ -272,7 +273,7 @@ async function syncChildren(uid) {
   const clinicRow = {
     user_id: uid,
     name: clinic.name || state.clinic || '',
-    address: clinic.address || '',
+    address: withGeo(parseGeo(clinic.address || '').text, clinic),
     hours: clinic.hours || '',
     phone: clinic.phone || '',
     website: clinic.website || '',
@@ -441,7 +442,7 @@ async function hydrateProfile(nextUid) {
     })),
     clinicInfo: {
       name: clinicRow?.name || profile?.clinic || '',
-      address: clinicRow?.address || '',
+      address: parseGeo(clinicRow?.address || '').text, lat: parseGeo(clinicRow?.address || '').lat, lng: parseGeo(clinicRow?.address || '').lng,
       hours: clinicRow?.hours || '',
       phone: clinicRow?.phone || '',
       website: clinicRow?.website || '',

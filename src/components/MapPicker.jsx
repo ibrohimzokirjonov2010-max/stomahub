@@ -6,6 +6,33 @@ const TASHKENT = [41.3111, 69.2797]
 let lastGeo = 0
 
 // Reverse geocode via Nominatim (free, no key). Max ~1 req/s, only on user action.
+const CYR = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'j',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'x',ц:'s',ч:'ch',ш:'sh',щ:'sh',ъ:'’',ы:'i',ь:'',э:'e',ю:'yu',я:'ya',ў:'o‘',қ:'q',ғ:'g‘',ҳ:'h' }
+export function translit(t = '') {
+  if (!/[\u0400-\u04FF]/.test(t)) return t
+  return t.replace(/\s*(улица|кўчаси)/gi, ' ko‘chasi').replace(/\s*(проспект|шоҳ кўчаси)/gi, ' shoh ko‘chasi').replace(/\s*(переулок|тор кўчаси)/gi, ' tor ko‘chasi').replace(/^(улица|проспект|переулок)\s+(.+)$/i, '$2 $1').replace(/[\u0400-\u04FF]/g, (ch) => { const l = ch.toLowerCase(); const r = CYR[l] ?? ch; return ch !== l ? r.charAt(0).toUpperCase() + r.slice(1) : r })
+    .replace(/\bUlitsa\b|\bulitsa\b/g, 'ko‘chasi').replace(/\bProspekt\b|\bprospekt\b/g, 'shoh ko‘chasi').replace(/\bpereulok\b/gi, 'tor ko‘chasi')
+}
+// Canonical cities/districts with Russian/Uzbek aliases (lowercased stems).
+const CITY_ALIAS = { Toshkent: ['toshkent', 'tashkent', 'ташкент', 'тошкент'], Samarqand: ['samarqand', 'samarkand', 'самарканд'], Buxoro: ['buxoro', 'bukhara', 'бухара'], Andijon: ['andijon', 'andijan', 'андижан'], 'Farg‘ona': ['farg', 'fergana', 'фергана', 'фарғона'], Namangan: ['namangan', 'наманган'], Nukus: ['nukus', 'нукус'] }
+const DIST_ALIAS = {
+  Yunusobod: ['yunusobod', 'юнусабад', 'юнусобод'], Chilonzor: ['chilonzor', 'чиланзар', 'чилонзор'], 'Mirzo Ulug‘bek': ['mirzo ulug', 'мирзо-улугбек', 'мирзо улугбек', 'мирзо улуғбек'],
+  Yakkasaroy: ['yakkasaroy', 'яккасарай', 'яккасарой'], Mirobod: ['mirobod', 'мирабад', 'миробод'], Shayxontohur: ['shayxontohur', 'шайхантахур', 'шайхонтоҳур'],
+  Sergeli: ['sergeli', 'сергели'], Uchtepa: ['uchtepa', 'учтепа'], Yashnobod: ['yashnobod', 'яшнабад', 'яшнобод'], Olmazor: ['olmazor', 'алмазар', 'олмазор'], Bektemir: ['bektemir', 'бектемир'],
+  Siab: ['siab', 'сиаб', 'сиёб'], Kogon: ['kogon', 'каган', 'когон'], Asaka: ['asaka', 'асака'], 'Qo‘qon': ['qo‘qon', 'qoqon', 'коканд', 'қўқон'], Chortoq: ['chortoq', 'чартак', 'чортоқ'],
+}
+const pick = (table, vals) => { for (const v of vals) { const l = String(v || '').toLowerCase(); if (!l) continue; for (const [k, al] of Object.entries(table)) if (al.some((x) => l.includes(x))) return k } return '' }
+export function normalizeGeo(a) {
+  const notMahalla = (v) => (v && !/махалл|mahalla|mfy/i.test(v) ? v : '')
+  // districts only from district-level fields; never neighbourhood/mahalla
+  const district = pick(DIST_ALIAS, [a.city_district, a.district, a.county, a.borough, a.suburb]) || 'Markaz'
+  const iso = { 'UZ-TK': 'Toshkent', 'UZ-SA': 'Samarqand', 'UZ-BU': 'Buxoro', 'UZ-AN': 'Andijon', 'UZ-FA': 'Farg‘ona', 'UZ-NG': 'Namangan', 'UZ-QR': 'Nukus' }[a['ISO3166-2-lvl4']]
+  const TASH = ['Yunusobod', 'Chilonzor', 'Mirzo Ulug‘bek', 'Yakkasaroy', 'Mirobod', 'Shayxontohur', 'Sergeli', 'Uchtepa', 'Yashnobod', 'Olmazor', 'Bektemir']
+  const city = pick(CITY_ALIAS, [notMahalla(a.city), a.state, notMahalla(a.town), a.region]) || iso || (TASH.includes(district) ? 'Toshkent' : '') || translit(notMahalla(a.city) || notMahalla(a.town) || a.state || '').replace(/\s*(shahri|viloyati)$/i, '')
+  const road = translit(a.road || a.pedestrian || a.footway || '')
+  const street = [road, a.house_number ? `${translit(a.house_number)}-uy` : ''].filter(Boolean).join(', ')
+  return { city, district, street }
+}
+
 export async function reverseGeocode(lat, lng) {
   const wait = Math.max(0, 1100 - (Date.now() - lastGeo))
   if (wait) await new Promise((r) => setTimeout(r, wait))
@@ -14,11 +41,8 @@ export async function reverseGeocode(lat, lng) {
   const res = await fetch(url, { headers: { Accept: 'application/json' } })
   if (!res.ok) throw new Error('geocode')
   const j = await res.json()
-  const a = j.address || {}
-  const city = a.city || a.town || a.village || a.state || ''
-  const district = (a.city_district || a.suburb || a.county || a.district || '').replace(/\s*(tumani|район|District)$/i, '')
-  const street = [a.road || a.pedestrian || a.neighbourhood || '', a.house_number ? `${a.house_number}-uy` : ''].filter(Boolean).join(', ')
-  return { city, district, street, display: j.display_name || '' }
+  const n = normalizeGeo(j.address || {})
+  return { ...n, display: j.display_name || '' }
 }
 
 // Orders store coordinates as a trailing token in the address text until orders.lat/lng columns exist.

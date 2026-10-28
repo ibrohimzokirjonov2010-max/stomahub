@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import MapPicker from '../../../components/MapPicker'
+import MapPicker, { withGeo, parseGeo } from '../../../components/MapPicker'
 import { Phone, MapPin, Clock, Save, Plus } from 'lucide-react'
 import Modal from '../shell/Modal'
 import { Btn, Field, Input, Toggle, Err, toast } from '../ui'
@@ -7,13 +7,13 @@ import { insertRow, updateRow, logActivity } from '../../api'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 export default function BranchForm({ edit, onClose }) {
-  const [v, setV] = useState(() => edit ? { ...edit } : { name: '', address: '', phone: '+998 ', hours: '09:00 - 18:00', active: true })
+  const [v, setV] = useState(() => edit ? (() => { const g = parseGeo(edit.address); return { ...edit, address: g.text, lat: g.lat, lng: g.lng } })() : { name: '', address: '', phone: '+998 ', hours: '09:00 - 18:00', active: true })
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   const set = (k, x) => { setV((s) => ({ ...s, [k]: x })); setErr('') }
   const save = async () => {
     if (!v.name.trim()) return setErr('Filial nomini kiriting.')
     if (!v.address.trim()) return setErr('Manzilni kiriting.')
-    const row = { name: v.name.trim(), address: v.address.trim(), phone: v.phone.trim(), hours: v.hours.trim(), active: v.active, lat: v.lat ?? null, lng: v.lng ?? null }
+    const row = { name: v.name.trim(), address: withGeo(v.address.trim(), v), phone: v.phone.trim(), hours: v.hours.trim(), active: v.active }
     setBusy(true); const r = edit ? await updateRow('seller_branches', edit.id, row) : await insertRow('seller_branches', row); setBusy(false)
     if (!r.ok) return setErr(r.error || 'Saqlanmadi.')
     await logActivity(edit ? 'Filial tahrirlandi' : 'Filial qo‘shildi', row.name)

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import MapPicker from '../components/MapPicker'
+import MapPicker, { withGeo, parseGeo } from '../components/MapPicker'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   BadgeCheck, MapPin, Settings, ArrowRight, UserPlus, CalendarPlus, CalendarDays, UserRound, CircleDollarSign, Armchair,
@@ -57,7 +57,7 @@ async function upsertCustomerClinic(uid, settings) {
   const base = {
     user_id: uid,
     name: (settings.name || '').trim() || 'Mening klinikam',
-    address: (settings.address || settings.city || '').trim(),
+    address: withGeo(parseGeo((settings.address || settings.city || '').trim()).text, settings),
     hours: `${open}–${close}`,
     phone: (settings.phone || '').trim(),
     website: (settings.website || '').trim(),
@@ -123,7 +123,7 @@ export default function Klinika() {
       }
       const [clinic, payload] = await Promise.all([fetchCustomerClinic(id), loadBlob('clinic_board')])
       if (stop) return
-      if (clinic) setSettings(settingsFromClinic(clinic))
+      if (clinic) { const g = parseGeo(clinic.address || ''); setSettings({ ...settingsFromClinic({ ...clinic, address: g.text }), lat: g.lat, lng: g.lng }) }
       else if (payload?.settings) setSettings({ ...DEFAULT_SETTINGS, ...payload.settings })
       else setSettings({ ...DEFAULT_SETTINGS })
       if (payload) {
