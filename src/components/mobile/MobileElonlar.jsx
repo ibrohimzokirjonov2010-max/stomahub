@@ -220,7 +220,7 @@ function FilterSheet({ initial, count, savedCount, onClose, onApply }) {
 
 const CAT_IMG = { uskuna: '/images/jihozlar/fengdan.jpg', material: '/images/market/p3.jpg', klinika: '/images/jihozlar/fengdan-room.jpg', ish: '/images/ishlar/ish-hall.jpg', asbob: '/images/market/p5.jpg' }
 
-function PostAdSheet({ onClose, onDone }) {
+export function PostAdSheet({ onClose, onDone }) {
   const [f, setF] = useState({ deal: 'sale', cat: 'material', title: '', sub: '', price: '', priceMax: '', city: 'Toshkent', cond: 'Yangi', phone: '+998 ' })
   const [photos, setPhotos] = useState([])
   const [tried, setTried] = useState(false)

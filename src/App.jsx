@@ -30,7 +30,7 @@ import ConfirmHeld from './organizer/pages/Confirm'
 import SeminarDetail from './organizer/pages/Detail'
 import { Marketing, Speakers, Reports, Ratings, SettingsPage, HelpPage } from './organizer/pages/Extra'
 import ChannelsRoute from './pages/Channels'
-import EducationRoute from './pages/Education'
+import { FormaCatalog, MarketCatalog, SeminarsCatalog, BooksCatalog, EducationCatalog, UstalarCatalog, JihozCatalog, IshlarCatalog, SurplusCatalog, DoctorsCatalog, ElonlarCatalog } from './pages/CatalogRoutes'
 import BooksRoute from './pages/Books'
 import Book from './pages/Book'
 import Reader from './pages/Reader'
@@ -128,7 +128,7 @@ export default function App() {
           <Route path="/royxat" element={<Register />} />
           <Route path="/maxfiylik" element={<Privacy />} />
           <Route path="/foydalanish-shartlari" element={<Terms />} />
-          <Route path="/marketplace" element={<Responsive mobile={<MobileMarketplace />}><ShopLayout active="all"><Marketplace /></ShopLayout></Responsive>} />
+          <Route path="/marketplace" element={<MarketCatalog />} />
           <Route
             path="/product/:id"
             element={
@@ -139,8 +139,8 @@ export default function App() {
               </Responsive>
             }
           />
-          <Route path="/ortiqcha" element={<Responsive mobile={<MobileSurplus />}><ShopLayout active="surplus" search="icon" placeholder="Ortiqcha materiallar ichidan qidiring..."><Surplus /></ShopLayout></Responsive>} />
-          <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
+          <Route path="/ortiqcha" element={<SurplusCatalog />} />
+          <Route path="/seminarlar" element={<SeminarsCatalog />} />
           {sellerRoutes}
           {adminRoutes}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
@@ -166,17 +166,17 @@ export default function App() {
           <Route path="/seminarlar/:id/royxat" element={<Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive>} />
           <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminar />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />
-          <Route path="/talim" element={<EducationRoute />} />
-          <Route path="/kitoblar" element={<Responsive mobile={<MobileBooks />}><BooksRoute /></Responsive>} />
+          <Route path="/talim" element={<EducationCatalog />} />
+          <Route path="/kitoblar" element={<BooksCatalog />} />
           <Route path="/kitoblar/:id/oqish" element={<Responsive mobile={<MobileReader />}><Reader /></Responsive>} />
           <Route path="/kitoblar/:id" element={<Responsive mobile={<MobileBook />}><ShopLayout active="books" search="plain" placeholder="Mahsulot, kurs, kitob yoki maqola qidiring..."><Book /></ShopLayout></Responsive>} />
-          <Route path="/forma" element={<Responsive mobile={<MobileForma />}><Forma /></Responsive>} />
+          <Route path="/forma" element={<FormaCatalog />} />
           <Route path="/forma/:id" element={<Responsive mobile={<MobileFormaItem />}><ShopLayout active="forma" search="plain" placeholder="Mahsulot, brend yoki kategoriya qidiring..."><FormaItem /></ShopLayout></Responsive>} />
-          <Route path="/jihozlar" element={<Responsive mobile={<MobileJihozlar />}><Jihozlar /></Responsive>} />
+          <Route path="/jihozlar" element={<JihozCatalog />} />
           <Route path="/jihozlar/:id" element={<Responsive mobile={<MobileJihozItem />}><ShopLayout active="jihozlar" search="plain" placeholder="Jihoz, material, brend yoki kategoriya qidiring..."><JihozItem /></ShopLayout></Responsive>} />
-          <Route path="/ustalar" element={<Responsive mobile={<MobileUstalar />}><Ustalar /></Responsive>} />
+          <Route path="/ustalar" element={<UstalarCatalog />} />
           <Route path="/ustalar/:id" element={<Responsive mobile={<MobileUsta />}><ShopLayout active="ustalar" search="plain" placeholder="Usta, xizmat yoki brend bo‘yicha qidiring..."><Usta /></ShopLayout></Responsive>} />
-          <Route path="/ishlar" element={<Responsive mobile={<MobileIshlar />}><Ishlar /></Responsive>} />
+          <Route path="/ishlar" element={<IshlarCatalog />} />
           <Route path="/ishlar/:id" element={<Responsive mobile={<MobileIsh />}><ShopLayout active="ishlar" search="plain" placeholder="Lavozim, klinika yoki shahar bo‘yicha qidiring..."><IshItem /></ShopLayout></Responsive>} />
           <Route path="/yangiliklar" element={<Yangiliklar />} />
           <Route path="/yangiliklar/:id" element={<ShopLayout active="yangiliklar" search="plain" placeholder="Stomatologiya sohasidagi yangiliklarni qidiring..."><Yangilik /></ShopLayout>} />
@@ -195,10 +195,10 @@ export default function App() {
           <Route path="/ombor/yangi" element={<CrmGate><Responsive mobile={<MobileOmborNew />}><Navigate to="/ombor" replace /></Responsive></CrmGate>} />
           <Route path="/buyurtma" element={<Responsive mobile={<MobileCart />}><Checkout /></Responsive>} />
           <Route path="/buyurtma/rasmiylashtirish" element={<Responsive mobile={<MobileCheckout />}><Navigate to="/buyurtma" replace /></Responsive>} />
-          <Route path="/mutaxassislar" element={<Responsive mobile={<MobileMutaxassislar />}><Navigate to="/" replace /></Responsive>} />
-          <Route path="/mutaxassislar/:id" element={<Responsive mobile={<MobileMutaxassis />}><Navigate to="/" replace /></Responsive>} />
-          <Route path="/elonlar" element={<Responsive mobile={<MobileElonlar />}><Navigate to="/" replace /></Responsive>} />
-          <Route path="/elonlar/:id" element={<Responsive mobile={<MobileElon />}><Navigate to="/" replace /></Responsive>} />
+          <Route path="/mutaxassislar" element={<DoctorsCatalog />} />
+          <Route path="/mutaxassislar/:id" element={<Responsive mobile={<MobileMutaxassis />}><ShopLayout active="mutaxassislar" search="plain"><div className="mx-auto max-w-[560px] py-4 [transform:translateZ(0)]"><MobileMutaxassis /></div></ShopLayout></Responsive>} />
+          <Route path="/elonlar" element={<ElonlarCatalog />} />
+          <Route path="/elonlar/:id" element={<Responsive mobile={<MobileElon />}><ShopLayout active="elonlar" search="plain"><div className="mx-auto max-w-[560px] py-4 [transform:translateZ(0)]"><MobileElon /></div></ShopLayout></Responsive>} />
           <Route path="/community" element={<Responsive mobile={<MobileCommunity />}><Community /></Responsive>} />
           <Route path="/community/:id" element={<Responsive mobile={<MobilePost />}><Navigate to="/community" replace /></Responsive>} />
           <Route path="/sertifikatlar" element={<Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive>} />
