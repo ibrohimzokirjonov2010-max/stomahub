@@ -83,6 +83,7 @@ export default function Buyurtmalar() {
     <div>
       <PageHead title="Buyurtmalar" subtitle={mobile ? 'Barcha buyurtmalarni ko‘ring va boshqaring.' : 'Barcha buyurtmalarni boshqaring va holatini kuzatib boring.'}
         action={<Btn icon={Plus} size="lg" onClick={() => setAdding(true)} className="px-8">Buyurtma qo‘lda qo‘shish</Btn>} />
+      {list.length > 0 && <div className="mb-3 flex justify-end md:hidden"><Btn size="sm" variant="gray" icon={Download} onClick={exportCsv}>Eksport (CSV)</Btn></div>}
       <div className="hidden md:block">
         <div className={`${card} flex items-center gap-3 p-3`}>
           <SearchInput value={q} onChange={setQ} placeholder="Buyurtma raqami yoki xaridor nomi..." className="flex-[1.5]" />
