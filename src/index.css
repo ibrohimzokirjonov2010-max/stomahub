@@ -364,16 +364,13 @@ body {
   --safe-bottom-sim: 0px;
 }
 
+:root {
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top-sim));
+}
+
 .app-topbar {
-  /* padding fills the status-bar zone; stick at top:0 so we do not double-count */
-  padding-top: max(0.75rem, env(safe-area-inset-top, 0px), var(--safe-top-sim));
+  padding-top: 0.75rem;
   background: inherit;
-}
-.app-topbar.sticky.top-0 {
-  top: 0 !important;
-}
-.app-topbar.sticky.top-0::before {
-  display: none;
 }
 
 .safe-overlay-top {
@@ -385,22 +382,25 @@ body {
 }
 
 @media (max-width: 767.98px) {
+  /* iOS standalone: content starts below the status bar; a fixed strip
+     keeps scrolled content from showing through under the clock. */
   html[data-bleed="0"] body {
-    padding-top: 0;
+    padding-top: var(--safe-top);
+  }
+  html[data-bleed="0"] body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--safe-top);
+    background: var(--status-bar-bg, #f1f9f8);
+    z-index: 70;
+    pointer-events: none;
   }
 
   .sticky.top-0 {
-    top: max(env(safe-area-inset-top, 0px), var(--safe-top-sim)) !important;
-  }
-  .sticky.top-0::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(max(env(safe-area-inset-top, 0px), var(--safe-top-sim)) * -1);
-    height: max(env(safe-area-inset-top, 0px), var(--safe-top-sim));
-    background: inherit;
-    pointer-events: none;
+    top: var(--safe-top) !important;
   }
 
   html[data-chrome="app"] .app-action-bar,

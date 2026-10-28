@@ -97,10 +97,10 @@ function ProductView({ id }) {
           alt={p.name}
           className={p.images.length > 1 ? `size-full object-cover ${shot === 0 && p.images[0].includes('g-main') ? 'scale-[1.26]' : ''}` : 'size-full bg-white object-contain px-10 pb-4 pt-14'}
         />
-        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/marketplace'))} aria-label="Orqaga" className="absolute left-3.5 top-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
+        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/marketplace'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />
         </button>
-        <div className="absolute right-3.5 top-3.5 flex gap-2">
+        <div className="safe-overlay-top absolute right-3.5 flex gap-2">
           <button type="button" onClick={() => { setLiked(!liked); setToast(liked ? 'Sevimlilardan olib tashlandi' : 'Sevimlilarga qo‘shildi') }} aria-label="Sevimlilarga qo‘shish" aria-pressed={liked} className="grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
             <Heart className={`size-[19px] ${liked ? 'fill-sale text-sale' : ''}`} />
           </button>
