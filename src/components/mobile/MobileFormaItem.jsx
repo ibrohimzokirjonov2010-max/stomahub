@@ -103,10 +103,10 @@ function FormaView({ id }) {
         }}
       >
         <img src={gallery[shot]} alt={p.title} className="size-full object-cover object-[50%_20%]" />
-        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/forma'))} aria-label="Orqaga" className="absolute left-3.5 top-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
+        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/forma'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />
         </button>
-        <div className="absolute right-3.5 top-3.5 flex gap-2">
+        <div className="safe-overlay-top absolute right-3.5 flex gap-2">
           <button type="button" onClick={() => { setLiked(!liked); if (!liked) setToast('Sevimlilarga qo‘shildi') }} aria-label="Sevimlilarga" aria-pressed={liked} className="grid size-10 place-items-center rounded-xl bg-white/95 shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
             <Heart className={`size-5 ${liked ? 'fill-sale text-sale' : 'text-ink'}`} />
           </button>
