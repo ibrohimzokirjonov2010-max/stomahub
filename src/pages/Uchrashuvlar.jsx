@@ -304,7 +304,7 @@ function VisitModal({ patients, draft, onClose, onSave }) {
         </div>
         <div className="bemor-dialog-body px-4 pb-2">
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <label className="text-[12px] font-medium">Bemor
+            <div className="text-[12px] font-medium">Bemor
               {patient ? (
                 <span className="mt-1 flex items-center gap-2 rounded-lg border border-line px-2 py-1.5">
                   <Face src={patient.photo} name={patient.name} />
@@ -322,7 +322,7 @@ function VisitModal({ patients, draft, onClose, onSave }) {
                   )}
                 </span>
               )}
-            </label>
+            </div>
             <label className="text-[12px] font-medium">Shifokor
               <select value={doctor} onChange={(e) => setDoctor(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-[12.5px]">
                 {doctors.length ? doctors.map((d) => <option key={d.id} value={d.id}>{d.name} — {d.role}</option>) : <option value="me">Men</option>}
