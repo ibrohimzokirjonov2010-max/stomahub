@@ -54,6 +54,7 @@ import Aksiya from './pages/Aksiya'
 import Bemorlar from './pages/Bemorlar'
 import Bemor from './pages/Bemor'
 import Uchrashuvlar from './pages/Uchrashuvlar'
+import Hisobotlar from './pages/Hisobotlar'
 import Tolovlar from './pages/Tolovlar'
 import Ombor from './pages/Ombor'
 import Checkout from './pages/Checkout'
@@ -197,6 +198,7 @@ export default function App() {
           <Route path="/uchrashuvlar/yangi" element={<CrmGate><Responsive mobile={<MobileUchrashuvNew />}><Navigate to="/uchrashuvlar" replace /></Responsive></CrmGate>} />
           <Route path="/tolovlar" element={<CrmGate><Responsive mobile={<MobileTolovlar />}><Tolovlar /></Responsive></CrmGate>} />
           <Route path="/tolovlar/yangi" element={<CrmGate><Responsive mobile={<MobileTolovNew />}><Navigate to="/tolovlar" replace /></Responsive></CrmGate>} />
+          <Route path="/hisobotlar" element={<CrmGate><Hisobotlar /></CrmGate>} />
           <Route path="/ombor" element={<CrmGate><Responsive mobile={<MobileOmbor />}><Ombor /></Responsive></CrmGate>} />
           <Route path="/ombor/yangi" element={<CrmGate><Responsive mobile={<MobileOmborNew />}><Navigate to="/ombor" replace /></Responsive></CrmGate>} />
           <Route path="/buyurtma" element={<Responsive mobile={<MobileCart />}><Checkout /></Responsive>} />
