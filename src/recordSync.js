@@ -23,6 +23,16 @@ export function accountReady() {
   return ready
 }
 
+const readyListeners = new Set()
+const emitReady = () => readyListeners.forEach((fn) => fn())
+/** true once the signed-in user's blobs are pulled (or there is no backend / no user). */
+export function useBlobsReady() {
+  return useSyncExternalStore((fn) => {
+    readyListeners.add(fn)
+    return () => readyListeners.delete(fn)
+  }, () => !supabase || ready || pendingUid === null)
+}
+
 export function getSyncError() {
   return syncError
 }
@@ -168,6 +178,7 @@ function setUid(next) {
   pendingUid = next
   ready = false
   accountListeners.forEach((listener) => listener(uid))
+  emitReady()
 }
 
 async function bootAccount(nextUid) {
@@ -181,6 +192,7 @@ async function bootAccount(nextUid) {
   setUid(nextUid)
   await pullBlobs()
   ready = true
+  emitReady()
 }
 
 const targets = []
