@@ -4,7 +4,7 @@ import { Bookmark, Clock, Eye, MapPin, Send, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
-import { articles, cats, catName, events, people, popular, viewsOf } from '../yangiliklarData'
+import { articles, authorOf, cats, catName, events, popularOf, viewsOf } from '../yangiliklarData'
 
 export default function Yangiliklar() {
   const [q, setQ] = useState('')
@@ -65,7 +65,7 @@ function Feed({ query }) {
               <button onClick={() => { setHot(true); setCat('all') }} className="shrink-0 text-[10px] font-semibold text-sea">Barchasini ko‘rish</button>
             </div>
             <div className="mt-2 grid gap-2.5">
-              {popular.map((a, i) => (
+              {popularOf().map((a, i) => (
                 <Link key={a.id} to={`/yangiliklar/${a.id}`} className="flex min-w-0 items-center gap-2">
                   <span className="w-4 text-[12px] font-bold text-muted">{i + 1}</span>
                   <img src={a.image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
@@ -133,7 +133,7 @@ function Feed({ query }) {
 }
 
 function Featured({ a, saved, onSave }) {
-  const person = people[a.author]
+  const person = authorOf(a)
   return (
     <article className="overflow-hidden rounded-2xl bg-white shadow-card">
       <div className="yangilik-feature">
