@@ -189,7 +189,8 @@ export function registerCatalog(kind, list) {
   targets.push({ kind, list })
 }
 
-const SEED_KINDS = new Set(['course', 'certificate', 'book'])
+// job: 248 ta egasiz demo vakansiya, deal: soxta reyting/sotuvli demo aksiyalar, channel: o‘ylab topilgan obunachi sonli demo kanallar.
+const SEED_KINDS = new Set(['course', 'certificate', 'book', 'job', 'deal', 'channel'])
 // kind:id of rows that have a real owner (seller/organizer). Ratings/discounts are only trusted on these.
 const ownedRows = new Set()
 export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)

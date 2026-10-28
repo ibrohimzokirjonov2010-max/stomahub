@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { Armchair, ChevronRight, Crown, Gem, Scissors, Wrench } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import { useMarket } from '../buyerApi'
-import { products as devices } from '../jihozData'
 
 const img = (name) => `/images/kategoriyalar/${name}.jpg`
 const n = (v) => v.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')
@@ -10,23 +9,26 @@ const n = (v) => v.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')
 const cats = [
   { id: 'terapiya', name: 'Terapiya', about: 'Kompozitlar, sementlar, adgezivlar va boshqa materiallar', count: 0, to: '/marketplace?cat=komp', image: img('kat-terapiya'), icon: Tooth },
   { id: 'ortopediya', name: 'Ortopediya', about: 'Kronalar, ko‘priklar, protezlar va ortopedik materiallar', count: 0, to: '/marketplace', image: img('kat-ortopediya'), icon: Crown },
-  { id: 'jarrohlik', name: 'Jarrohlik', about: 'Jarrohlik asboblari, materiallar va sarf buyumlari', count: 0, to: '/marketplace?cat=asb', image: img('kat-jarrohlik'), icon: Scissors },
+  { id: 'jarrohlik', name: 'Jarrohlik', about: 'Jarrohlik asboblari, materiallar va sarf buyumlari', count: 0, to: '/marketplace', image: img('kat-jarrohlik'), icon: Scissors },
   { id: 'implant', name: 'Implantologiya', about: 'Implantlar, abutmentlar, jarrohlik to‘plamlar', count: 0, to: '/marketplace?cat=impl', image: img('kat-implant'), icon: Screw },
   { id: 'endo', name: 'Endodontiya', about: 'Kanal asboblari, motorlar, materiallar va irrigatsiya', count: 0, to: '/marketplace?cat=endo', image: img('kat-endo'), icon: Tooth },
-  { id: 'orto', name: 'Ortodontiya', about: 'Breketlar, alaynerlar, dog‘lar va ortodontik materiallar', count: 0, to: '/marketplace', image: img('kat-orto'), icon: Braces },
+  { id: 'orto', name: 'Ortodontiya', about: 'Breketlar, alaynerlar, dog‘lar va ortodontik materiallar', count: 0, to: '/marketplace?cat=orto', image: img('kat-orto'), icon: Braces },
   { id: 'gigiyena', name: 'Gigiyena', about: 'Cho‘tkalar, pastalar, iplar va profilaktik vositalar', count: 0, to: '/marketplace?cat=gig', image: img('kat-gigiyena'), icon: Tooth },
   { id: 'asbob', name: 'Asboblar', about: 'Diagnostik, terapevtik va jarrohlik asboblar', count: 0, to: '/marketplace?cat=asb', image: img('kat-asbob'), icon: Wrench },
-  { id: 'uskuna', name: 'Uskunalar', about: 'Stomatologik unitlar, rentgen, sterilizatsiya va boshqa uskunalar', count: 0, to: '/jihozlar', image: img('kat-uskuna'), icon: Armchair },
+  { id: 'uskuna', name: 'Uskunalar', about: 'Stomatologik unitlar, rentgen, sterilizatsiya va boshqa uskunalar', count: 0, to: '/marketplace?cat=usk', image: img('kat-uskuna'), icon: Armchair },
 ]
 
 export default function Kategoriyalar() {
   const market = useMarket()
-  const total = (market.products?.length || 0) + (devices?.length || 0)
+  // Marketplace bilan bir xil manba: faqat faol seller_products (useMarket) va bir xil cat xaritasi.
+  const products = market.products || []
+  const total = products.length
+  const KEYS = { terapiya: ['komp', 'bond'], implant: ['impl'], endo: ['endo'], orto: ['orto'], gigiyena: ['gig'], asbob: ['asb', 'uch'], uskuna: ['usk'] }
   const live = cats.map((c) => {
-    if (c.id === 'uskuna') return { ...c, count: devices.length }
-    const key = ({ terapiya: 'komp', implant: 'impl', jarrohlik: 'asb', endo: 'endo', gigiyena: 'gig', asbob: 'asb' })[c.id]
-    const count = key ? (market.products || []).filter((p) => p.cat === key).length : 0
-    return { ...c, count }
+    if (c.id === 'jarrohlik') return { ...c, count: products.filter((p) => /jarroh/i.test(`${p.category} ${p.name}`)).length }
+    if (c.id === 'ortopediya') return { ...c, count: products.filter((p) => /ortoped|krona|protez/i.test(`${p.category} ${p.name}`)).length }
+    const keys = KEYS[c.id] || []
+    return { ...c, count: products.filter((p) => keys.includes(p.cat)).length }
   })
   return (
     <ShopLayout active="cats" search="plain" placeholder="Mahsulot, brend yoki kategoriya qidiring...">

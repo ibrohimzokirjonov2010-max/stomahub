@@ -43,6 +43,9 @@ function SeminarView({ id }) {
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const refs = useRef({})
+  // Tashkilotchi seminarlarida faqat u kiritgan bandlar; bo‘sh bo‘limlar yashiriladi
+  const includes = s ? (s.includes ? s.includes.map((t) => [Check, t]) : INCLUDES) : []
+  const tabs = TABS.filter(([k]) => (k !== 'program' || s?.program?.length) && (k !== 'includes' || includes.length))
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -148,7 +151,7 @@ function SeminarView({ id }) {
       {/* Tablar */}
       <div className="sticky top-0 z-20 mt-3 overflow-x-auto bg-[#f6f9fb] px-3 py-2 backdrop-blur no-scrollbar">
         <div className="flex w-max gap-2">
-          {TABS.map(([key, label, Icon]) => (
+          {tabs.map(([key, label, Icon]) => (
             <button key={key} type="button" onClick={() => goTo(key)} aria-current={tab === key ? 'true' : undefined} className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-medium transition ${tab === key ? 'bg-sea text-white shadow-[0_4px_12px_-4px_rgb(11_138_149/0.6)]' : 'border border-line bg-white text-ink'}`}>
               <Icon className="size-4" strokeWidth={1.7} /> {label}
             </button>
@@ -161,7 +164,7 @@ function SeminarView({ id }) {
         <p className="mt-1 text-[12px] leading-[1.55] text-ink-2">{s.about}</p>
       </section>
 
-      <section ref={(el) => { refs.current.program = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+      {s.program.length > 0 && <section ref={(el) => { refs.current.program = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Seminar dasturi</h2>
         <div className="mt-2 flex flex-col gap-3">
           {s.program.map((day) => (
@@ -182,19 +185,19 @@ function SeminarView({ id }) {
             </div>
           ))}
         </div>
-      </section>
+      </section>}
 
-      <section ref={(el) => { refs.current.includes = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+      {includes.length > 0 && <section ref={(el) => { refs.current.includes = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Narxga nimalar kiradi?</h2>
         <div className="mt-2 grid grid-cols-3 gap-2">
-          {INCLUDES.map(([Icon, label]) => (
+          {includes.map(([Icon, label]) => (
             <div key={label} className="flex flex-col items-center gap-1 rounded-xl border border-[#d8eeec] bg-[#f3fafa] px-1 py-2 text-center">
               <Icon className="size-5 text-sea" strokeWidth={1.6} />
               <span className="text-[10px] leading-tight text-ink-2">{label}</span>
             </div>
           ))}
         </div>
-      </section>
+      </section>}
 
       <section ref={(el) => { refs.current.venue = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Manzil</h2>

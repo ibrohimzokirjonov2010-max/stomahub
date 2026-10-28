@@ -117,11 +117,13 @@ export function buildSeminarPage(s) {
     modeText: s.format.startsWith('Offline +') ? 'Zalda va onlayn qatnashish' : 'Zalda qatnashish',
     hero: s.image,
     about: s.organizer ? String(s.text || s.title) : `${s.title} — ${String(s.text || '').toLowerCase()}. Dastur nazariy qism, klinik holatlar va amaliy mashg‘ulotdan iborat. Ishtirokchilar sertifikat va CME ball oladi.`,
-    learn: learnByCat[s.cat] || learnByCat.other,
+    learn: s.organizer ? (s.learnList || []).filter(Boolean) : (learnByCat[s.cat] || learnByCat.other),
     perks: [['Amaliy mashg‘ulot', 'Kichik guruhlarda ishlash'], ['Sertifikat', `CME ${s.cme || 6} ball`], ['Materiallar', 'Tashkilotchi taqdim etadi'], ['Networking', 'Hamkasblar bilan tanishish']],
     speaker,
     scheduleTitle: `Dastur (${s.day} ${s.mon})`,
-    schedule: scheduleFor(s),
+    schedule: s.organizer
+      ? (s.program || []).map((p) => Array.isArray(p) ? p : [p?.time || '', p?.title || p?.text || '', p?.sub || '']).filter((p) => p[1])
+      : scheduleFor(s),
     gear: ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
     venue: { name: s.place, address: `${s.city}`, image: pic('hotel'), map: `https://maps.google.com/?q=${encodeURIComponent((s.place || '') + ' ' + (s.city || ''))}` },
     seatsBanner: s.left,
@@ -132,7 +134,7 @@ export function buildSeminarPage(s) {
           price: Number(t.price) || 0,
           oldPrice: 0,
           discount: '',
-          perks: t.perks?.length ? t.perks : ['Seminarga kirish', 'Sertifikat'],
+          perks: (t.perks || []).filter(Boolean),
           left: t.left,
           seats: t.seats || t.total,
         }))
@@ -180,7 +182,9 @@ export function seminarView(record) {
   const month = MONTHS[page.mon]
   const d = Number(page.day)
   const items = page.schedule.filter(([, t]) => !BREAKS.test(t))
-  const program = card.days > 1
+  const program = page.organizer
+    ? (items.length ? [{ label: '1-kun', date: `${d} ${month}`, items }] : [])
+    : card.days > 1
     ? [
         { label: '1-kun', date: `${d} ${month}`, items: items.slice(0, 4) },
         {
@@ -204,6 +208,7 @@ export function seminarView(record) {
     hero: card.image,
     timeLabel: `${page.time}${card.days > 1 ? ` (${card.days} kun)` : ''}`,
     program,
+    includes: page.organizer ? [...new Set(page.plans.flatMap((p) => p.perks || []))] : null,
     speaker: { ...page.speaker, bio: page.speaker.lines.join('. ') + '.' },
   }
 }

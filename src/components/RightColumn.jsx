@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Timer, ChevronRight, ShoppingCart, ArrowRight, Star, ShieldCheck, Truck, CreditCard } from 'lucide-react'
 import { ToothIcon } from './icons'
 import { sellers } from '../data'
+import { payPromo } from '../payments/paymentService'
 
 const card = 'rounded-xl bg-white p-3 shadow-card'
 
@@ -80,7 +81,7 @@ const reasons = [
   { icon: ShieldCheck, title: 'Tasdiqlangan sotuvchilar', text: 'Ishonchli hamkorlar' },
   { icon: Truck, title: 'Tez yetkazib berish', text: 'Barcha hududlarga' },
   { icon: ToothIcon, title: 'Stomatologlar uchun', text: 'Maxsus tanlangan assortiment' },
-  { icon: CreditCard, title: 'Qulay to‘lov usullari', text: 'Click, Payme, Uzum va boshqalar' },
+  { icon: CreditCard, title: 'Qulay to‘lov usullari', text: payPromo('Click, Payme, Uzum va boshqalar', 'Xavfsiz va qulay') },
 ]
 
 function WhyUs() {
