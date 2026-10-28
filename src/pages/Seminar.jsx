@@ -36,14 +36,14 @@ const ABOUT_CARDS = [
 
 const FAQ = [
   ['Sertifikat beriladimi?', 'Ha. Seminar yakunida StomaHub rasmiy sertifikati va CME ballari beriladi. Elektron nusxasi “Sertifikatlar” bo‘limida paydo bo‘ladi.'],
-  ['To‘lovni qanday amalga oshirish mumkin?', 'Click, Payme yoki Uzcard/Humo kartasi orqali ro‘yxatdan o‘tish sahifasida to‘lash mumkin.'],
+  ['To‘lovni qanday amalga oshirish mumkin?', 'To‘lov ro‘yxatdan o‘tish sahifasida amalga oshiriladi.'],
   ['Qaytarish shartlari qanday?', 'Seminar boshlanishidan 72 soat oldin bekor qilinsa, to‘lov to‘liq qaytariladi. Undan keyin joyni hamkasbingizga o‘tkazish mumkin.'],
   ['Seminar kimlar uchun mos?', 'Implantologiyani boshlayotgan va tajribasini mustahkamlamoqchi bo‘lgan stomatolog-jarrohlar, ortopedlar va rezidentlar uchun.'],
   ['Joylar soni cheklanganmi?', 'Ha, amaliy qism sifatli bo‘lishi uchun guruh 30 kishidan oshmaydi.'],
 ]
 
 const NOTES = {
-  pay: ['To‘lov xavfsiz', 'To‘lovlar Click, Payme va bank kartalari orqali himoyalangan kanalda amalga oshiriladi. Karta ma’lumotlari StomaHub’da saqlanmaydi.'],
+  pay: ['To‘lov xavfsiz', 'To‘lovlar himoyalangan kanalda amalga oshiriladi. Karta ma’lumotlari StomaHub’da saqlanmaydi.'],
   refund: ['Qaytarish shartlari', 'Seminardan 72 soat oldin bekor qilinsa, to‘lov to‘liq qaytariladi. Keyinroq bekor qilinsa, joyingizni hamkasbingizga o‘tkazishingiz mumkin.'],
   invite: ['Rasmiy taklifnoma', 'Ro‘yxatdan o‘tgandan so‘ng ish joyingiz uchun rasmiy taklifnoma PDF ko‘rinishida elektron pochtangizga yuboriladi.'],
 }
@@ -71,7 +71,7 @@ function detail(d) {
         name: 'Dr. Aziz Karimov',
         role: 'Implantolog, PhD',
         avatar: d.speaker.avatar,
-        lines: ['10+ yil tajriba', '500+ muvaffaqiyatli implantatsiya', 'Xalqaro sertifikatlar (ITI, Straumann)', 'Amaliy klinik faoliyat'],
+        lines: [],
         bio: 'Dr. Aziz Karimov – implantologiya va rekonstruktiv jarrohlik bo‘yicha mutaxassis. ITI va Straumann sertifikatlariga ega. Ko‘plab xalqaro konferensiyalarda ma’ruzachi sifatida ishtirok etgan.',
       },
       about: 'Ushbu amaliy seminar implantologiyaning zamonaviy yondashuvlarini, diagnostika, jarrohlik protokollari va implant usti protezlash bosqichlarini qamrab oladi. Ishtirokchilar nazariy bilimlar bilan bir qatorda jonli jarrohlik va amaliy mashg‘ulotlarda qatnashish imkoniyatiga ega bo‘ladilar.',
@@ -121,7 +121,7 @@ function detail(d) {
     taken: d.seats - d.left,
     hero: d.image,
     gallery: [d.image, yang('yang-seminar'), yang('yang-training'), pic('hotel'), pic('micro')],
-    more: 8,
+    more: 0,
     speaker: {
       name: d.speaker.name,
       role: d.speaker.role,
@@ -131,9 +131,11 @@ function detail(d) {
     },
     about: d.about,
     learn: d.learn,
-    includes: plan.perks,
+    // Narxga kiradiganlar — faqat tashkilotchi chiptalarga yozgan bandlar
+    includes: [...new Set(d.plans.flatMap((p) => p.perks || []))],
     schedule: d.schedule.map(([time, text]) => [time, text, '']),
-    venue: { ...d.venue, lines: [[Building2, 'Konferens-zal'], [Car, 'Avtoturargoh mavjud']] },
+    organizer: !!d.organizer,
+    venue: { ...d.venue, lines: d.organizer ? [] : [[Building2, 'Konferens-zal'], [Car, 'Avtoturargoh mavjud']] },
     similar: d.similar.map((s) => ({ to: `/seminarlar/${s.id}`, title: s.title, date: `${s.date}, ${s.city}`, price: s.price, image: s.image })),
     ics: { start: `${year}${mm}${String(d.day).padStart(2, '0')}T${from}00`, end: `${year}${mm}${String(d.day).padStart(2, '0')}T${to}00` },
   }
@@ -196,14 +198,14 @@ export default function Seminar() {
           </div>
         </section>
 
-        <div className="sem-feats">
+        {!v.organizer && <div className="sem-feats">
           {FEATS.map(([Icon, a, b]) => (
             <div key={a} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-card">
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Icon className="size-4" /></span>
               <span className="text-[11.5px] font-semibold leading-tight text-ink">{a}<br /><span className="font-medium text-ink-2">{b}</span></span>
             </div>
           ))}
-        </div>
+        </div>}
 
         <div className="sem-gallery">
           <button type="button" onClick={() => setShot(0)} className="relative row-span-2 overflow-hidden rounded-2xl" aria-label="Seminar videosi">
@@ -217,7 +219,7 @@ export default function Seminar() {
           {v.gallery.slice(1, 5).map((src, i) => (
             <button key={src} type="button" onClick={() => setShot(i + 1)} className="relative overflow-hidden rounded-2xl" aria-label={`Rasm ${i + 2}`}>
               <img src={src} alt="" className="h-full w-full object-cover" />
-              {i === 3 && <span className="absolute inset-0 grid place-items-center bg-[#0b1f3a]/50 text-[20px] font-bold text-white">+{v.more}</span>}
+              {i === 3 && v.more > 0 && <span className="absolute inset-0 grid place-items-center bg-[#0b1f3a]/50 text-[20px] font-bold text-white">+{v.more}</span>}
             </button>
           ))}
         </div>
@@ -247,9 +249,9 @@ export default function Seminar() {
 
         <div className="sticky top-[46px] z-10 flex gap-1 overflow-x-auto rounded-xl bg-white px-1 shadow-card no-scrollbar">
           {[
-            ['about', 'Seminar haqida'], ['program', 'Dastur'], ['learn', 'Nimalarni o‘rganasiz?'], ['who', 'Kimlar uchun?'],
-            ['price', 'Narxga nimalar kiradi?'], ['place', 'Manzil'], ['reviews', 'Sharhlar'], ['faq', 'FAQ'],
-          ].map(([key, label]) => (
+            ['about', 'Seminar haqida'], v.schedule.length && ['program', 'Dastur'], v.learn.length && ['learn', 'Nimalarni o‘rganasiz?'], !v.organizer && ['who', 'Kimlar uchun?'],
+            v.includes.length && ['price', 'Narxga nimalar kiradi?'], ['place', 'Manzil'], ['reviews', 'Sharhlar'], ['faq', 'FAQ'],
+          ].filter(Boolean).map(([key, label]) => (
             <button key={key} type="button" onClick={() => go(key)} className={`h-9 shrink-0 px-2.5 text-[12px] font-semibold ${tab === key ? 'text-sea' : 'text-ink-2'}`} style={{ boxShadow: tab === key ? 'inset 0 -2px 0 #0b8a95' : 'none' }}>{label}</button>
           ))}
         </div>
@@ -258,25 +260,25 @@ export default function Seminar() {
           <section id="sem-about" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
             <h2 className="text-[15px] font-bold">Seminar haqida</h2>
             <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">{v.about}</p>
-            <div className="sem-cards mt-3">
+            {!v.organizer && <div className="sem-cards mt-3">
               {ABOUT_CARDS.map(([Icon, t, s]) => (
                 <div key={t} className="flex items-start gap-2">
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Icon className="size-4" /></span>
                   <span className="min-w-0"><b className="block text-[12px]">{t}</b><span className="block text-[11px] text-muted">{s}</span></span>
                 </div>
               ))}
-            </div>
+            </div>}
           </section>
-          <section id="sem-learn" className="scroll-mt-24 rounded-2xl bg-[#eef8f7] p-4">
+          {v.learn.length > 0 && <section id="sem-learn" className="scroll-mt-24 rounded-2xl bg-[#eef8f7] p-4">
             <h2 className="text-[15px] font-bold">Nimalarni o‘rganasiz?</h2>
             <ul className="mt-2 space-y-2">
               {v.learn.map((t) => <li key={t} className="flex items-start gap-2 text-[12.5px] text-ink"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> {t}</li>)}
             </ul>
-          </section>
+          </section>}
         </div>
 
         <div className="sem-split">
-          <section id="sem-program" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
+          {v.schedule.length > 0 && <section id="sem-program" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
             <div className="flex items-center gap-2">
               <h2 className="text-[15px] font-bold">Dastur</h2>
               <span className="inline-flex items-center gap-1 rounded-lg bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea"><CalendarDays className="size-3.5" /> {v.dayShort}</span>
@@ -292,7 +294,7 @@ export default function Seminar() {
                 </li>
               ))}
             </ol>
-          </section>
+          </section>}
           <section id="sem-place" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
             <h2 className="text-[15px] font-bold">Manzil</h2>
             <div className="relative mt-2 overflow-hidden rounded-xl">
@@ -307,14 +309,14 @@ export default function Seminar() {
           </section>
         </div>
 
-        <section id="sem-who" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
+        {!v.organizer && <section id="sem-who" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
           <h2 className="text-[15px] font-bold">Kimlar uchun?</h2>
           <div className="mt-2 flex flex-wrap gap-2">
             {['Stomatolog-jarrohlar', 'Ortoped stomatologlar', 'Implantologiyani boshlayotganlar', 'Rezident va ordinatorlar', 'Klinika rahbarlari'].map((t) => (
               <span key={t} className="rounded-full bg-[#f3f6fa] px-3 py-1 text-[12px] font-medium text-ink-2">{t}</span>
             ))}
           </div>
-        </section>
+        </section>}
 
         <section id="sem-reviews" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
           <h2 className="text-[15px] font-bold">Ishtirokchilar sharhlari</h2>
@@ -335,7 +337,8 @@ export default function Seminar() {
             <b className="text-[24px] leading-tight">{som(v.price)}</b>
             {v.off && <span className="rounded-md bg-[#fde8e8] px-1.5 py-0.5 text-[12px] font-bold text-[#dc2626]">{v.off}</span>}
           </div>
-          <ul className="mt-3 space-y-1.5">
+          {v.includes.length > 0 && <p className="mt-3 text-[12px] font-semibold text-ink">Narxga nimalar kiradi?</p>}
+          <ul className="mt-1.5 space-y-1.5">
             {v.includes.map((t) => <li key={t} className="flex items-center gap-2 text-[12.5px] text-ink"><Check className="size-4 text-sea" /> {t}</li>)}
           </ul>
           <div className="mt-3 flex justify-between text-[11.5px] text-muted"><span>Band joylar</span><span>{v.taken}/{v.seats}</span></div>

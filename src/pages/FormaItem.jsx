@@ -4,11 +4,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Star, Heart, ShoppingCart, Minus, Plus, Truck, ShieldCheck, CreditCard, ChevronRight, X } from 'lucide-react'
 import { useCart } from '../cart'
 import { getForma, products, similarIds, money, colorOf, sizeChart } from '../formaData'
+import { payPromo } from '../payments/paymentService'
 
 const perks = [
   ['Sifat kafolati', '30 kun ichida qaytarish'],
   ['Tez yetkazib berish', 'Toshkent 1 kun · Viloyatlar 2–3 kun'],
-  ['Xavfsiz to‘lov', 'Click, Payme, Uzcard'],
+  ['Xavfsiz to‘lov', payPromo('Click, Payme, Uzcard', 'Himoyalangan to‘lov')],
 ]
 const shipping = [
   ['Toshkent shahri', '1 kun'],
@@ -196,8 +197,6 @@ export default function FormaItem() {
             <p className="text-[10px] text-muted">Sotuvchi</p>
             <p className="text-[14px] font-extrabold text-ink">{product.brand}</p>
             <p className="text-[11px] text-muted">Tibbiy forma va aksessuarlar</p>
-            <p className="mt-1 flex items-center gap-1 text-[11px]"><Star className="size-3 fill-star text-star" /> 4.9 <span className="text-muted">(320 sharh)</span></p>
-            <p className="text-[11px] text-muted">2 500+ mahsulot</p>
             <Link to={`/forma?brand=${encodeURIComponent(product.brand)}`} className="mt-2 flex h-8 items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea">Barcha mahsulotlar →</Link>
           </div>
           <div className="rounded-xl bg-white p-3 shadow-card">

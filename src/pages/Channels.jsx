@@ -94,10 +94,11 @@ function Channels({ query }) {
           </label>
         </div>
 
-        {list.length ? (
+        {!channels.length ? (
+          <div className="mt-3"><EmptyCatalog title="Hozircha kanallar yo‘q" text="Tasdiqlangan stomatologiya kanallari qo‘shilganda shu yerda ko‘rinadi. O‘z kanalingizni taklif qilishingiz mumkin." /></div>
+        ) : list.length ? (
           <div className="mt-3 grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-            {!channels.length ? <EmptyCatalog title="Kanallar ro‘yxati bo‘sh" text="Hali kanallar qo‘shilmagan." /> : null}
-      {list.map((c) => (
+            {list.map((c) => (
               <ChannelCard key={c.id} c={c} saved={saved.has(c.id)} joined={!!joined[c.id]} onSave={() => toggleSave(c.id)} onJoin={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))} />
             ))}
           </div>
@@ -107,7 +108,7 @@ function Channels({ query }) {
       </div>
 
       <aside className="flex flex-col gap-3">
-        <div className="rounded-xl bg-white p-3 shadow-card">
+        {editors.length > 0 && <div className="rounded-xl bg-white p-3 shadow-card">
           <h3 className="text-[12px] font-bold text-ink">Muharrir tanlovi</h3>
           <p className="text-[9px] text-muted">StomaHub jamoasi tavsiyasi</p>
           <div className="mt-2 flex flex-col gap-2">
@@ -124,7 +125,7 @@ function Channels({ query }) {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
 
         <div className="rounded-xl bg-white p-3 shadow-card">
           <div className="mb-2 flex items-center justify-between">
@@ -140,7 +141,7 @@ function Channels({ query }) {
           )) : <p className="text-[10px] text-muted">Hali saqlangan kanal yo‘q</p>}
         </div>
 
-        <div className="relative overflow-hidden rounded-xl bg-white p-3 shadow-card">
+        {official.length > 0 && <div className="relative overflow-hidden rounded-xl bg-white p-3 shadow-card">
           <h3 className="text-[12px] font-bold text-ink">StomaHub rasmiy kanallari</h3>
           <p className="text-[9px] text-muted">Yangiliklar, aksiyalar va foydali kontentlar.</p>
           <Plane className="pointer-events-none absolute -right-2 top-6 size-16 text-sea/80" />
@@ -159,7 +160,7 @@ function Channels({ query }) {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
       </aside>
 
       {ask && (

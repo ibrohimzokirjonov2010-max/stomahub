@@ -693,6 +693,9 @@ export function toPublic(s) {
     image: s.cover && !String(s.cover).startsWith('data:') ? s.cover : (s.image || IMG.teeth),
     status: s.status,
     cancelled: s.status === 'bekor',
+    // Faqat tashkilotchi kiritgan dastur / o‘rganiladigan mavzular (bo‘lmasa bo‘sh — sahifada bo‘lim yashiriladi)
+    program: Array.isArray(s.program) ? s.program : Array.isArray(s.form?.program) ? s.form.program : [],
+    learnList: Array.isArray(s.learn) ? s.learn : Array.isArray(s.form?.learn) ? s.form.learn : [],
     organizer: true,
   }
 }

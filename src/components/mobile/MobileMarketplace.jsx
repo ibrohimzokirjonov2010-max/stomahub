@@ -15,7 +15,7 @@ import { MobileTopBar, MobileToast, QtyStepper, GoCartButton } from './parts'
 const GROUPS = [
   { key: 'mat', label: 'Materiallar', icon: Box, cats: ['komp', 'bond', 'endo'] },
   { key: 'impl', label: 'Implantlar', icon: ToothIcon, cats: ['impl'] },
-  { key: 'asb', label: 'Asboblar', icon: Scissors, cats: ['asb', 'uch'] },
+  { key: 'asb', label: 'Asboblar', icon: Scissors, cats: ['asb', 'uch', 'orto'] },
   { key: 'jih', label: 'Jihozlar', icon: Monitor, cats: ['usk'] },
   { key: 'lab', label: 'Laboratoriya', icon: FlaskConical, cats: ['lab'] },
   { key: 'gig', label: 'Gigiyena', icon: Sparkles, cats: ['gig'] },

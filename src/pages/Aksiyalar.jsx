@@ -65,12 +65,13 @@ export default function Aksiyalar() {
           ))}
         </div>
 
-        {list.length === 0 ? (
+        {!catalog.length ? (
+          <div className="mt-4"><EmptyCatalog title="Hozircha aksiyalar yo‘q" text="Sotuvchilar chegirma e’lon qilganda ular shu yerda ko‘rinadi. Barcha mahsulotlarni Marketplace’da ko‘ring." /></div>
+        ) : list.length === 0 ? (
           <p className="mt-8 text-center text-[13px] text-muted">Bu filtrda aksiya topilmadi.</p>
         ) : (
           <div className="aksiya-grid mt-3">
-            {!catalog.length ? <EmptyCatalog title="Aksiyalar bo‘sh" text="Hali aksiyalar yo‘q. catalog_items (deal) orqali qo‘shiladi." /> : null}
-      {list.map((d) => (
+            {list.map((d) => (
               <Card key={d.id} deal={d} saved={!!saved[d.id]} onSave={() => setSaved((s) => ({ ...s, [d.id]: !s[d.id] }))} />
             ))}
           </div>
@@ -103,21 +104,24 @@ function Card({ deal, saved, onSave }) {
       <Link to={`/aksiyalar/${deal.id}`} className="grid h-[128px] place-items-center overflow-hidden">
         <img src={deal.image} alt={deal.name} className="max-h-[118px] max-w-full object-contain" />
       </Link>
-      <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-sea">
-        <Clock className="size-3" /> {clock(sec)}
-      </p>
+      {deal.left > 0 && (
+        <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-sea">
+          <Clock className="size-3" /> {clock(sec)}
+        </p>
+      )}
       <Link to={`/aksiyalar/${deal.id}`} className="mt-1 truncate text-[13px] font-bold text-ink">{deal.name}</Link>
       <p className="text-[11px] text-muted">{deal.brand}</p>
-      <div className="mt-1 flex items-center justify-between gap-1 text-[11px]">
-        <span className="flex items-center gap-1 text-ink-2">
-          <Star className="size-3 fill-[#f5b400] text-[#f5b400]" /> {deal.rating} ({deal.reviews})
-        </span>
-        <span className="shrink-0 text-muted">{deal.sold} sotilgan</span>
-      </div>
+      {/* Reyting/sotuv faqat real sharhlar/buyurtmalar bo‘lsa ko‘rsatiladi */}
+      {(Number(deal.reviews) > 0 || Number(deal.sold) > 0) && (
+        <div className="mt-1 flex items-center justify-between gap-1 text-[11px]">
+          {Number(deal.reviews) > 0 ? <span className="flex items-center gap-1 text-ink-2"><Star className="size-3 fill-[#f5b400] text-[#f5b400]" /> {deal.rating} ({deal.reviews})</span> : <span />}
+          {Number(deal.sold) > 0 && <span className="shrink-0 text-muted">{deal.sold} sotilgan</span>}
+        </div>
+      )}
       <div className="mt-2 flex items-end justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[14px] font-bold text-ink">{som(deal.price)}</p>
-          <p className="text-[11px] text-muted line-through">{som(deal.oldPrice)}</p>
+          <p className="text-[11px] text-muted line-through">{deal.oldPrice > deal.price ? som(deal.oldPrice) : ''}</p>
         </div>
         <button
           onClick={() => add({ id: deal.id, name: deal.name, type: deal.brand, price: deal.price, image: deal.image })}

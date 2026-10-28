@@ -9,7 +9,7 @@ import { BottomSheet } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 
 const COUNTRIES = {
-  us: 'AQSH', de: 'Germaniya', ch: 'Shveytsariya', li: 'Lixtenshteyn', jp: 'Yaponiya', kr: 'Janubiy Koreya', au: 'Avstraliya', at: 'Avstriya', fi: 'Finlandiya', cn: 'Xitoy', br: 'Braziliya',
+  us: 'AQSH', de: 'Germaniya', ch: 'Shveytsariya', li: 'Lixtenshteyn', jp: 'Yaponiya', kr: 'Janubiy Koreya', au: 'Avstraliya', xx: 'Boshqa', at: 'Avstriya', fi: 'Finlandiya', cn: 'Xitoy', br: 'Braziliya',
 }
 
 const BRANDS = [
@@ -64,11 +64,15 @@ export default function MobileBrendlar() {
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
 
-  const brandsLive = useMemo(() => BRANDS.map((b) => {
-    const key = String(b.market || b.name).split(/\s/)[0].toLowerCase()
-    const count = (market.products || []).filter((p) => String(p.brand || '').toLowerCase().includes(key)).length
-    return { ...b, count }
-  }), [market.products])
+  const brandsLive = useMemo(() => {
+    const products = market.products || []
+    const keyOf = (b) => String(b.market || b.name).split(/\s/)[0].toLowerCase()
+    const known = BRANDS.map((b) => ({ ...b, count: products.filter((p) => String(p.brand || '').toLowerCase().includes(keyOf(b))).length }))
+    const extra = [...new Set(products.map((p) => String(p.brand || '').trim()).filter(Boolean))]
+      .filter((name) => !BRANDS.some((b) => name.toLowerCase().includes(keyOf(b))))
+      .map((name, i) => ({ name, country: 'xx', rank: 100 + i, logo: TextLogo(name), count: products.filter((p) => String(p.brand || '').trim() === name).length }))
+    return [...known, ...extra]
+  }, [market.products])
 
   const filter = useCallback((c, s = q, g = group) => {
     const text = s.trim().toLowerCase()
@@ -79,7 +83,7 @@ export default function MobileBrendlar() {
     const out = filter(country)
     if (sort === 'az') return out.sort((a, b) => a.name.localeCompare(b.name))
     if (sort === 'count') return out.sort((a, b) => b.count - a.count)
-    return out.sort((a, b) => a.rank - b.rank)
+    return out.sort((a, b) => (b.count - a.count) || a.rank - b.rank)
   }, [filter, country, sort])
   const extra = (country ? 1 : 0) + (sort !== 'rank' ? 1 : 0)
 
@@ -141,12 +145,17 @@ export default function MobileBrendlar() {
   )
 }
 
+function TextLogo(name) {
+  const Logo = ({ className = '' }) => <span className={`grid place-items-center font-extrabold text-[#0F766E] ${className}`}>{name}</span>
+  return Logo
+}
+
 function BrandTile({ b }) {
   const Logo = b.logo
   const meta = (
     <span className="min-w-0">
       <span className="block truncate text-[12.5px] font-bold text-[#0d2a4a]">{b.name}</span>
-      <span className="block text-[11px] text-muted">{b.count} mahsulot</span>
+      <span className="block text-[11px] text-muted">{b.count ? `${b.count} mahsulot` : 'Mahsulot yo‘q'}</span>
     </span>
   )
   return (

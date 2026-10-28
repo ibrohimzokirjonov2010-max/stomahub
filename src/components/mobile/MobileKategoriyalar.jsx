@@ -9,7 +9,6 @@ import { BrandLogo, CountBadge, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { useMarket } from '../../buyerApi'
-import { products as devices } from '../../jihozData'
 import { masters } from '../../ustalarData'
 import { seminars } from '../../seminarsData'
 import { products as uniforms } from '../../formaData'
@@ -22,9 +21,9 @@ const CATS = [
   { id: 'material', name: 'Stomatologik materiallar', count: '0 mahsulot', to: '/marketplace?cat=komp', icon: Syringe, tone: 'bg-[#e3f5f3] text-sea', image: kat('kat-terapiya'), pos: '58% 64%', keys: 'kompozit bond sement adgeziv plomba' },
   { id: 'implant', name: 'Implantlar', count: '0 mahsulot', to: '/marketplace?cat=impl', icon: ImplantIcon, tone: 'bg-[#e4f6ec] text-[#22a06b]', image: kat('kat-implant'), pos: '78% 60%', keys: 'implant abutment' },
   { id: 'instrument', name: 'Instrumentlar', count: '0 mahsulot', to: '/marketplace?cat=asb', icon: ProbeIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-asbob'), pos: '92% 55%', keys: 'asbob ko‘zgu zond pinset' },
-  { id: 'uskuna', name: 'Uskunalar', count: '0 mahsulot', to: '/jihozlar', icon: Armchair, tone: 'bg-[#fdeee3] text-[#e8772e]', image: kat('kat-uskuna'), pos: '50% 50%', keys: 'jihoz kreslo unit rentgen avtoklav' },
+  { id: 'uskuna', name: 'Uskunalar', count: '0 mahsulot', to: '/marketplace?cat=usk', icon: Armchair, tone: 'bg-[#fdeee3] text-[#e8772e]', image: kat('kat-uskuna'), pos: '50% 50%', keys: 'jihoz kreslo unit rentgen avtoklav' },
   { id: 'endo', name: 'Endodontiya', count: '0 mahsulot', to: '/marketplace?cat=endo', icon: ToothIcon, tone: 'bg-[#fde8ef] text-[#e04f7d]', image: kat('kat-endo'), pos: '25% 60%', keys: 'kanal fayl apekslokator endomotor' },
-  { id: 'orto', name: 'Ortodontiya', count: '0 mahsulot', to: '/marketplace', icon: BracesIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-orto'), pos: '72% 55%', keys: 'breket elayner kappa' },
+  { id: 'orto', name: 'Ortodontiya', count: '0 mahsulot', to: '/marketplace?cat=orto', icon: BracesIcon, tone: 'bg-[#efe9fc] text-[#7c4ddb]', image: kat('kat-orto'), pos: '72% 55%', keys: 'breket elayner kappa' },
   { id: 'lab', name: 'Laboratoriya materiallari', count: '0 mahsulot', to: '/marketplace', icon: FlaskConical, tone: 'bg-[#e4f6ec] text-[#22a06b]', image: '/images/seminars/teeth.jpg', pos: '50% 50%', photo: true, keys: 'laboratoriya gips mum keramika protez' },
   { id: 'forma', name: 'Stomatologik forma', count: '0 mahsulot', to: '/forma', icon: Shirt, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', image: '/images/forma/folded.jpg', pos: '50% 45%', photo: true, keys: 'forma kiyim xalat scrubs' },
   { id: 'seminar', name: 'Seminarlar', count: '0 tadbir', to: '/seminarlar', icon: GraduationCap, tone: 'bg-[#fdf3dc] text-[#d99a00]', art: SeminarArt, keys: 'seminar kurs master-klass ta’lim' },
@@ -66,15 +65,15 @@ export default function MobileKategoriyalar() {
       material: n('komp') + n('bond'),
       implant: n('impl'),
       instrument: n('asb'),
-      uskuna: devices.length,
+      uskuna: n('usk'),
       endo: n('endo'),
-      orto: 0,
+      orto: n('orto'),
       lab: 0,
       forma: uniforms.length,
       seminar: seminars.length,
       qism: n('uch'),
       xizmat: masters.length,
-      boshqa: 0,
+      boshqa: n('gig'),
     }
   }, [market.products])
   const list = useMemo(() => {

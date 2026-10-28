@@ -5,8 +5,8 @@ import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
 import {
-  jobs, cities, specs, exps, types, sorts, tips, popularOrder, resumes, resumePhoto,
-  expName, typeName, pay, clinicCount,
+  jobs, cities, specs, exps, types, sorts, tips, popularClinics, resumes, resumePhoto,
+  expName, typeName, pay,
 } from '../ishlarData'
 
 const PAY_MIN = 3000000
@@ -185,23 +185,23 @@ function Catalog({ query }) {
                 <button onClick={() => setResume(true)} className="mt-2 h-8 w-full rounded-lg bg-sea text-[12px] font-semibold text-white">Rezyume joylash</button>
               </div>
             </div>
-            <div className="rounded-xl bg-white p-3 shadow-card">
+            {popularClinics().length > 0 && <div className="rounded-xl bg-white p-3 shadow-card">
               <div className="flex items-center justify-between">
                 <p className="text-[13px] font-bold">Mashhur klinikalar</p>
                 <Link to="/ishlar" className="text-[10px] text-sea">Barchasini ko‘rish</Link>
               </div>
               <div className="mt-2 grid gap-2">
-                {popularOrder.map((name) => (
+                {popularClinics().map(({ name, city, count }) => (
                   <Link key={name} to={`/ishlar?clinic=${encodeURIComponent(name)}`} className="flex items-center gap-2">
                     <span className="grid size-8 place-items-center rounded-lg bg-sea-50 text-[10px] font-bold text-sea">{mark(name)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[12px] font-semibold text-ink">{name}</span>
-                      <span className="block text-[10px] text-muted">Toshkent · {clinicCount(name)} ta vakansiya</span>
+                      <span className="block text-[10px] text-muted">{[city, `${count} ta vakansiya`].filter(Boolean).join(' · ')}</span>
                     </span>
                   </Link>
                 ))}
               </div>
-            </div>
+            </div>}
             <div className="rounded-xl bg-white p-3 shadow-card">
               <p className="text-[13px] font-bold">Foydali maslahatlar</p>
               <div className="mt-2 grid gap-1.5">
@@ -249,8 +249,7 @@ function Catalog({ query }) {
   )
 }
 
-const marks = { 'Smile Dental Clinic': 'SD', DentaCare: 'DC', 'Family Dental': 'FD', 'Implant Plus': 'IP', 'City Dental': 'CD' }
-function mark(name) { return marks[name] || name.slice(0, 2).toUpperCase() }
+function mark(name) { return name.slice(0, 2).toUpperCase() }
 
 function rankExp(k) {
   return { none: 0, y1: 1, y3: 2, y5: 3 }[k] || 0

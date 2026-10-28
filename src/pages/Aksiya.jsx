@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../cart'
 import { clock, getDeal, others, som, useCountdown } from '../aksiyaData'
+import { payPromo } from '../payments/paymentService'
 
 const places = ['Toshkent, Yakkasaroy tumani', 'Toshkent, Chilonzor tumani', 'Samarqand shahri']
 
@@ -92,21 +93,21 @@ export default function Aksiya() {
           </div>
           <h1 className="mt-1 text-[20px] font-bold leading-tight text-ink">{deal.name}</h1>
           <p className="text-[13px] text-muted">{deal.brand}</p>
-          <p className="mt-1 flex items-center gap-1 text-[12.5px] text-ink-2">
+          {Number(deal.reviews) > 0 && <p className="mt-1 flex items-center gap-1 text-[12.5px] text-ink-2">
             <Stars value={deal.rating} />
             <span className="font-semibold text-ink">{deal.rating}</span>
             <span className="text-muted">({deal.reviews} ta sharh)</span>
-          </p>
+          </p>}
           <p className="mt-3 text-[13px] text-muted line-through">{som(deal.oldPrice)}</p>
           <div className="flex flex-wrap items-end gap-2">
             <p className="text-[26px] font-bold leading-none text-ink">{som(deal.price)}</p>
             <p className="text-[12.5px] font-semibold text-sea">Siz {som(deal.oldPrice - deal.price)} tejaysiz</p>
           </div>
-          <div className="mt-3 flex items-center gap-2 rounded-xl bg-sea-50 px-3 py-2.5 text-[13px]">
+          {deal.left > 0 && <div className="mt-3 flex items-center gap-2 rounded-xl bg-sea-50 px-3 py-2.5 text-[13px]">
             <Timer className="size-4 text-sea" />
             <span className="text-ink-2">Aksiya tugashiga:</span>
             <span className="font-bold text-sea">{clock(sec)}</span>
-          </div>
+          </div>}
           <div className="mt-3 flex items-center gap-3">
             <div className="flex h-9 items-center rounded-lg border border-line bg-white">
               <button onClick={() => setQty((n) => Math.max(1, n - 1))} className="grid size-9 place-items-center" aria-label="Kamaytirish"><Minus className="size-3.5" /></button>
@@ -127,7 +128,7 @@ export default function Aksiya() {
             {[
               [Truck, 'Tez yetkazib berish', '1–2 kun ichida'],
               [ShieldCheck, 'Rasmiy kafolat', '12 oy'],
-              [Wallet, 'Qulay to‘lov', 'Click, Payme, Uzum'],
+              [Wallet, 'Qulay to‘lov', payPromo('Click, Payme, Uzum')],
               [RotateCcw, '7 kun ichida qaytarish', 'Agar mos kelmasa'],
             ].map(([Icon, title, sub]) => (
               <div key={title} className="flex items-start gap-2 rounded-lg bg-white px-2 py-1.5">
