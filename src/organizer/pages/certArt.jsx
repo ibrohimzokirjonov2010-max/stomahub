@@ -35,7 +35,7 @@ export function MiniCert({ issued = true }) {
   )
 }
 
-function CertArt({ name, course, date, qr = false }) {
+function CertArt({ name, course, date, qr = false, cme = '', org = '' }) {
   const uid = useId().replace(/:/g, '')
   const teal = `${uid}-teal`
   const gold = `${uid}-gold`
@@ -81,7 +81,7 @@ function CertArt({ name, course, date, qr = false }) {
       <div className="relative flex h-full flex-col items-center px-7 pb-3 pt-[58px] text-center">
         <div className="flex items-center gap-1 text-[12.5px] font-bold tracking-tight text-[#0e756f]">
           <ToothIcon className="size-[15px]" strokeWidth={1.7} />
-          StomaHub
+          {org || 'StomaHub'}
         </div>
         <p className="mt-2.5 font-['Playfair_Display',Georgia,serif] text-[20px] font-semibold tracking-[0.22em] text-[#0e6e72]" style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
           SERTIFIKAT
@@ -96,6 +96,7 @@ function CertArt({ name, course, date, qr = false }) {
           <br />
           faol ishtirok etgan.
         </p>
+        {cme && <p className="mt-1.5 rounded-full border border-[#e4cb86] px-2 py-0.5 text-[7.5px] font-semibold text-[#0e6e72]">{cme}</p>}
 
         <div className="mt-auto grid w-full grid-cols-3 items-end pb-1">
           <div className="text-left">

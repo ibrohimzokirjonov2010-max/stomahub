@@ -9,6 +9,13 @@ import { useOrg } from '../Shell'
 import { Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
 
+// CME soat/ball — seminar formasidan (sertifikatda chop etiladi)
+export function cmeLabel(sem) {
+  const h = Number(sem?.form?.cmeHours) || 0
+  const p = Number(sem?.form?.cmePoints) || 0
+  return [h && `${h} soat`, p && `${p} CME ball`].filter(Boolean).join(' · ')
+}
+
 const TICKETS = ['Standart', 'VIP', 'Student', 'Guruh']
 const TONE = {
   done: 'bg-[#e7f8ee] text-[#16a34a]',
@@ -91,6 +98,8 @@ export default function Certificates() {
   }), [rows])
 
   const cert = rows.find((c) => c.id === selected) || slice[0] || rows[0]
+  const certSem = cert ? hub.seminars.find((x) => x.id === cert.seminarId || x.id === cert.seminar_id || x.title === cert.seminar) : null
+  const certCme = cmeLabel(certSem)
 
   const issue = (c) => {
     issueCert(c.id)
@@ -162,11 +171,12 @@ export default function Certificates() {
           allOn={allOn}
           toggleAll={toggleAll}
           cert={cert}
+          cme={certCme}
           preview={preview}
           setPreview={setPreview}
           onTpl={() => setTpl(true)}
           onNote={() => setNote(true)}
-          onDownload={() => { if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${cert.seminar || cert.course || 'Seminar'}\n${cert.code || 'berilmagan'}\n${cert.date || ''}`); notify('Sertifikat yuklab olindi') }}
+          onDownload={() => { if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${cert.seminar || cert.course || 'Seminar'}\n${cert.code || 'berilmagan'}\n${cert.date || ''}${certCme ? `\n${certCme}` : ''}`); notify('Sertifikat yuklab olindi') }}
           onMail={() => notify('Email yuborildi')}
           onQr={() => setQr(cert)}
           onResend={() => notify('Sertifikat qayta yuborildi')}
@@ -199,7 +209,7 @@ export default function Certificates() {
 
       <Modal open={tpl} title="Sertifikat shablonini sozlash" sub="Barcha ishtirokchilarga shu shablon asosida sertifikat beriladi." onClose={() => setTpl(false)} width={520}>
         <div className="flex justify-center rounded-2xl bg-[#e7f6f3] p-4">
-          <CertFrame width={220} name="Ism familiya" course={hub.seminars[0]?.title || 'Seminar nomi'} date={hub.seminars[0]?.date || '—'} />
+          <CertFrame width={220} name="Ism familiya" course={hub.seminars[0]?.title || 'Seminar nomi'} date={hub.seminars[0]?.date || '—'} cme={cmeLabel(hub.seminars[0])} org={hub.settings?.orgName} />
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-[12.5px]">
           <div className="rounded-xl border border-[#e6f1ef] px-3 py-2">
@@ -276,9 +286,9 @@ function Desktop(p) {
 
       <section className="mb-2.5 grid grid-cols-4 gap-2.5">
         <Kpi icon={Users} label="Jami ishtirokchilar" value={String(p.counts.all)} />
-        <Kpi icon={CircleCheck} label="Sertifikat berilgan" value={String(p.counts.done)} ring={90} color="#12a99a" />
-        <Kpi icon={Clock} label="Jarayonda" value={String(p.counts.progress)} ring={8} color="#f0a31a" />
-        <Kpi icon={Shield} label="Berilmagan" value={String(p.counts.none)} ring={2} color="#f05d6a" />
+        <Kpi icon={CircleCheck} label="Sertifikat berilgan" value={String(p.counts.done)} ring={p.counts.all ? Math.round((p.counts.done / p.counts.all) * 100) : 0} color="#12a99a" />
+        <Kpi icon={Clock} label="Jarayonda" value={String(p.counts.progress)} ring={p.counts.all ? Math.round((p.counts.progress / p.counts.all) * 100) : 0} color="#f0a31a" />
+        <Kpi icon={Shield} label="Berilmagan" value={String(p.counts.none)} ring={p.counts.all ? Math.round((p.counts.none / p.counts.all) * 100) : 0} color="#f05d6a" />
       </section>
 
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -417,7 +427,7 @@ function Desktop(p) {
 
           {p.preview && p.cert && (
             <aside className="border-l border-[#eef3f2] px-3 pb-3 pt-3">
-              <CertFrame width={268} name={p.cert.name} course={p.cert.seminar || p.cert.course || 'Seminar'} date={p.cert.date || '—'} />
+              <CertFrame width={268} name={p.cert.name} course={p.cert.seminar || p.cert.course || 'Seminar'} date={p.cert.date || '—'} cme={p.cme || ''} />
               <button type="button" onClick={p.onDownload} className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(14_128_120/0.22)] hover:bg-[#0c756e]">
                 <Download className="size-4" /> Sertifikatni yuklab olish
               </button>
@@ -581,7 +591,7 @@ function Mobile(p) {
       <p className="mt-0.5 px-3.5 text-[12px] text-[#8aa0a4]">Ishtirokchilarga sertifikat berish va yuborish</p>
 
       <div className="mx-3.5 mt-2 grid grid-cols-[92px_minmax(0,1fr)] items-start gap-2 rounded-2xl bg-[#e7f6f3] p-2">
-        <CertFrame width={92} qr name="Ism familiya" course={sem?.title || 'Seminar nomi'} date={sem?.date || '—'} />
+        <CertFrame width={92} qr name="Ism familiya" course={sem?.title || 'Seminar nomi'} date={sem?.date || '—'} cme={cmeLabel(sem)} />
         <div className="min-w-0">
           <p className="text-[13px] font-bold leading-tight">Sertifikat shabloni</p>
           <p className="mt-0.5 text-[11px] leading-snug text-[#5e787e]">Barcha ishtirokchilarga shu shablon asosida sertifikat beriladi.</p>

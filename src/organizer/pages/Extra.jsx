@@ -7,6 +7,8 @@ import { addMessage, addSpeaker, downloadText, saveMarketing, saveSettings, useH
 import { profileStore } from '../../profileStore'
 import { signOut, useSession } from '../../sessionStore'
 import { useOrg } from '../Shell'
+import { uploadDoc } from '../../apply/api'
+import { SpeakerModal } from './WizardModals'
 import { Badge, Btn, Card, Field, Toggle, inputCls } from '../ui'
 
 export function Marketing() {
@@ -42,31 +44,42 @@ export function Speakers() {
   const { notify } = useOrg()
   const hub = useHub()
   const list = hub.speakers
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('')
-  const [err, setErr] = useState('')
+  const [open, setOpen] = useState(false)
   return (
     <div>
-      <h1 className="text-[22px] font-bold">Ma’ruzachilar</h1>
-      <p className="mt-0.5 text-[13px] text-[#6e868c]">Seminarlarda ishtirok etadigan ma’ruzachilar.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {list.map((s) => (
-          <article key={s.id} className="rounded-2xl border border-[#e6f1ef] bg-white p-4">
-            <div className="flex items-center gap-3">
-              <img src={s.avatar} alt="" className="size-12 rounded-full object-cover" />
-              <div><p className="font-bold">{s.name}</p><p className="text-[12px] text-[#6e868c]">{s.role} · {s.city}</p></div>
-            </div>
-            <p className="mt-2 text-[12.5px] text-[#5e787e]">{s.bio}</p>
-          </article>
-        ))}
-      </div>
-      <Card className="mt-3" title="Ma’ruzachi qo‘shish">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Ism" req error={err}><input className={inputCls(!!err)} value={name} onChange={(e) => setName(e.target.value)} placeholder="Dr. Ism Familiya" /></Field>
-          <Field label="Lavozim"><input className={inputCls()} value={role} onChange={(e) => setRole(e.target.value)} placeholder="Implantolog" /></Field>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-[22px] font-bold">Ma’ruzachilar</h1>
+          <p className="mt-0.5 text-[13px] text-[#6e868c]">Seminarlarda ishtirok etadigan ma’ruzachilar.</p>
         </div>
-        <Btn className="mt-3" onClick={() => { if (name.trim().length < 3) { setErr('Ismni kiriting'); return } addSpeaker({ id: Date.now(), name: name.trim(), role: role || 'Mutaxassis', city: 'Toshkent', avatar: '/images/avatar.jpg', bio: '' }); setName(''); setRole(''); setErr(''); notify('Ma’ruzachi qo‘shildi') }}>Qo‘shish</Btn>
-      </Card>
+        <Btn onClick={() => setOpen(true)}>Ma’ruzachi qo‘shish</Btn>
+      </div>
+      {!list.length && <p className="mt-4 rounded-2xl border border-dashed border-[#d5ebe6] bg-white px-4 py-10 text-center text-[13px] text-[#6e868c]">Hali ma’ruzachi yo‘q. “Ma’ruzachi qo‘shish” tugmasi orqali to‘liq ma’lumot bilan qo‘shing.</p>}
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {list.map((s) => {
+          const meta = (Array.isArray(s.links) ? s.links : []).find((l) => l && typeof l === 'object' && l.kind === 'meta') || {}
+          const years = s.years || meta.years
+          const clinic = s.clinic || meta.clinic
+          const degree = s.degree || meta.degree
+          const certs = s.certs || meta.certs
+          return (
+            <article key={s.id} className="rounded-2xl border border-[#e6f1ef] bg-white p-4">
+              <div className="flex items-center gap-3">
+                <img src={s.avatar || '/images/avatar.jpg'} alt="" className="size-12 rounded-full object-cover" />
+                <div className="min-w-0"><p className="truncate font-bold">{s.name}</p><p className="truncate text-[12px] text-[#6e868c]">{[s.role, s.city].filter(Boolean).join(' · ')}</p></div>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
+                {years && <Badge>{years} yil tajriba</Badge>}
+                {degree && <Badge>{degree}</Badge>}
+                {clinic && <Badge>{clinic}</Badge>}
+              </div>
+              {certs && <p className="mt-1.5 text-[12px] text-[#5e787e]">Sertifikatlar: {certs}</p>}
+              {s.bio && <p className="mt-2 text-[12.5px] text-[#5e787e]">{s.bio}</p>}
+            </article>
+          )
+        })}
+      </div>
+      <SpeakerModal open={open} photo="" onClose={() => setOpen(false)} onSave={(sp) => { addSpeaker(sp); setOpen(false); notify('Ma’ruzachi qo‘shildi') }} />
     </div>
   )
 }
@@ -81,7 +94,9 @@ export function Reports() {
     certs: hub.certs.filter((c) => c.seminarId === s.id && c.state === 'done').length,
     id: s.id,
   }))
-  const confirmId = hub.seminars.find((s) => s.status === 'yakunlangan')?.id || hub.seminars[0]?.id
+  const confirmId = hub.seminars.find((s) => s.status === 'yakunlangan')?.id
+  const loading = !hub.ready
+  const total = rows.reduce((t, r) => ({ people: t.people + r.people, revenue: t.revenue + r.revenue, certs: t.certs + r.certs }), { people: 0, revenue: 0, certs: 0 })
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -93,8 +108,12 @@ export function Reports() {
           <table className="w-full min-w-[640px] text-left text-[13px]">
             <thead><tr className="border-b border-[#eef3f2] text-[12px] text-[#8aa0a4]">{['Seminar', 'Ishtirokchi', 'Tushum', 'Sertifikat'].map((h) => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}</tr></thead>
             <tbody>
-              {!rows.length && <tr><td colSpan={4} className="px-3 py-8 text-center text-[#7e9398]">Hali seminar yo‘q. Hisobot birinchi seminardan keyin paydo bo‘ladi.</td></tr>}
-              {rows.map((r) => (
+              {loading && [0, 1, 2].map((i) => <tr key={`sk${i}`} className="border-b border-[#f3f7f6]">{[0, 1, 2, 3].map((j) => <td key={j} className="px-3 py-3"><span className="block h-3.5 w-24 animate-pulse rounded bg-[#e8f1ef]" /></td>)}</tr>)}
+              {!loading && !rows.length && <tr><td colSpan={4} className="px-3 py-8 text-center text-[#7e9398]">Hali seminar yo‘q. Hisobot birinchi seminardan keyin paydo bo‘ladi.</td></tr>}
+              {!loading && rows.length > 1 && (
+                <tr className="border-b border-[#eef3f2] bg-[#f7fcfb] font-semibold"><td className="px-3 py-3">Jami</td><td className="px-3 py-3">{total.people}</td><td className="px-3 py-3">{som(total.revenue)}</td><td className="px-3 py-3">{total.certs}</td></tr>
+              )}
+              {!loading && rows.map((r) => (
                 <tr key={r.id} className="border-b border-[#f3f7f6]">
                   <td className="px-3 py-3 font-medium">{r.seminar}</td>
                   <td className="px-3 py-3">{r.people}</td>
@@ -156,6 +175,7 @@ export function SettingsPage() {
       <h1 className="text-[22px] font-bold">Sozlamalar</h1>
       <p className="mt-0.5 text-[13px] text-[#6e868c]">Tashkilotchi profili va bildirishnomalar.</p>
       <OrgProfileCard notify={notify} />
+      <LegalCard notify={notify} />
       <Card className="mt-4" title="Hisob va bildirishnomalar">
         <form
           className="grid gap-3 sm:grid-cols-2"
@@ -214,5 +234,75 @@ export function HelpPage() {
         <Btn className="mt-3" onClick={() => { if (text.trim().length < 5) { setErr('Xabar kamida 5 ta belgidan iborat bo‘lsin'); return } addMessage(text.trim()); setSent(true); setText(''); notify('Xabar yuborildi') }}>Yuborish</Btn>
       </Card>
     </div>
+  )
+}
+
+const LEGAL_DOCS = [
+  ['license', 'Tibbiy/ta’lim litsenziyasi', 'licenseNo'],
+  ['eduCert', 'Ta’lim guvohnomasi', 'eduCertNo'],
+]
+
+// Yuridik ma'lumotlar: arizadagi STIR va hujjatlar bo'lsa — qayta ishlatiladi.
+function LegalCard({ notify }) {
+  const hub = useHub()
+  const app = hub.application || null
+  const [f, setF] = useState({ stir: '', licenseNo: '', eduCertNo: '', docs: {} })
+  const [err, setErr] = useState({})
+  const [busy, setBusy] = useState('')
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    if (!hub.ready || hydrated) return
+    const legal = hub.settings?.legal || {}
+    const appDocs = Array.isArray(app?.docs) ? app.docs : []
+    const docs = { ...(legal.docs || {}) }
+    if (!docs.eduCert) { const d = appDocs.find((x) => x.key === 'certificate'); if (d) docs.eduCert = d }
+    setF({ stir: legal.stir || app?.stir || '', licenseNo: legal.licenseNo || '', eduCertNo: legal.eduCertNo || '', docs })
+    setHydrated(true)
+  }, [hub.ready, hub.settings, app, hydrated])
+  const pick = async (key, label, file) => {
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { setErr({ ...err, [key]: 'Fayl 10 MB dan oshmasin' }); return }
+    setBusy(key)
+    const r = await uploadDoc(file, key, label, 'settings')
+    setBusy('')
+    if (!r.ok) { setErr({ ...err, [key]: r.error || 'Yuklab bo‘lmadi' }); return }
+    setF((x) => ({ ...x, docs: { ...x.docs, [key]: r.doc } }))
+    setErr({ ...err, [key]: '' })
+  }
+  const save = (e) => {
+    e.preventDefault()
+    const v = {}
+    if (!/^\d{9}$/.test(f.stir)) v.stir = 'STIR 9 ta raqamdan iborat bo‘lsin'
+    if (f.licenseNo && f.licenseNo.trim().length < 3) v.licenseNo = 'Litsenziya raqamini to‘liq kiriting'
+    if (f.eduCertNo && f.eduCertNo.trim().length < 3) v.eduCertNo = 'Guvohnoma raqamini to‘liq kiriting'
+    setErr(v)
+    if (Object.keys(v).length) return
+    saveSettings({ legal: { stir: f.stir, licenseNo: f.licenseNo.trim(), eduCertNo: f.eduCertNo.trim(), docs: f.docs } })
+    notify('Yuridik ma’lumotlar saqlandi')
+  }
+  return (
+    <Card className="mt-4" title="Yuridik ma’lumotlar">
+      {app && <p className="mb-3 rounded-xl bg-[#eef8f6] px-3 py-2 text-[12px] text-[#3e6a6c]">Arizangizdagi ma’lumotlar avtomatik qo‘yildi — kerak bo‘lsa yangilang.</p>}
+      <form className="grid gap-3 sm:grid-cols-2" onSubmit={save} noValidate>
+        <Field label="STIR (INN)" req error={err.stir}>
+          <input inputMode="numeric" className={inputCls(!!err.stir)} value={f.stir} onChange={(e) => setF({ ...f, stir: e.target.value.replace(/\D/g, '').slice(0, 9) })} onKeyDown={(e) => e.stopPropagation()} placeholder="9 ta raqam" />
+        </Field>
+        <div />
+        {LEGAL_DOCS.map(([key, label, numKey]) => (
+          <div key={key} className="space-y-2">
+            <Field label={`${label} raqami`} error={err[numKey]}>
+              <input className={inputCls(!!err[numKey])} value={f[numKey]} onChange={(e) => setF({ ...f, [numKey]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} placeholder="Masalan: L-012345" />
+            </Field>
+            <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-dashed border-[#cfe7e2] bg-[#f7fcfb] px-3 py-2 text-[12.5px]">
+              <span className="min-w-0 truncate text-[#3e5a62]">{busy === key ? 'Yuklanmoqda…' : f.docs[key]?.name || `${label} fayli (PDF/JPG)`}</span>
+              <span className="shrink-0 font-semibold text-[var(--color-org-teal)]">{f.docs[key] ? 'Almashtirish' : 'Fayl tanlash'}</span>
+              <input type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => pick(key, label, e.target.files?.[0])} />
+            </label>
+            {err[key] && <p className="text-[11.5px] text-[#e11d48]">{err[key]}</p>}
+          </div>
+        ))}
+        <div className="sm:col-span-2"><Btn type="submit">Saqlash</Btn></div>
+      </form>
+    </Card>
   )
 }
