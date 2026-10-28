@@ -4,7 +4,7 @@ import { seminars as CATALOG } from './seminarsData'
 import { friendlySupabaseError, supabase } from './supabaseClient'
 import { tashkentClock, tashkentDate } from './time'
 import {
-  pullHub, pushCancel, pushCert, pushCheckIn, pushConfirm, pushDuplicate, pushMessage,
+  pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
   pushSettingsBundle, pushSpeaker, pushTickets, pushWithdraw, remoteRegister, subscribeHub,
 } from './hubRemote'
@@ -295,6 +295,30 @@ export function cancelSeminar(id, reason) {
     }
   })
   remote(() => pushCancel(id, reason))
+}
+
+export function setSeminarVisible(id, visible) {
+  patch((s) => ({
+    ...s,
+    seminars: s.seminars.map((x) => (x.id === id ? { ...x, published: !!visible } : x)),
+    activity: pushActivity(s.activity, { icon: 'cal', title: visible ? 'Seminar ko‘rsatildi' : 'Seminar yashirildi', text: s.seminars.find((x) => x.id === id)?.title || id }),
+  }))
+  remote(() => pushVisibility(id, !!visible))
+}
+
+export function deleteSeminar(id) {
+  const sem = state.seminars.find((x) => x.id === id)
+  if (!sem) return { ok: false, error: 'Seminar topilmadi' }
+  const people = state.participants.filter((p) => p.seminarId === id).length
+  if ((sem.sold || 0) > 0 || people > 0) return { ok: false, error: 'Ro‘yxatdan o‘tganlar bor — o‘chirish o‘rniga bekor qiling' }
+  patch((s) => ({
+    ...s,
+    seminars: s.seminars.filter((x) => x.id !== id),
+    promos: s.promos.filter((p) => p.seminar !== id),
+    activity: pushActivity(s.activity, { icon: 'cal', title: 'Seminar o‘chirildi', text: sem.title }),
+  }))
+  remote(() => pushDeleteSeminar(id))
+  return { ok: true }
 }
 
 export function duplicateSeminar(id) {
@@ -623,6 +647,12 @@ export function moneyOf(s = state) {
   }
 }
 
+function spanHours(a = '10:00', b = '18:00') {
+  const toMin = (t) => { const [h, m] = String(t || '').split(':').map(Number); return (h || 0) * 60 + (m || 0) }
+  const diff = toMin(b) - toMin(a)
+  return diff > 0 ? `${Math.round(diff / 6) / 10} soat` : ''
+}
+
 export function toPublic(s) {
   const [y, m, d] = (s.start || isoFromLabel(s.date)).split('-').map(Number)
   const date = new Date(y, (m || 1) - 1, d || 1)
@@ -645,7 +675,8 @@ export function toPublic(s) {
     city: s.city,
     place: s.place || s.city,
     time: `${s.startTime || '10:00'} – ${s.endTime || '18:00'}`,
-    hours: '8 soat',
+    hours: Number(s.form?.hours) ? `${Number(s.form.hours)} soat` : spanHours(s.startTime, s.endTime),
+    noSpeaker: !(s.speakers || []).some((sp) => sp?.name),
     speaker: {
       name: s.speakers?.[0]?.name || s.speaker,
       role: s.speakers?.[0]?.role || s.topic,

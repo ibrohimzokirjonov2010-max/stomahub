@@ -479,6 +479,16 @@ export async function pushConfirm(id) {
   await logActivity(await requireUid(), { icon: 'award', title: 'Seminar o‘tkazilgani tasdiqlandi', text: id })
 }
 
+export async function pushVisibility(id, visible) {
+  const { error } = await supabase.from('seminars').update({ published: !!visible }).eq('id', id)
+  if (error) throw error
+}
+
+export async function pushDeleteSeminar(id) {
+  const { error } = await supabase.from('seminars').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function pushCancel(id, reason) {
   const { data, error } = await supabase.rpc('cancel_seminar', { seminar_id: id, reason: reason || '' })
   if (error) throw error

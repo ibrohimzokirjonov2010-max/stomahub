@@ -125,13 +125,14 @@ function SeminarView({ id }) {
           <Tag className="mt-0.5 size-3.5 shrink-0 text-sea" strokeWidth={1.8} />
           <span className="min-w-0 leading-tight">
             <span className="block whitespace-nowrap text-[11px] font-bold text-ink">{som(s.price)}</span>
-            <span className="block whitespace-nowrap text-[9px] text-muted line-through">{som(s.oldPrice)}</span>
-            <span className="mt-0.5 inline-block rounded-full bg-sea px-1.5 text-[9px] font-bold text-white">-{s.off}%</span>
+            {s.oldPrice > s.price && <span className="block whitespace-nowrap text-[9px] text-muted line-through">{som(s.oldPrice)}</span>}
+            {s.off > 0 && <span className="mt-0.5 inline-block rounded-full bg-sea px-1.5 text-[9px] font-bold text-white">-{s.off}%</span>}
           </span>
         </div>
       </div>
 
       {/* Ma'ruzachi */}
+      {!s.noSpeaker && (
       <button type="button" onClick={() => setSheet('speaker')} className="mx-3 mt-3 flex w-[calc(100%-24px)] items-center gap-3 rounded-2xl bg-white p-2.5 text-left shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
         <img src={s.speaker.avatar} alt={s.speaker.name} className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
         <span className="min-w-0 flex-1">
@@ -142,6 +143,7 @@ function SeminarView({ id }) {
         </span>
         <ChevronRight className="size-5 shrink-0 text-ink-2" />
       </button>
+      )}
 
       {/* Tablar */}
       <div className="sticky top-0 z-20 mt-3 overflow-x-auto bg-[#f6f9fb] px-3 py-2 backdrop-blur no-scrollbar">
@@ -229,10 +231,10 @@ function SeminarView({ id }) {
           <>
             <div className="min-w-0">
               <p className="whitespace-nowrap text-[18px] font-extrabold leading-tight text-[#0d3b44]">{som(s.price)}</p>
-              <p className="flex items-center gap-1.5 text-[11.5px]">
+              {s.oldPrice > s.price && <p className="flex items-center gap-1.5 text-[11.5px]">
                 <span className="text-muted line-through">{som(s.oldPrice)}</span>
                 <span className="rounded-md bg-sale px-1.5 font-bold text-white">-{s.off}%</span>
-              </p>
+              </p>}
             </div>
             <button type="button" disabled={s.cancelled} onClick={() => { if (!s.cancelled) navigate(`/seminarlar/${s.id}/royxat`) }} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:bg-[#fde8e8] disabled:text-[#dc2626] disabled:shadow-none">
               {s.cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'} {!s.cancelled && <ArrowRight className="size-[18px]" />}
