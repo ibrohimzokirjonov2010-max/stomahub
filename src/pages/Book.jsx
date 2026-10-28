@@ -67,14 +67,16 @@ export default function Book() {
           <p className="mt-1 text-[12px] text-muted">Muallif: {book.author}</p>
           <p className="mt-1 flex items-center gap-1 text-[12px]"><Stars n={Math.round(book.rating || 0)} /> <span className="font-bold">{book.rating}</span> <button onClick={() => setTab('reviews')} className="text-muted">({book.reviews} ta sharh)</button></p>
           <p className="mt-2 text-[22px] font-extrabold text-ink">{money(price)}</p>
-          {priceless(book) ? <p className="mt-2 rounded-lg bg-sea-50 px-3 py-2 text-[11.5px] text-ink-2">Narx sotuvchi bilan kelishiladi. Buyurtma uchun StomaHub bilan bog‘laning.</p> : <>
+          {priceless(book) ? <><p className="mt-2 rounded-lg bg-sea-50 px-3 py-2 text-[11.5px] text-ink-2">Narx sotuvchi bilan kelishiladi. Buyurtma uchun StomaHub bilan bog‘laning.</p>
+          {book.pdf && <Link to={`/kitoblar/${book.id}/oqish`} className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5" /> O‘qish</Link>}
+          </> : <>
           <p className="mt-3 text-[12px] font-bold">Formatni tanlang</p>
           <div className="mt-1.5 grid grid-cols-2 gap-2">
             <Format on={format === 'print'} onClick={() => setFormat('print')} icon={BookOpen} title="Qog‘oz nashr" price={money(book.price)} />
             <Format on={format === 'pdf'} onClick={() => setFormat('pdf')} icon={BookOpen} title="Elektron nashr (PDF)" price={money(view.pdf)} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {!priceless(book) && <Link to={`/kitoblar/${book.id}/oqish`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5 text-sea" /> O‘qib ko‘rish (1-bob)</Link>}
+            {<Link to={`/kitoblar/${book.id}/oqish`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5 text-sea" /> O‘qib ko‘rish (1-bob)</Link>}
             <button onClick={put} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-sea px-3 text-[12px] font-semibold text-sea"><ShoppingCart className="size-3.5" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}</button>
             <button onClick={() => { put(); setBought(true) }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white">{bought ? 'Qabul qilindi' : 'Sotib olish'}</button>
           </div>
@@ -115,13 +117,14 @@ export default function Book() {
               <button onClick={() => setMore((v) => !v)} className="mt-1 text-[12px] font-semibold text-sea">{more ? 'Yig‘ish' : 'Ko‘proq o‘qish'} ›</button>
               <p className="mt-4 text-[13px] font-bold">Mundarija</p>
               <div className="mt-2 grid gap-1 sm:grid-cols-2">
-                {view.toc.map((row, i) => <p key={row} className="flex items-center justify-between border-b border-[#f0f4f8] py-1.5 text-[12px] text-ink-2"><span>{i + 1}. {row}</span><ChevronRight className="size-3.5 text-muted" /></p>)}
+                {view.toc.map((row) => <Link key={row.title} to={`/kitoblar/${book.id}/oqish${row.page ? `?page=${row.page}` : ''}`} className="flex items-center justify-between gap-2 border-b border-[#f0f4f8] py-1.5 text-[12px] text-ink-2"><span>{row.title}</span>{row.page && <span className="shrink-0 text-[11px] text-muted">{row.page}-bet</span>}</Link>)}
               </div>
             </div>
           )}
           {tab === 'toc' && (
             <div className="grid gap-1 pt-3">
-              {view.toc.map((row, i) => <Link key={row} to={`/kitoblar/${book.id}/oqish`} className="flex items-center justify-between rounded-lg px-1 py-1.5 text-[12px] hover:bg-[#f4fbfb]"><span>{i + 1}. {row}</span><ChevronRight className="size-3.5 text-muted" /></Link>)}
+              {view.toc.length === 0 && <p className="text-[12px] text-muted">Mundarija hali kiritilmagan.</p>}
+              {view.toc.map((row) => <Link key={row.title} to={`/kitoblar/${book.id}/oqish${row.page ? `?page=${row.page}` : ''}`} className="flex items-center justify-between gap-2 rounded-lg px-1 py-1.5 text-[12px] hover:bg-[#f4fbfb]"><span>{row.title}</span>{row.page ? <span className="shrink-0 text-[11px] text-muted">{row.page}-bet</span> : <ChevronRight className="size-3.5 text-muted" />}</Link>)}
             </div>
           )}
           {tab === 'reviews' && <ReviewList rows={view.reviews} />}

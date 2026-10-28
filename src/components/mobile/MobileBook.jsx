@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  Heart, UserRound, Star, Eye, ShoppingCart, BookOpen, FileText, Globe, File, ChevronDown, ChevronRight, ListOrdered, MessageCircle, MoreHorizontal, Check, Truck,
+  Heart, UserRound, Star, ShoppingCart, BookOpen, FileText, Globe, File, ChevronDown, ChevronRight, ListOrdered, MessageCircle, MoreHorizontal, Check, Truck,
 } from 'lucide-react'
-import { getBook, productOf, readerOf, langLong, money } from '../../booksData'
+import { getBook, productOf, langLong, money } from '../../booksData'
 import { useCart } from '../../cart'
 import BookPdfPanel from '../BookPdf'
 import { MobileToast } from './parts'
@@ -12,15 +12,12 @@ import { BottomSheet } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import { bookCartId, bookPrice, defaultFormat } from './MobileBooks'
 
-const img = (n) => `/images/books/${n}.jpg`
 
 export default function MobileBook() {
   const { id } = useParams()
   return <BookView key={id} id={id} />
 }
 
-const chapterNo = (title) => title.match(/^(\d+)-bob/)?.[1]
-const chapterName = (title) => title.replace(/^\d+-bob\.\s*/, '')
 
 function BookView({ id }) {
   const b = getBook(id)
@@ -51,14 +48,12 @@ function BookView({ id }) {
   }
 
   const view = productOf(b)
-  const doc = readerOf(b)
-  const chapters = b.toc?.length ? b.toc.map((t, i) => ({ id: `t${i}`, title: `${i + 1}-bob. ${t}`, page: undefined })) : doc.chapters.map((ch, i) => ({ ...ch, pages: (doc.chapters[i + 1]?.page || doc.pages + 1) - ch.page }))
-  const gallery = b.gallery?.length || b.id === 'atlas' ? view.gallery : [b.cover, img('book-spread'), img('book-page')]
+  const chapters = view.toc.map((r, i) => ({ id: `t${i}`, title: r.title, page: r.page }))
+  const gallery = view.gallery
   const price = bookPrice(b, fmt)
   const cartId = bookCartId(b, fmt)
   const inCart = items.some((it) => it.id === cartId)
-  const views = b.reviews * 67
-  const subtitle = b.id === 'klinik' ? doc.subtitle : b.blurb
+  const subtitle = b.blurb
 
   const buy = () => {
     if (!inCart) add({ id: cartId, name: `${b.title} (${fmt === 'pdf' ? 'PDF' : 'bosma'})`, type: 'Kitob', price, image: b.cover })
@@ -106,7 +101,6 @@ function BookView({ id }) {
             <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{b.rating}</b>
             <button type="button" onClick={() => setSheet('reviews')} className="text-muted">({Math.max(0, reviews.length + (b.reviews || 0))} ta sharh)</button>
             <span className="mx-1 h-3 w-px bg-line" />
-            {views > 0 && <><Eye className="size-3.5 text-muted" /> <span className="text-muted">{(views / 1000).toFixed(1)}K</span></>}
           </p>
           {b.formats.length > 1 && (
             <div className="mt-2 grid grid-cols-2 rounded-lg bg-[#e8f1f2] p-0.5">
@@ -116,7 +110,10 @@ function BookView({ id }) {
             </div>
           )}
           <p className="mt-2 whitespace-nowrap text-[22px] font-extrabold tracking-tight text-[#0b6d73]">{money(price)}</p>
-          {b.price == null ? <p className="mt-2 rounded-xl bg-[#e8f1f2] px-3 py-2 text-[11.5px] leading-snug text-ink-2">Narx sotuvchi bilan kelishiladi</p> : <>
+          {b.price == null ? <>
+          <p className="mt-2 rounded-xl bg-[#e8f1f2] px-3 py-2 text-[11.5px] leading-snug text-ink-2">Narx sotuvchi bilan kelishiladi</p>
+          {b.pdf && <button type="button" onClick={() => read()} className="mt-2 flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[#0b6d73]/50 bg-white text-[12.5px] font-semibold text-[#0b6d73]"><BookOpen className="size-[18px]" /> O‘qish</button>}
+          </> : <>
           <button type="button" onClick={buy} className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white active:scale-[0.98]">
             <ShoppingCart className="size-[18px]" /> Sotib olish
           </button>
@@ -160,9 +157,9 @@ function BookView({ id }) {
       </Card>
 
       {/* Mundarija */}
-      <Card icon={ListOrdered} title="Mundarija" action={<button type="button" onClick={() => setSheet('toc')} className="flex items-center gap-0.5 text-[12px] font-semibold text-[#0b6d73]">Barcha boblar ({chapters.length}) <ChevronRight className="size-4" /></button>}>
+      {chapters.length > 0 && <Card icon={ListOrdered} title="Mundarija" action={<button type="button" onClick={() => setSheet('toc')} className="flex items-center gap-0.5 text-[12px] font-semibold text-[#0b6d73]">Barchasi ({chapters.length}) <ChevronRight className="size-4" /></button>}>
         <ChapterList chapters={chapters.slice(0, 5)} onOpen={read} />
-      </Card>
+      </Card>}
 
       {/* Sharhlar */}
       <Card icon={MessageCircle} title={`Sharhlar (${Math.max(0, reviews.length + (b.reviews || 0))})`} action={<button type="button" onClick={() => setSheet('reviews')} className="text-[12px] font-semibold text-[#0b6d73]">Barchasini ko‘rish</button>}>
@@ -187,7 +184,7 @@ function BookView({ id }) {
       )}
 
       {sheet === 'toc' && (
-        <BottomSheet title={`Mundarija · ${chapters.length} bob`} onClose={() => setSheet(null)}>
+        <BottomSheet title="Mundarija" onClose={() => setSheet(null)}>
           <ChapterList chapters={chapters} onOpen={read} />
         </BottomSheet>
       )}
@@ -227,10 +224,9 @@ function ChapterList({ chapters, onOpen }) {
   return (
     <div className="flex flex-col">
       {chapters.map((ch) => (
-        <button key={ch.id} type="button" onClick={() => onOpen(ch.children?.[0]?.page || ch.page)} className="flex h-[42px] items-center gap-2.5 border-b border-line/70 text-left last:border-0">
-          <span className="w-[50px] shrink-0 rounded-full bg-[#e6f4f3] py-0.5 text-center text-[10.5px] font-semibold text-[#0b6d73]">{chapterNo(ch.title) ? `${chapterNo(ch.title)}-bob` : 'Bob'}</span>
-          <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink">{chapterName(ch.title)}</span>
-          {ch.pages > 0 && <span className="shrink-0 text-[11px] text-muted">{ch.pages} bet</span>}
+        <button key={ch.id} type="button" onClick={() => onOpen(ch.page)} className="flex min-h-[42px] items-center gap-2.5 border-b border-line/70 py-1.5 text-left last:border-0">
+          <span className="min-w-0 flex-1 text-[12.5px] leading-snug text-ink">{ch.title}</span>
+          {ch.page > 0 && <span className="shrink-0 text-[11px] tabular-nums text-muted">{ch.page}-bet</span>}
           <ChevronRight className="size-4 shrink-0 text-muted" />
         </button>
       ))}

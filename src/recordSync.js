@@ -189,7 +189,7 @@ export function registerCatalog(kind, list) {
   targets.push({ kind, list })
 }
 
-const SEED_KINDS = new Set(['course', 'certificate'])
+const SEED_KINDS = new Set(['course', 'certificate', 'book'])
 
 export async function loadCatalog() {
   if (!supabase) return
@@ -201,7 +201,7 @@ export async function loadCatalog() {
   }
   const grouped = new Map()
   ;(data || []).forEach((row) => {
-    // Ownerless seed rows (demo courses/certificates) are not real content.
+    // Ownerless seed rows (demo courses/certificates/books) are not real content.
     if (!row.owner_id && SEED_KINDS.has(row.kind)) return
     if (!grouped.has(row.kind)) grouped.set(row.kind, [])
     grouped.get(row.kind).push(row)
