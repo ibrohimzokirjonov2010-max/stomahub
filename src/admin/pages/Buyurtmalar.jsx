@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Eye, ShoppingBag } from 'lucide-react'
 import { listOrders, orderDetail, useAdminList } from '../api'
-import { dmyhm, maskPhone, num, ORDER_STATUS, payLabel, som } from '../format'
+import { dmyhm, maskPhone, num, ORDER_STATUS, payLabel, som, fullPhone } from '../format'
 import Modal from '../components/Modal'
 import { PayBadge } from '../components/dashboard/StatusBadge'
 import {
@@ -138,7 +138,7 @@ export default function Buyurtmalar() {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3 text-[13px]">
-              <div><div className="text-[#8A9AA8]">Xaridor</div><div className="font-semibold">{detail.customer_name}</div><div>{maskPhone(detail.customer_phone)}</div></div>
+              <div><div className="text-[#8A9AA8]">Xaridor</div><div className="font-semibold">{detail.customer_name}</div><a href={`tel:${String(detail.customer_phone || '').replace(/[^\d+]/g, '')}`} className="text-[#0F766E] underline">{fullPhone(detail.customer_phone)}</a></div>
               <div><div className="text-[#8A9AA8]">Sotuvchi</div><div className="font-semibold">{detail.seller?.shop_name || detail.seller?.name}</div><div>{detail.seller?.city} · {maskPhone(detail.seller?.phone)}</div></div>
               <div className="col-span-2"><div className="text-[#8A9AA8]">Manzil</div><div className="font-semibold">{detail.address || '—'}</div></div>
             </div>

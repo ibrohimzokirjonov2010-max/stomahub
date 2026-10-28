@@ -7,6 +7,7 @@ import {
   Avatar, Btn, DataTable, Empty, FilterTabs, MigrateBanner, MobileCards,
   PageHeader, Pagination, RowActions, SearchRow, StatusDot, TableCard,
 } from '../components/ui'
+import ConfirmReason from '../components/ConfirmReason'
 
 export default function Foydalanuvchilar() {
   const [tab, setTab] = useState('all')
@@ -16,6 +17,7 @@ export default function Foydalanuvchilar() {
   const [detail, setDetail] = useState(null)
   const [busy, setBusy] = useState('')
   const [reason, setReason] = useState('')
+  const [blockRow, setBlockRow] = useState(null)
   const [msg, setMsg] = useState('')
 
   const { loading, error, needsMigration, rows, total, counts, reload } = useAdminList(
@@ -115,6 +117,10 @@ export default function Foydalanuvchilar() {
 
       <Pagination page={page} pageSize={pageSize} total={total} onPage={setPage} onPageSize={(n) => { setPageSize(n); setPage(1) }} />
 
+      <ConfirmReason open={!!blockRow} title="Foydalanuvchini bloklash" danger confirmLabel="Bloklash" reasonLabel="Bloklash sababi"
+        placeholder="Masalan: Qoidalarni buzganlik" text={blockRow ? `${blockRow.name || 'Foydalanuvchi'} bloklanadi va platformadan foydalana olmaydi.` : ''}
+        onClose={() => setBlockRow(null)}
+        onConfirm={async (r) => { await userBlock(blockRow.id, true, r); setMsg('Foydalanuvchi bloklandi.'); if (detail) setDetail(await userDetail(blockRow.id)); reload() }} />
       <Modal
         open={!!detail}
         onClose={() => setDetail(null)}
@@ -126,7 +132,7 @@ export default function Foydalanuvchilar() {
           <div className="flex flex-wrap gap-2">
             {detail.blocked
               ? <Btn tone="primary" disabled={busy === detail.id} onClick={() => block(detail.id, false, true)}><CheckCircle2 className="size-4" /> Blokdan chiqarish</Btn>
-              : <Btn tone="danger" disabled={busy === detail.id} onClick={() => block(detail.id, true, true)}><Ban className="size-4" /> Bloklash</Btn>}
+              : <Btn tone="danger" disabled={busy === detail.id} onClick={() => setBlockRow(detail)}><Ban className="size-4" /> Bloklash</Btn>}
             <Btn onClick={() => setDetail(null)}>Yopish</Btn>
           </div>
         )}
@@ -169,12 +175,6 @@ export default function Foydalanuvchilar() {
               <Field label="Manzil" value={detail.address || '—'} />
               <Field label="Qo‘shimcha ma’lumot" value={detail.about || '—'} />
             </div>
-            {!detail.blocked && (
-              <label className="block text-[13px]">
-                <span className="mb-1 block font-semibold text-[#10283F]">Bloklash sababi</span>
-                <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} className="w-full rounded-xl border border-[#E6EEF0] px-3 py-2 outline-none focus:border-[#0F766E]" placeholder="Masalan: Qoidalarni buzganlik" />
-              </label>
-            )}
           </div>
         )}
       </Modal>

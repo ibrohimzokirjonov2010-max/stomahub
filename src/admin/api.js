@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { monthBounds } from './format'
 import { shotRpc } from './shotFixtures'
@@ -7,8 +7,17 @@ function iso(d) {
   return new Date(d).toISOString()
 }
 
+export function isMissingFn(e) {
+  const msg = e?.message || String(e || '')
+  return e?.code === 'PGRST202' || e?.code === '42883' || /Could not find the function|function .* does not exist/i.test(msg)
+}
+
 async function rpc(name, args = {}) {
-  if (typeof window !== 'undefined' && window.__ADMIN_SHOT__) {
+  if (typeof window !== 'undefined' && (window.__ADMIN_SHOT__ || (import.meta.env.DEV && window.location.pathname.startsWith('/admin-shot')))) {
+    // screenshot runs may inject real (read-only queried) payloads: key = rpc name or name:kind/tab
+    const real = window.__ADMIN_SHOT_REAL__
+    const k = [`${name}:${args.p_kind || args.p_tab || args.p_type || ''}`, name].find((x) => real && real[x] != null)
+    if (k) return real[k]
     const fix = shotRpc(name, args)
     if (fix != null) return fix
   }
@@ -65,6 +74,12 @@ export const listComplaints = (a) => rpc('admin_complaints_list', { p_tab: a.tab
 export const updateComplaint = (id, status, resolution = '') => rpc('admin_complaint_update', { p_id: id, p_status: status, p_resolution: resolution })
 
 export const fetchReports = (from, to) => rpc('admin_reports', { p_from: iso(from), p_to: iso(to) })
+
+export const pendingCounts = () => rpc('admin_pending_counts')
+export const licenseQueue = (tab = 'pending') => rpc('admin_license_queue', { p_tab: tab })
+export const reviewLicense = (id, approve, reason = '') => rpc('admin_review_license', { p_id: id, p_approve: approve, p_reason: reason })
+export const listContent = (a) => rpc('admin_content_list', { p_kind: a.kind, p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 20 })
+export const moderateContent = (kind, id, action, reason = '') => rpc('admin_content_moderate', { p_kind: kind, p_id: String(id), p_action: action, p_reason: reason })
 
 export const getSettings = () => rpc('admin_settings_get')
 export const setSettings = (p) => rpc('admin_settings_set', { p })
@@ -133,7 +148,12 @@ function normalizeDashboard(raw) {
       ads: Number(d.pending?.ads) || 0,
       products: Number(d.pending?.products) || 0,
       users: Number(d.pending?.users) || 0,
+      doctors: Number(d.pending?.doctors) || 0,
+      total: d.pending?.total != null ? Number(d.pending.total) : undefined,
     },
+    cash_pending: Number(d.cash_pending) || 0,
+    seminar_revenue: Number(d.seminar_revenue) || 0,
+    seminar_commission: Number(d.seminar_commission) || 0,
     complaints: Array.isArray(d.complaints) ? d.complaints : [],
     activity: Array.isArray(d.activity) ? d.activity : [],
     pending_sellers: Array.isArray(d.pending_sellers) ? d.pending_sellers : [],
@@ -146,10 +166,17 @@ export function useAdminList(fetcher, deps) {
     loading: true, error: '', needsMigration: false,
     rows: [], total: 0, counts: {}, extra: {},
   })
+  const seq = useRef(0)
   const load = useCallback(async () => {
+    const my = ++seq.current
     setState((s) => ({ ...s, loading: true, error: '' }))
     try {
-      const raw = await fetcher()
+      // a hung request must never leave the page on "Yuklanmoqda…" forever
+      const raw = await Promise.race([
+        fetcher(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('So‘rov javob bermadi (20 s). Sahifani yangilang yoki qayta urinib ko‘ring.')), 20000)),
+      ])
+      if (my !== seq.current) return
       setState({
         loading: false, error: '', needsMigration: false,
         rows: raw?.rows || [],
@@ -158,14 +185,16 @@ export function useAdminList(fetcher, deps) {
         extra: raw || {},
       })
     } catch (e) {
+      if (my !== seq.current) return
       const msg = e?.message || String(e)
-      const needsMigration = /Could not find the function|schema cache|404|PGRST|admin_/i.test(msg)
+      // only a really missing function means "migration needed"; other errors are shown as-is
+      const needsMigration = isMissingFn(e)
       setState({
         loading: false,
         error: needsMigration
-          ? 'Kerakli RPC topilmadi. supabase/migrations/0012_admin_sections.sql ni Supabase’da qo‘llang.'
+          ? 'Kerakli RPC topilmadi. Tegishli migratsiyani Supabase’da qo‘llang.'
           : msg,
-        needsMigration: true,
+        needsMigration,
         rows: [], total: 0, counts: {}, extra: {},
       })
     }

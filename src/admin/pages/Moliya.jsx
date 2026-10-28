@@ -14,6 +14,16 @@ const STATUS = {
   rad_etildi: { label: 'Rad etildi', tone: 'red' },
 }
 
+function Card({ label, value, sub }) {
+  return (
+    <div className="rounded-2xl border border-[#E6EEF0] bg-white p-3.5">
+      <div className="text-[12.5px] font-medium text-[#5C6E80]">{label}</div>
+      <div className="mt-1 text-[18px] font-extrabold text-[#10283F]">{value}</div>
+      {sub && <div className="text-[11.5px] text-[#8A9AA8]">{sub}</div>}
+    </div>
+  )
+}
+
 export default function Moliya() {
   const [month] = useState(() => new Date())
   const [finance, setFinance] = useState(null)
@@ -32,6 +42,7 @@ export default function Moliya() {
     fetchFinance(from, to).then(setFinance).catch((e) => setFinErr(e.message))
   }, [month])
 
+  const pct = Math.round(Number(finance?.commission_pct ?? (finance?.commission_rate != null ? finance.commission_rate * 100 : 12)))
   const { loading, error, needsMigration, rows, total, counts, reload } = useAdminList(
     () => listPayouts({ tab, q, page, pageSize }),
     [tab, q, page, pageSize],
@@ -57,25 +68,35 @@ export default function Moliya() {
 
   return (
     <div>
-      <PageHeader title="Moliya va komissiya" subtitle="Platforma komissiyasi (12%) va sotuvchi to‘lovlari" />
+      <PageHeader title="Moliya va komissiya" subtitle="Komissiya faqat yetkazilgan buyurtmalardan; demo to‘lovlar hisobga olinmaydi" />
       <MigrateBanner show={needsMigration || /admin_finance|admin_payouts/i.test(finErr)} />
       {msg && <p role="status" className="mt-3 rounded-xl bg-[#eef8f6] px-3 py-2 text-[13px]">{msg}</p>}
       <KpiStrip items={[
-        { label: 'Aylanma', value: som(finance?.turnover), active: true, icon: Wallet },
-        { label: 'Komissiya 12%', value: som(finance?.commission) },
-        { label: 'Sotuvchilarga', value: som(finance?.payout) },
-        { label: 'Kutilayotgan to‘lovlar', value: som(finance?.payouts_pending) },
+        { label: 'Aylanma (demo’siz)', value: som(finance?.turnover), active: true, icon: Wallet },
+        { label: `Komissiya ${pct}% (yetkazilgan)`, value: som(finance?.commission) },
+        { label: 'Sotuvchilarga to‘lash kerak', value: som(finance?.seller_payable ?? finance?.payout) },
+        { label: 'Kutilayotgan to‘lovlar', value: som(finance?.seller_payable ?? finance?.payouts_pending), sub: finance?.payouts_requested != null ? `So‘rov: ${som(finance.payouts_requested)}` : undefined },
       ]} />
+      {finance && finance.seminar_revenue != null && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Card label="Seminar tushumi" value={som(finance.seminar_revenue)} sub={`${num(finance.seminar_paid_count)} ta to‘langan chipta`} />
+          <Card label={`Tashkilotchi komissiyasi ${pct}%`} value={som(finance.seminar_commission)} sub="Seminar tushumidan" />
+          <Card label="Naqd — kutilmoqda" value={som(finance.cash_pending)} sub={`${num(finance.cash_pending_orders)} ta buyurtma · escrow emas`} />
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {(finance?.by_method || []).map((m) => (
-          <div key={m.method} className="rounded-2xl border border-[#E6EEF0] bg-white p-3.5">
-            <div className="text-[12.5px] font-medium text-[#5C6E80]">{payLabel(m.method)}</div>
-            <div className="mt-1 text-[18px] font-extrabold text-[#10283F]">{som(m.sum)}</div>
-            <div className="text-[11.5px] text-[#8A9AA8]">{num(m.count)} ta buyurtma</div>
-          </div>
+          <Card key={m.method} label={payLabel(m.method)} value={som(m.sum)}
+            sub={`${num(m.count)} ta buyurtma${m.cancelled ? ` · ${num(m.cancelled)} bekor` : ''}${m.demo ? ` · ${num(m.demo)} demo` : ''}`} />
         ))}
       </div>
+      {finance?.orders_count != null && (
+        <p className="mt-2 text-[12px] text-[#5C6E80]">
+          Jami {num(finance.orders_count)} ta buyurtma = usullar bo‘yicha {num((finance.by_method || []).reduce((a, m) => a + Number(m.count || 0), 0))} ta
+          {finance.orders_demo ? ` (shundan ${num(finance.orders_demo)} ta demo to‘lov hisobotdan chiqarilgan)` : ''}.
+        </p>
+      )}
 
       <h2 className="mt-6 text-[16px] font-bold">To‘lov so‘rovlari</h2>
       <FilterTabs tabs={tabs} value={tab} onChange={(v) => { setTab(v); setPage(1) }} />

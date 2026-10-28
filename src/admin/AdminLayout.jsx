@@ -44,13 +44,15 @@ export default function AdminLayout() {
   const pending = data?.pending || {}
   const notifItems = [
     { icon: Store, label: 'Yangi sotuvchilar', count: pending.sellers || 0, to: '/admin/sotuvchilar?tab=pending' },
-    { icon: BadgeCheck, label: 'Tasdiqlashlar', count: (pending.sellers || 0) + (pending.organizers || 0) + (pending.ads || 0) + (pending.products || 0), to: '/admin/tasdiqlashlar' },
-    { icon: Megaphone, label: 'E’lonlar moderatsiyasi', count: pending.ads || 0, to: '/admin/elonlar?tab=moderatsiyada' },
-    { icon: ShoppingBag, label: 'Mahsulotlar', count: pending.products || 0, to: '/admin/mahsulotlar' },
+    { icon: BadgeCheck, label: 'Tasdiqlashlar', count: pending.total ?? ((pending.sellers || 0) + (pending.organizers || 0) + (pending.ads || 0) + (pending.products || 0) + (pending.doctors || 0)), to: '/admin/tasdiqlashlar' },
+    { icon: Megaphone, label: 'Reklama kampaniyalari', count: pending.ads || 0, to: '/admin/elonlar?tab=moderatsiyada' },
+    { icon: ShoppingBag, label: 'Mahsulotlarni tasdiqlash', count: pending.products || 0, to: '/admin/mahsulotlar' },
     { icon: CircleHelp, label: 'Shikoyatlar', count: (data?.complaints || []).length, to: '/admin/shikoyatlar' },
     { icon: Users, label: 'Tashkilotchilar', count: pending.organizers || 0, to: '/admin/tashkilotchilar?tab=pending' },
   ]
-  const unread = notifItems.reduce((s, x) => s + (Number(x.count) || 0), 0)
+  // the Tasdiqlashlar row already contains the others; count it once to avoid double badges
+  const unread = (Number(notifItems[1].count) || 0) + (Number(notifItems[4].count) || 0)
+  const _unusedUnread = notifItems.reduce((s, x) => s + (Number(x.count) || 0), 0)
 
   const hits = useMemo(() => {
     const s = q.trim().toLowerCase()

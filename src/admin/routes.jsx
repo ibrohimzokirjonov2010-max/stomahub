@@ -1,5 +1,4 @@
-import { Route } from 'react-router-dom'
-import Arizalar from './pages/Arizalar'
+import { Navigate, Route } from 'react-router-dom'
 import AdminGate from './AdminGate'
 import AdminLayout from './AdminLayout'
 import Dashboard from './pages/Dashboard'
@@ -15,12 +14,13 @@ import Shikoyatlar from './pages/Shikoyatlar'
 import Hisobotlar from './pages/Hisobotlar'
 import Sozlamalar from './pages/Sozlamalar'
 import Mahsulotlar from './pages/Mahsulotlar'
+import Moderatsiya from './pages/Moderatsiya'
 
 export const adminRoutes = (
   <Route path="/admin" element={<AdminGate><AdminLayout /></AdminGate>}>
     <Route index element={<Dashboard />} />
     <Route path="foydalanuvchilar" element={<Foydalanuvchilar />} />
-    <Route path="arizalar" element={<Arizalar />} />
+    <Route path="arizalar" element={<Navigate to="/admin/tasdiqlashlar?bolim=arizalar" replace />} />
     <Route path="sotuvchilar" element={<Sotuvchilar />} />
     <Route path="tashkilotchilar" element={<Tashkilotchilar />} />
     <Route path="elonlar" element={<Elonlar />} />
@@ -32,5 +32,6 @@ export const adminRoutes = (
     <Route path="hisobotlar" element={<Hisobotlar />} />
     <Route path="sozlamalar" element={<Sozlamalar />} />
     <Route path="mahsulotlar" element={<Mahsulotlar />} />
+    <Route path="moderatsiya" element={<Moderatsiya />} />
   </Route>
 )

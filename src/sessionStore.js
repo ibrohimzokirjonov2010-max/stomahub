@@ -161,7 +161,7 @@ function boot() {
   }
   supabase.auth.onAuthStateChange((event) => {
     if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-      refreshSession()
+      setTimeout(refreshSession, 0) // never call auth APIs inside the auth callback (supabase-js lock deadlock)
     }
   })
   refreshSession()

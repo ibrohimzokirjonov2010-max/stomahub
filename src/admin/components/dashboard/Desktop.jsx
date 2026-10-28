@@ -48,8 +48,8 @@ function MonthRange({ month, onPick, label }) {
 export function KpiRow({ data }) {
   const items = [
     { icon: Coins, label: 'Umumiy aylanma', value: som(data.turnover), sub: 'Platformadagi jami savdolar' },
-    { icon: ShoppingBag, label: 'Escrowdagi mablag‘', value: som(data.escrow), sub: 'Sotuvchilarga to‘lanmagan' },
-    { icon: Percent, label: 'Komissiya daromadi (12%)', value: som(data.commission), sub: 'Platforma daromadi' },
+    { icon: ShoppingBag, label: 'Escrowdagi mablag‘', value: som(data.escrow), sub: `Karta to‘lovlari · naqd kutilmoqda: ${som(data.cash_pending)}` },
+    { icon: Percent, label: 'Komissiya daromadi (12%)', value: som(data.commission), sub: 'Faqat yetkazilgan, demo’siz' },
   ]
   return (
     <div className="mt-5 grid grid-cols-3 gap-4">
@@ -166,14 +166,14 @@ export function OrdersAndPending({ data, onOpenSeller }) {
       </div>
 
       <div className={`${card} p-5`}>
-        <h2 className="text-[16px] font-bold text-[#10283F]">Kutilayotgan tasdiqlashlar</h2>
+        <h2 className="text-[16px] font-bold text-[#10283F]">Kutilayotgan tasdiqlashlar{data.pending?.total != null ? ` — ${num(data.pending.total)}` : ''}</h2>
         <ul className="mt-3 space-y-2">
           {[
-            { key: 'sellers', label: 'Yangi sotuvchilar', icon: Store, to: '/admin/sotuvchilar', open: true },
-            { key: 'organizers', label: 'Seminar tashkilotchilari', icon: GraduationCap, to: '/admin/tashkilotchilar' },
-            { key: 'ads', label: 'E’lonlar', icon: Megaphone, to: '/admin/elonlar' },
+            { key: 'sellers', label: 'Yangi sotuvchilar', icon: Store, to: '/admin/tasdiqlashlar?bolim=arizalar', open: true },
+            { key: 'organizers', label: 'Seminar tashkilotchilari', icon: GraduationCap, to: '/admin/tasdiqlashlar?bolim=arizalar' },
+            { key: 'ads', label: 'Reklama', icon: Megaphone, to: '/admin/elonlar' },
             { key: 'products', label: 'Mahsulotlar', icon: Package, to: '/admin/mahsulotlar' },
-            { key: 'users', label: 'Foydalanuvchilar', icon: Users, to: '/admin/foydalanuvchilar' },
+            { key: 'doctors', label: 'Shifokor litsenziyalari', icon: Users, to: '/admin/tasdiqlashlar?bolim=shifokor' },
           ].map(({ key, label, icon: Icon, to, open }) => (
             <li key={key} className="flex items-center gap-3 rounded-xl bg-[#F8FBFC] px-3 py-2.5">
               <span className="grid size-9 place-items-center rounded-full bg-white text-[#0F766E] shadow-sm"><Icon className="size-4" /></span>

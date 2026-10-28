@@ -25,13 +25,15 @@ import Moliya from './Moliya'
 import Shikoyatlar from './Shikoyatlar'
 import Hisobotlar from './Hisobotlar'
 import Sozlamalar from './Sozlamalar'
+import Moderatsiya from './Moderatsiya'
+import Mahsulotlar from './Mahsulotlar'
 
 const SEC_META = {
   '01': { to: '/admin', label: 'Boshqaruv paneli' },
   '02': { to: '/admin/foydalanuvchilar', label: 'Foydalanuvchilar', Page: Foydalanuvchilar },
   '03': { to: '/admin/sotuvchilar', label: 'Sotuvchilar', Page: Sotuvchilar },
   '04': { to: '/admin/tashkilotchilar', label: 'Seminar tashkilotchilari', Page: Tashkilotchilar },
-  '05': { to: '/admin/elonlar', label: 'E’lonlar', Page: Elonlar },
+  '05': { to: '/admin/elonlar', label: 'Reklama kampaniyalari', Page: Elonlar },
   '06': { to: '/admin/buyurtmalar', label: 'Buyurtmalar', Page: Buyurtmalar },
   '07': { to: '/admin/escrow', label: 'Escrow va pul aylanmasi', Page: Escrow },
   '08': { to: '/admin/tasdiqlashlar', label: 'Tasdiqlashlar', Page: Tasdiqlashlar },
@@ -39,6 +41,8 @@ const SEC_META = {
   '10': { to: '/admin/shikoyatlar', label: 'Shikoyatlar', Page: Shikoyatlar },
   '11': { to: '/admin/hisobotlar', label: 'Hisobotlar', Page: Hisobotlar },
   '12': { to: '/admin/sozlamalar', label: 'Sozlamalar', Page: Sozlamalar },
+  '13': { to: '/admin/moderatsiya', label: 'Kontent moderatsiyasi', Page: Moderatsiya },
+  '14': { to: '/admin/mahsulotlar', label: 'Mahsulotlarni tasdiqlash', Page: Mahsulotlar },
 }
 
 const FIXTURE = {
