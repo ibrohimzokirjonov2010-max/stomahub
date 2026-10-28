@@ -5,6 +5,7 @@ import { useSellerData, setOrderStatus, netOf, csvDownload } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { useMobile } from '../../useMobile'
 import { card, PageHead, Btn, Select, SearchInput, Tabs, Chips, Badge, Checkbox, Pager, usePaged, Menu, Fab, Th, Td, toast, inputCls } from '../components/ui'
+import { xlsxBlob, oneCBlob, download } from '../lib/exportOrders'
 import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
 import ProductThumb from '../components/bosh-sahifa/ProductThumb'
@@ -69,6 +70,16 @@ export default function Buyurtmalar() {
   }
   const exportCsv = () => csvDownload('buyurtmalar.csv', [['Raqam', 'Sana', 'Xaridor', 'Telefon', 'Mahsulotlar', 'Summa', 'Komissiya', 'Sizga', 'Holat'],
     ...list.map((o) => [o.code, `${dmy(o.created_at)} ${hm(o.created_at)}`, o.customer_name, phoneOf(o), o.items.reduce((s, i) => s + i.qty, 0), total(o), o.commission, o.payout, O_LABEL[o.status]])])
+  const stamp = () => new Date().toISOString().slice(0, 10)
+  const exportXlsx = () => {
+    const head = ['Raqam', 'Sana', 'Xaridor', 'Telefon', 'Manzil', 'Mahsulot', 'Variant', 'Soni', 'Narx', 'Qator summasi', 'Buyurtma summasi', 'Komissiya', 'Sizga', 'To‘lov', 'Holat']
+    const rows = list.flatMap((o) => (o.items.length ? o.items : [{}]).map((i, k) => [o.code, `${dmy(o.created_at)} ${hm(o.created_at)}`, o.customer_name || '', phoneOf(o) || '', [o.city, o.address].filter(Boolean).join(', '),
+      i.name || '', i.variant || '', Number(i.qty) || 0, Number(i.price) || 0, (Number(i.price) || 0) * (Number(i.qty) || 0),
+      k ? '' : total(o), k ? '' : Number(o.commission) || 0, k ? '' : Number(o.payout) || 0, (o.payment_method || '').toUpperCase(), O_LABEL[o.status] || o.status]))
+    download(xlsxBlob([head, ...rows]), `buyurtmalar-${stamp()}.xlsx`)
+  }
+  const export1C = () => download(oneCBlob(list, data.settings?.legal || {}), `buyurtmalar-1c-${stamp()}.csv`)
+  const exportBtns = (size = 'sm') => <div className="flex gap-2"><Btn size={size} variant="gray" icon={Download} onClick={exportXlsx}>Excel</Btn><Btn size={size} variant="gray" icon={Download} onClick={export1C}>1C (CSV)</Btn><Btn size={size} variant="gray" icon={Download} onClick={exportCsv}>CSV</Btn></div>
   const items = (o) => [
     ['Ko‘rish', () => navigate(`/sotuvchi/buyurtmalar/${o.id}`), Eye],
     O_NEXT[o.status] && [O_NEXT[o.status][1], async () => { const r = await setOrderStatus(o.id, O_NEXT[o.status][0]); toast(r.ok ? `Holat: ${O_LABEL[O_NEXT[o.status][0]]}` : r.error) }, ChevronRight],
@@ -83,7 +94,7 @@ export default function Buyurtmalar() {
     <div>
       <PageHead title="Buyurtmalar" subtitle={mobile ? 'Barcha buyurtmalarni ko‘ring va boshqaring.' : 'Barcha buyurtmalarni boshqaring va holatini kuzatib boring.'}
         action={<Btn icon={Plus} size="lg" onClick={() => setAdding(true)} className="px-8">Buyurtma qo‘lda qo‘shish</Btn>} />
-      {list.length > 0 && <div className="mb-3 flex justify-end md:hidden"><Btn size="sm" variant="gray" icon={Download} onClick={exportCsv}>Eksport (CSV)</Btn></div>}
+      {list.length > 0 && <div className="mb-3 flex justify-end md:hidden">{exportBtns()}</div>}
       <div className="hidden md:block">
         <div className={`${card} flex items-center gap-3 p-3`}>
           <SearchInput value={q} onChange={setQ} placeholder="Buyurtma raqami yoki xaridor nomi..." className="flex-[1.5]" />
@@ -100,7 +111,7 @@ export default function Buyurtmalar() {
           <Tabs tabs={tabs} value={tab} onChange={setTab} />
           <div className="flex items-center gap-2 text-[13px]">
             {sel.size > 0 && <><span className="text-[#5C6E80]">{sel.size} ta tanlandi</span><Btn size="sm" variant="outline" onClick={bulkNext}>Keyingi bosqich</Btn></>}
-            {list.length > 0 && <Btn size="sm" variant="gray" icon={Download} onClick={exportCsv}>Eksport</Btn>}
+            {list.length > 0 && exportBtns()}
           </div>
         </div>
         <div className={`${card} mt-3 overflow-hidden`}>

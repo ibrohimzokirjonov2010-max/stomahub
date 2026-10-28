@@ -28,17 +28,52 @@ export default function Product() {
   return <ProductBody key={p.id} p={p} />
 }
 
+function productTabs(p) {
+  const t = [{ key: 'tavsif', label: 'Tavsif' }]
+  if (p.clinicalUse) t.push({ key: 'klinik', label: 'Klinik qo‘llanish', text: p.clinicalUse })
+  if (p.techSpecs?.length) t.push({ key: 'texnik', label: 'Texnik xususiyatlar', rows: p.techSpecs })
+  if (p.certificate?.length) t.push({ key: 'sertifikat', label: 'Sertifikat', rows: p.certificate })
+  const terms = [
+    ...(p.minQty > 1 ? [['Minimal buyurtma', `${p.minQty} ${p.uom || 'dona'}`]] : []),
+    ...(p.priceTiers || []).map((x) => [`${x.min_qty} ${p.uom || 'dona'} dan`, `${som(x.price)} / ${p.uom || 'dona'}`]),
+  ]
+  if (p.deliveryInfo || terms.length) t.push({ key: 'yetkazish', label: 'Yetkazib berish', text: p.deliveryInfo, rows: terms })
+  if (p.reorder?.enabled) t.push({ key: 'qayta', label: 'Qayta buyurtma', text: `Sotuvchi bu mahsulotni har ${p.reorder.intervalDays} kunda qayta buyurtma qilishni tavsiya qiladi. Buyurtmalarim bo‘limidan bir bosishda qayta buyurtma bering.` })
+  return t
+}
+
+function ProductTabBody({ t, p }) {
+  if (!t) return null
+  return (
+    <div className="lg:col-span-3">
+      {t.text && <p className="whitespace-pre-line text-[10px] leading-[1.6] text-ink-2">{t.text}</p>}
+      {t.rows?.length > 0 && (
+        <dl className={`${t.text ? 'mt-3' : ''} max-w-[560px]`}>
+          {t.rows.map(([k, v, url], i) => (
+            <div key={`${k}-${i}`} className="grid grid-cols-2 border-b border-line/70 py-[4px] text-[9.5px] last:border-0">
+              <dt className="text-muted">{k}</dt>
+              <dd className="text-ink">{url ? <a href={url} target="_blank" rel="noreferrer" className="text-sea hover:underline">{v}</a> : v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {t.key === 'qayta' && p.minQty > 1 && <p className="mt-2 text-[9.5px] text-muted">Minimal miqdor: {p.minQty} {p.uom || 'dona'}</p>}
+    </div>
+  )
+}
+
 function ProductBody({ p }) {
   const id = p.id
   const similarProducts = similarTo(p)
   const [img, setImg] = useState(0)
-  const [qty, setQty] = useState(1)
+  const minQty = Math.max(1, p.minQty || 1)
+  const [qty, setQty] = useState(minQty)
   const [tab, setTab] = useState(0)
   const { add } = useCart()
   const navigate = useNavigate()
   const n = p.images.length
 
-  useEffect(() => { setImg(0); setQty(1); setTab(0) }, [id])
+  useEffect(() => { setImg(0); setQty(minQty); setTab(0) }, [id, minQty])
 
   const facts = [
     { icon: PackageOpen, label: 'Holati', value: 'Yangi (yopiq)' },
@@ -46,7 +81,8 @@ function ProductBody({ p }) {
     { icon: MapPinned, label: 'Sotuvchi', value: p.seller || '—' },
     { icon: Truck, label: 'To‘lov', value: 'Naqd, yetkazishda' },
   ]
-  const tabs = ['Tavsif', 'Klinik qo‘llanish', 'Texnik xususiyatlar', 'Sertifikat', 'Yetkazib berish', 'Qayta buyurtma']
+  // Only tabs the seller actually filled are shown (no "ma’lumot qo‘shmagan" placeholders).
+  const tabs = productTabs(p)
 
   return (
     <div className="pb-6 pt-2.5 lg:pl-1.5">
@@ -129,7 +165,13 @@ function ProductBody({ p }) {
           <div className="flex items-start justify-between">
             <div>
               <SaleBadge badge={p.badge} className="-ml-1 rounded-sm" />
-              <p className="mt-1 text-[23px] font-extrabold leading-none tracking-tight text-ink">{som(p.price)}</p>
+              <p className="mt-1 text-[23px] font-extrabold leading-none tracking-tight text-ink">{som(p.price)}{p.uom && p.uom !== 'dona' && <span className="ml-1 text-[11px] font-medium text-muted">/ {p.uom}</span>}</p>
+              {(minQty > 1 || p.priceTiers?.length > 0) && (
+                <p className="mt-1 text-[10px] text-ink-2">
+                  {minQty > 1 && <>Minimal buyurtma: <b>{minQty} {p.uom || 'dona'}</b></>}
+                  {p.priceTiers?.map((t) => <span key={t.min_qty} className="ml-2 rounded bg-sea-50 px-1.5 py-0.5 text-sea-600">{t.min_qty}+ — {som(t.price)}</span>)}
+                </p>
+              )}
               {p.oldPrice > p.price && (
                 <p className="mt-2 flex gap-3 text-[9.5px]">
                   <span className="text-muted line-through">{som(p.oldPrice)}</span>
@@ -141,7 +183,7 @@ function ProductBody({ p }) {
           </div>
 
           <div className="mt-3 flex items-center gap-4">
-            <QtyStepper value={qty} onChange={(q) => setQty(Math.max(1, Math.min(p.stock || 1, q)))} size="lg" />
+            <QtyStepper value={qty} onChange={(q) => setQty(Math.max(minQty, Math.min(Math.max(p.stock, minQty) || 1, q)))} size="lg" />
             <span className="text-[10px] text-muted">{p.stock} dona mavjud</span>
           </div>
 
@@ -178,18 +220,20 @@ function ProductBody({ p }) {
       <div className="mt-4 flex gap-1 overflow-x-auto no-scrollbar xl:-mt-3">
         {tabs.map((t, i) => (
           <button
-            key={t}
+            key={t.key}
             onClick={() => setTab(i)}
             className={`relative shrink-0 rounded-t-lg px-3.5 pb-1.5 pt-1 text-[10.5px] transition ${
               i === tab ? 'bg-sea-50 font-semibold text-ink after:absolute after:inset-x-1.5 after:bottom-0 after:h-[2px] after:rounded-full after:bg-sea' : 'text-ink-2 hover:text-sea'
             } ${i === 0 ? 'ml-2' : 'sm:ml-5'}`}
           >
-            {t}
+            {t.label}
           </button>
         ))}
       </div>
       <div className="grid gap-5 rounded-xl bg-white p-3.5 shadow-card lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.85fr)_240px]">
-        {tab === 0 ? (
+        {tabs[tab]?.key !== 'tavsif' ? (
+          <ProductTabBody t={tabs[tab]} p={p} />
+        ) : (
           <>
             <div>
               <p className="text-[10px] leading-[1.6] text-ink-2">{p.description}</p>
@@ -214,8 +258,6 @@ function ProductBody({ p }) {
             </div>
             <img src="/images/market/tooth.jpg" alt="" className="hidden h-[128px] w-full rounded-lg object-cover lg:block" />
           </>
-        ) : (
-          <p className="py-8 text-center text-[10.5px] text-muted lg:col-span-3">Sotuvchi bu bo‘lim uchun ma’lumot qo‘shmagan</p>
         )}
       </div>
 

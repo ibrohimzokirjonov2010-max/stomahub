@@ -1,3 +1,4 @@
+import { variantLabel } from './config/productCatalog'
 const img = (n) => `/images/market/${n}.jpg`
 
 export const filterChips = [
@@ -80,13 +81,23 @@ export function productById(id) {
     description: s.description || 'Sotuvchi tavsif qo‘shmagan.',
     features: [],
     highlights: s.specs?.length ? s.specs.map(([k, v]) => `${k}: ${v}`) : null,
-    variants: s.variants?.length ? s.variants.map((v) => ({ label: v.name || v.label || v.sku, sku: v.sku, price: Number(v.price) || s.price, stock: Number(v.stock) || 0 })) : null,
+    variants: s.variants?.length ? s.variants.map((v) => ({ label: variantLabel(v, v.type || s.variantType) || v.name || v.sku, sku: v.sku, price: Number(v.price) || s.price, stock: Number(v.stock) || 0 })) : null,
+    techSpecs: s.specs || [],
+    certificate: [
+      ...(s.regCertNo ? [['Ro‘yxatdan o‘tish guvohnomasi', s.regCertNo]] : []),
+      ...(s.lotNo ? [['Seriya (LOT)', s.lotNo]] : []),
+      ...(s.expiresOn ? [['Yaroqlilik muddati', s.expiresOn]] : []),
+      ...(s.storageTemp ? [['Saqlash harorati', s.storageTemp]] : []),
+      ...(s.country ? [['Ishlab chiqaruvchi davlat', s.country]] : []),
+      ...(s.documents || []).filter((d) => d && (d.doc_type || d.doc_no || d.name)).map((d) => [d.doc_type || 'Hujjat', [d.doc_no, d.name].filter(Boolean).join(' · ') || '—', d.url || '']),
+    ],
     specs: [
       ...(s.brand ? [['Brend', s.brand]] : []),
       ...(s.specs || []),
       ['Kategoriya', s.category || '—'],
       ['Sotuvchi', s.seller || '—'],
-      ['Omborda', `${s.stock} dona`],
+      ...(s.minQty > 1 ? [['Minimal buyurtma', `${s.minQty} ${s.uom || 'dona'}`]] : []),
+      ['Omborda', `${s.stock} ${s.uom || 'dona'}`],
     ],
   }
 }

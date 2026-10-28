@@ -12,6 +12,7 @@ import ProductThumb from '../components/bosh-sahifa/ProductThumb'
 import ProductForm from '../components/mahsulotlar/ProductForm'
 import StockModal from '../components/mahsulotlar/StockModal'
 import { CATEGORIES } from '../components/mahsulotlar/constants'
+import { normCategory } from '../../config/productCatalog'
 
 const TONE = { active: 'on', review: 'mid', rejected: 'off', inactive: 'off', archived: 'off', draft: 'off' }
 export const ProductBadge = ({ status, className }) => <Badge tone={TONE[status]} className={`min-w-[72px] ${className || ''}`}>{PRODUCT_STATUS[status]?.label || status}</Badge>
@@ -82,7 +83,7 @@ export default function Mahsulotlar() {
     let l = products.filter((p) => {
       if (tab === 'all' && p.status === 'archived' && status !== 'archived') return false
       if (tab === 'out') { if (p.stock > 0 || p.status === 'archived') return false } else if (tab === 'active' && mobile) { if (p.status !== 'active' || p.stock <= 0) return false } else if (tab !== 'all' && p.status !== tab) return false
-      if (cat && p.category !== cat) return false
+      if (cat && normCategory(p.category) !== cat) return false
       if (status && p.status !== status) return false
       if (stock === 'in' && p.stock <= 0) return false
       if (stock === 'low' && !(p.stock > 0 && p.stock <= 5)) return false

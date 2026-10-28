@@ -93,7 +93,7 @@ export function useFormaSection() {
   }, [v])
 }
 
-const MARKET_ICONS = { 'Restavratsion materiallar': Sparkles, Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: Wrench, Uskunalar: Armchair, 'Himoya vositalari': ShieldCheck, 'O‘lchov materiallari': Layers, Ortodontiya: Smile, 'Gigiena vositalari': Pill, Boshqa: Package }
+const MARKET_ICONS = { 'Restavratsion materiallar': Sparkles, Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: Wrench, Uskunalar: Armchair, 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiena vositalari': Pill, Boshqa: Package }
 export function useMarketSection() {
   const { products, status } = useMarket()
   return useMemo(() => {
