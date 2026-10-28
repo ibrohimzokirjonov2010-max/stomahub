@@ -69,7 +69,9 @@ export function MapPreview({ lat, lng, className = '' }) {
   return (
     <div className={`mt-2 ${className}`}>
       <a href={mapUrl(lat, lng)} target="_blank" rel="noreferrer" className="relative block h-[96px] overflow-hidden rounded-xl border border-line bg-[#e8eef0]">
-        <img src={`https://tile.openstreetmap.org/${t.z}/${t.x}/${t.y}.png`} alt="Xarita" className="absolute size-[256px] max-w-none" style={{ left: `calc(50% - ${t.fx * 256}px)`, top: `calc(50% - ${t.fy * 256}px)` }} loading="lazy" />
+        {[-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => (
+          <img key={`${dx}${dy}`} src={`https://tile.openstreetmap.org/${t.z}/${t.x + dx}/${t.y + dy}.png`} alt="" className="absolute size-[256px] max-w-none" style={{ left: `calc(50% - ${(t.fx - dx) * 256}px)`, top: `calc(50% - ${(t.fy - dy) * 256}px)` }} loading="lazy" />
+        )))}
         <MapPin className="absolute left-1/2 top-1/2 size-7 -translate-x-1/2 -translate-y-full fill-[#0b6d73] text-white drop-shadow" />
       </a>
       <a href={mapUrl(lat, lng)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-sea"><ExternalLink className="size-3.5" /> Xaritada ochish</a>

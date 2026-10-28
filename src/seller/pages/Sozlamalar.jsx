@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPreview, parseGeo } from '../../components/MapPicker'
+import MapPicker, { MapPreview, parseGeo, withGeo } from '../../components/MapPicker'
 import { useSearchParams, useNavigate } from 'react-router'
 import { Save, Store, Phone, MapPin, Clock, CalendarDays, Upload, UserPlus, Plus, Pencil, Trash2, Eye, Users, Building2, Bell, Lock, ShieldCheck, Globe, UserRound, ChevronRight, ChevronLeft, LogOut, Info } from 'lucide-react'
 import { supabase } from '../../supabaseClient'
@@ -43,7 +43,7 @@ export default function Sozlamalar() {
     if (d.loading || loaded.current) return
     loaded.current = true
     const s = d.settings || {}
-    setShop((x) => ({ ...x, phone: s.phone || '', address: s.address || '', work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '' }))
+    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '' }))
     setNotify({ ...DEFAULT_NOTIFY, ...(s.notify || {}) })
     const uid = session.user?.id
     if (uid && supabase) supabase.from('profiles').select('shop_name').eq('id', uid).maybeSingle().then(({ data }) => setShop((x) => ({ ...x, name: data?.shop_name || '' })))
@@ -53,7 +53,7 @@ export default function Sozlamalar() {
     if (!shop.name.trim()) return setErr('Do‘kon nomini kiriting.')
     setBusy(true); setErr('')
     const { error } = await supabase.from('profiles').update({ shop_name: shop.name.trim() }).eq('id', session.user.id)
-    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: shop.address, work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || null, notify })
+    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || null, notify })
     setBusy(false)
     if (!r.ok) return setErr(r.error)
     window.dispatchEvent(new CustomEvent('shop-name', { detail: shop.name.trim() }))
@@ -85,6 +85,7 @@ export default function Sozlamalar() {
       <Field label="Do‘kon nomi"><Input icon={Store} value={shop.name} onChange={(e) => setShop({ ...shop, name: e.target.value })} /></Field>
       <Field label="Telefon raqam"><PhoneInput className="h-11" value={shop.phone} onChange={(v) => setShop({ ...shop, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
       <Field label="Manzil"><Input icon={MapPin} value={shop.address} onChange={(e) => setShop({ ...shop, address: e.target.value })} placeholder="Shahar, tuman, ko‘cha" /></Field>
+      <MapPicker lat={shop.lat} lng={shop.lng} onChange={({ lat, lng, geo }) => setShop((x) => ({ ...x, lat, lng, ...(geo?.street ? { address: [geo.city, geo.district !== 'Markaz' ? `${geo.district} tumani` : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
       <div className="grid grid-cols-2 gap-3"><Field label="Ish kunlari"><Input icon={CalendarDays} value={shop.work_days} onChange={(e) => setShop({ ...shop, work_days: e.target.value })} /></Field><Field label="Ish vaqti"><Input icon={Clock} value={shop.work_hours} onChange={(e) => setShop({ ...shop, work_hours: e.target.value })} /></Field></div>
       <Err>{err}</Err>
     </div>
