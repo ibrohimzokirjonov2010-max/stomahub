@@ -5,7 +5,8 @@ import EmptyCatalog from '../components/EmptyCatalog'
 import { useMobile } from '../useMobile'
 import { BottomSheet } from '../components/mobile/MobileSeminars'
 import { useCatalogVersion } from '../recordSync'
-import { directions, levels, formats, prices, sorts, courses, continuing, certificates, why, money } from '../educationData'
+import { useProfile, learningStats } from '../profileStore'
+import { directions, levels, formats, prices, sorts, courses, continuing, why, money } from '../educationData'
 
 export default function EducationRoute() {
   const [q, setQ] = useState('')
@@ -36,6 +37,8 @@ function Education({ headerQuery, mobile }) {
   const [chat, setChat] = useState(false)
   const [sent, setSent] = useState(false)
 
+  const profile = useProfile()
+  const stats = learningStats(profile, courses)
   const query = (local || headerQuery).trim().toLowerCase()
   const list = useMemo(() => courses
     .filter((c) => direction === 'all' || c.direction === direction)
@@ -152,31 +155,30 @@ function Education({ headerQuery, mobile }) {
       </div>
 
       <aside className="flex flex-col gap-3">
-        <div className="rounded-xl bg-white p-3 shadow-card">
+        {(profile.certificates || []).length > 0 &&         <div className="rounded-xl bg-white p-3 shadow-card">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-[12px] font-bold text-ink">Mening sertifikatlarim</h3>
-            <span className="text-[9px] font-medium text-sea">Barchasini ko‘rish</span>
+            <a href="/sertifikatlar" className="text-[9px] font-medium text-sea">Barchasini ko‘rish</a>
           </div>
-          {certificates.map((c) => (
-            <div key={c.title} className="flex items-start gap-2 py-1.5">
+          {(profile.certificates || []).slice(0, 3).map((c) => (
+            <div key={c.id || c.title} className="flex items-start gap-2 py-1.5">
               <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><FileBadge className="size-3.5" /></span>
               <div className="min-w-0">
                 <p className="text-[10.5px] font-semibold leading-tight text-ink">{c.title}</p>
-                <p className="text-[9px] text-muted">{c.score}</p>
-                <p className="text-[9px] text-muted">{c.date}</p>
+                <p className="text-[9px] text-muted">{c.issuedAt ? new Date(c.issuedAt).toLocaleDateString('ru-RU') : ''}</p>
               </div>
             </div>
           ))}
-        </div>
+        </div>}
 
-        <div className="rounded-xl bg-white p-3 shadow-card">
+        {stats.any && <div className="rounded-xl bg-white p-3 shadow-card">
           <h3 className="mb-2 text-[12px] font-bold text-ink">Mening natijalarim</h3>
           <div className="grid grid-cols-2 gap-2">
             {[
-              ['42', 'Ko‘rilgan soat', Clock],
-              ['6', 'Tugatilgan kurslar', BadgeCheck],
-              ['3', 'Sertifikatlar', Award],
-              ['1', 'Joriy kurs', Hourglass],
+              [stats.hours, 'Ko‘rilgan soat', Clock],
+              [stats.completed, 'Tugatilgan kurslar', BadgeCheck],
+              [stats.certificates, 'Sertifikatlar', Award],
+              [stats.current, 'Joriy kurs', Hourglass],
             ].map(([n, label, Icon]) => (
               <div key={label} className="rounded-lg bg-[#f6f9fc] px-2 py-2">
                 <div className="flex items-center justify-between">
@@ -187,7 +189,7 @@ function Education({ headerQuery, mobile }) {
               </div>
             ))}
           </div>
-        </div>
+        </div>}
 
         <div className="rounded-xl bg-white p-3 shadow-card">
           <h3 className="mb-2 text-[12px] font-bold text-ink">Nega Ta’lim?</h3>
