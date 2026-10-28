@@ -8,6 +8,7 @@ import { Login, Register } from './pages/Auth'
 import { Privacy, Terms } from './pages/Legal'
 import Marketplace from './pages/Marketplace'
 import Product from './pages/Product'
+import Savatcha from './pages/Savatcha'
 import Surplus from './pages/Surplus'
 import SurplusItem from './pages/SurplusItem'
 import SeminarsPage from './pages/SeminarsPage'
@@ -199,6 +200,7 @@ export default function App() {
           <Route path="/tolovlar/yangi" element={<CrmGate><Responsive mobile={<MobileTolovNew />}><Navigate to="/tolovlar" replace /></Responsive></CrmGate>} />
           <Route path="/ombor" element={<CrmGate><Responsive mobile={<MobileOmbor />}><Ombor /></Responsive></CrmGate>} />
           <Route path="/ombor/yangi" element={<CrmGate><Responsive mobile={<MobileOmborNew />}><Navigate to="/ombor" replace /></Responsive></CrmGate>} />
+          <Route path="/savatcha" element={<Responsive mobile={<MobileCart />}><Savatcha /></Responsive>} />
           <Route path="/buyurtma" element={<Responsive mobile={<MobileCart />}><Checkout /></Responsive>} />
           <Route path="/buyurtma/rasmiylashtirish" element={<Responsive mobile={<MobileCheckout />}><Navigate to="/buyurtma" replace /></Responsive>} />
           <Route path="/mutaxassislar" element={<DoctorsCatalog />} />

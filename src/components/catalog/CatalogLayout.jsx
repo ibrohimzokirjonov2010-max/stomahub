@@ -315,7 +315,7 @@ export function CatalogPage({ section }) {
                   liked={liked.has(card.id)}
                   onLike={() => setLiked((s) => { const n = new Set(s); if (n.has(card.id)) n.delete(card.id); else { n.add(card.id); setToast('Sevimlilarga qo‘shildi') } return n })}
                   added={added}
-                  onAdd={() => { if (added) navigate('/buyurtma', { state: { from: section.key } }); else { add(card.cart.line); setToast(`${card.title} savatga qo‘shildi`) } }}
+                  onAdd={() => { if (added) navigate('/savatcha', { state: { from: section.key } }); else { add(card.cart.line); setToast(`${card.title} savatga qo‘shildi`) } }}
                 />
               )
             })}

@@ -175,7 +175,7 @@ function ProductBody({ p }) {
       </div>
 
       {/* Tablar */}
-      <div className="mt-4 flex gap-1 overflow-x-auto no-scrollbar xl:-mt-3">
+      <div className="relative mt-4 flex gap-1 overflow-x-auto no-scrollbar">
         {tabs.map((t, i) => (
           <button
             key={t}
