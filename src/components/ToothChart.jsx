@@ -14,7 +14,15 @@ export const CONDITIONS = [
   ['crown', 'Krona'],
   ['implant', 'Implant'],
   ['missing', 'Yo‘q tish'],
+  ['perio', 'Parodontit'],
+  ['mobility', 'Qimirlovchi tish'],
+  ['bridge', 'Ko‘prik'],
+  ['veneer', 'Vinir'],
+  ['fracture', 'Sinish / defekt'],
 ]
+
+// Tish yuzalari (FDI): O — okklyuziya/kesuvchi, M — mezial, D — distal, V — vestibulyar, L — lingval/palatinal
+export const SURFACES = [['O', 'Okklyuziya'], ['M', 'Mezial'], ['D', 'Distal'], ['V', 'Vestibulyar'], ['L', 'Lingval']]
 
 const SHAPES = {
   incisor: {
@@ -65,8 +73,8 @@ export function Tooth({ n, state = 'healthy', tint, lower = false, height = 56, 
   const cx = s.w / 2
   const missing = state === 'missing'
   const implant = state === 'implant'
-  const crownFill = tint || (state === 'crown' ? '#cfe8f7' : `url(#c${uid})`)
-  const crownStroke = state === 'crown' && !tint ? '#6db3dc' : tint ? 'rgb(0 0 0 / 0.12)' : '#c3ccd8'
+  const crownFill = tint || (state === 'crown' || state === 'bridge' ? '#cfe8f7' : state === 'veneer' ? '#efe6fb' : `url(#c${uid})`)
+  const crownStroke = (state === 'crown' || state === 'bridge') && !tint ? '#6db3dc' : state === 'veneer' && !tint ? '#a78bdb' : tint ? 'rgb(0 0 0 / 0.12)' : '#c3ccd8'
   const rootFill = tint ? tint : `url(#r${uid})`
 
   return (
@@ -104,13 +112,18 @@ export function Tooth({ n, state = 'healthy', tint, lower = false, height = 56, 
         {state === 'filling' && <ellipse cx={s.spot[0]} cy={s.spot[1] + 3} rx={s.w * 0.2} ry="4.2" fill="#7cc4ef" stroke="#4aa3d8" strokeWidth=".6" />}
         {state === 'caries' && <ellipse cx={s.spot[0] + 1.5} cy={s.spot[1] + 2} rx="2.8" ry="2.4" fill="#d9475f" opacity=".85" />}
         {state === 'endo' && <ellipse cx={s.spot[0]} cy={s.spot[1] + 3} rx={s.w * 0.16} ry="3.4" fill="#f6a6ae" />}
+        {state === 'perio' && <path d={`M1.5 37 Q${cx} 31 ${s.w - 1.5} 37`} fill="none" stroke="#e8743b" strokeWidth="1.8" strokeLinecap="round" />}
+        {state === 'mobility' && <path d={`M0.5 46 l2 -2 m-2 2 l2 2 M${s.w - 0.5} 46 l-2 -2 m2 2 l-2 2`} fill="none" stroke="#d97706" strokeWidth="1" strokeLinecap="round" />}
+        {state === 'bridge' && <rect x="-1.5" y="58.5" width={s.w + 3} height="2.6" rx="1.3" fill="#4aa3d8" />}
+        {state === 'veneer' && <path d={s.detail} fill="none" stroke="#8b5cf6" strokeWidth="1.4" strokeLinecap="round" />}
+        {state === 'fracture' && <path d={`M${cx - 4} 40 L${cx} 45 L${cx - 2} 49 L${cx + 4} 55`} fill="none" stroke="#b91c1c" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
         {missing && <path d={`M${cx - 4} 42 L${cx + 4} 54 M${cx + 4} 42 L${cx - 4} 54`} stroke="#e5484d" strokeWidth="1.1" strokeLinecap="round" />}
       </g>
     </svg>
   )
 }
 
-export default function ToothChart({ upper = UPPER, lower = LOWER, height = 56, stateOf, tintOf, ringOf, numberClass, onPick, sideLabels = true }) {
+export default function ToothChart({ upper = UPPER, lower = LOWER, height = 56, stateOf, tintOf, ringOf, numberClass, onPick, sideLabels = true, surfacesOf }) {
   const row = (nums, isLower) => {
     const mid = nums.length / 2
     return (
@@ -126,6 +139,7 @@ export default function ToothChart({ upper = UPPER, lower = LOWER, height = 56, 
             >
               <span className={`text-[9.5px] leading-none ${numberClass?.(n) || 'text-muted'}`}>{n}</span>
               <Tooth n={n} lower={isLower} height={height} state={stateOf?.(n)} tint={tintOf?.(n)} ring={ringOf?.(n)} />
+              {surfacesOf && <span className="h-3 text-[8.5px] font-bold leading-3 text-[#b45309]">{(surfacesOf(n) || []).join('')}</span>}
             </button>
           </div>
         ))}
