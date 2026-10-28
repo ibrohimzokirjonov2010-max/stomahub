@@ -6,6 +6,9 @@ import {
   ChevronLeft, ChevronRight, MoreVertical, MoreHorizontal, Plus, Search, SlidersHorizontal, Clock, X, Phone, Check, AlertTriangle, Coffee, Truck,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import AppointmentForm from '../components/crm/AppointmentForm'
+import PatientForm from '../components/crm/PatientForm'
+import { STAFF_ROLES, setClinicSettings } from '../clinicSettings'
 import { ToothIcon } from '../components/icons'
 import { addBemor } from '../bemorData'
 import { useOmbor, patchOmbor } from '../omborData'
@@ -21,7 +24,9 @@ import { scrubClinicBoard } from '../demoPurge'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
-const DEFAULT_SETTINGS = { name: '', city: '', open: '09:00', close: '18:00', phone: '', address: '', website: '', chair_count: 0 }
+const DEFAULT_SETTINGS = { name: '', city: '', open: '09:00', close: '18:00', phone: '', address: '', website: '', chair_count: 0, lunch: true, lunch_start: '13:00', lunch_end: '14:00', days_off: [6], staff: [] }
+// customer_clinic jadvalida yo‘q maydonlar — clinic_board blobida saqlanadi (migratsiyasiz)
+const pickExtra = (s = {}) => Object.fromEntries(['lunch', 'lunch_start', 'lunch_end', 'days_off', 'staff'].filter((k) => s[k] !== undefined).map((k) => [k, s[k]]))
 
 function hoursParts(hours) {
   const m = String(hours || '').match(/(\d{1,2}:\d{2})\s*[–\-—]\s*(\d{1,2}:\d{2})/)
@@ -125,6 +130,7 @@ export default function Klinika() {
       if (stop) return
       if (clinic) { const g = parseGeo(clinic.address || ''); setSettings({ ...settingsFromClinic({ ...clinic, address: g.text }), lat: g.lat, lng: g.lng }) }
       else if (payload?.settings) setSettings({ ...DEFAULT_SETTINGS, ...payload.settings })
+      if (clinic && payload?.settings) setSettings((cur) => ({ ...cur, ...pickExtra(payload.settings) }))
       else setSettings({ ...DEFAULT_SETTINGS })
       if (payload) {
         const cleaned = isDemoUser() ? payload : scrubClinicBoard(payload)
@@ -175,23 +181,18 @@ export default function Klinika() {
     setMenu(null)
     flash('Qabul bekor qilindi')
   }
-  const saveVisit = (form) => {
-    const id = `${form.date}-${form.chair}-${form.time}`
-    setVisits((list) => [...list, { id, date: form.date, chair: Number(form.chair), time: form.time, name: form.name.trim(), service: form.service, status: 'tasdiq', female: form.female, phone: form.phone, avatar: avatarOf(form.name, form.female) }])
-    setDate(form.date)
+  const saveVisit = (v) => {
+    // Bosh sahifa jadvali uchun nusxa (kreslo indeksi bo‘yicha); asosiy yozuv uchrashuvData 'visits' da.
+    const chair = Math.max(0, chairList.indexOf(v.room))
+    setVisits((list) => [...list, { id: v.id, date: v.date, chair, time: v.start, name: v.name, service: v.service, status: 'tasdiq', female: false, phone: v.phone, avatar: avatarOf(v.name, false), patientId: v.patientId }])
+    setDate(v.date)
     setView('day')
     setBooking(null)
-    flash(`${form.name.trim()} ${label(form.date)}, ${form.time} ga yozildi`)
+    flash(`${v.name} ${label(v.date)}, ${v.start} ga yozildi`)
   }
-  const savePatient = (form) => {
-    const id = `kp-${Date.now()}`
-    const row = { id, name: form.name.trim(), female: form.female, phone: form.phone, last: '', next: '', debt: 0, status: 'Yangi', avatar: avatarOf(form.name, form.female) }
-    setPatients((list) => [row, ...list])
-    addBemor({
-      id: `bemor-new-${Date.now()}`, name: row.name, age: '', birth: '', gender: form.female ? 'Ayol' : 'Erkak', phone: form.phone, city: form.city,
-      status: 'Yangi', last: '', next: '', code: `P-${String(Date.now()).slice(-4)}`, email: '', photo: '', address: form.city, source: form.source,
-      telegram: '', total: 0, paid: 0, meds: 'Yo‘q', habits: 'Yo‘q', note: '',
-    })
+  const savePatient = (p) => {
+    const female = p.gender === 'Ayol'
+    setPatients((list) => [{ id: p.id, name: p.name, female, phone: p.phone, last: '', next: '', debt: 0, status: 'Yangi', avatar: avatarOf(p.name, female) }, ...list])
     setNewCount((n) => n + 1)
     setAdding(false)
     flash('Bemor qo‘shildi va Bemorlar bo‘limiga saqlandi')
@@ -200,6 +201,7 @@ export default function Klinika() {
     const uid = currentUid()
     const cleaned = { ...DEFAULT_SETTINGS, ...next, name: (next.name || '').trim() || 'Mening klinikam' }
     setSettings(cleaned)
+    setClinicSettings(cleaned)
     setSettingsOpen(false)
     const res = await upsertCustomerClinic(uid, cleaned)
     if (!res.ok) {
@@ -381,8 +383,8 @@ export default function Klinika() {
         </div>
       </div>
 
-      {booking && <BookingDialog initial={booking} visits={visits} chairs={chairs.length ? chairs : DEFAULT_CHAIRS} onClose={() => setBooking(null)} onSave={saveVisit} />}
-      {adding && <PatientDialog onClose={() => setAdding(false)} onSave={savePatient} />}
+      {booking && <AppointmentForm initial={booking} onClose={() => setBooking(null)} onSaved={saveVisit} />}
+      {adding && <PatientForm onClose={() => setAdding(false)} onSaved={savePatient} />}
       {settingsOpen && <SettingsDialog value={settings} onClose={() => setSettingsOpen(false)} onSave={saveSettings} />}
       {staffOpen && (
         <Dialog title="Barcha xodimlar" onClose={() => setStaffOpen(false)}>
@@ -737,75 +739,33 @@ function GenderPick({ value, onChange }) {
   )
 }
 
-function BookingDialog({ initial, visits, chairs = DEFAULT_CHAIRS, onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', phone: '', female: false, service: SERVICES[0], date: TODAY, chair: 0, time: '', ...initial })
-  const [error, setError] = useState('')
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
-  const taken = visits.filter((x) => x.date === form.date && x.chair === Number(form.chair)).map((x) => x.time)
-  const free = SLOTS.filter((t) => !taken.includes(t))
-  const time = free.includes(form.time) ? form.time : free[0] || ''
-  const submit = () => {
-    if (!form.name.trim() || form.phone.replace(/\D/g, '').length < 9) return setError('Bemor ismi va telefon raqami majburiy.')
-    if (weekday(form.date) === 6) return setError('Yakshanba — dam olish kuni.')
-    if (!time) return setError('Bu kresloda shu kunga bo‘sh vaqt qolmagan.')
-    onSave({ ...form, time })
+function StaffEditor({ value, onChange }) {
+  const [row, setRow] = useState({ name: '', role: STAFF_ROLES[0], phone: '' })
+  const add = () => {
+    if (!row.name.trim()) return
+    onChange([...value, { ...row, name: row.name.trim(), id: `st-${Date.now()}` }])
+    setRow({ name: '', role: STAFF_ROLES[0], phone: '' })
   }
   return (
-    <Dialog
-      title="Qabulga yozish"
-      onClose={onClose}
-      foot={<><button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-medium">Bekor qilish</button><button type="button" onClick={submit} className="h-10 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white">Saqlash</button></>}
-    >
-      <div className="space-y-3">
-        <Field label="Bemor ismi familiyasi"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Bemor ismi" className={input} /></Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
-          <Field label="Jinsi"><GenderPick value={form.female} onChange={(v) => set('female', v)} /></Field>
-        </div>
-        <Field label="Xizmat"><select value={form.service} onChange={(e) => set('service', e.target.value)} className={input}>{SERVICES.map((s) => <option key={s}>{s}</option>)}</select></Field>
-        <div className="grid grid-cols-3 gap-2">
-          <Field label="Sana"><input type="date" value={form.date} onChange={(e) => set('date', e.target.value || TODAY)} className={input} /></Field>
-          <Field label="Kreslo"><select value={form.chair} onChange={(e) => set('chair', Number(e.target.value))} className={input}>{chairs.map((c, i) => <option key={c} value={i}>{c}</option>)}</select></Field>
-          <Field label="Vaqt">
-            <select value={time} onChange={(e) => set('time', e.target.value)} className={input} disabled={!free.length}>
-              {free.length ? free.map((t) => <option key={t}>{t}</option>) : <option value="">Bo‘sh emas</option>}
-            </select>
-          </Field>
-        </div>
-        <p className="text-[11.5px] text-muted">{chairs[form.chair] || `Kreslo ${Number(form.chair) + 1}`} — {label(form.date)}: {free.length} ta bo‘sh slot</p>
-        {error && <p className="text-[12px] text-[#e11d48]">{error}</p>}
+    <div className="rounded-xl border border-line p-3">
+      <p className="mb-2 text-[12.5px] font-semibold">Xodimlar</p>
+      {value.length ? (
+        <ul className="mb-2 space-y-1">
+          {value.map((s, i) => (
+            <li key={s.id || i} className="flex items-center justify-between gap-2 rounded-lg bg-[#f7fafd] px-2 py-1.5 text-[12.5px]">
+              <span className="min-w-0 truncate"><b>{s.name}</b> · {s.role}{s.phone ? ` · ${s.phone}` : ''}</span>
+              <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} className="text-[11.5px] font-semibold text-[#dc2626]">O‘chirish</button>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="mb-2 text-[11.5px] text-muted">Hali xodim qo‘shilmagan</p>}
+      <div className="grid grid-cols-[1fr_120px] gap-2">
+        <input value={row.name} onChange={(e) => setRow((r) => ({ ...r, name: e.target.value }))} placeholder="Ism familiya" className={input} />
+        <select value={row.role} onChange={(e) => setRow((r) => ({ ...r, role: e.target.value }))} className={input}>{STAFF_ROLES.map((r) => <option key={r}>{r}</option>)}</select>
+        <PhoneInput className={input + ' flex'} value={row.phone} onChange={(v) => setRow((r) => ({ ...r, phone: toE164(v) || extractUzLocalDigits(v) }))} valueMode="e164" placeholder="+998 90 123 45 67" />
+        <button type="button" onClick={add} disabled={!row.name.trim()} className="h-10 rounded-xl bg-sea text-[12.5px] font-semibold text-white disabled:opacity-40">+ Qo‘shish</button>
       </div>
-    </Dialog>
-  )
-}
-
-function PatientDialog({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', phone: '', female: false, city: 'Toshkent', source: 'Instagram' })
-  const [error, setError] = useState('')
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
-  const submit = () => {
-    if (!form.name.trim() || form.phone.replace(/\D/g, '').length < 9) return setError('Ism familiya va telefon raqami majburiy.')
-    onSave(form)
-  }
-  return (
-    <Dialog
-      title="Yangi bemor qo‘shish"
-      onClose={onClose}
-      foot={<><button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-medium">Bekor qilish</button><button type="button" onClick={submit} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white"><UserPlus className="size-4" /> Qo‘shish</button></>}
-    >
-      <div className="space-y-3">
-        <Field label="Ism familiya"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Bemor ismi" className={input} /></Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
-          <Field label="Jinsi"><GenderPick value={form.female} onChange={(v) => set('female', v)} /></Field>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Shahar"><select value={form.city} onChange={(e) => set('city', e.target.value)} className={input}>{CITY_LIST.map((c) => <option key={c}>{c}</option>)}</select></Field>
-          <Field label="Qayerdan bildi"><select value={form.source} onChange={(e) => set('source', e.target.value)} className={input}>{['Instagram', 'Telegram', 'Do‘st tavsiyasi', 'Reklama', 'Boshqa'].map((c) => <option key={c}>{c}</option>)}</select></Field>
-        </div>
-        {error && <p className="text-[12px] text-[#e11d48]">{error}</p>}
-      </div>
-    </Dialog>
+    </div>
   )
 }
 
@@ -845,6 +805,25 @@ function SettingsDialog({ value, onClose, onSave }) {
           <input type="number" min="0" max="12" value={form.chair_count ?? 0} onChange={(e) => set('chair_count', Number(e.target.value) || 0)} className={input} />
         </Field>
         <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Kreslo soni 0 bo‘lsa jadval bo‘sh holatda chiqadi.</p>
+        <div className="rounded-xl border border-line p-3">
+          <label className="flex items-center gap-2 text-[12.5px] font-semibold"><input type="checkbox" checked={form.lunch !== false} onChange={(e) => set('lunch', e.target.checked)} className="size-4 accent-[#0f9b8e]" /> Tushlik tanaffusi</label>
+          {form.lunch !== false && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Field label="Boshlanishi"><input type="time" value={form.lunch_start || '13:00'} onChange={(e) => set('lunch_start', e.target.value)} className={input} /></Field>
+              <Field label="Tugashi"><input type="time" value={form.lunch_end || '14:00'} onChange={(e) => set('lunch_end', e.target.value)} className={input} /></Field>
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="mb-1 text-[12px] font-medium text-ink-2">Dam olish kunlari</p>
+          <div className="flex flex-wrap gap-1.5">
+            {WD.map((d, i) => {
+              const on = (form.days_off || []).includes(i)
+              return <button key={d} type="button" aria-pressed={on} onClick={() => set('days_off', on ? form.days_off.filter((x) => x !== i) : [...(form.days_off || []), i])} className={`h-8 min-w-10 rounded-lg px-2 text-[12px] font-semibold ${on ? 'bg-[#fde2e2] text-[#b91c1c]' : 'bg-[#f4f7fb] text-ink-2'}`}>{d}</button>
+            })}
+          </div>
+        </div>
+        <StaffEditor value={form.staff || []} onChange={(v) => set('staff', v)} />
       </div>
     </Dialog>
   )
