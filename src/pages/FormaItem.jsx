@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Star, Heart, ShoppingCart, Minus, Plus, Truck, ShieldCheck, CreditCard, ChevronRight, X } from 'lucide-react'
 import { useCart } from '../cart'
@@ -100,7 +101,7 @@ export default function FormaItem() {
                   <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
                 </button>
               </div>
-              <button onClick={() => { put(); navigate('/buyurtma', { state: { from: 'forma' } }) }} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
+              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty, 'forma')} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {perks.map(([t, d], i) => {
                   const Icon = [ShieldCheck, Truck, CreditCard][i]

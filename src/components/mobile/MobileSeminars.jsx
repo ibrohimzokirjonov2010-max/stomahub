@@ -52,7 +52,7 @@ export function SeminarTopBar({ onCalendar, onBell }) {
       <BrandLogo />
       <div className="flex items-center gap-2">
         <button type="button" onClick={onCalendar} aria-label="Mening seminarlarim" className={btn}><CalendarDays className="size-[19px]" /></button>
-        <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} aria-label="Savat" className={btn}>
+        <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className={btn}>
           <ShoppingCart className="size-[19px]" />
           {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
         </button>
@@ -210,10 +210,10 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
   )
 }
 
-export function BottomSheet({ title, onClose, children, footer }) {
+export function BottomSheet({ title, onClose, children, footer, centered }) {
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-ink/45" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="flex max-h-[90dvh] flex-col rounded-t-3xl bg-white">
+    <div className={`fixed inset-0 z-[60] flex flex-col justify-end bg-ink/45 ${centered ? 'md:items-center md:justify-center md:p-6' : ''}`} onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className={`flex max-h-[90dvh] flex-col rounded-t-3xl bg-white ${centered ? 'md:w-full md:max-w-[640px] md:rounded-3xl md:shadow-2xl' : ''}`}>
         <div className="flex items-center justify-between px-4 pb-1 pt-3">
           <span className="w-8" />
           <span className="h-1 w-10 rounded-full bg-line" />

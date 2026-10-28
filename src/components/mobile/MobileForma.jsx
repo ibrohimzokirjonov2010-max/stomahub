@@ -84,7 +84,7 @@ export default function MobileForma() {
 
   const inCart = (p) => items.some((it) => it.id.startsWith(`forma-${p.id}-`))
   const quickAdd = (p) => {
-    if (inCart(p)) return navigate('/buyurtma', { state: { from: 'forma' } })
+    if (inCart(p)) return navigate('/savatcha', { state: { from: 'forma' } })
     const color = filter.color && p.colors.includes(filter.color) ? filter.color : p.colors[0]
     const size = filter.size && p.sizes.includes(filter.size) ? filter.size : defaultSize(p)
     add({ id: formaCartId(p, color, size), name: `${p.title} (${colorOf(color).name}, ${sizeLabel(size)})`, type: p.brand, price: p.price, image: p.image })
@@ -206,7 +206,7 @@ export default function MobileForma() {
       <MobileToast
         text={toast}
         onClose={closeToast}
-        action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'forma' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
+        action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'forma' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
       />
       <MobileTabBar />
     </div>

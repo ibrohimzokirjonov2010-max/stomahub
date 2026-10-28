@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Star, Heart, ShoppingCart, Minus, Plus, ChevronRight, X, BadgeCheck, Truck, Check, MapPin } from 'lucide-react'
 import { useCart } from '../cart'
@@ -93,7 +94,7 @@ export default function JihozItem() {
                   <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
                 </button>
               </div>
-              <button onClick={() => { put(); navigate('/buyurtma', { state: { from: 'jihoz' } }) }} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600">Hozir sotib olish</button>
+              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty, 'jihoz')} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600">Hozir sotib olish</button>
               <button onClick={() => setAsk(true)} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Konsultatsiya so‘rash</button>
             </div>
           </div>

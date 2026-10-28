@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Download, Mail, MapPin, MoreHorizontal, Phone, Plus, Search, Upload, X,
+  CalendarCheck, CalendarDays, CalendarPlus, ChevronDown, ChevronLeft, ChevronRight, Download, Eye, Mail, MapPin, MoreHorizontal, Phone, Plus, Search, SearchX, Trash2, Upload, UserPlus, UserRound, Users, Wallet, X,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
-import { addBemor, CITIES, patchBemor, removeBemor, SOURCES, STATUSES, statusClass, useBemorlar } from '../bemorData'
+import { addBemor, CITIES, patchBemor, removeBemor, som, SOURCES, STATUSES, statusClass, useBemorlar } from '../bemorData'
+import { useBemorStats } from '../bemorStats'
+import { fmtDate } from '../components/mobile/bemorParts'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 export default function Bemorlar() {
@@ -15,7 +17,7 @@ export default function Bemorlar() {
   const [sort, setSort] = useState('new')
   const [page, setPage] = useState(1)
   const [per, setPer] = useState(10)
-  const [sel, setSel] = useState('aliyeva-mohira')
+  const [sel, setSel] = useState(null)
   const [checked, setChecked] = useState({})
   const [open, setOpen] = useState(false)
   const [menu, setMenu] = useState(null)
@@ -37,7 +39,7 @@ export default function Bemorlar() {
   const pages = Math.max(1, Math.ceil(filtered.length / per))
   const safePage = Math.min(page, pages)
   const slice = filtered.slice((safePage - 1) * per, safePage * per)
-  const current = all.find((p) => p.id === sel) || slice[0]
+  const current = all.find((p) => p.id === sel) || null
 
   const exportCsv = () => {
     const head = 'Ism,Telefon,Shahar,Status,Oxirgi tashrif,Keyingi qabul'
@@ -86,131 +88,220 @@ export default function Bemorlar() {
     })
   }
 
+  const stats = useBemorStats()
+  const filtersOn = q || status !== 'all' || city !== 'all'
+  const clearFilters = () => { setQ(''); setStatus('all'); setCity('all'); setPage(1) }
+  const sel4 = 'h-10 appearance-none rounded-xl border border-[#e3eeec] bg-white pl-3 pr-8 text-[12.5px] font-medium text-ink outline-none transition hover:border-[#bfe0db] focus:border-[#0F766E]'
+
   return (
     <ShopLayout active="bemorlar" placeholder="Bemor qidiring (ism, telefon, ID)...">
-      <div className="pb-4 pt-4">
+      <div className="pb-6 pt-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-[22px] font-bold leading-none text-ink">Bemorlar</h1>
-            <p className="mt-1 text-[13px] text-muted">Barcha bemorlaringizni boshqaring</p>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wide text-[#0F766E]">Klinika CRM</p>
+            <h1 className="mt-0.5 text-[24px] font-extrabold leading-none text-ink">Bemorlar</h1>
+            <p className="mt-1.5 text-[13px] text-muted">Bemorlaringiz, qabullar va qarzdorlikni bir joyda boshqaring</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => setOpen(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12.5px] font-semibold text-white">
+            <button onClick={() => fileRef.current?.click()} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3.5 text-[12.5px] font-semibold text-[#0F766E] hover:bg-[#f2faf8]">
+              <Upload className="size-4" /> Import
+            </button>
+            <button onClick={exportCsv} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3.5 text-[12.5px] font-semibold text-[#0F766E] hover:bg-[#f2faf8]">
+              <Download className="size-4" /> Eksport
+            </button>
+            <button onClick={() => setOpen(true)} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#0F766E] px-4 text-[13px] font-semibold text-white shadow-[0_6px_16px_rgb(15_118_110/0.25)] hover:bg-[#0c635c]">
               <Plus className="size-4" /> Yangi bemor qo‘shish
-            </button>
-            <button onClick={() => fileRef.current?.click()} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold text-ink">
-              <Upload className="size-3.5" /> Import
-            </button>
-            <button onClick={exportCsv} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold text-ink">
-              <Download className="size-3.5" /> Eksport
             </button>
             <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onImport} />
           </div>
         </div>
 
-        <div className="bemor-layout mt-3">
-          <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
+        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <Kpi icon={Users} tone="teal" label="Jami bemorlar" value={stats.total} sub={stats.total ? 'Bazangizdagi barcha bemorlar' : 'Hali bemor yo‘q'} />
+          <Kpi icon={UserPlus} tone="green" label="Bu oy yangi" value={stats.thisMonth} sub="Joriy oyda qo‘shilgan" />
+          <Kpi icon={CalendarCheck} tone="blue" label="Bugungi qabullar" value={stats.today} sub="Bugun rejalashtirilgan" />
+          <Kpi icon={Wallet} tone="rose" label="Qarzdorlar" value={stats.debtors} sub={stats.debtSum ? `Jami ${som(stats.debtSum)}` : 'Qarzdorlik yo‘q'} />
+        </div>
+
+        <div className={`bemor-layout mt-4 ${current ? '' : 'bemor-layout-full'}`}>
+          <section className="min-w-0 rounded-2xl border border-[#e8f0ef] bg-white p-4 shadow-card">
             <div className="flex flex-wrap items-center gap-2">
-              <label className="flex h-9 min-w-[180px] flex-1 items-center gap-2 rounded-lg border border-line px-3">
-                <Search className="size-4 text-muted" />
-                <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder="Bemor qidiring..." className="w-full bg-transparent text-[12.5px] outline-none placeholder:text-muted" />
+              <label className="flex h-10 min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[#e3eeec] bg-[#f8fbfb] px-3 focus-within:border-[#0F766E] focus-within:bg-white">
+                <Search className="size-4 text-[#0F766E]" />
+                <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder="Ism, telefon yoki ID bo‘yicha qidirish..." className="w-full bg-transparent text-[12.5px] outline-none placeholder:text-muted" />
+                {q && <button onClick={() => { setQ(''); setPage(1) }} aria-label="Tozalash" className="text-muted"><X className="size-4" /></button>}
               </label>
-              <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }} className="h-9 rounded-lg border border-line bg-white px-2 text-[12.5px]">
+              <Sel value={status} cls={sel4} onChange={(v) => { setStatus(v); setPage(1) }}>
                 <option value="all">Barcha statuslar</option>
                 {STATUSES.map((s) => <option key={s}>{s}</option>)}
-              </select>
-              <select value={city} onChange={(e) => { setCity(e.target.value); setPage(1) }} className="h-9 rounded-lg border border-line bg-white px-2 text-[12.5px]">
+              </Sel>
+              <Sel value={city} cls={sel4} onChange={(v) => { setCity(v); setPage(1) }}>
                 <option value="all">Barcha shaharlar</option>
                 {CITIES.map((c) => <option key={c}>{c}</option>)}
-              </select>
-              <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-9 rounded-lg border border-line bg-white px-2 text-[12.5px]">
+              </Sel>
+              <Sel value={sort} cls={sel4} onChange={setSort}>
                 <option value="new">Yangi oldin</option>
                 <option value="old">Eski oldin</option>
                 <option value="name">Ism bo‘yicha</option>
-              </select>
+              </Sel>
+              {filtersOn && <button onClick={clearFilters} className="h-10 rounded-xl px-3 text-[12.5px] font-semibold text-[#0F766E] hover:bg-[#f2faf8]">Tozalash</button>}
             </div>
 
-            <div className="bemor-scroll mt-3">
-              <table className="bemor-table text-left text-[12px]">
-                <thead className="text-[11px] text-muted">
-                  <tr className="border-b border-line">
-                    <th className="w-8 py-2"><input type="checkbox" checked={slice.length > 0 && slice.every((p) => checked[p.id])} onChange={toggleAll} /></th>
-                    <th className="w-8 py-2 font-medium">#</th>
-                    <th className="py-2 font-medium">Bemor</th>
-                    <th className="py-2 font-medium">Telefon</th>
-                    <th className="py-2 font-medium">Shahar</th>
-                    <th className="py-2 font-medium">Status</th>
-                    <th className="py-2 font-medium">Oxirgi tashrif</th>
-                    <th className="py-2 font-medium">Keyingi qabul</th>
-                    <th className="w-8" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {slice.map((p, i) => (
-                    <tr key={p.id} onClick={() => setSel(p.id)} className={`cursor-pointer border-b border-line/70 ${current?.id === p.id ? 'bg-[#eef8f8]' : 'hover:bg-[#f7fbfb]'}`}>
-                      <td className="py-2" onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" checked={!!checked[p.id]} onChange={() => setChecked((c) => ({ ...c, [p.id]: !c[p.id] }))} />
-                      </td>
-                      <td className="py-2 text-muted">{(safePage - 1) * per + i + 1}</td>
-                      <td className="py-2">
-                        <Link to={`/bemorlar/${p.id}`} className="flex min-w-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Face src={p.photo} name={p.name} />
-                          <span className="min-w-0">
-                            <span className="block truncate font-semibold text-ink">{p.name}</span>
-                            <span className="block text-[11px] text-muted">{p.age}{p.age && p.gender ? ' · ' : ''}{p.gender}</span>
-                          </span>
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap py-2 text-ink-2">{p.phone}</td>
-                      <td className="py-2">{p.city}</td>
-                      <td className="py-2"><span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClass[p.status] || ''}`}>{p.status}</span></td>
-                      <td className="whitespace-nowrap py-2 text-muted">{p.last || '—'}</td>
-                      <td className="whitespace-nowrap py-2 font-medium text-sea">{p.next || '—'}</td>
-                      <td className="relative py-2" onClick={(e) => e.stopPropagation()}>
-                        <button aria-label="Yana" onClick={() => setMenu(menu === p.id ? null : p.id)} className="grid size-7 place-items-center rounded-md text-muted hover:bg-white"><MoreHorizontal className="size-4" /></button>
-                        {menu === p.id && (
-                          <div className="absolute right-0 z-20 w-36 rounded-lg bg-white py-1 text-[12px] shadow-card">
-                            <Link to={`/bemorlar/${p.id}`} className="block px-3 py-1.5 hover:bg-sea-50">Profil</Link>
-                            <button onClick={() => { setSel(p.id); setMenu(null) }} className="block w-full px-3 py-1.5 text-left hover:bg-sea-50">Yon panel</button>
-                            <button onClick={() => { removeBemor(p.id); setMenu(null) }} className="block w-full px-3 py-1.5 text-left text-sale hover:bg-sea-50">O‘chirish</button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {slice.length === 0 && (
-                    <tr><td colSpan={9} className="py-8 text-center text-muted">Bemor topilmadi.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {all.length === 0 ? (
+              <EmptyState onAdd={() => setOpen(true)} onImport={() => fileRef.current?.click()} />
+            ) : (
+              <>
+                <div className="bemor-scroll mt-3">
+                  <table className="bemor-table text-left text-[12.5px]">
+                    <thead>
+                      <tr className="bg-[#f4f9f8] text-[11px] font-semibold uppercase tracking-wide text-[#6d8388]">
+                        <th className="w-9 rounded-l-xl py-2.5 pl-3"><input type="checkbox" className="accent-[#0F766E]" checked={slice.length > 0 && slice.every((p) => checked[p.id])} onChange={toggleAll} /></th>
+                        <th className="py-2.5 font-semibold">Bemor</th>
+                        <th className="py-2.5 font-semibold">Telefon</th>
+                        <th className="py-2.5 font-semibold">Status</th>
+                        <th className="py-2.5 font-semibold">Oxirgi tashrif</th>
+                        <th className="py-2.5 font-semibold">Keyingi qabul</th>
+                        <th className="py-2.5 text-right font-semibold">Qarz</th>
+                        <th className="w-24 rounded-r-xl py-2.5 pr-3 text-right font-semibold">Amallar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {slice.map((p) => (
+                        <tr key={p.id} onClick={() => setSel(p.id)} className={`cursor-pointer border-b border-[#eef3f2] transition ${current?.id === p.id ? 'bg-[#eef8f6]' : 'hover:bg-[#f7fbfb]'}`}>
+                          <td className="py-3 pl-3" onClick={(e) => e.stopPropagation()}>
+                            <input type="checkbox" className="accent-[#0F766E]" checked={!!checked[p.id]} onChange={() => setChecked((c) => ({ ...c, [p.id]: !c[p.id] }))} />
+                          </td>
+                          <td className="py-3">
+                            <Link to={`/bemorlar/${p.id}`} className="flex min-w-0 items-center gap-2.5" onClick={(e) => e.stopPropagation()}>
+                              <Face src={p.photo} name={p.name} />
+                              <span className="min-w-0">
+                                <span className="block truncate font-semibold text-ink">{p.name}</span>
+                                <span className="block text-[11px] text-muted">#{p.code}{p.city ? ` · ${p.city}` : ''}{p.gender ? ` · ${p.gender}` : ''}</span>
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="whitespace-nowrap py-3 text-ink-2">{p.phone ? <a href={`tel:${p.phone.replace(/\s/g, '')}`} onClick={(e) => e.stopPropagation()} className="hover:text-[#0F766E]">{fmtPhone(p.phone)}</a> : '—'}</td>
+                          <td className="py-3"><Badge status={p.status} /></td>
+                          <td className="whitespace-nowrap py-3 text-ink-2">{fmtDate(p.last) || <span className="text-muted">—</span>}</td>
+                          <td className="whitespace-nowrap py-3">{p.next ? <span className="inline-flex items-center gap-1 rounded-lg bg-[#e8f5f3] px-2 py-1 text-[11.5px] font-semibold text-[#0F766E]"><CalendarDays className="size-3.5" />{fmtDate(p.next)}</span> : <span className="text-muted">Belgilanmagan</span>}</td>
+                          <td className={`whitespace-nowrap py-3 text-right font-semibold ${(p.debt || 0) > 0 ? 'text-[#e11d48]' : 'text-[#1c9a52]'}`}>{(p.debt || 0) > 0 ? som(p.debt) : '0 so‘m'}</td>
+                          <td className="relative py-3 pr-3" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1">
+                              <Link to={`/bemorlar/${p.id}`} aria-label="Profil" title="Profil" className="grid size-8 place-items-center rounded-lg text-[#5e787e] hover:bg-[#eef8f6] hover:text-[#0F766E]"><Eye className="size-4" /></Link>
+                              {p.phone && <a href={`tel:${p.phone.replace(/\s/g, '')}`} aria-label="Qo‘ng‘iroq" title="Qo‘ng‘iroq" className="grid size-8 place-items-center rounded-lg text-[#5e787e] hover:bg-[#eef8f6] hover:text-[#0F766E]"><Phone className="size-4" /></a>}
+                              <button aria-label="Yana" onClick={() => setMenu(menu === p.id ? null : p.id)} className="grid size-8 place-items-center rounded-lg text-[#5e787e] hover:bg-[#eef8f6]"><MoreHorizontal className="size-4" /></button>
+                            </div>
+                            {menu === p.id && (
+                              <div className="absolute right-3 top-11 z-20 w-44 overflow-hidden rounded-xl border border-[#e8f0ef] bg-white py-1 text-[12.5px] shadow-card">
+                                <Link to={`/bemorlar/${p.id}`} className="flex items-center gap-2 px-3 py-2 hover:bg-[#f2faf8]"><UserRound className="size-4 text-[#0F766E]" /> Profilni ochish</Link>
+                                <button onClick={() => { setSel(p.id); setMenu(null) }} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[#f2faf8]"><CalendarPlus className="size-4 text-[#0F766E]" /> Qabul qo‘shish</button>
+                                <button onClick={() => { if (window.confirm(`${p.name} o‘chirilsinmi?`)) removeBemor(p.id); setMenu(null) }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /> O‘chirish</button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {slice.length === 0 && (
+                        <tr><td colSpan={8} className="py-12 text-center">
+                          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#eef8f6] text-[#0F766E]"><SearchX className="size-6" /></span>
+                          <p className="mt-3 text-[14px] font-semibold text-ink">Bemor topilmadi</p>
+                          <p className="mt-1 text-[12.5px] text-muted">Qidiruv yoki filtrlarni o‘zgartirib ko‘ring</p>
+                          <button onClick={clearFilters} className="mt-3 h-9 rounded-xl bg-[#eef8f6] px-4 text-[12.5px] font-semibold text-[#0F766E]">Filtrlarni tozalash</button>
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px]">
-              <span className="text-muted">Jami: {filtered.length} bemor</span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage((n) => Math.max(1, n - 1))} className="grid size-7 place-items-center rounded-md border border-line" aria-label="Oldingi"><ChevronLeft className="size-3.5" /></button>
-                {pageButtons(safePage, pages).map((n, i) => n === '…' ? (
-                  <span key={`e${i}`} className="px-1 text-muted">…</span>
-                ) : (
-                  <button key={n} onClick={() => setPage(n)} className={`grid size-7 place-items-center rounded-md ${n === safePage ? 'bg-sea text-white' : 'border border-line'}`}>{n}</button>
-                ))}
-                <button onClick={() => setPage((n) => Math.min(pages, n + 1))} className="grid size-7 place-items-center rounded-md border border-line" aria-label="Keyingi"><ChevronRight className="size-3.5" /></button>
-              </div>
-              <label className="flex items-center gap-1 text-muted">
-                Sahifada:
-                <select value={per} onChange={(e) => { setPer(Number(e.target.value)); setPage(1) }} className="h-7 rounded-md border border-line bg-white px-1 text-ink">
-                  {[10, 25, 50].map((n) => <option key={n}>{n}</option>)}
-                </select>
-              </label>
-            </div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                  <span className="text-muted">Jami: <b className="text-ink">{filtered.length}</b> bemor</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setPage((n) => Math.max(1, n - 1))} className="grid size-8 place-items-center rounded-lg border border-[#e3eeec] hover:bg-[#f2faf8]" aria-label="Oldingi"><ChevronLeft className="size-4" /></button>
+                    {pageButtons(safePage, pages).map((n, i) => n === '…' ? (
+                      <span key={`e${i}`} className="px-1 text-muted">…</span>
+                    ) : (
+                      <button key={n} onClick={() => setPage(n)} className={`grid size-8 place-items-center rounded-lg font-semibold ${n === safePage ? 'bg-[#0F766E] text-white' : 'border border-[#e3eeec] hover:bg-[#f2faf8]'}`}>{n}</button>
+                    ))}
+                    <button onClick={() => setPage((n) => Math.min(pages, n + 1))} className="grid size-8 place-items-center rounded-lg border border-[#e3eeec] hover:bg-[#f2faf8]" aria-label="Keyingi"><ChevronRight className="size-4" /></button>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-muted">
+                    Sahifada:
+                    <select value={per} onChange={(e) => { setPer(Number(e.target.value)); setPage(1) }} className="h-8 rounded-lg border border-[#e3eeec] bg-white px-1.5 text-ink">
+                      {[10, 25, 50].map((n) => <option key={n}>{n}</option>)}
+                    </select>
+                  </label>
+                </div>
+              </>
+            )}
           </section>
 
-          {current && <Side patient={current} onVisit={(date) => patchBemor(current.id, { next: date, visits: [{ date, kind: 'Qabul', note: 'Yangi qabul', doctor: '' }, ...(current.visits || [])] })} />}
+          {current && <div className="relative"><button onClick={() => setSel(null)} aria-label="Yopish" className="absolute right-2 top-2 z-10 grid size-7 place-items-center rounded-lg bg-white text-muted hover:text-ink"><X className="size-4" /></button><Side patient={current} onVisit={(date) => patchBemor(current.id, { next: date, visits: [{ date, kind: 'Qabul', note: 'Yangi qabul', doctor: '' }, ...(current.visits || [])] })} /></div>}
         </div>
       </div>
       {open && <AddModal onClose={() => setOpen(false)} />}
     </ShopLayout>
   )
+}
+
+const TONES = {
+  teal: 'bg-[#e6f4f2] text-[#0F766E]',
+  green: 'bg-[#e6f8ec] text-[#1c9a52]',
+  blue: 'bg-[#e7f0ff] text-[#3a6fd6]',
+  rose: 'bg-[#ffe9ee] text-[#e11d48]',
+}
+
+function Kpi({ icon: Icon, tone, label, value, sub }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-[#e8f0ef] bg-white p-4 shadow-card">
+      <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${TONES[tone]}`}><Icon className="size-6" strokeWidth={1.8} /></span>
+      <div className="min-w-0">
+        <p className="text-[12px] font-medium text-muted">{label}</p>
+        <p className="text-[24px] font-extrabold leading-tight text-ink">{value}</p>
+        <p className="truncate text-[11.5px] text-muted">{sub}</p>
+      </div>
+    </div>
+  )
+}
+
+function Sel({ value, onChange, cls, children }) {
+  return (
+    <span className="relative">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className={cls}>{children}</select>
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
+    </span>
+  )
+}
+
+const DOT = { Faol: '#1c9a52', Davolanishda: '#b07d00', Yangi: '#3a6fd6', Kuzatuvda: '#8a4ec4', Nofaol: '#e15b78' }
+function Badge({ status }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusClass[status] || 'bg-[#eef1f5] text-[#6b7a90]'}`}>
+      <span className="size-1.5 rounded-full" style={{ background: DOT[status] || '#8d99a8' }} />{status || '—'}
+    </span>
+  )
+}
+
+function EmptyState({ onAdd, onImport }) {
+  return (
+    <div className="mt-4 flex flex-col items-center rounded-2xl border border-dashed border-[#cfe5e1] bg-[linear-gradient(180deg,#f4fbfa_0%,#ffffff_100%)] px-6 py-14 text-center">
+      <span className="relative grid size-20 place-items-center rounded-3xl bg-[#e6f4f2] text-[#0F766E]">
+        <Users className="size-10" strokeWidth={1.6} />
+        <span className="absolute -bottom-1.5 -right-1.5 grid size-8 place-items-center rounded-full bg-[#0F766E] text-white ring-4 ring-white"><Plus className="size-4" /></span>
+      </span>
+      <h2 className="mt-5 text-[18px] font-bold text-ink">Hali bemorlar yo‘q</h2>
+      <p className="mt-1.5 max-w-[420px] text-[13px] leading-relaxed text-muted">Birinchi bemoringizni qo‘shing yoki mavjud ro‘yxatni CSV fayldan import qiling. Qabullar, davolash rejalari va to‘lovlar shu yerda jamlanadi.</p>
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <button onClick={onAdd} className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[#0F766E] px-5 text-[13.5px] font-semibold text-white shadow-[0_6px_16px_rgb(15_118_110/0.25)] hover:bg-[#0c635c]"><Plus className="size-4" /> Yangi bemor qo‘shish</button>
+        <button onClick={onImport} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-5 text-[13.5px] font-semibold text-[#0F766E] hover:bg-[#f2faf8]"><Upload className="size-4" /> CSV import</button>
+      </div>
+      <p className="mt-4 text-[11.5px] text-muted">CSV ustunlari: Ism, Telefon, Shahar</p>
+    </div>
+  )
+}
+
+const fmtPhone = (s) => {
+  const d = String(s).replace(/\D/g, '')
+  return d.length === 12 && d.startsWith('998') ? `+998 ${d.slice(3, 5)} ${d.slice(5, 8)} ${d.slice(8, 10)} ${d.slice(10)}` : s
 }
 
 function pageButtons(page, pages) {
@@ -223,8 +314,10 @@ function pageButtons(page, pages) {
 function Face({ src, name }) {
   const [ok, setOk] = useState(true)
   const letters = name.split(' ').slice(0, 2).map((w) => w[0]).join('')
-  if (!src || !ok) return <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sea-50 text-[10px] font-bold text-sea">{letters}</span>
-  return <img src={src} alt="" onError={() => setOk(false)} className="size-8 shrink-0 rounded-full object-cover" />
+  const hues = ['#0F766E', '#3a6fd6', '#8a4ec4', '#e07a2e', '#1c9a52', '#e15b78']
+  const hue = hues[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % hues.length]
+  if (!src || !ok) return <span className="grid size-9 shrink-0 place-items-center rounded-full text-[11.5px] font-bold" style={{ background: `${hue}1a`, color: hue }}>{letters.toUpperCase()}</span>
+  return <img src={src} alt="" onError={() => setOk(false)} className="size-9 shrink-0 rounded-full object-cover" />
 }
 
 function Side({ patient, onVisit }) {

@@ -192,7 +192,7 @@ export function HubTopBar({ onBell, onBack }) {
         )}
         <BrandLogo />
         <div className="flex justify-end">
-          <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} aria-label="Savat" className={iconBtn}>
+          <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className={iconBtn}>
             <ShoppingCart className="size-[22px]" />
             {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
           </button>
