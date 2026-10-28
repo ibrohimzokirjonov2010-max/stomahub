@@ -63,7 +63,7 @@ function ProductView({ id }) {
     } else setCartQty(cartId, Math.min(99, next))
   }
   const off = v.oldPrice && v.oldPrice > v.price ? Math.round((1 - v.price / v.oldPrice) * 100) : 0
-  const thumbs = p.thumbs.slice(0, 4)
+  const thumbs = p.thumbs.slice(0, 5)
   const n = thumbs.length
 
   const share = async () => {
@@ -111,7 +111,7 @@ function ProductView({ id }) {
       </div>
 
       {n > 1 && (
-        <div className="mt-2 grid grid-cols-4 gap-2 px-3.5">
+        <div className={`mt-2 grid ${n > 4 ? "grid-cols-5" : "grid-cols-4"} gap-2 px-3.5`}>
           {thumbs.map((t, i) => (
             <button key={t} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[60px] overflow-hidden rounded-xl bg-[#f3f6f9] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
               <img src={t} alt="" className="size-full object-cover" />

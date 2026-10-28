@@ -251,6 +251,202 @@
           "Qo‘l qismi, oyoq pedali, suv idishi"
         ]
       ]
+    },
+    {
+      "slug": "11-implant",
+      "sku": "SH-IMP-5",
+      "name": "Implant tizimi to‘plami (5 dona implant + abatment)",
+      "price": 3800000,
+      "category": "Implantologiya",
+      "unit": "to‘plam",
+      "description": "Dental implantatsiya uchun to‘plam: 5 dona implant va ularga mos abatmentlar. Komponentlar qadoqda alohida uyachalarga joylashtirilgan.",
+      "specs": [
+        [
+          "Tarkibi",
+          "5 dona implant + abatmentlar"
+        ],
+        [
+          "Qadoq",
+          "To‘plam qutisi"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "12-breketlar",
+      "sku": "SH-BRK-M20",
+      "name": "Ortodontik breket tizimi (metall, 20 dona)",
+      "price": 650000,
+      "category": "Ortodontiya",
+      "unit": "to‘plam",
+      "description": "Tishlar holatini tuzatish uchun metall breketlar to‘plami. To‘plamda 20 dona breket bor, qadoqda tartib bilan joylashtirilgan.",
+      "specs": [
+        [
+          "Material",
+          "Metall"
+        ],
+        [
+          "Soni",
+          "20 dona"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "13-rentgen-sensor",
+      "sku": "SH-RVG-1",
+      "name": "Rentgen sensori (RVG, 1-o‘lcham)",
+      "price": 9500000,
+      "category": "Uskunalar",
+      "unit": "dona",
+      "description": "Raqamli intraoral rentgen (RVG) sensori, 1-o‘lcham. Tasvir kompyuter ekranida ko‘rib chiqiladi.",
+      "specs": [
+        [
+          "Turi",
+          "Raqamli intraoral sensor (RVG)"
+        ],
+        [
+          "O‘lcham",
+          "1"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "14-avtoklav",
+      "sku": "SH-AVK-B18",
+      "name": "Avtoklav (B-klass, 18 litr)",
+      "price": 18000000,
+      "category": "Sterilizatsiya",
+      "unit": "dona",
+      "description": "Stomatologik asboblarni bug‘ bilan sterilizatsiya qilish uchun B-klass avtoklav, kamera hajmi 18 litr. Ichida asboblar uchun tokchalar bor.",
+      "specs": [
+        [
+          "Klass",
+          "B"
+        ],
+        [
+          "Kamera hajmi",
+          "18 l"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "15-shisha-ionomer",
+      "sku": "SH-SIT-PL",
+      "name": "Shisha-ionomer tsement (kukun + suyuqlik)",
+      "price": 180000,
+      "category": "Restavratsion materiallar",
+      "unit": "to‘plam",
+      "description": "Kukun va suyuqlikdan iborat shisha-ionomer tsement. Ishlatishdan oldin kukun suyuqlik bilan aralashtiriladi.",
+      "specs": [
+        [
+          "Turi",
+          "Shisha-ionomer tsement"
+        ],
+        [
+          "Shakli",
+          "Kukun + suyuqlik"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "16-kofferdam",
+      "sku": "SH-KFD-SET",
+      "name": "Kofferdam to‘plami (ramka, qisqichlar, plastinalar)",
+      "price": 320000,
+      "category": "Endodontik asboblar",
+      "unit": "to‘plam",
+      "description": "Ish maydonini so‘lakdan ajratish uchun kofferdam to‘plami: ramka, qisqichlar va plastinalar, qisqichlarni o‘rnatish uchun forseps bilan.",
+      "specs": [
+        [
+          "Tarkibi",
+          "Ramka, qisqichlar, plastinalar"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "17-mikromotor",
+      "sku": "SH-MKM-ANG",
+      "name": "Mikromotor va burchakli nakonechnik",
+      "price": 2100000,
+      "category": "Uskunalar",
+      "unit": "to‘plam",
+      "description": "Boshqaruv bloki bilan mikromotor va unga ulanadigan burchakli nakonechnik.",
+      "specs": [
+        [
+          "Tarkibi",
+          "Mikromotor + burchakli nakonechnik"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "18-a-silikon",
+      "sku": "SH-ASL-PL",
+      "name": "A-silikon qolip materiali (putty + light)",
+      "price": 260000,
+      "category": "Qolip materiallari",
+      "unit": "to‘plam",
+      "description": "Qolip olish uchun A-silikon (additsion silikon) material: zich (putty) va suyuq (light) konsistensiyalar to‘plamda.",
+      "specs": [
+        [
+          "Turi",
+          "A-silikon"
+        ],
+        [
+          "Konsistensiya",
+          "Putty + light"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "19-oqartirish",
+      "sku": "SH-OQG-35",
+      "name": "Oqartirish geli to‘plami (klinik, 35%)",
+      "price": 540000,
+      "category": "Estetik stomatologiya",
+      "unit": "to‘plam",
+      "description": "Klinikada tishlarni oqartirish uchun gel to‘plami, konsentratsiyasi 35%.",
+      "specs": [
+        [
+          "Qo‘llanilishi",
+          "Klinik"
+        ],
+        [
+          "Konsentratsiya",
+          "35%"
+        ]
+      ],
+      "imageCount": 5
+    },
+    {
+      "slug": "20-steril-toplam",
+      "sku": "SH-STR-50",
+      "name": "Bir martalik steril asboblar to‘plami (50 dona)",
+      "price": 120000,
+      "category": "Sarflanadigan materiallar",
+      "unit": "quti",
+      "description": "Bir martalik steril ko‘rik to‘plamlari, qutida 50 dona. Har bir to‘plam alohida steril qadoqda.",
+      "specs": [
+        [
+          "Soni",
+          "50 dona"
+        ],
+        [
+          "Holati",
+          "Steril"
+        ],
+        [
+          "Foydalanish",
+          "Bir martalik"
+        ]
+      ],
+      "imageCount": 5
     }
   ],
   "books": [
