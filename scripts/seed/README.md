@@ -1,9 +1,11 @@
 # StomaHub official catalog seed
 
-Content: `marketplace-seed.json` (10 products, 2 books). Script: `seed-marketplace.mjs` (dry-run by default).
+Content: `marketplace-seed.json` (20 products, 2 books). Script: `seed-marketplace.mjs` (dry-run by default).
 
 1. Crop images (products already cropped to `/workspace/mp-out`):
    `python3 scripts/seed/crop_grid.py designs/.../01-kompozit.png /workspace/mp-out 01-kompozit` (one per product)
+   Products 11–20 (3+2 collages, 5 images each, `imageCount: 5`):
+   `python3 scripts/seed/crop_collage.py designs/marketplace-products-2/11-implant.png /workspace/mp-out 11-implant`
    Books: `crop_grid.py kitob-01-terapevtik.png /workspace/mp-out book-terapevtik-stomatologiya-2004` and
    `crop_grid.py kitob-02-ortopedik.png /workspace/mp-out book-ortopedik-stomatologiya-propedevtikasi-2006`
 2. Apply `supabase/migrations/0021_product_specs.sql` in the Supabase SQL editor.

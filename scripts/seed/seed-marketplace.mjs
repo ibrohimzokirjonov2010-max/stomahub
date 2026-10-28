@@ -70,8 +70,8 @@ async function uploadPdf(b) {
   return { bucket: PDF_BUCKET, path, name: b.pdf.name, pages, size: statSync(src).size, preview, previewPages: preview.length }
 }
 
-function files(prefix) {
-  const out = [1, 2, 3, 4].map((n) => join(IMG_DIR, `${prefix}-${n}.webp`))
+function files(prefix, count = 4) {
+  const out = Array.from({ length: count }, (_, i) => i + 1).map((n) => join(IMG_DIR, `${prefix}-${n}.webp`))
   const missing = out.filter((f) => !existsSync(f))
   if (missing.length) throw new Error(`Missing images: ${missing.join(', ')}`)
   return out
@@ -125,7 +125,7 @@ async function main() {
 
   // 3. products
   for (const p of seed.products) {
-    const images = await upload(files(p.slug), 'products', p.slug)
+    const images = await upload(files(p.slug, p.imageCount || 4), 'products', p.slug)
     const row = { seller_id: sellerId, sku: p.sku, name: p.name, category: p.category, unit: p.unit, price: p.price, stock: STOCK,
       description: p.description, specs: p.specs, images, image_url: images[0], brand: '', status: 'active' }
     const { data: ex } = APPLY ? await sb.from('seller_products').select('id').eq('seller_id', sellerId).eq('sku', p.sku).maybeSingle() : { data: null }
