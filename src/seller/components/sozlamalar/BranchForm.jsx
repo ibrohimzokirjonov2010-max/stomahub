@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import MapPicker, { withGeo, parseGeo } from '../../../components/MapPicker'
 import { Phone, MapPin, Clock, Save, Plus } from 'lucide-react'
 import Modal from '../shell/Modal'
 import { Btn, Field, Input, Toggle, Err, toast } from '../ui'
@@ -6,13 +7,13 @@ import { insertRow, updateRow, logActivity } from '../../api'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 export default function BranchForm({ edit, onClose }) {
-  const [v, setV] = useState(() => edit ? { ...edit } : { name: '', address: '', phone: '+998 ', hours: '09:00 - 18:00', active: true })
+  const [v, setV] = useState(() => edit ? (() => { const g = parseGeo(edit.address); return { ...edit, address: g.text, lat: g.lat, lng: g.lng } })() : { name: '', address: '', phone: '+998 ', hours: '09:00 - 18:00', active: true })
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   const set = (k, x) => { setV((s) => ({ ...s, [k]: x })); setErr('') }
   const save = async () => {
     if (!v.name.trim()) return setErr('Filial nomini kiriting.')
     if (!v.address.trim()) return setErr('Manzilni kiriting.')
-    const row = { name: v.name.trim(), address: v.address.trim(), phone: v.phone.trim(), hours: v.hours.trim(), active: v.active }
+    const row = { name: v.name.trim(), address: withGeo(v.address.trim(), v), phone: v.phone.trim(), hours: v.hours.trim(), active: v.active }
     setBusy(true); const r = edit ? await updateRow('seller_branches', edit.id, row) : await insertRow('seller_branches', row); setBusy(false)
     if (!r.ok) return setErr(r.error || 'Saqlanmadi.')
     await logActivity(edit ? 'Filial tahrirlandi' : 'Filial qo‘shildi', row.name)
@@ -24,6 +25,7 @@ export default function BranchForm({ edit, onClose }) {
       <div className="space-y-3">
         <Field label="Filial nomi"><Input value={v.name} onChange={(e) => set('name', e.target.value)} placeholder="Masalan: Chilonzor filiali" /></Field>
         <Field label="Manzil"><Input icon={MapPin} value={v.address} onChange={(e) => set('address', e.target.value)} placeholder="Shahar, tuman, ko‘cha" /></Field>
+        <MapPicker lat={v.lat} lng={v.lng} onChange={({ lat, lng, geo }) => setV((x) => ({ ...x, lat, lng, ...(geo?.street ? { address: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
         <div className="grid gap-3 md:grid-cols-2"><Field label="Telefon"><PhoneInput className="h-11" value={v.phone} onChange={(val) => set('phone', toE164(val) || extractUzLocalDigits(val))} valueMode="e164" /></Field><Field label="Ish vaqti"><Input icon={Clock} value={v.hours} onChange={(e) => set('hours', e.target.value)} placeholder="09:00 - 18:00" /></Field></div>
         <div className="flex items-center gap-3"><Toggle checked={v.active} onChange={(x) => set('active', x)} /><span className="text-[13px] font-semibold">{v.active ? 'Faol' : 'Faol emas'}</span></div>
         <Err>{err}</Err>

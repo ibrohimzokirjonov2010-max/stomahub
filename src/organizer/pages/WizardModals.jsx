@@ -168,10 +168,10 @@ export function TicketModal({ open, onClose, onSave }) {
 
 export function SpeakerModal({ open, onClose, onSave, photo }) {
   const [f, setF] = useState({
-    name: 'Dr. Alisher Karimov',
-    role: 'Implantolog',
-    city: 'Toshkent',
-    bio: '10 yillik tajribaga ega implantolog. Xalqaro seminarlar ishtirokchisi. Astra Tech va Straumann bo‘yicha sertifikatlangan mutaxassis.',
+    name: '',
+    role: '',
+    city: '',
+    bio: '',
     avatar: photo,
     links: ['https://', 'https://'],
     net: 'web',
@@ -180,10 +180,10 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
   useEffect(() => {
     if (!open) return
     setF({
-      name: 'Dr. Alisher Karimov',
-      role: 'Implantolog',
-      city: 'Toshkent',
-      bio: '10 yillik tajribaga ega implantolog. Xalqaro seminarlar ishtirokchisi. Astra Tech va Straumann bo‘yicha sertifikatlangan mutaxassis.',
+      name: '',
+      role: '',
+      city: '',
+      bio: '',
       avatar: photo,
       links: ['https://', 'https://'],
       net: 'web',

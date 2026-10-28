@@ -31,15 +31,7 @@ const row = (name, price, meta) => ({ name, price, meta })
 
 export const masters = []
 
-const extras = [
-  ['otabek-yusupov', 'Otabek Yusupov', 'Kompressor va havo tizimlari', 'Sergeli', 8, 190, 4.6, 54, 'online', ['compressor'], ['Kompressor', 'Cattani'], photo('usta-sardor.jpg'), 'Kompressor diagnostikasi', '180 000 so‘m'],
-  ['sherzod-aliyev', 'Sherzod Aliyev', 'Intraoral skaner mutaxassisi', 'Mirobod', 5, 140, 4.8, 61, 'offline', ['scan'], ['Skaner', '3shape'], photo('usta-dilshod.jpg'), 'Skaner kalibrovka', '700 000 so‘m'],
-  ['bekzod-tursunov', 'Bekzod Tursunov', 'O‘rnatish va montaj brigadasi', 'Uchtepa', 11, 510, 4.9, 143, 'soon', ['install', 'unit'], ['O‘rnatish', 'Ustanovka'], photo('usta-bobur.jpg'), 'Ustanovka montaji', '1 200 000 so‘m'],
-  ['farrux-nazarov', 'Farrux Nazarov', 'Stomatologik kreslo ustasi', 'Yakkasaroy', 4, 98, 4.5, 33, 'online', ['unit'], ['Ustanovka', 'Fengdan'], photo('usta-sardor.jpg'), 'Kreslo ta’miri', '400 000 so‘m'],
-  ['islom-qodirov', 'Islom Qodirov', 'Sterilizatsiya xonasi bo‘yicha usta', 'Chilonzor', 9, 260, 4.7, 77, 'offline', ['autoclave'], ['Avtoklav', 'Melag'], photo('usta-azamat.jpg'), 'Avtoklav profilaktikasi', '280 000 so‘m'],
-  ['sanjar-ergashev', 'Sanjar Ergashev', 'Turbina va uchliklar ustasi', 'Yunusobod', 6, 175, 4.8, 69, 'online', ['handpiece'], ['Uchlik/turbina', 'NSK', 'W&H'], photo('usta-bobur.jpg'), 'Turbina ta’miri', '250 000 so‘m'],
-  ['nodir-karimov', 'Nodir Karimov', 'Rentgen apparatlari muhandisi', 'Sergeli', 12, 330, 4.9, 118, 'soon', ['cbct'], ['Rentgen', 'CBCT', 'Planmeca'], photo('usta-dilshod.jpg'), 'Rentgen diagnostikasi', '220 000 so‘m'],
-]
+const extras = []
 
 extras.forEach(([id, name, role, district, years, jobs, rating, reviews, status, cats, tags, image, service, price], i) => {
   masters.push({
@@ -77,12 +69,8 @@ export function viewOf(m) {
     warranty: m.warranty || 'Bajarilgan ishlar uchun 6 oy kafolat. Agar muammo takrorlansa, bepul qayta ko‘riladi.',
     table: m.table || m.services.map((s) => [s.name, s.price, s.meta]),
     works: m.works || works.slice(0, 4),
-    reviewList: m.reviewList || [
-      ['Dr. Aziza Karimova', 'Nur Clinic', '04.10.2026', 5, `${m.name} ishni o‘z vaqtida va sifatli bajardi.`],
-      ['Dr. Jasur Toshpo‘latov', 'City Dental', '18.09.2026', 5, 'Narx oldindan aytilgan, qo‘shimcha to‘lov chiqmadi.'],
-      ['Dr. Malika Saidova', 'Smile', '02.08.2026', 4, 'Javob tez, keyingi safar ham shu ustani chaqiramiz.'],
-    ],
-    bars: m.bars || [82, 11, 5, 2, 0],
+    reviewList: m.reviewList || [],
+    bars: m.bars || [0, 0, 0, 0, 0],
   }
 }
 

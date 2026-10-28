@@ -29,13 +29,10 @@ export const WEEKLY = []
 export const MONTHLY = []
 
 export function planFor(patient) {
-  if (!patient) return { name: 'Davolash rejasi', date: '14.10.2024', plan: 0, paid: 0 }
-  if (patient.id === 'malika-karimova') {
-    return { name: 'Implant va protez rejasi', date: '14.10.2024', plan: 9050000, paid: 8000000 }
-  }
-  const plan = patient.total || 2500000
+  if (!patient) return { name: 'Davolash rejasi', date: '', plan: 0, paid: 0 }
+  const plan = patient.total || 0
   const paid = Math.min(patient.paid || 0, plan)
-  return { name: 'Davolash rejasi', date: patient.last || '01.10.2026', plan, paid }
+  return { name: 'Davolash rejasi', date: patient.last || '', plan, paid }
 }
 
 const DEMO_PAYMENTS = []

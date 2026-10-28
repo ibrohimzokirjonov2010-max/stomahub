@@ -103,7 +103,6 @@ import MobileSeminarReg from './components/mobile/MobileSeminarReg'
 import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
 import { adminRoutes } from './admin/routes'
-import ShotHarness from './admin/pages/ShotHarness'
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -144,8 +143,6 @@ export default function App() {
           <Route path="/seminarlar" element={<Responsive mobile={<MobileSeminars />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><SeminarsPage /></ShopLayout></Responsive>} />
           {sellerRoutes}
           {adminRoutes}
-          <Route path="/admin-shot" element={<ShotHarness />} />
-          <Route path="/admin-shot/:sec" element={<ShotHarness />} />
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<Dashboard />} />
             <Route path="seminarlar" element={<Seminars />} />

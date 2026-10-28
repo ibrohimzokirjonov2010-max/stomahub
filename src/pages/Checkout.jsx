@@ -5,6 +5,7 @@ import {
   CreditCard, Banknote, CalendarDays, Pencil, ArrowRight, ArrowLeft, X,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import MapPicker, { withGeo } from '../components/MapPicker'
 import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
@@ -147,7 +148,7 @@ export default function Checkout() {
         name: form.name.trim(),
         phone: form.phone,
         city: [form.city, form.district].filter(Boolean).join(', '),
-        address: form.address,
+        address: withGeo(form.address, shipMode === 'courier' ? form : null),
         note: form.note || '',
         pickup: shipMode !== 'courier',
         paymentMethod: method,
@@ -369,6 +370,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
               <input className={`${input} pl-9`} value={form.address} onChange={(e) => patch('address', e.target.value)} />
             </div>
           </Field>
+          <MapPicker lat={form.lat} lng={form.lng} height={240} onChange={({ lat, lng, geo }) => setForm((f) => ({ ...f, lat, lng, ...(geo?.street ? { address: geo.street } : {}), saved: '' }))} />
         </div>
         <div className="mt-3">
           <CityMap zoom={zoom} onZoom={setZoom} />
@@ -380,7 +382,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         <div className="mt-2 space-y-2">
           {!saved.length && <p className="rounded-xl border border-dashed border-[#d7e4ea] px-3 py-4 text-center text-[12.5px] text-muted">Saqlangan manzil yo‘q. Manzilni yuqorida kiriting.</p>}
           {saved.map((a) => (
-            <button key={a.id} type="button" onClick={() => setForm((f) => ({ ...f, city: a.city, district: a.district, address: a.address, saved: a.id }))} className="flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left" style={{ borderColor: form.saved === a.id ? '#0b8a95' : '#e6ebf2' }}>
+            <button key={a.id} type="button" onClick={() => setForm((f) => ({ ...f, city: a.city, district: a.district, address: a.address, lat: a.lat ?? null, lng: a.lng ?? null, saved: a.id }))} className="flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left" style={{ borderColor: form.saved === a.id ? '#0b8a95' : '#e6ebf2' }}>
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sea-50 text-sea"><MapPin className="size-4" /></span>
               <span className="min-w-0 flex-1">
                 <b className="block text-[13px]">{a.tag}</b>

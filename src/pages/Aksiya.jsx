@@ -44,10 +44,7 @@ export default function Aksiya() {
     ['Kafolat', '12 oy'],
     ['Yetkazish', '1–3 kun'],
   ]
-  const reviews = deal.reviewList || [
-    { name: 'Dr. Azizbek', role: 'Stomatolog', date: '18 okt 2026', stars: 5, text: 'Aksiya narxi adolatli, mahsulot rasmiy. Klinikada ishlatib ko‘rdim.' },
-    { name: 'Dr. Nilufar', role: 'Ortoped', date: '2 okt 2026', stars: 4, text: 'Yetkazib berish tez bo‘ldi. Sifat kutilganidek.' },
-  ]
+  const reviews = deal.reviewList || []
   const more = others(deal.id)
 
   const addCart = () => {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import MapPicker, { withGeo, parseGeo } from '../components/MapPicker'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   BadgeCheck, MapPin, Settings, ArrowRight, UserPlus, CalendarPlus, CalendarDays, UserRound, CircleDollarSign, Armchair,
@@ -13,7 +14,7 @@ import { supabase } from '../supabaseClient'
 import { profileStore } from '../profileStore'
 import { useCrmStats } from '../crmStats'
 import {
-  TODAY, DEFAULT_CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, MONTHS_CAP, WD, WD_LONG,
+  TODAY, DEFAULT_CHAIRS, SLOTS, SERVICES, CITY_LIST, STATUS, MONTHS_CAP, WD, WD_LONG,
   chairsFromSettings, shiftIso, weekday, label, avatarOf,
 } from '../klinikaData'
 import { scrubClinicBoard } from '../demoPurge'
@@ -56,7 +57,7 @@ async function upsertCustomerClinic(uid, settings) {
   const base = {
     user_id: uid,
     name: (settings.name || '').trim() || 'Mening klinikam',
-    address: (settings.address || settings.city || '').trim(),
+    address: withGeo(parseGeo((settings.address || settings.city || '').trim()).text, settings),
     hours: `${open}–${close}`,
     phone: (settings.phone || '').trim(),
     website: (settings.website || '').trim(),
@@ -122,7 +123,7 @@ export default function Klinika() {
       }
       const [clinic, payload] = await Promise.all([fetchCustomerClinic(id), loadBlob('clinic_board')])
       if (stop) return
-      if (clinic) setSettings(settingsFromClinic(clinic))
+      if (clinic) { const g = parseGeo(clinic.address || ''); setSettings({ ...settingsFromClinic({ ...clinic, address: g.text }), lat: g.lat, lng: g.lng }) }
       else if (payload?.settings) setSettings({ ...DEFAULT_SETTINGS, ...payload.settings })
       else setSettings({ ...DEFAULT_SETTINGS })
       if (payload) {
@@ -440,7 +441,7 @@ function Ring({ value }) {
 
 function ChairColumn({ chair, index, visits, menu, setMenu, onStatus, onCancel, onBook }) {
   const busy = visits.some((x) => x.status === 'qabulda')
-  const rows = [...SLOTS.slice(0, 2), LUNCH, ...SLOTS.slice(2)]
+  const rows = SLOTS
   return (
     <div className="min-w-0 rounded-xl border border-line p-2">
       <div className="mb-1.5 flex items-center gap-1.5 px-1">
@@ -451,14 +452,6 @@ function ChairColumn({ chair, index, visits, menu, setMenu, onStatus, onCancel, 
       </div>
       <div className="space-y-1.5">
         {rows.map((time) => {
-          if (time === LUNCH) {
-            return (
-              <div key={time} className="grid grid-cols-[38px_minmax(0,1fr)] items-center gap-1.5">
-                <span className="text-[11px] text-muted">{time}</span>
-                <span className="flex h-7 items-center gap-1.5 rounded-lg bg-[#f1f5f9] px-2 text-[11px] text-muted"><Coffee className="size-3.5" /> Tushlik</span>
-              </div>
-            )
-          }
           const x = visits.find((y) => y.time === time)
           const key = `v-${index}-${time}`
           return (
@@ -841,6 +834,7 @@ function SettingsDialog({ value, onClose, onSave }) {
           </select>
         </Field>
         <Field label="Manzil"><input value={form.address || ''} onChange={(e) => set('address', e.target.value)} placeholder="Ko‘cha, uy" className={input} /></Field>
+        <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => { set('lat', lat); set('lng', lng); if (geo?.city && CITY_LIST.includes(geo.city)) set('city', geo.city); if (geo?.street) set('address', [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ')) }} />
         <Field label="Telefon"><PhoneInput className={input + ' flex'} value={form.phone || ''} onChange={(v) => set('phone', toE164(v) || extractUzLocalDigits(v))} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
         <Field label="Veb-sayt"><input value={form.website || ''} onChange={(e) => set('website', e.target.value)} placeholder="https://" className={input} /></Field>
         <div className="grid grid-cols-2 gap-2">
@@ -850,7 +844,7 @@ function SettingsDialog({ value, onClose, onSave }) {
         <Field label="Kreslo soni">
           <input type="number" min="0" max="12" value={form.chair_count ?? 0} onChange={(e) => set('chair_count', Number(e.target.value) || 0)} className={input} />
         </Field>
-        <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Tushlik: {LUNCH}. Kreslo soni 0 bo‘lsa jadval bo‘sh holatda chiqadi.</p>
+        <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Kreslo soni 0 bo‘lsa jadval bo‘sh holatda chiqadi.</p>
       </div>
     </Dialog>
   )

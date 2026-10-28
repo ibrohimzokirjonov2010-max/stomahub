@@ -224,6 +224,7 @@ export function saveSeminar(form, { publish, id } = {}) {
     endTime: form.endTime || '18:00',
     place: form.place,
     address: form.address || '',
+    lat: form.lat ?? null, lng: form.lng ?? null,
     placeImg: form.placeImg || IMG.hall2,
     tickets: mappedTickets,
     speakers: form.speakers || [],

@@ -9,12 +9,7 @@ export const MSTATUS = {
 }
 export const STATUS_TABS = ['Yangi', 'Davolanishda', 'Kuzatuvda', 'Faol', 'Nofaol']
 
-export const DOCTORS = {
-  'Dr. Aziza': '/images/bemorlar/bemor-dilnoza.jpg',
-  'Dr. Kamron': '/images/yangiliklar/yang-dilshod.jpg',
-  'Dr. Sardor': '/images/jihozlar/engineer.jpg',
-  'Dr. Nigora': '/images/bemorlar/bemor-madina.jpg',
-}
+export const DOCTORS = {}
 
 const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
 export function fmtDate(s) {

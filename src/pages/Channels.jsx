@@ -33,7 +33,7 @@ function Channels({ query }) {
     const text = query.trim().toLowerCase()
     return channels
       .filter((c) => platform === 'all' || c.platform === platform)
-      .filter((c) => topic === 'all' || c.topic === topic || c.tags.some((t) => t.toLowerCase().includes(topics.find((x) => x[0] === topic)?.[1].toLowerCase() || '')))
+      .filter((c) => topic === 'all' || c.topic === topic || (c.tags || []).some((t) => t.toLowerCase().includes(topics.find((x) => x[0] === topic)?.[1].toLowerCase() || '')))
       .filter((c) => lang === 'all' || c.lang === lang)
       .filter((c) => !onlySaved || saved.has(c.id))
       .filter((c) => !text || `${c.name} ${c.handle} ${c.about}`.toLowerCase().includes(text))
@@ -41,7 +41,7 @@ function Channels({ query }) {
       .sort((a, b) => sort === 'rating' ? b.rating - a.rating : sort === 'subs' ? b.subs - a.subs : channels.indexOf(a) - channels.indexOf(b))
   }, [platform, topic, lang, sort, query, onlySaved, saved])
 
-  const editors = ['stom-uz', 'endo-masters', 'aesthetics', 'marketing', 'talk'].map((id) => channels.find((c) => c.id === id))
+  const editors = ['stom-uz', 'endo-masters', 'aesthetics', 'marketing', 'talk'].map((id) => channels.find((c) => c.id === id)).filter(Boolean)
   const savedList = channels.filter((c) => saved.has(c.id))
   const toggleSave = (id) => setSaved((prev) => {
     const next = new Set(prev)

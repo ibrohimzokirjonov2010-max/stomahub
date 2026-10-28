@@ -12,6 +12,7 @@ import { createCharge, isDemoPayments } from '../../payments/paymentService'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
+import MapPicker, { MapPreview, withGeo } from '../MapPicker'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
 import { PROMOS } from './MobileCart'
@@ -184,7 +185,7 @@ export default function MobileCheckout() {
       }
       const res = await createOrder({
         items, name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
-        address: form.address, note: form.note || '', pickup: mode === 'pickup',
+        address: withGeo(form.address, mode === 'pickup' ? null : form), note: form.note || '', pickup: mode === 'pickup',
         paymentMethod: method, paymentRef,
       })
       const at = new Date()
@@ -258,7 +259,8 @@ export default function MobileCheckout() {
                 </Field>
                                 <Field f="phone" icon={Phone} label="Telefon raqami" err={tried && errors.phone}>
                     <PhoneInput
-                      className="h-10 rounded-xl border border-[#e2e9ec] bg-white px-3"
+                      bare
+                      inputClassName="text-[13px] text-[#0d2a4a]"
                       value={form.phone}
                       onChange={(v) => patch('phone', extractUzLocalDigits(v))}
                       valueMode="local"
@@ -288,6 +290,7 @@ export default function MobileCheckout() {
                         {form.address && <button type="button" onClick={() => patch('address', '')} aria-label="Manzilni tozalash" className="grid size-6 shrink-0 place-items-center text-ink-2"><X className="size-4" /></button>}
                       </span>
                     </Field>
+                    {form.lat != null && <MapPreview lat={form.lat} lng={form.lng} />}
                   </div>
                   <button type="button" onClick={() => setSheet('map')} className="relative mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#e3f4f1] text-[13.5px] font-semibold text-[#0b6d73] active:scale-[0.99]">
                     <MapIcon className="size-[18px]" /> Xaritadan tanlash <ChevronRight className="absolute right-3 size-4" />
@@ -303,7 +306,7 @@ export default function MobileCheckout() {
                     {(allSaved ? SAVED : SAVED.slice(0, 2)).map((a) => {
                       const on = form.saved === a.id
                       return (
-                        <button key={a.id} type="button" role="radio" aria-checked={on} onClick={() => setForm((f) => ({ ...f, name: a.name || f.name, phone: a.phone || f.phone, city: a.city, district: a.district, address: a.address, saved: a.id }))} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left ${on ? 'border-[#0b8a7a] bg-[#eef8f6]' : 'border-[#e2e9ec] bg-white'}`}>
+                        <button key={a.id} type="button" role="radio" aria-checked={on} onClick={() => setForm((f) => ({ ...f, name: a.name || f.name, phone: a.phone || f.phone, city: a.city, district: a.district, address: a.address, lat: a.lat ?? null, lng: a.lng ?? null, saved: a.id }))} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left ${on ? 'border-[#0b8a7a] bg-[#eef8f6]' : 'border-[#e2e9ec] bg-white'}`}>
                           <a.icon className="size-5 shrink-0 text-[#0b6d73]" strokeWidth={1.7} />
                           <span className="min-w-0 flex-1">
                             <span className="block text-[13px] font-semibold text-[#0d2a4a]">{a.tag}</span>
@@ -490,10 +493,17 @@ export default function MobileCheckout() {
       </div>
 
       {sheet === 'map' && (
-        <MapSheet
-          current={form.city === 'Toshkent' ? form.district : ''}
+        <GeoSheet
+          lat={form.lat} lng={form.lng}
           onClose={() => setSheet(null)}
-          onPick={(p) => { setForm((f) => ({ ...f, city: 'Toshkent', district: p.district, address: p.address, saved: '' })); setSheet(null); setToast('Manzil xaritadan tanlandi') }}
+          onPick={(p) => {
+            setForm((f) => {
+              const city = Object.keys(CITIES).find((c) => p.geo?.city && (p.geo.city.includes(c) || c.includes(p.geo.city.split(' ')[0]))) || f.city
+              const d = (CITIES[city] || []).find((x) => p.geo?.district && p.geo.district.toLowerCase().startsWith(x.toLowerCase().slice(0, 5)))
+              return { ...f, city, district: d || f.district, address: p.geo?.street || f.address, lat: p.lat, lng: p.lng, saved: '' }
+            })
+            setSheet(null); setToast('Manzil xaritadan tanlandi')
+          }}
         />
       )}
       {sheet === 'oferta' && (
@@ -650,42 +660,6 @@ function Row({ k, v, tone = '' }) {
   )
 }
 
-function MapSheet({ current, onClose, onPick }) {
-  const [sel, setSel] = useState(PINS.find((p) => p.district === current) || null)
-  return (
-    <BottomSheet title="Xaritadan tanlash" onClose={onClose} footer={<button type="button" disabled={!sel} onClick={() => onPick(sel)} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-40">Shu manzilni tanlash</button>}>
-      <p className="text-[12px] text-muted">Toshkent shahri · nuqtani bosib manzilni tanlang</p>
-      <div className="relative mt-2 overflow-hidden rounded-2xl">
-        <svg viewBox="0 0 360 250" className="block w-full" role="img" aria-label="Toshkent xaritasi">
-          <rect width="360" height="250" fill="#e6f0e2" />
-          <g fill="#d3e4ce">
-            <rect x="14" y="14" width="70" height="44" rx="4" /><rect x="100" y="12" width="80" height="34" rx="4" /><rect x="250" y="14" width="96" height="40" rx="4" />
-            <rect x="20" y="200" width="90" height="36" rx="4" /><rect x="140" y="190" width="70" height="46" rx="4" /><rect x="290" y="180" width="60" height="56" rx="4" />
-          </g>
-          <path d="M0 130 C 80 110, 160 150, 360 120" stroke="#b9dcf0" strokeWidth="10" fill="none" />
-          <g stroke="#fff" strokeWidth="9"><path d="M0 80 H360 M0 170 H360 M120 0 V250 M270 0 V250" /></g>
-          <g stroke="#f1d58d" strokeWidth="5"><path d="M0 104 H360 M196 0 V250" /></g>
-          {PINS.map((p) => {
-            const on = sel?.district === p.district
-            return (
-              <g key={p.district} onClick={() => setSel(p)} className="cursor-pointer">
-                <circle cx={p.x} cy={p.y} r="16" fill="transparent" />
-                <path d={`M${p.x} ${p.y} c-6 -8 -10 -12 -10 -18 a10 10 0 0 1 20 0 c0 6 -4 10 -10 18z`} fill={on ? '#0b6d73' : '#ffffff'} stroke="#0b6d73" strokeWidth="2" />
-                <circle cx={p.x} cy={p.y - 18} r="3.5" fill={on ? '#fff' : '#0b6d73'} />
-                <text x={p.x} y={p.y + 13} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#0d2a4a">{p.district}</text>
-              </g>
-            )
-          })}
-        </svg>
-      </div>
-      <div className="mt-2.5 flex min-h-[48px] items-center gap-2.5 rounded-xl bg-[#eef8f6] px-3 py-2">
-        <MapPin className="size-5 shrink-0 text-[#0b6d73]" />
-        <p className="text-[12.5px] text-[#0d2a4a]">{sel ? sel.address : 'Manzil tanlanmagan'}</p>
-      </div>
-    </BottomSheet>
-  )
-}
-
 function Paying({ method, amount, onCancel, onDone }) {
   const [phase, setPhase] = useState(0)
   const done = useRef(onDone)
@@ -823,5 +797,15 @@ function InfoRow({ icon: Icon, k, v }) {
       <span className="flex-1 text-ink-2">{k}</span>
       <span className="text-right font-semibold text-[#0d2a4a]">{v}</span>
     </div>
+  )
+}
+
+function GeoSheet({ lat, lng, onClose, onPick }) {
+  const [p, setP] = useState(lat != null ? { lat, lng, geo: null } : null)
+  return (
+    <BottomSheet title="Xaritadan tanlash" onClose={onClose} footer={<button type="button" disabled={!p} onClick={() => onPick(p)} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-50">Shu manzilni tanlash</button>}>
+      <MapPicker lat={p?.lat ?? lat} lng={p?.lng ?? lng} height={320} onChange={(v) => setP((old) => ({ ...v, geo: v.geo || old?.geo || null }))} />
+      {p?.geo?.display && <p className="mt-1 text-[12px] text-ink-2">{p.geo.display}</p>}
+    </BottomSheet>
   )
 }

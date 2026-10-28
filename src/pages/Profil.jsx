@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+
+import MapPicker, { MapPreview } from '../components/MapPicker'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   BadgeCheck, Bell, Building2, Camera, Check, CreditCard, Download, Globe,
@@ -572,6 +574,7 @@ function ClinicCard({ draft, editing, setEditing, setForm, onSave, onPhoto, busy
               <>
                 <input className={field} value={draft.name} onChange={set('name')} placeholder="Klinika nomi" />
                 <input className={field} value={draft.address} onChange={set('address')} placeholder="Manzil" />
+                <MapPicker lat={draft.lat} lng={draft.lng} onChange={({ lat, lng, geo }) => setForm((d) => ({ ...(d || draft), lat, lng, ...(geo?.display ? { address: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
                 <input className={field} value={draft.hours} onChange={set('hours')} placeholder="09:00–19:00" />
                 <PhoneInput className="h-11" value={draft.phone} onChange={(v) => setForm((f) => ({ ...(f || draft), phone: extractUzLocalDigits(v) }))} valueMode="local" placeholder="+998 90 123 45 67" />
                 <input className={field} value={draft.website} onChange={set('website')} placeholder="https://" />
@@ -581,6 +584,7 @@ function ClinicCard({ draft, editing, setEditing, setForm, onSave, onPhoto, busy
               <>
                 <p className="text-[15px] font-bold text-[#12263a]">{draft.name || '—'}</p>
                 <p className="flex items-start gap-2 text-[13px] text-[#5b6b7d]"><MapPin className="mt-0.5 size-3.5 shrink-0 text-[#0F766E]" />{draft.address || '—'}</p>
+                {draft.lat != null && <MapPreview lat={draft.lat} lng={draft.lng} />}
                 <p className="text-[13px] text-[#5b6b7d]">Ish vaqti: {draft.hours || '—'}</p>
                 <p className="flex items-center gap-2 text-[13px] text-[#5b6b7d]"><Phone className="size-3.5 text-[#0F766E]" />{draft.phone || '—'}</p>
                 {draft.website && <a href={draft.website} target="_blank" rel="noreferrer" className="text-[13px] font-semibold text-[#0F766E]">{draft.website}</a>}
@@ -696,7 +700,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
   const blank = () => ({ id: `a${Date.now().toString(36)}`, kind: 'home', name: profile.name || '', phone: profile.phone || '', city: profile.city || 'Toshkent', district: 'Markaz', street: '', extra: '' })
   const save = async () => {
     try {
-      const row = addr(form.id, form.kind, form.name, form.phone, form.district, form.street, form.extra, form.city)
+      const row = addr(form.id, form.kind, form.name, form.phone, form.district, form.street, form.extra, form.city, form.lat ?? null, form.lng ?? null)
       const exists = list.some((x) => x.id === row.id)
       const addresses = exists ? list.map((x) => (x.id === row.id ? row : x)) : [...list, row]
       profileStore.update({ addresses, defaultAddr: profile.defaultAddr || row.id })
@@ -728,6 +732,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
             <p className="mt-2 text-[13.5px] font-bold text-[#12263a]">{a.name}</p>
             <p className="mt-1 text-[12.5px] text-[#5b6b7d]">{fmtPhone(a.phone)}</p>
             <p className="mt-1 text-[12.5px] text-[#5b6b7d]">{a.city}, {a.address}</p>
+            {a.lat != null && <MapPreview lat={a.lat} lng={a.lng} />}
             {a.id !== profile.defaultAddr && (
               <button type="button" className="mt-2 text-[12px] font-semibold text-[#0F766E]" onClick={() => { profileStore.update({ defaultAddr: a.id }); flushProfile() }}>Asosiy qilish</button>
             )}
@@ -749,6 +754,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
           <input className={field} placeholder="Shahar" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
           <input className={field} placeholder="Tuman" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
           <input className={field} placeholder="Ko‘cha, uy" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} />
+          <div className="sm:col-span-2"><MapPicker lat={form.lat} lng={form.lng} height={240} onChange={({ lat, lng, geo }) => setForm((f) => ({ ...f, lat, lng, ...(geo?.city ? { city: geo.city } : {}), ...(geo?.district ? { district: geo.district.replace(/ tumani$/i, '') } : {}), ...(geo?.street ? { street: geo.street } : {}) }))} /></div>
           <div className="flex gap-2 sm:col-span-2">
             <button type="button" onClick={save} className="h-10 rounded-xl bg-[#0F766E] px-4 text-[13px] font-semibold text-white">Saqlash</button>
             <button type="button" onClick={() => setForm(null)} className="h-10 rounded-xl border border-[#d7e5e3] px-4 text-[13px] font-semibold">Bekor</button>

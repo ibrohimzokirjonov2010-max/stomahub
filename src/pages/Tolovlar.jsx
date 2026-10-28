@@ -414,7 +414,7 @@ function downloadReport(rows) {
 
 function PayModal({ patients, preset, edit, onClose, onSave }) {
   const picks = patients.filter((p) => p.photo).slice(0, 12)
-  const [pid, setPid] = useState(edit?.patientId || 'malika-karimova')
+  const [pid, setPid] = useState(edit?.patientId || '')
   const [whoOpen, setWhoOpen] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
   const patient = patients.find((p) => p.id === pid) || picks[0]

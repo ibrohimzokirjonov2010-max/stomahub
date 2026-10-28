@@ -37,7 +37,7 @@ function fromPlan(p) {
 }
 
 const blank = () => ({
-  id: '', code: nextPlanCode(), patient: null, doctor: 'ibrohim', title: '', status: 'reja', start: TODAY, chair: 'Kreslo 1',
+  id: '', code: nextPlanCode(), patient: null, doctor: 'me', title: '', status: 'reja', start: TODAY, chair: 'Kreslo 1',
   teeth: {}, items: [], groups: [], discount: 0, payMode: 'full', note: '', paid: 0, payments: [], visits: [], stages: [],
 })
 

@@ -172,17 +172,7 @@ export default function FormaItem() {
           )}
           {tab === 'reviews' && (
             <div className="mt-3 flex max-w-[640px] flex-col gap-2">
-              {[
-                ['Dr. Madina', 'Juda qulay, kun bo‘yi kiyib yuraman. Mato nafas oladi.'],
-                ['Dr. Jasur', 'O‘lcham to‘g‘ri keldi. Yuvilgandan keyin ham shakli saqlanadi.'],
-                ['Klinika nurse', 'Rang chiroyli, cho‘ntaklari amaliy.'],
-              ].map(([name, text]) => (
-                <div key={name} className="rounded-xl bg-white p-3 shadow-card">
-                  <p className="text-[12px] font-bold">{name}</p>
-                  <p className="mt-1 flex gap-0.5">{[1, 2, 3, 4, 5].map((n) => <Star key={n} className="size-3 fill-star text-star" />)}</p>
-                  <p className="mt-1 text-[12px] text-ink-2">{text}</p>
-                </div>
-              ))}
+              <p className="rounded-xl bg-white p-3 text-[12px] text-muted shadow-card">Hali sharhlar yo‘q</p>
             </div>
           )}
 

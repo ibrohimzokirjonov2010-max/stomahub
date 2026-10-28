@@ -78,10 +78,8 @@ export function shift(iso, days) {
 }
 
 export function weekdayIndex(iso) {
-  const a = parts(ANCHOR)
   const p = parts(iso)
-  const diff = Math.round((new Date(p.y, p.m - 1, p.d) - new Date(a.y, a.m - 1, a.d)) / 86400000)
-  return ((diff % 7) + 7) % 7
+  return (new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay() + 6) % 7
 }
 
 export function alignWeek(iso) {

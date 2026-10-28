@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Award, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown,
@@ -18,12 +19,6 @@ const INITIAL_TICKETS = [
   { id: 't1', name: 'Standart', price: 450000, seats: 100, perks: ['Seminarga kirish', 'Materiallar', 'Sertifikat'], active: true, basic: true, tone: 'teal', icon: 'ticket' },
   { id: 't2', name: 'VIP', price: 850000, seats: 30, perks: ['Seminarga kirish', 'Maxsus materiallar', 'Oldingi qator o‘rinlar', 'Kofe-breyk', 'Sertifikat', 'Ma’ruzachilar bilan foto'], active: true, tone: 'gold', icon: 'crown' },
   { id: 't3', name: 'Student', price: 250000, seats: 50, perks: ['Seminarga kirish', 'Materiallar', 'Sertifikat'], active: true, tone: 'violet', icon: 'cap' },
-]
-
-const INITIAL_SPEAKERS = [
-  { id: 's1', name: 'Dr. Alisher Karimov', role: 'Implantolog', city: 'Toshkent', avatar: '/images/ustalar/usta-jasur.jpg' },
-  { id: 's2', name: 'Dr. Malika Tursunova', role: 'Jarroh stomatolog', city: 'Samarqand', avatar: '/images/forma/woman-navy.jpg' },
-  { id: 's3', name: 'Dr. Javohir Sodiqov', role: 'Protezist', city: 'Toshkent', avatar: '/images/ustalar/usta-dilshod.jpg' },
 ]
 
 const INITIAL_PROMOS = [
@@ -399,6 +394,7 @@ export default function Wizard() {
                       <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.address} onChange={(e) => set({ address: e.target.value })} />
                     </span>
                   </label>
+                    <MapPicker lat={form.lat} lng={form.lng} height={220} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { address: geo.street, ...(geo.city ? { city: geo.city } : {}) } : {}) })} />
                 </div>
                 <label className="relative block h-[108px] cursor-pointer overflow-hidden rounded-xl bg-[#f4fbfa]">
                   {form.placeImg ? <img src={form.placeImg} alt="" className="size-full object-cover" /> : <span className="grid size-full place-items-center text-[12px] text-[#8aa0a4]">Manzil rasmi yo‘q</span>}
@@ -658,7 +654,7 @@ export default function Wizard() {
       </div>
 
       <TicketModal open={modal === 'ticket'} onClose={() => setModal(null)} onSave={(t) => { set({ tickets: [...form.tickets, t] }); setModal(null); notify('Chipta turi qo‘shildi') }} />
-      <SpeakerModal open={modal === 'speaker'} onClose={() => setModal(null)} photo={INITIAL_SPEAKERS[0].avatar} onSave={(s) => { set({ speakers: [...form.speakers, s] }); setModal(null); notify('Ma’ruzachi qo‘shildi') }} />
+      <SpeakerModal open={modal === 'speaker'} onClose={() => setModal(null)} photo="" onSave={(s) => { set({ speakers: [...form.speakers, s] }); setModal(null); notify('Ma’ruzachi qo‘shildi') }} />
       <PromoModal open={modal === 'promo'} onClose={() => setModal(null)} onSave={(p) => { set({ promos: [...form.promos, p] }); setModal(null); notify('Promo-kod qo‘shildi') }} />
     </div>
   )

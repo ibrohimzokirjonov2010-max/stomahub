@@ -3,10 +3,10 @@ const shot = (name) => `/images/bemorlar/${name}.jpg`
 const sem = (name) => `/images/seminars/${name}.jpg`
 
 export const ME = {
-  name: 'Ibrohim Zakirjonov',
+  name: 'Shifokor',
   role: 'Stomatolog',
   place: 'Toshkent',
-  avatar: '/images/market/avatar2.jpg',
+  avatar: '',
 }
 
 export const TOPICS = [
@@ -45,7 +45,7 @@ export const KINDS = [
 
 export const KIND_LABEL = { keys: 'Klinik keys', savol: 'Savol', muhokama: 'Muhokama', maqola: 'Ilmiy maqola' }
 
-export const SAMPLE_SHOTS = [shot('bemor-rvg'), shot('bemor-opg'), shot('bemor-kt')]
+export const SAMPLE_SHOTS = []
 
 export const seedPosts = []
 

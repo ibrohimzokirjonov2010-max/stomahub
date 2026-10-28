@@ -2,19 +2,22 @@ import { useMemo, useState } from 'react'
 import { Search, SlidersHorizontal, LayoutGrid, LayoutList, Heart, Star, Play, Clock, BookOpen, Award, Headphones, X, FileBadge, Hourglass, BadgeCheck, MonitorPlay } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
+import { useMobile } from '../useMobile'
+import { BottomSheet } from '../components/mobile/MobileSeminars'
 import { useCatalogVersion } from '../recordSync'
 import { directions, levels, formats, prices, sorts, courses, continuing, certificates, why, money } from '../educationData'
 
 export default function EducationRoute() {
   const [q, setQ] = useState('')
+  const mobile = useMobile()
   return (
     <ShopLayout active="education" search="plain" placeholder="Stomatologga nima kerak?" onQuery={setQ}>
-      <Education headerQuery={q} />
+      <Education headerQuery={q} mobile={mobile} />
     </ShopLayout>
   )
 }
 
-function Education({ headerQuery }) {
+function Education({ headerQuery, mobile }) {
   useCatalogVersion()
   const [local, setLocal] = useState('')
   const [direction, setDirection] = useState('all')
@@ -24,6 +27,10 @@ function Education({ headerQuery }) {
   const [sort, setSort] = useState('popular')
   const [view, setView] = useState('grid')
   const [showFilters, setShowFilters] = useState(true)
+  const [sheet, setSheet] = useState(null)
+  const activeCount = [direction !== 'all', level !== 'all', format !== 'all', price !== 'all', sort !== 'popular'].filter(Boolean).length
+  const openSheet = () => setSheet({ direction, level, format, price, sort })
+  const applySheet = () => { setDirection(sheet.direction); setLevel(sheet.level); setFormat(sheet.format); setPrice(sheet.price); setSort(sheet.sort); setSheet(null) }
   const [saved, setSaved] = useState(() => new Set())
   const [playing, setPlaying] = useState(null)
   const [chat, setChat] = useState(false)
@@ -59,18 +66,27 @@ function Education({ headerQuery }) {
             <h1 className="text-[24px] font-extrabold tracking-tight text-ink">Ta’lim</h1>
             <p className="mt-0.5 text-[12px] text-ink-2">Bilimingizni oshiring. Klinik ko‘nikmalar, protokollar va sertifikatli kurslar.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="flex h-9 w-[250px] items-center rounded-full bg-white px-3 shadow-card">
+          <div className="flex items-center gap-2 max-md:w-full">
+            <label className="flex h-9 w-[250px] max-md:w-auto max-md:flex-1 items-center rounded-full bg-white px-3 shadow-card">
               <Search className="size-3.5 text-muted" />
               <input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Dars yoki kurs qidiring..." className="h-full flex-1 bg-transparent px-2 text-[11px] outline-none placeholder:text-[#8a94a3]" />
             </label>
-            <button onClick={() => setShowFilters((v) => !v)} aria-label="Filtrlar" className={`grid size-9 place-items-center rounded-xl bg-white shadow-card ${showFilters ? 'text-sea' : 'text-ink-2'}`}>
+            <button onClick={() => (mobile ? openSheet() : setShowFilters((v) => !v))} aria-label="Filtrlar" className={`relative grid size-9 place-items-center rounded-xl bg-white shadow-card ${(mobile ? activeCount : showFilters) ? 'text-sea' : 'text-ink-2'}`}>
               <SlidersHorizontal className="size-4" />
+              {mobile && activeCount > 0 && <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-sea text-[9px] font-bold text-white">{activeCount}</span>}
             </button>
           </div>
         </div>
 
-        <section className="mt-4">
+        {mobile && (
+          <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+            {directions.map(([k, name]) => (
+              <button key={k} onClick={() => setDirection(k)} className={`h-[28px] shrink-0 whitespace-nowrap rounded-full px-3 text-[11px] font-medium ${direction === k ? 'bg-sea text-white' : 'bg-white text-ink-2 shadow-card'}`}>{name}</button>
+            ))}
+          </div>
+        )}
+
+        {continuing.length > 0 && <section className="mt-4">
           <h2 className="mb-2 text-[15px] font-bold text-ink">Davom ettirish</h2>
           <div className="grid gap-2.5 md:grid-cols-3">
             {continuing.map((c) => (
@@ -95,9 +111,9 @@ function Education({ headerQuery }) {
               </article>
             ))}
           </div>
-        </section>
+        </section>}
 
-        {showFilters && (
+        {!mobile && showFilters && (
           <div className="mt-3 flex flex-col gap-2">
             <ChipRow label="Yo‘nalish:" value={direction} onChange={setDirection} items={directions} />
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -114,7 +130,7 @@ function Education({ headerQuery }) {
           </div>
         )}
 
-        <div className="mt-4 mb-2 flex items-center justify-between">
+        <div className={`${mobile ? 'mt-3' : 'mt-4'} mb-2 flex items-center justify-between`}>
           <h2 className="text-[15px] font-bold text-ink">Barcha kurslar <span className="ml-1 text-[11px] font-medium text-muted">{list.length} ta kurs topildi</span></h2>
           <div className="flex overflow-hidden rounded-lg bg-white shadow-card">
             <button aria-label="Kartochkalar" onClick={() => setView('grid')} className={`grid size-7 place-items-center ${view === 'grid' ? 'bg-sea text-white' : 'text-ink-2'}`}><LayoutGrid className="size-3.5" /></button>
@@ -123,10 +139,9 @@ function Education({ headerQuery }) {
         </div>
 
         {list.length === 0 ? (
-          <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">Kurs topilmadi</div>
+          <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">{courses.length ? 'Kurs topilmadi' : 'Hali kurslar qo‘shilmagan'}</div>
         ) : view === 'grid' ? (
           <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
-            {!courses.length ? <EmptyCatalog title="Ta’lim kurslari bo‘sh" text="Hali kurslar qo‘shilmagan." /> : null}
       {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
           </div>
         ) : (
@@ -204,6 +219,21 @@ function Education({ headerQuery }) {
         </div>
       </aside>
 
+      {sheet && (
+        <BottomSheet title="Filtrlar" onClose={() => setSheet(null)} footer={<>
+          <button type="button" onClick={() => setSheet({ direction: 'all', level: 'all', format: 'all', price: 'all', sort: 'popular' })} className="h-11 flex-1 rounded-xl border border-line text-[13px] font-semibold text-ink">Tozalash</button>
+          <button type="button" onClick={applySheet} className="h-11 flex-1 rounded-xl bg-sea text-[13px] font-semibold text-white">Qo‘llash</button>
+        </>}>
+          {[['Yo‘nalish', 'direction', directions], ['Daraja', 'level', levels], ['Format', 'format', formats], ['Narx', 'price', prices], ['Saralash', 'sort', Object.entries(sorts)]].map(([label, key, items]) => (
+            <div key={key} className="mt-3">
+              <p className="mb-1.5 text-[12px] font-semibold text-ink">{label}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {items.map(([k, name]) => <button key={k} type="button" onClick={() => setSheet((d) => ({ ...d, [key]: k }))} className={`h-8 rounded-full px-3 text-[12px] font-medium ${sheet[key] === k ? 'bg-sea text-white' : 'bg-page text-ink-2'}`}>{name}</button>)}
+              </div>
+            </div>
+          ))}
+        </BottomSheet>
+      )}
       {playing && (
         <Modal title={playing.title} onClose={() => setPlaying(null)}>
           <img src={playing.cover} alt="" className="h-[160px] w-full rounded-xl object-cover" />

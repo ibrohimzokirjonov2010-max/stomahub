@@ -17,34 +17,6 @@ const navy = 'text-[#0d2a4a]'
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 const METHOD_LABEL = { click: 'Click', payme: 'Payme', uzum: 'Uzum Bank', card: 'Bank kartasi', split: 'Bo‘lib to‘lash' }
 
-const SEED = [
-  {
-    key: 'seed-impl', cat: 'Implantologiya', title: 'Implantologiya: nazariya va klinik amaliyot', speaker: 'Dr. Sardor Karimov', role: 'Implantolog',
-    date: '2026-11-24', from: '10:00', to: '16:00', online: false, place: 'Toshkent, Hyatt Regency', address: 'Toshkent shahri, Navoiy ko‘chasi, 1A',
-    image: '/images/seminar-1.jpg', pos: 'object-[80%_center]', order: 'SEM-2031', plan: 'Standart · Oflayn', price: 1200000, method: 'click', cme: 8,
-  },
-  {
-    key: 'seed-endo', cat: 'Endodontiya', title: 'Endodontiya: zamonaviy yondashuv', speaker: 'Dr. Sardor Ismailov', role: 'Endodontist',
-    date: '2026-12-12', from: '10:00', to: '15:00', online: true, place: 'Onlayn', address: 'Zoom havolasi seminardan 1 soat oldin yuboriladi',
-    image: '/images/seminar-2.jpg', pos: 'object-[18%_center]', order: 'SEM-2036', plan: 'Standart · Onlayn', price: 470000, method: 'payme', cme: 6,
-  },
-  {
-    key: 'seed-orto', cat: 'Ortodontiya', title: 'Ortodontiya asoslari', speaker: 'Dr. Nilufar Abdullayeva', role: 'Ortodont',
-    date: '2026-10-15', from: '10:00', to: '16:00', online: false, place: 'Toshkent, Hyatt Regency', address: 'Toshkent shahri, Navoiy ko‘chasi, 1A',
-    image: '/images/seminars/aligner.jpg', pos: 'object-center', order: 'SEM-2012', plan: 'Standart · Oflayn', price: 900000, method: 'click', cme: 6,
-  },
-  {
-    key: 'seed-estet', cat: 'Estetika', title: 'Kompozit restavratsiya: oldingi tishlar', speaker: 'Dr. Kamola Abdullayeva', role: 'Estetik stomatolog',
-    date: '2026-09-27', from: '09:00', to: '17:00', online: false, place: 'Toshkent, Dentoshon Center', address: 'Toshkent shahri, Mirzo Ulug‘bek tumani',
-    image: '/images/seminar-4.jpg', pos: 'object-[20%_center]', order: 'SEM-1998', plan: 'Amaliy · Oflayn', price: 1700000, method: 'card', cme: 5,
-  },
-  {
-    key: 'seed-paro', cat: 'Parodontologiya', title: 'Parodontologiya: klinik protokollar', speaker: 'Dr. Javohir Ahmedov', role: 'Parodontolog',
-    date: '2026-09-06', from: '10:00', to: '14:00', online: true, place: 'Onlayn', address: 'Yozuv 3 oy davomida mavjud',
-    image: '/images/seminars/smile.jpg', pos: 'object-center', order: 'SEM-1984', plan: 'Standart · Onlayn', price: 390000, method: 'uzum', cme: 4,
-  },
-]
-
 const atOf = (s) => new Date(`${s.date}T${s.to}:00`)
 export const dateLabel = (s) => {
   const [y, m, d] = s.date.split('-').map(Number)

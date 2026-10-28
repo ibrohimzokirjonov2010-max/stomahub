@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { MapPreview } from '../MapPicker'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Check, CircleCheck, CircleX, Clock, MapPin, Package, RotateCcw, Truck } from 'lucide-react'
 import { useCart } from '../../cart'
@@ -270,6 +271,7 @@ export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onC
       </ul>
       <div className="mt-2 space-y-2 rounded-xl bg-[#f3f8f8] p-3 text-[12.5px]">
         <p className="flex gap-2 text-ink-2"><MapPin className={`mt-0.5 size-4 shrink-0 ${teal}`} /> {order.address}</p>
+        {order.lat != null && <MapPreview lat={+order.lat} lng={+order.lng} />}
         <p className="flex items-center gap-2 text-ink-2"><Logo id={order.method} /> {METHODS[order.method]?.[0]}{order.months ? ` · ${order.months} oy` : ''}</p>
         <div className="space-y-1 border-t border-[#e2ebee] pt-2 text-ink-2">
           <p className="flex justify-between"><span>Mahsulotlar</span><span>{som(order.goods ?? order.total)}</span></p>
