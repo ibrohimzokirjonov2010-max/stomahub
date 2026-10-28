@@ -1,4 +1,5 @@
 import { Route } from 'react-router-dom'
+import Arizalar from './pages/Arizalar'
 import AdminGate from './AdminGate'
 import AdminLayout from './AdminLayout'
 import Dashboard from './pages/Dashboard'
@@ -19,6 +20,7 @@ export const adminRoutes = (
   <Route path="/admin" element={<AdminGate><AdminLayout /></AdminGate>}>
     <Route index element={<Dashboard />} />
     <Route path="foydalanuvchilar" element={<Foydalanuvchilar />} />
+    <Route path="arizalar" element={<Arizalar />} />
     <Route path="sotuvchilar" element={<Sotuvchilar />} />
     <Route path="tashkilotchilar" element={<Tashkilotchilar />} />
     <Route path="elonlar" element={<Elonlar />} />

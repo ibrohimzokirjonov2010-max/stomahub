@@ -153,6 +153,11 @@ export async function becomeOrganizer() {
 export function canUseSeller(profile) {
   return profile?.role === 'admin' || (profile?.role === 'seller' && profile?.seller_status === 'approved')
 }
+/** Ro'yxatdan o'tgan (hali tasdiqlanmagan) sotuvchi ham kabinetga kiradi, lekin faqat Sozlamalar ishlaydi. */
+export const SELLER_MEMBER_STATUSES = ['registered', 'pending', 'rejected', 'approved']
+export function canEnterSeller(profile) {
+  return profile?.role === 'admin' || (profile?.role === 'seller' && SELLER_MEMBER_STATUSES.includes(profile?.seller_status))
+}
 export function canUseOrganizer(profile) {
   return profile?.role === 'admin' || (profile?.role === 'organizer' && profile?.org_status === 'approved')
 }
