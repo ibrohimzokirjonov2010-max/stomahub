@@ -15,6 +15,8 @@ import Seminar from './pages/Seminar'
 import SeminarReg from './pages/SeminarReg'
 import Shell from './organizer/Shell'
 import OrganizerGate from './organizer/OrganizerGate'
+import OrgVerifyGate, { OrgVerifyPage } from './organizer/OrgVerifyGate'
+import OrganizerRegister from './apply/OrganizerRegister'
 import { sellerRoutes } from './seller/routes'
 import SellerRegister from './apply/SellerRegister'
 import Dashboard from './organizer/pages/Dashboard'
@@ -143,26 +145,28 @@ export default function App() {
           <Route path="/ortiqcha" element={<SurplusCatalog />} />
           <Route path="/seminarlar" element={<SeminarsCatalog />} />
           <Route path="/sotuvchi-bolish" element={<SellerRegister />} />
+          <Route path="/tashkilotchi-bolish" element={<OrganizerRegister />} />
           {sellerRoutes}
           {adminRoutes}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
-            <Route index element={<Dashboard />} />
-            <Route path="seminarlar" element={<Seminars />} />
-            <Route path="seminarlar/yangi" element={<Wizard />} />
-            <Route path="seminarlar/:id" element={<SeminarDetail />} />
-            <Route path="seminarlar/:id/tasdiqlash" element={<ConfirmHeld />} />
-            <Route path="ishtirokchilar" element={<Participants />} />
-            <Route path="chiptalar" element={<Tickets />} />
-            <Route path="qr" element={<QrCheckin />} />
-            <Route path="tolovlar" element={<OrgPayments />} />
-            <Route path="hamyon" element={<WalletPage />} />
-            <Route path="sertifikatlar" element={<OrgCertificates />} />
-            <Route path="promo" element={<Promos />} />
-            <Route path="marketing" element={<Marketing />} />
-            <Route path="maruzachilar" element={<Speakers />} />
-            <Route path="hisobotlar" element={<Reports />} />
-            <Route path="reyting" element={<Ratings />} />
+            <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />
+            <Route path="seminarlar" element={<OrgVerifyGate section="Mening seminarlarim"><Seminars /></OrgVerifyGate>} />
+            <Route path="seminarlar/yangi" element={<OrgVerifyGate section="Seminar qo‘shish"><Wizard /></OrgVerifyGate>} />
+            <Route path="seminarlar/:id" element={<OrgVerifyGate section="Seminar"><SeminarDetail /></OrgVerifyGate>} />
+            <Route path="seminarlar/:id/tasdiqlash" element={<OrgVerifyGate section="Seminar"><ConfirmHeld /></OrgVerifyGate>} />
+            <Route path="ishtirokchilar" element={<OrgVerifyGate section="Ishtirokchilar"><Participants /></OrgVerifyGate>} />
+            <Route path="chiptalar" element={<OrgVerifyGate section="Chiptalar"><Tickets /></OrgVerifyGate>} />
+            <Route path="qr" element={<OrgVerifyGate section="QR Check-in"><QrCheckin /></OrgVerifyGate>} />
+            <Route path="tolovlar" element={<OrgVerifyGate section="To‘lovlar"><OrgPayments /></OrgVerifyGate>} />
+            <Route path="hamyon" element={<OrgVerifyGate section="Hamyon"><WalletPage /></OrgVerifyGate>} />
+            <Route path="sertifikatlar" element={<OrgVerifyGate section="Sertifikatlar"><OrgCertificates /></OrgVerifyGate>} />
+            <Route path="promo" element={<OrgVerifyGate section="Promo-kodlar"><Promos /></OrgVerifyGate>} />
+            <Route path="marketing" element={<OrgVerifyGate section="Marketing"><Marketing /></OrgVerifyGate>} />
+            <Route path="maruzachilar" element={<OrgVerifyGate section="Ma’ruzachilar"><Speakers /></OrgVerifyGate>} />
+            <Route path="hisobotlar" element={<OrgVerifyGate section="Hisobotlar"><Reports /></OrgVerifyGate>} />
+            <Route path="reyting" element={<OrgVerifyGate section="Reyting va sharhlar"><Ratings /></OrgVerifyGate>} />
             <Route path="sozlamalar" element={<SettingsPage />} />
+            <Route path="tasdiqlash" element={<OrgVerifyPage />} />
             <Route path="yordam" element={<HelpPage />} />
           </Route>
           <Route path="/seminarlar/:id/royxat" element={<Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive>} />

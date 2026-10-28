@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { becomeOrganizer, canUseOrganizer, refreshSession, useSession } from '../sessionStore'
+import { canEnterOrganizer, refreshSession, useSession } from '../sessionStore'
 import NoAccess from '../components/NoAccess'
 import { retryHub, useHub } from '../hubStore'
 
@@ -11,7 +11,7 @@ export default function OrganizerGate({ children }) {
   const [stuck, setStuck] = useState(false)
 
   const waitingSession = session.status === 'loading'
-  const waitingHub = session.status === 'authed' && canUseOrganizer(session.profile) && (!hub.ready || hub.loading)
+  const waitingHub = session.status === 'authed' && canEnterOrganizer(session.profile) && (!hub.ready || hub.loading)
 
   useEffect(() => {
     if (!waitingSession && !waitingHub) {
@@ -51,8 +51,8 @@ export default function OrganizerGate({ children }) {
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/kirish?next=${next}&role=organizer`} replace />
   }
-  if (!canUseOrganizer(session.profile)) {
-    return <NoAccess kind="organizer" role={session.profile?.role} status={session.profile?.org_status} onApply={becomeOrganizer} />
+  if (!canEnterOrganizer(session.profile)) {
+    return <NoAccess kind="organizer" role={session.profile?.role} status={session.profile?.org_status} applyTo="/tashkilotchi-bolish" />
   }
   if (waitingHub) {
     if (stuck) {

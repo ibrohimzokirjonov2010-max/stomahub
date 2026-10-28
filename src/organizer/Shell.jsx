@@ -3,11 +3,12 @@ import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-do
 import {
   House, CalendarDays, Users, Ticket, QrCode, Wallet, Award, Tag, Megaphone, Mic, ChartColumn,
   Store, Wrench, Shirt, BookOpen, Settings, CircleQuestionMark, Search, MapPin, Calendar, Bell,
-  ChevronDown, ChevronLeft, Star, Landmark, Ellipsis, MoreVertical,
+  ChevronDown, ChevronLeft, Star, Landmark, Ellipsis, MoreVertical, Lock, ShieldCheck,
 } from 'lucide-react'
 import { CITIES } from './data'
 import { useHub } from '../hubStore'
-import { useSession } from '../sessionStore'
+import { canUseOrganizer, useSession } from '../sessionStore'
+import { supabase } from '../supabaseClient'
 import HubNotice from '../components/HubNotice'
 
 const Ctx = createContext(null)
@@ -76,16 +77,56 @@ function isSeminarScreen(pathname) {
   return /^\/tashkilotchi\/seminarlar\/.+/.test(pathname)
 }
 
-function Item({ to, icon: Icon, label, end, onClick }) {
+function Item({ to, icon: Icon, label, end, onClick, locked }) {
   return (
     <NavLink to={to} end={end} onClick={onClick} className={({ isActive }) => `${ITEM} ${isActive ? 'bg-[#def6f6] font-semibold text-[var(--color-org-teal)]' : 'text-[#445066] hover:bg-white'}`}>
       {({ isActive }) => (
         <>
           <Icon className={`size-[18px] shrink-0 ${isActive ? 'text-[var(--color-org-teal)]' : 'text-[#3a7a7e]'}`} strokeWidth={1.75} />
           <span className="truncate">{label}</span>
+          {locked && <Lock data-testid="nav-lock" className="ml-auto size-3.5 shrink-0 text-[#9aaeb2]" aria-label="Tasdiqdan keyin ochiladi" />}
         </>
       )}
     </NavLink>
+  )
+}
+
+const OPEN = ['/tashkilotchi/sozlamalar', '/tashkilotchi/yordam']
+function useLocked() {
+  const session = useSession()
+  return (to) => to.startsWith('/tashkilotchi') && !OPEN.includes(to) && !canUseOrganizer(session.profile)
+}
+
+function ApprovalNotice({ uid }) {
+  const [note, setNote] = useState(null)
+  useEffect(() => {
+    if (!supabase || !uid) return
+    supabase.from('customer_notifications').select('id,title,body').eq('user_id', uid).eq('link', '/tashkilotchi').is('read_at', null)
+      .order('created_at', { ascending: false }).limit(1).then(({ data }) => setNote(data?.[0] || null))
+  }, [uid])
+  if (!note) return null
+  const close = () => { setNote(null); supabase.from('customer_notifications').update({ read_at: new Date().toISOString() }).eq('id', note.id).then(() => {}) }
+  return (
+    <div data-testid="approval-notice" role="status" className="mb-4 flex items-start gap-3 rounded-2xl bg-[#0F766E] p-4 text-white shadow-[0_10px_30px_rgb(15_118_110/0.25)]">
+      <ShieldCheck className="mt-0.5 size-6 shrink-0" />
+      <span className="min-w-0 flex-1"><b className="block text-[15px]">{note.title}</b><span className="text-[13.5px] text-white/90">{note.body}</span></span>
+      <button type="button" onClick={close} className="rounded-lg bg-white/15 px-3 py-1.5 text-[13px] font-semibold hover:bg-white/25">Yopish</button>
+    </div>
+  )
+}
+
+function UnverifiedBanner({ status }) {
+  const navigate = useNavigate()
+  const pending = status === 'pending'
+  return (
+    <div data-testid="unverified-banner" className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#CCFBF1] bg-[#F0FDFA] p-4 sm:flex-row sm:items-center">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#0F766E]"><ShieldCheck className="size-5" /></span>
+      <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-[#3D4E5F]">
+        <b className="block text-[14.5px] text-[#10283F]">{pending ? 'Arizangiz ko‘rib chiqilmoqda' : status === 'rejected' ? 'Arizangiz rad etildi' : 'Tashkilotchi hisobingiz hali tasdiqlanmagan'}</b>
+        {pending ? 'Tasdiqlangach seminar qo‘shish va boshqa bo‘limlar ochiladi. Hozircha profilni to‘ldirishingiz mumkin.' : 'Hozircha faqat Sozlamalar ishlaydi. Seminar qo‘shish uchun tasdiqdan o‘ting.'}
+      </span>
+      {!pending && <button type="button" data-testid="banner-verify" onClick={() => navigate('/tashkilotchi/tasdiqlash')} className="h-10 shrink-0 rounded-xl bg-[#0F766E] px-4 text-[14px] font-semibold text-white">{status === 'rejected' ? 'Qayta yuborish' : 'Tasdiqdan o‘tish'}</button>}
+    </div>
   )
 }
 
@@ -94,13 +135,14 @@ function SectionLabel({ children }) {
 }
 
 function Side({ onNavigate }) {
+  const locked = useLocked()
   return (
     <div className="flex h-full flex-col">
       <nav className="px-2 pt-[13px]">
-        {MAIN.map((it) => <Item key={it.to} {...it} onClick={onNavigate} />)}
+        {MAIN.map((it) => <Item key={it.to} {...it} locked={locked(it.to)} onClick={onNavigate} />)}
         <SectionLabel>SEMINAR TASHKILOTCHI</SectionLabel>
         <div className="space-y-px">
-          {ORG_NAV.map((it) => <Item key={it.to} {...it} onClick={onNavigate} />)}
+          {ORG_NAV.map((it) => <Item key={it.to} {...it} locked={locked(it.to)} onClick={onNavigate} />)}
         </div>
         <SectionLabel>PLATFORMA</SectionLabel>
         <div className="space-y-px">
@@ -165,6 +207,7 @@ export default function Shell() {
   const pop = useRef(null)
   const kebabRef = useRef(null)
 
+  const verified = canUseOrganizer(session.profile)
   const perSeminar = isSeminarScreen(pathname)
   const seminarId = seminarIdFrom(pathname)
   const onSheetRoute = [...SHEET_ORG, ...PLATFORM, ...FOOTER].some((it) => pathname === it.to || pathname.startsWith(`${it.to}/`))
@@ -217,6 +260,7 @@ export default function Shell() {
       <Link key={it.to} to={it.to} onClick={() => setMore(false)} className={`flex h-11 items-center gap-3 rounded-xl px-2 text-[14px] ${active ? 'bg-[#e7f6f3] font-semibold text-[var(--color-org-teal)]' : 'text-[#1c3d4a]'}`}>
         <Icon className="size-5 shrink-0" strokeWidth={1.75} />
         {it.label}
+        {!verified && it.to.startsWith('/tashkilotchi') && !OPEN.includes(it.to) && <Lock className="ml-auto size-4 text-[#9aaeb2]" />}
       </Link>
     )
   }
@@ -390,6 +434,8 @@ export default function Shell() {
             </header>
             <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-[calc(96px+env(safe-area-inset-bottom))] md:py-4 md:pb-4 md:pl-0 md:pr-4">
               <HubNotice hub={hub} />
+              <ApprovalNotice uid={session.user?.id} />
+              {!verified && pathname !== '/tashkilotchi/tasdiqlash' && <UnverifiedBanner status={session.profile?.org_status} />}
               <Outlet />
             </main>
           </div>

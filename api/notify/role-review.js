@@ -25,8 +25,8 @@ export default async function handler(req, res) {
     const text = app.status === 'approved'
       ? (app.kind === 'seller'
         ? `Do‘koningiz tasdiqlandi! Endi mahsulot qo‘shishingiz mumkin\n${SITE}/sotuvchi`
-        : `Tashkilotchi arizangiz tasdiqlandi! ${SITE}/tashkilotchi`)
-      : `Arizangiz rad etildi. Sabab: ${app.reject_reason}\nQayta ariza: ${SITE}/sotuvchi-bolish`
+        : `Tashkilotchi sifatida tasdiqlandingiz! Barcha bo‘limlar ochildi, endi seminar qo‘shishingiz mumkin\n${SITE}/tashkilotchi`)
+      : `Arizangiz rad etildi. Sabab: ${app.reject_reason}\nQayta ariza: ${SITE}${app.kind === 'seller' ? '/sotuvchi-bolish' : '/tashkilotchi/tasdiqlash'}`
     await sendTelegram(p.telegram_id, text)
     send(res, 200, { ok: true, telegram: 'sent' })
   } catch (e) {

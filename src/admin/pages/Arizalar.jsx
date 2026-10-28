@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
 import { CheckCircle2, FileText, XCircle } from 'lucide-react'
 import { adminListApplications, adminReviewApplication, signDocs } from '../../apply/api'
@@ -14,8 +15,11 @@ const LEGAL = { yatt: 'YaTT', mchj: 'MChJ' }
 const dt = (s) => (s ? new Date(s).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—')
 const Pill = ({ s }) => <span className={`inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold ${ST[s]?.[1] || ''}`}>{ST[s]?.[0] || s}</span>
 
-/** Reusable for organizers later: <Arizalar kind="organizer" /> */
-export default function Arizalar({ kind = 'seller' }) {
+/** Seller and organizer (tashkilotchi) applications; type tab is in the URL (?tur=tashkilotchi). */
+export default function Arizalar({ kind: fixed }) {
+  const [params, setParams] = useSearchParams()
+  const kind = fixed || (params.get('tur') === 'tashkilotchi' ? 'organizer' : 'seller')
+  const setKind = (k) => setParams(k === 'organizer' ? { tur: 'tashkilotchi' } : {}, { replace: true })
   const [status, setStatus] = useState('pending')
   const [state, setState] = useState({ loading: true, rows: [], error: '' })
   const [open, setOpen] = useState(null)
@@ -28,7 +32,14 @@ export default function Arizalar({ kind = 'seller' }) {
 
   return (
     <div data-testid="admin-arizalar">
-      <PageHeader title={kind === 'seller' ? 'Sotuvchi arizalari' : 'Tashkilotchi arizalari'} subtitle="Hujjatlarni tekshiring, tasdiqlang yoki sababini yozib rad eting" />
+      <PageHeader title="Arizalar" subtitle="Hujjatlarni tekshiring, tasdiqlang yoki sababini yozib rad eting" />
+      {!fixed && (
+        <div data-testid="kind-tabs" className="mb-3 inline-flex rounded-xl border border-[#E6EEF0] bg-white p-1">
+          {[['seller', 'Sotuvchilar'], ['organizer', 'Tashkilotchilar']].map(([k, l]) => (
+            <button key={k} type="button" data-kind={k} onClick={() => setKind(k)} className={`h-9 rounded-lg px-4 text-[14px] font-semibold ${kind === k ? 'bg-[#0F766E] text-white' : 'text-[#3D4E5F] hover:bg-[#F4FBFA]'}`}>{l}</button>
+          ))}
+        </div>
+      )}
       <FilterTabs value={status} onChange={setStatus} tabs={[{ id: 'pending', label: 'Kutilmoqda' }, { id: 'approved', label: 'Tasdiqlangan' }, { id: 'rejected', label: 'Rad etilgan' }, { id: 'all', label: 'Barchasi' }]} />
       {state.error && <div className="mt-4 rounded-xl bg-[#FDECEC] px-4 py-3 text-[13.5px] text-[#C53030]">{state.error}</div>}
       <div className="mt-4 overflow-hidden rounded-2xl border border-[#E6EEF0] bg-white">
@@ -70,7 +81,7 @@ function ReviewModal({ row, onClose, onDone }) {
     onDone()
   }
   const kv = [
-    ['Egasi', row.full_name], ['Telefon', row.phone], ['Email', row.email], ['Do‘kon', row.shop_name], ['Kategoriya', row.category],
+    ['Egasi', row.full_name], ['Telefon', row.phone], ['Email', row.email], [row.kind === 'organizer' ? 'Tashkilot' : 'Do‘kon', row.shop_name], [row.kind === 'organizer' ? 'Yo‘nalish' : 'Kategoriya', row.category],
     ['Hudud', row.region], ['Manzil', parseGeo(row.address || '').text], ['Instagram', row.instagram], ['Telegram', row.telegram], ['Sayt', row.website],
     ['Yuridik shakl', LEGAL[row.legal_type]], ['STIR', row.stir], ['Yuborilgan', dt(row.created_at)],
   ]
