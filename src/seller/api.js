@@ -153,12 +153,16 @@ export const addManualOrder = (v) => run(supabase.rpc('seller_create_manual_orde
   payload: { customer_name: v.customer_name, customer_phone: v.customer_phone, address: v.address, note: v.note, items: [{ product_id: v.product_id, qty: Number(v.qty) || 1 }] },
 }))
 
+// Sotuvchi bo'lish = ariza (seller_status = 'pending'). Kabinet faqat admin tasdiqlagach ochiladi.
 export async function becomeSeller(shopName) {
   const me = uid()
   if (!supabase || !me) return { ok: false, error: 'Avval kiring' }
-  const patch = { role: 'seller', updated_at: new Date().toISOString() }
-  if (shopName) patch.shop_name = shopName
-  const { error } = await supabase.from('profiles').update(patch).eq('id', me)
+  let { error } = await supabase.rpc('request_seller_role', { p_shop_name: shopName || '' })
+  if (error && /function|schema cache|not find/i.test(error.message || '')) {
+    const patch = { role: 'seller', seller_status: 'pending', updated_at: new Date().toISOString() }
+    if (shopName) patch.shop_name = shopName
+    ;({ error } = await supabase.from('profiles').update(patch).eq('id', me))
+  }
   if (error) return { ok: false, error: fail(error) }
   await refreshSession()
   return { ok: true }

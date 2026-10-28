@@ -48,9 +48,9 @@ export async function refreshSession() {
     commit({ status: 'anon', user: null, profile: null, error: '' })
     return state
   }
-  let { data, error } = await supabase.from('profiles').select('id,role,name,full_name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle()
+  let { data, error } = await supabase.from('profiles').select('id,role,seller_status,org_status,shop_name,name,full_name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle()
   if (error && /full_name/i.test(error.message || '')) {
-    ;({ data, error } = await supabase.from('profiles').select('id,role,name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle())
+    ;({ data, error } = await supabase.from('profiles').select('id,role,seller_status,org_status,shop_name,name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle())
   }
   const profile = data ? { ...data, full_name: data.full_name || data.name || '' } : null
   commit({
@@ -134,8 +134,27 @@ export async function ensureProfile({ role, name, fullName, phone, specialty, em
   return { ok: true, profile: state.profile }
 }
 
+// Tashkilotchi bo'lish = ariza. Kabinet faqat admin tasdiqlagach (org_status = 'approved') ochiladi.
 export async function becomeOrganizer() {
-  return ensureProfile({ role: 'organizer', forceRole: true })
+  if (!supabase) return { ok: false, error: 'Supabase sozlanmagan' }
+  if (!state.user) await refreshSession()
+  if (!state.user) return { ok: false, error: 'Avval kiring' }
+  let { error } = await supabase.rpc('request_organizer_role')
+  if (error && /function|schema cache|not find/i.test(error.message || '')) {
+    // 0024 hali qo'llanmagan bo'lsa: arizani profilga yozamiz (gate baribir approved talab qiladi)
+    ;({ error } = await supabase.from('profiles').update({ role: 'organizer', org_status: 'pending', updated_at: new Date().toISOString() }).eq('id', state.user.id))
+  }
+  if (error) return { ok: false, error: error.message }
+  await refreshSession()
+  return { ok: true, profile: state.profile }
+}
+
+/** Kabinetga kirish huquqi: admin yoki tasdiqlangan sotuvchi / tashkilotchi. */
+export function canUseSeller(profile) {
+  return profile?.role === 'admin' || (profile?.role === 'seller' && profile?.seller_status === 'approved')
+}
+export function canUseOrganizer(profile) {
+  return profile?.role === 'admin' || (profile?.role === 'organizer' && profile?.org_status === 'approved')
 }
 
 function boot() {
