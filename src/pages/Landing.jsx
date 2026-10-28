@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, CONTACT_EMAIL, SOCIAL_LINKS } from '../config/contact'
 import { useSession } from '../sessionStore'
 import { useCrmStats, mln } from '../crmStats'
 import { useClinicPayments } from '../tolovData'
@@ -47,7 +47,7 @@ const FAQ = [
   ['Klinika CRM’ni bir necha xodim ishlata oladimi?', 'Ha. Klinika egasi shifokor va administratorlarni qo‘shib, ularga alohida kirish beradi.'],
   ['Mahsulotlarni qanday xarid qilish mumkin?', 'Marketplace’da mahsulotni savatga qo‘shing, manzil va to‘lov usulini tanlab buyurtma bering.'],
   ['To‘lovlarni qanday qabul qilish mumkin?', payPromo('Click va Payme orqali onlayn, shuningdek naqd to‘lov qo‘llab-quvvatlanadi.', 'Naqd to‘lov qo‘llab-quvvatlanadi. Onlayn to‘lov tez orada ishga tushadi.')],
-  ['Texnik yordam qanday ishlaydi?', `Savol bo‘lsa, ${CONTACT_PHONE} raqamiga qo‘ng‘iroq qiling yoki info@stomahub.uz manziliga yozing. Ish vaqti 09:00–21:00.`],
+  ['Texnik yordam qanday ishlaydi?', CONTACT_PHONE ? `Savol bo‘lsa, ${CONTACT_PHONE} raqamiga qo‘ng‘iroq qiling yoki ${CONTACT_EMAIL} manziliga yozing. Ish vaqti 09:00–21:00.` : `Savol bo‘lsa, ${CONTACT_EMAIL} manziliga yozing. Ish vaqti 09:00–21:00.`],
 ]
 
 const wrap = 'mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8'
@@ -245,7 +245,7 @@ export default function Landing() {
             <img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-10 w-auto" />
             <p className="mt-3 max-w-[220px] text-[13px] leading-relaxed text-[#5c6e80]">O‘zbekiston stomatologlari uchun yagona platforma.</p>
             <div className="mt-5 flex gap-2.5">
-              {[['Telegram', 'https://t.me/', 'M21.9 4.6 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3.1c.9-.3 1.6.2 1.4 1.5Z'], ['Instagram', 'https://instagram.com/', null], ['YouTube', 'https://youtube.com/', null], ['LinkedIn', 'https://linkedin.com/', null]].map(([n, href, d]) => (
+              {[['Telegram', SOCIAL_LINKS.Telegram, 'M21.9 4.6 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3.1c.9-.3 1.6.2 1.4 1.5Z'], ['Instagram', SOCIAL_LINKS.Instagram, null], ['YouTube', SOCIAL_LINKS.YouTube, null], ['LinkedIn', SOCIAL_LINKS.LinkedIn, null]].filter(([, href]) => href).map(([n, href, d]) => (
                 <a key={n} href={href} target="_blank" rel="noreferrer" aria-label={n} className="grid size-10 place-items-center rounded-full bg-[#e6f4f1] text-[#0F766E] hover:bg-[#d4ece8]">
                   <Social n={n} d={d} />
                 </a>
@@ -257,7 +257,7 @@ export default function Landing() {
           <Foot title="Yordam" links={[['Savol-javob', '#faq'], ['Foydalanish shartlari', '/foydalanish-shartlari'], ['Maxfiylik siyosati', '/maxfiylik'], ['Sayt xaritasi', '/kategoriyalar']]} />
           <div>
             <p className="text-[14px] font-bold text-[#0f2438]">Aloqa</p>
-            <a href={CONTACT_PHONE_TEL} className="mt-3 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><Phone className="size-4 text-[#0F766E]" /> {CONTACT_PHONE}</a>
+            {CONTACT_PHONE && <a href={CONTACT_PHONE_TEL} className="mt-3 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><Phone className="size-4 text-[#0F766E]" /> {CONTACT_PHONE}</a>}
             <a href="mailto:info@stomahub.uz" className="mt-2.5 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><Mail className="size-4 text-[#0F766E]" /> info@stomahub.uz</a>
             <p className="mt-2.5 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><MapPin className="size-4 text-[#0F766E]" /> Toshkent, O‘zbekiston</p>
           </div>
