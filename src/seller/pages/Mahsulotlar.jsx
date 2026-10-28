@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, Pencil, Copy, Package, SlidersHorizontal, ArrowUpDown, ClipboardList, Eye, Archive, Boxes, Trash2, EyeOff } from 'lucide-react'
-import { useSellerData, PRODUCT_STATUS, insertRow, updateRow, deleteRow, logActivity } from '../api'
+import { useSellerData, PRODUCT_STATUS, insertRow, updateRow, deleteRow, logActivity, removeMedia } from '../api'
 import { num, som } from '../format'
 import { useMobile } from '../../useMobile'
 import { card, PageHead, Btn, Select, SearchInput, Tabs, Chips, Badge, Checkbox, Pager, usePaged, Menu, Fab, Th, Td, toast } from '../components/ui'
@@ -48,7 +48,7 @@ export function useProductActions() {
       <StockModal product={stock} onClose={() => setStock(null)} />
       <Confirm open={!!confirm} title="Mahsulotni o‘chirish" okText="O‘chirish" onClose={() => setConfirm(null)}
         text={`“${confirm?.name}” butunlay o‘chiriladi. Avvalgi buyurtmalardagi yozuvlar saqlanib qoladi.`}
-        onOk={async () => { const p = confirm; const r = await deleteRow('seller_products', p.id); setConfirm(null); if (r.ok) { logActivity('Mahsulot o‘chirildi', p.name); toast('Mahsulot o‘chirildi'); navigate('/sotuvchi/mahsulotlar') } else toast(r.error) }} />
+        onOk={async () => { const p = confirm; const r = await deleteRow('seller_products', p.id); setConfirm(null); if (r.ok) { removeMedia([...(p.images || []), p.image_url, p.image]); logActivity('Mahsulot o‘chirildi', p.name); toast('Mahsulot o‘chirildi'); navigate('/sotuvchi/mahsulotlar') } else toast(r.error) }} />
     </>
   )
   return { items, modals, setEdit, setStock, copy, setStatus, setConfirm }
