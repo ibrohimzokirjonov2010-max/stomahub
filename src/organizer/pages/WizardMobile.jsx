@@ -6,6 +6,7 @@ import {
 import { ToothIcon } from '../../components/icons'
 import { TEAL_MOBILE, readImage, uzDate } from './wizardBits'
 import { getHub, saveSeminar } from '../../hubStore'
+import MapPicker from '../../components/MapPicker'
 
 const GREEN = TEAL_MOBILE
 
@@ -127,6 +128,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
       start: s.startTime || f.start,
       end: s.endTime || f.end,
       place: s.place || f.place,
+      lat: s.lat ?? f.lat, lng: s.lng ?? f.lng,
       cover: s.cover || s.image || f.cover,
     }))
     if (s.tickets?.length) setTickets(s.tickets)
@@ -149,6 +151,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
       endTime: form.end,
       place: form.place,
       address: form.place,
+      lat: form.lat ?? null, lng: form.lng ?? null,
       tickets,
       speakers,
       template: 'teal',
@@ -208,7 +211,8 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
               </Shell>
             </label>
           </div>
-          <Field label="Zal manzili" icon={MapPin} value={form.place} onChange={(v) => set({ place: v })} chevron />
+          <Field label="Zal manzili" icon={MapPin} value={form.place} onChange={(v) => set({ place: v })} />
+          <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district !== 'Markaz' ? `${geo.district} tumani` : '', geo.street].filter(Boolean).join(', ') } : {}) })} />
           <div className="grid grid-cols-2 gap-2">
             <Field label="Kredit soati" icon={FileText} value={form.hours} onChange={(v) => set({ hours: v.replace(/\D/g, '') })} />
             <Field label="Minimal ishtirokchi soni" icon={Users} value={form.min} onChange={(v) => set({ min: v.replace(/\D/g, '') })} />
