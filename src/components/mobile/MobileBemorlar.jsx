@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Search, X, Filter, MoreVertical, Phone, CalendarDays, Plus, Check, UserRound, CalendarPlus, Trash2 } from 'lucide-react'
-import { CITIES, patchBemor, removeBemor, addBemor, useBemorlar } from '../../bemorData'
+import { Search, X, Filter, MoreVertical, Phone, CalendarDays, Plus, Check, UserRound, CalendarPlus, Trash2, Users, UserPlus, CalendarCheck, Wallet } from 'lucide-react'
+import { useBemorStats } from '../../bemorStats'
+import { CITIES, patchBemor, removeBemor, addBemor, useBemorlar, som } from '../../bemorData'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
@@ -32,6 +33,7 @@ export function tagsOf(p) {
 
 export default function MobileBemorlar() {
   const all = useBemorlar()
+  const stats = useBemorStats()
   const navigate = useNavigate()
   const location = useLocation()
   const [q, setQ] = useState('')
@@ -90,6 +92,15 @@ export default function MobileBemorlar() {
           <input type="search" value={q} onChange={(e) => pick(setQ)(e.target.value)} placeholder="Bemor ismi, telefon yoki ID bo‘yicha qidirish..." className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink outline-none placeholder:text-muted" />
           {q && <button type="button" onClick={() => setQ('')} aria-label="Tozalash" className="text-muted"><X className="size-4" /></button>}
         </label>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {[[Users, 'Jami bemorlar', stats.total, 'bg-[#e6f4f2] text-[#0F766E]'], [UserPlus, 'Bu oy yangi', stats.thisMonth, 'bg-[#e6f8ec] text-[#1c9a52]'], [CalendarCheck, 'Bugungi qabullar', stats.today, 'bg-[#e7f0ff] text-[#3a6fd6]'], [Wallet, 'Qarzdorlar', stats.debtors, 'bg-[#ffe9ee] text-[#e11d48]']].map(([I, l, v, c]) => (
+            <div key={l} className="flex items-center gap-2.5 rounded-2xl border border-[#e8f0ef] bg-white p-3">
+              <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${c}`}><I className="size-5" /></span>
+              <div className="min-w-0"><p className="truncate text-[11px] text-muted">{l}</p><p className="text-[19px] font-extrabold leading-tight text-ink">{v}</p></div>
+            </div>
+          ))}
+        </div>
+        {stats.debtSum > 0 && <p className="mt-1.5 text-right text-[11px] text-[#e11d48]">Jami qarzdorlik: {som(stats.debtSum)}</p>}
       </div>
 
       <div className="mt-3 flex gap-1.5 overflow-x-auto px-3.5 pb-0.5 no-scrollbar">
@@ -107,13 +118,23 @@ export default function MobileBemorlar() {
       <div className="mt-3 flex flex-col gap-2 px-3.5">
         {list.slice(0, shown).map((p) => <PatientCard key={p.id} p={p} onMenu={() => setSheet({ menu: p })} />)}
         {list.length > shown && <button type="button" onClick={() => setShown((n) => n + PAGE)} className="h-11 rounded-xl border border-line bg-white text-[13px] font-semibold text-sea">Yana ko‘rsatish ({list.length - shown})</button>}
-        {!list.length && (
+        {!list.length && (all.length === 0 ? (
+          <div className="flex flex-col items-center rounded-2xl border border-dashed border-[#cfe5e1] bg-white px-6 py-10 text-center">
+            <span className="relative grid size-16 place-items-center rounded-3xl bg-[#e6f4f2] text-[#0F766E]">
+              <Users className="size-8" strokeWidth={1.6} />
+              <span className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full bg-[#0F766E] text-white ring-4 ring-white"><Plus className="size-4" /></span>
+            </span>
+            <p className="mt-4 text-[16px] font-bold text-ink">Hali bemorlar yo‘q</p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">Birinchi bemoringizni qo‘shing — qabullar, to‘lovlar va davolash tarixi shu yerda jamlanadi.</p>
+            <button type="button" onClick={() => navigate('/bemorlar/yangi')} className="mt-4 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-[#0F766E] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_rgb(15_118_110/0.25)]"><Plus className="size-4" /> Yangi bemor qo‘shish</button>
+          </div>
+        ) : (
           <div className="rounded-2xl bg-white px-6 py-10 text-center">
             <p className="text-[14px] font-semibold text-ink">Bemor topilmadi</p>
             <p className="mt-1 text-[12px] text-muted">Qidiruv yoki filtrlarni o‘zgartirib ko‘ring</p>
             <button type="button" onClick={() => { setQ(''); setStatus(''); setF(EMPTY) }} className="mt-3 h-9 rounded-xl bg-sea-50 px-4 text-[12.5px] font-semibold text-sea">Filtrlarni tozalash</button>
           </div>
-        )}
+        ))}
       </div>
 
       <button type="button" onClick={() => navigate('/bemorlar/yangi')} className="fixed bottom-[76px] right-3.5 z-30 flex h-12 items-center gap-2 rounded-full bg-[#0b6d73] pl-4 pr-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgb(11_109_115/0.4)] active:scale-95">

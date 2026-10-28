@@ -15,7 +15,15 @@ export const catName = Object.fromEntries(cats.filter(([k]) => k !== 'all'))
 
 export const people = {}
 
+// Real catalog rows may reference an author key that has no profile here — never crash on it.
+const EDITORIAL = { name: 'StomaHub tahririyati', role: 'Tahririyat', photo: '/icons/icon-192.png' }
+export function authorOf(a) {
+  const p = a && people[a.author]
+  return p ? { ...EDITORIAL, ...p } : EDITORIAL
+}
+
 export function longDate(d) {
+  if (!d || typeof d !== 'string' || !d.includes('.')) return d || ''
   const [dd, mm, yyyy] = d.split('.')
   return `${Number(dd)}-${months[Number(mm) - 1]} ${yyyy}`
 }
@@ -33,6 +41,7 @@ export function getArticle(id) {
 
 export function sectionsOf(a) {
   if (a.sections) return a.sections
+  if (!a) return []
   return [
     { id: 'mazmun', title: 'Asosiy mazmun', body: [a.excerpt, `${a.title} mavzusi bo‘yicha StomaHub tahririyati shifokorlar va klinika rahbarlari fikrini jamlagan.`] },
     { id: 'tafsilot', title: 'Muhim tafsilotlar', body: [`Material ${a.date} holatiga ko‘ra tayyorlangan. Raqamlar va talablar o‘zgarishi mumkin, shu bois rasmiy manbani ham tekshiring.`] },
@@ -46,4 +55,6 @@ export function relatedOf(a) {
   return ids.map(getArticle).filter(Boolean)
 }
 
-export const popular = articles.filter((a) => a.popular).sort((a, b) => a.popular - b.popular)
+// Computed on demand: `articles` is filled from Supabase after module load.
+export const popularOf = () => articles.filter((a) => a.popular).sort((a, b) => a.popular - b.popular)
+export const popular = popularOf()

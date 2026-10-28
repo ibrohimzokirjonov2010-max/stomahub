@@ -640,7 +640,7 @@ function Done({ s, m, reg }) {
         <button type="button" onClick={() => navigate(`/seminarlar/${s.id}`)} aria-label="Orqaga" className="grid size-9 place-items-center rounded-full text-[#0d2a4a] active:bg-white/70"><ChevronLeft className="size-6" /></button>
         <BrandLogo />
         <div className="ml-auto flex items-center gap-1.5">
-          <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-[#0d2a4a]">
+          <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-[#0d2a4a]">
             <ShoppingCart className="size-[21px]" />
             {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
           </button>

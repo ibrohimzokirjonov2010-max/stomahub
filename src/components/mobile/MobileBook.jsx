@@ -60,7 +60,7 @@ function BookView({ id }) {
     goBuyNow(navigate, { id: cartId, name: `${b.title} (${fmt === 'pdf' ? 'PDF' : 'bosma'})`, type: 'Kitob', price, image: b.cover }, 1, 'market')
   }
   const toCart = () => {
-    if (inCart) return navigate('/buyurtma', { state: { from: 'market' } })
+    if (inCart) return navigate('/savatcha', { state: { from: 'market' } })
     add({ id: cartId, name: `${b.title} (${fmt === 'pdf' ? 'PDF' : 'bosma'})`, type: 'Kitob', price, image: b.cover })
     setToast('Savatga qo‘shildi')
   }

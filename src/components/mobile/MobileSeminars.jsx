@@ -52,7 +52,7 @@ export function SeminarTopBar({ onCalendar, onBell }) {
       <BrandLogo />
       <div className="flex items-center gap-2">
         <button type="button" onClick={onCalendar} aria-label="Mening seminarlarim" className={btn}><CalendarDays className="size-[19px]" /></button>
-        <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} aria-label="Savat" className={btn}>
+        <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className={btn}>
           <ShoppingCart className="size-[19px]" />
           {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
         </button>
