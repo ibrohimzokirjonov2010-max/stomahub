@@ -109,6 +109,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     hours: '',
     min: '',
     bring: '',
+    about: '',
     cover: '',
   })
   const [ticket, setTicket] = useState({ name: '', price: '', seats: '', note: '' })
@@ -130,6 +131,10 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
       place: s.place || f.place,
       lat: s.lat ?? f.lat, lng: s.lng ?? f.lng,
       cover: s.cover || s.image || f.cover,
+      about: s.about || s.form?.about || f.about,
+      hours: String(s.form?.hours || f.hours || ''),
+      min: String(s.form?.min || f.min || ''),
+      bring: s.form?.bring || f.bring,
     }))
     if (s.tickets?.length) setTickets(s.tickets)
     if (s.speakers?.length) setSpeakers(s.speakers)
@@ -138,7 +143,10 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   const publish = (asDraft) => {
     const res = saveSeminar({
       name: form.name,
-      about: form.bring || form.name,
+      about: form.about,
+      hours: form.hours,
+      min: form.min,
+      bring: form.bring,
       topic: form.topic,
       format: 'Offline (joyida)',
       category: 'Tibbiy amaliy seminar',
@@ -204,13 +212,24 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
               </Shell>
             </label>
             <label className="block">
-              <Lab>Vaqt</Lab>
+              <Lab>Boshlanish vaqti</Lab>
               <Shell icon={Clock} chevron>
-                <span className="whitespace-nowrap text-[13px]">{form.start} – {form.end}</span>
-                <input type="time" value={form.start} onChange={(e) => set({ start: e.target.value })} className="absolute inset-0 opacity-0" />
+                <input type="time" aria-label="Boshlanish vaqti" value={form.start} onChange={(e) => set({ start: e.target.value })} className="w-full bg-transparent text-[13px] outline-none" />
               </Shell>
             </label>
           </div>
+          <label className="block">
+            <Lab>Tugash vaqti</Lab>
+            <Shell icon={Clock} chevron>
+              <input type="time" aria-label="Tugash vaqti" value={form.end} onChange={(e) => set({ end: e.target.value })} className="w-full bg-transparent text-[13px] outline-none" />
+            </Shell>
+          </label>
+          <label className="block">
+            <Lab>Seminar haqida (qisqa tavsif)</Lab>
+            <Shell icon={FileText} tall>
+              <textarea aria-label="Seminar haqida" value={form.about} onChange={(e) => set({ about: e.target.value })} rows={3} placeholder="Kamida 10 belgi" className="w-full resize-none bg-transparent text-[13.5px] leading-snug outline-none" />
+            </Shell>
+          </label>
           <Field label="Zal manzili" icon={MapPin} value={form.place} onChange={(v) => set({ place: v })} />
           <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) })} />
           <div className="grid grid-cols-2 gap-2">

@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   Award, Calendar, Check, ChevronDown, ChevronRight, ClipboardList, Clock, Coins, Copy,
   CreditCard, FileText, House, LayoutGrid, MapPin, MessageSquare, MoreVertical, Pencil,
-  Plus, Ticket, Trash2, Users, Wallet, X,
+  Eye, EyeOff, Plus, Ticket, Trash2, Users, Wallet, X,
 } from 'lucide-react'
 import { num, som } from '../data'
 import { useOrg } from '../Shell'
-import { cancelSeminar, duplicateSeminar, useHub } from '../../hubStore'
+import { cancelSeminar, deleteSeminar, duplicateSeminar, setSeminarVisible, useHub } from '../../hubStore'
 
 const REASONS = ['Sana o‘zgardi', 'Ma’ruzachi kelmaydi', 'Joy topilmadi', 'Ishtirokchilar yetarli emas', 'Boshqa sabab']
 
@@ -39,8 +39,9 @@ function modelFor(id, seminars = []) {
     place: sem.place || sem.city,
     mobilePlace: sem.place || sem.city,
     city: 'O‘zbekiston',
-    venueLines: [sem.city, ''],
-    mobileVenue: [sem.city, ''],
+    published: sem.published !== false,
+    venueLines: [sem.place || sem.city, sem.place && sem.city && !String(sem.place).includes(sem.city) ? sem.city : ''],
+    mobileVenue: [sem.place || sem.city, sem.place && sem.city && !String(sem.place).includes(sem.city) ? sem.city : ''],
     image: sem.cover || sem.image,
     venueImage: sem.placeImg || sem.image,
     sold: sem.sold,
@@ -50,9 +51,9 @@ function modelFor(id, seminars = []) {
     checked: sem.checked || 0,
     hours: Number(sem.form?.hours) || 0,
     minPeople: Number(sem.form?.min) || 0,
-    description: sem.about || `${sem.title} — ${sem.days}. ${sem.speaker} ishtirokida.`,
+    description: sem.about || `${sem.title} — ${sem.days}.${sem.speaker && sem.speaker !== 'Ma’ruzachi' ? ` ${sem.speaker} ishtirokida.` : ''}`,
     mobileDescription: sem.about || `${sem.title}. ${sem.days}.`,
-    bring: ['Noutbuk', 'Shaxsiy asboblar', 'Qulay kiyim'],
+    bring: String(sem.form?.bring || '').split(/[\n,;]+/).map((x) => x.trim()).filter(Boolean),
     refundPeople: sem.sold,
     refundSum: sem.revenue || 0,
     speakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '' }]).map((sp) => ({
@@ -180,7 +181,20 @@ export default function Detail() {
   const pct = Math.round((m.sold / m.seats) * 100)
   const left = m.seats - m.sold
   const checkPct = m.sold ? Math.round((m.checked / m.sold) * 100) : 0
-  const actions = { edit, duplicate, openCancel, done }
+  const toggleVisible = () => {
+    setMenu(false)
+    setSeminarVisible(m.id, !m.published)
+    notify?.(m.published ? 'Seminar yashirildi — katalogda ko‘rinmaydi' : 'Seminar yana katalogda ko‘rinadi')
+  }
+  const remove = () => {
+    setMenu(false)
+    if (!window.confirm('Seminar butunlay o‘chirilsinmi? Bu amalni qaytarib bo‘lmaydi.')) return
+    const res = deleteSeminar(m.id)
+    if (!res.ok) { notify?.(res.error); return }
+    notify?.('Seminar o‘chirildi')
+    navigate('/tashkilotchi/seminarlar')
+  }
+  const actions = { edit, duplicate, openCancel, toggleVisible, remove, published: m.published, done }
 
   return (
     <div>
@@ -215,7 +229,9 @@ function ActionMenu({ open, actions }) {
     <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-[196px] overflow-hidden rounded-xl border border-[#e7eeed] bg-white py-1 shadow-[0_10px_28px_rgb(16_40_50/0.14)]">
       <button type="button" className={item} onClick={actions.edit}><Pencil className="size-4 text-[#5e787e]" /> Tahrirlash</button>
       <button type="button" className={item} onClick={actions.duplicate}><Copy className="size-4 text-[#5e787e]" /> Nusxalash</button>
-      <button type="button" className={cx(item, 'text-[#e11d48]')} onClick={actions.openCancel}><Trash2 className="size-4" /> Bekor qilish</button>
+      <button type="button" className={item} onClick={actions.toggleVisible}>{actions.published ? <EyeOff className="size-4 text-[#5e787e]" /> : <Eye className="size-4 text-[#5e787e]" />} {actions.published ? 'Yashirish' : 'Ko‘rsatish'}</button>
+      <button type="button" className={cx(item, 'text-[#e11d48]')} onClick={actions.openCancel}><X className="size-4" /> Bekor qilish</button>
+      <button type="button" className={cx(item, 'text-[#e11d48]')} onClick={actions.remove}><Trash2 className="size-4" /> O‘chirish</button>
     </div>
   )
 }
@@ -383,6 +399,7 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
               <Panel>
                 <Heading icon={ClipboardList}>Olib kelish kerak narsalar</Heading>
                 <ul className="space-y-2.5">
+                  {!m.bring.length && <li className="text-[13px] text-[#8aa0a6]">Ko‘rsatilmagan</li>}
                   {m.bring.map((b) => (
                     <li key={b} className="flex items-start gap-2 text-[13.5px] text-[#3e5560]">
                       <Check className="mt-0.5 size-4 shrink-0 text-[#22a34a]" strokeWidth={2.6} />
@@ -473,6 +490,12 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
             <Pencil className="size-3.5" /> Tahrirlash
           </button>
         </div>
+      </div>
+      <div className="mt-2 grid grid-cols-4 gap-1.5 text-[11.5px] font-semibold">
+        <button type="button" onClick={actions.duplicate} className="flex h-10 flex-col items-center justify-center rounded-xl border border-[#e6eeec] bg-white text-[#243e4a]"><Copy className="size-3.5" />Nusxalash</button>
+        <button type="button" onClick={actions.toggleVisible} className="flex h-10 flex-col items-center justify-center rounded-xl border border-[#e6eeec] bg-white text-[#243e4a]">{actions.published ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}{actions.published ? 'Yashirish' : 'Ko‘rsatish'}</button>
+        <button type="button" onClick={actions.openCancel} className="flex h-10 flex-col items-center justify-center rounded-xl border border-[#fbd5df] bg-white text-[#e11d48]"><X className="size-3.5" />Bekor qilish</button>
+        <button type="button" onClick={actions.remove} className="flex h-10 flex-col items-center justify-center rounded-xl border border-[#fbd5df] bg-white text-[#e11d48]"><Trash2 className="size-3.5" />O‘chirish</button>
       </div>
 
       <div className="mt-3">

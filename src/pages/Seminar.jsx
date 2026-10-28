@@ -222,6 +222,7 @@ export default function Seminar() {
           ))}
         </div>
 
+        {!d.noSpeaker && (
         <section className="sem-speaker rounded-2xl bg-white p-3 shadow-card">
           <div className="relative overflow-hidden rounded-xl bg-[#eef6f8]">
             <img src={v.speaker.avatar} alt="" className="h-full min-h-[150px] w-full object-cover" />
@@ -242,6 +243,7 @@ export default function Seminar() {
             <button type="button" onClick={() => setProfile(true)} className="inline-flex h-9 items-center justify-center gap-1 self-end rounded-xl border border-sea px-3 text-[12px] font-semibold text-sea">Batafsil profil <ArrowRight className="size-3.5" /></button>
           </div>
         </section>
+        )}
 
         <div className="sticky top-[46px] z-10 flex gap-1 overflow-x-auto rounded-xl bg-white px-1 shadow-card no-scrollbar">
           {[
@@ -328,10 +330,10 @@ export default function Seminar() {
             <span className="rounded-lg bg-[#fde8e8] px-2.5 py-1 text-[12px] font-bold text-[#dc2626]">{cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'}</span>
             <span className="rounded-lg border border-[#fbd5d5] px-2.5 py-1 text-[12px] font-semibold text-[#dc2626]">{left} ta o‘rin qoldi</span>
           </div>
-          <p className="mt-3 text-[12px] text-muted line-through">{som(v.oldPrice)}</p>
+          {v.oldPrice > v.price && <p className="mt-3 text-[12px] text-muted line-through">{som(v.oldPrice)}</p>}
           <div className="flex items-center justify-between gap-2">
             <b className="text-[24px] leading-tight">{som(v.price)}</b>
-            <span className="rounded-md bg-[#fde8e8] px-1.5 py-0.5 text-[12px] font-bold text-[#dc2626]">{v.off}</span>
+            {v.off && <span className="rounded-md bg-[#fde8e8] px-1.5 py-0.5 text-[12px] font-bold text-[#dc2626]">{v.off}</span>}
           </div>
           <ul className="mt-3 space-y-1.5">
             {v.includes.map((t) => <li key={t} className="flex items-center gap-2 text-[12.5px] text-ink"><Check className="size-4 text-sea" /> {t}</li>)}

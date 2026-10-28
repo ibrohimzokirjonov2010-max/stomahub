@@ -43,6 +43,7 @@ const MSTATUS = {
   qoralama: { label: 'Qoralama', dot: '#b0b7c3', text: '#98a0ae' },
   otgan: { label: 'O‘tgan', dot: '#b0b7c3', text: '#98a0ae' },
   bekor: { label: 'Bekor qilingan', dot: '#e11d48', text: '#e11d48' },
+  yashirin: { label: 'Yashirin', dot: '#e8a317', text: '#b7791f' },
 }
 
 export default function Seminars() {
@@ -241,10 +242,12 @@ function Banner({ s, className = 'h-[76px] w-[248px]' }) {
   )
 }
 
+const realSpeaker = (n) => !!n && n.trim() && n.trim() !== 'Ma’ruzachi'
+
 function Meta({ s }) {
   return (
     <p className="mt-1 flex items-center gap-x-2 overflow-hidden whitespace-nowrap text-[11.5px]" style={{ color: MUTED }}>
-      <span className="inline-flex items-center gap-1"><User className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.speaker}</span>
+      {realSpeaker(s.speaker) && <span className="inline-flex items-center gap-1"><User className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.speaker}</span>}
       <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.date}</span>
       <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.city}</span>
     </p>
@@ -375,6 +378,7 @@ function Mobile() {
     sold: s.sold,
     seats: s.seats,
     status: s.status === 'qoralama' ? 'qoralama' : s.status === 'yakunlangan' ? 'otgan' : s.status === 'bekor' ? 'bekor' : 'faol',
+    hidden: s.published === false && s.status !== 'qoralama',
     image: s.image,
     pos: 'center',
   }))
@@ -407,7 +411,7 @@ function Mobile() {
 
       <div className="mt-3 space-y-3 pb-24">
         {rows.map((s) => {
-          const st = MSTATUS[s.status]
+          const st = s.hidden && s.status === 'faol' ? MSTATUS.yashirin : MSTATUS[s.status]
           const pct = s.seats ? Math.round((s.sold / s.seats) * 100) : 0
           return (
             <article key={s.id} className="relative rounded-[18px] border border-[#eef1f4] bg-white px-3 py-3 shadow-[0_6px_18px_rgb(16_36_58/0.05)]">
@@ -437,6 +441,7 @@ function Mobile() {
               {menu === s.id && (
                 <div className="absolute right-3 top-9 z-30 w-40 overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
                   <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => navigate(`/tashkilotchi/seminarlar/${s.id}`)}>Tafsilotlar</button>
+                  <button type="button" className="block w-full px-3 py-2 text-left text-[13px]" onClick={() => navigate(`/tashkilotchi/seminarlar/yangi?tahrir=${s.id}`)}>Tahrirlash</button>
                 </div>
               )}
               <button type="button" className="absolute inset-0 z-10 rounded-[18px]" aria-label={s.title} onClick={() => navigate(`/tashkilotchi/seminarlar/${s.id}`)} />
