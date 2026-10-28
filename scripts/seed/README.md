@@ -21,3 +21,7 @@ Books go to `catalog_items(kind='book')` with `price: null` → shown as "Narxi 
 - Who can open the full PDF: the user must have a `book_access(user_id, book_id)` row, or be the book owner or an admin. They get a 10-minute signed URL. To grant access after a sale (as the owner, admin or service role):
   `insert into book_access (user_id, book_id, source) values ('<buyer uuid>', 'terapevtik-stomatologiya-2004', 'purchase');`
 - Source files are taken from `PDF_DIR` (default `/workspace/designs/marketplace-products`).
+
+## Existing seller account (never downgraded)
+If `STOMAHUB_SELLER_EMAIL` already belongs to a user, the seed sets only `shop_name='StomaHub'` and `seller_status='approved'`. The role stays `seller`/`admin`; customer/organizer is promoted to `seller`. The personal name is kept (it is set to "StomaHub" only for a brand-new or nameless profile). The dry run prints the planned change.
+An `admin` can open the seller cabinet (SellerGate admits admin). The seller RPCs need `0023_admin_can_sell.sql` (`is_seller()` accepts admin); apply it before seeding into an admin account.

@@ -24,6 +24,14 @@ const PDF_DIR = process.env.PDF_DIR || '/workspace/designs/marketplace-products'
 const PDF_BUCKET = 'book-files'
 const BUCKET = 'catalog'
 const CATALOG_OPTS = { public: true, fileSizeLimit: '5MB', allowedMimeTypes: ['image/webp', 'image/jpeg', 'image/png'] }
+// roles that already sell (or rank above seller) and must never be changed by the seed
+const KEEP_ROLES = new Set(['seller', 'admin'])
+export function sellerProfilePatch(prof, { createdNow, id, seller }) {
+  if (!prof) return { op: 'insert', row: { id, ...seller } }
+  const keep = KEEP_ROLES.has(prof.role)
+  const row = { shop_name: seller.shop_name, seller_status: seller.seller_status, ...(keep ? {} : { role: 'seller' }), ...(createdNow || !prof.name ? { name: seller.name } : {}) }
+  return { op: 'update', row, note: `role ${prof.role}${keep ? ' kept' : ' -> seller'}${row.name ? '' : ', name kept'}` }
+}
 const STOCK = 10 // starting stock, editable later in the seller cabinet
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STOMAHUB_SELLER_EMAIL } = process.env
@@ -112,6 +120,7 @@ async function main() {
     sellerId = data.users.find((u) => u.email?.toLowerCase() === STOMAHUB_SELLER_EMAIL.toLowerCase())?.id
     if (data.users.length < 1000) break
   }
+  const createdNow = !sellerId
   if (!sellerId) {
     log(`create auth user ${STOMAHUB_SELLER_EMAIL} (no password; admin sets it via reset link)`)
     if (APPLY) {
@@ -120,8 +129,16 @@ async function main() {
       sellerId = data.user.id
     } else sellerId = '<new-seller-uuid>'
   }
-  log(`seller profile ${sellerId}:`, seed.seller)
-  if (APPLY) { const { error } = await sb.from('profiles').upsert({ id: sellerId, ...seed.seller }, { onConflict: 'id' }); if (error) throw error }
+  // Never downgrade or rename an existing account: keep seller/admin (or any role above
+  // seller) as is, only promote customer/organizer to seller, and touch only shop fields.
+  const { data: prof, error: profErr } = createdNow && !APPLY ? { data: null } : await sb.from('profiles').select('id, role, name').eq('id', sellerId).maybeSingle()
+  if (profErr) throw profErr
+  const profPatch = sellerProfilePatch(prof, { createdNow, id: sellerId, seller: seed.seller })
+  log(`seller profile ${sellerId}: ${profPatch.op}`, profPatch.row, profPatch.note || '')
+  if (APPLY) {
+    const q = profPatch.op === 'insert' ? sb.from('profiles').insert(profPatch.row) : sb.from('profiles').update(profPatch.row).eq('id', sellerId)
+    const { error } = await q; if (error) throw error
+  }
 
   // 3. products
   for (const p of seed.products) {
