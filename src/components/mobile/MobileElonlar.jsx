@@ -221,7 +221,7 @@ function FilterSheet({ initial, count, savedCount, onClose, onApply }) {
 const CAT_IMG = { uskuna: '/images/jihozlar/fengdan.jpg', material: '/images/market/p3.jpg', klinika: '/images/jihozlar/fengdan-room.jpg', ish: '/images/ishlar/ish-hall.jpg', asbob: '/images/market/p5.jpg' }
 
 export function PostAdSheet({ onClose, onDone }) {
-  const [f, setF] = useState({ deal: 'sale', cat: 'material', title: '', sub: '', price: '', priceMax: '', city: 'Toshkent', cond: 'Yangi', phone: '+998 ' })
+  const [f, setF] = useState({ deal: 'sale', cat: 'material', title: '', sub: '', price: '', priceMax: '', city: 'Toshkent', cond: 'Yangi', phone: '+998 ', expires: '' })
   const [photos, setPhotos] = useState([])
   const [tried, setTried] = useState(false)
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
@@ -231,6 +231,7 @@ export function PostAdSheet({ onClose, onDone }) {
     title: f.title.trim().length < 3,
     price: !num(f.price) || (isJob && num(f.priceMax) < num(f.price)),
     phone: f.phone.replace(/\D/g, '').length !== 12,
+    expires: Boolean(f.expires) && f.expires < new Date().toISOString().slice(0, 10),
   }
   const ok = !Object.values(errs).some(Boolean)
   const field = (bad) => `h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && bad ? 'border-sale' : 'border-line'}`
@@ -246,7 +247,7 @@ export function PostAdSheet({ onClose, onDone }) {
     onDone({
       id: `mening-${Date.now()}`, deal: f.deal, cat: isJob ? 'ish' : f.cat, title: f.title.trim(), sub: f.sub.trim() || 'Yangi e’lon',
       price: num(f.price), priceMax: isJob ? num(f.priceMax) : undefined, city: f.city, date: `${d.getDate()} ${['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'][d.getMonth()]} ${d.getFullYear()}`,
-      cond: isJob ? 'To‘liq stavka' : f.cond, original: false, views: 0,
+      cond: isJob ? 'To‘liq stavka' : f.cond, expires: f.expires || undefined, original: false, views: 0,
       images: photos.length ? photos : [CAT_IMG[isJob ? 'ish' : f.cat]],
       specs: [['cat', 'Turi', dealName[f.deal]], ['place', 'Shahar', f.city], ['cond', isJob ? 'Bandlik' : 'Holati', isJob ? 'To‘liq stavka' : f.cond]],
       about: f.sub.trim() || 'Batafsil ma’lumot uchun qo‘ng‘iroq qiling.', features: [],
@@ -254,7 +255,7 @@ export function PostAdSheet({ onClose, onDone }) {
     })
   }
   return (
-    <BottomSheet title="E’lon joylash" onClose={onClose} footer={<button type="button" onClick={submit} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white">E’lonni joylash</button>}>
+    <BottomSheet centered title="E’lon joylash" onClose={onClose} footer={<button type="button" onClick={submit} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white">E’lonni joylash</button>}>
       <div className="mt-2 grid grid-cols-3 gap-1.5">
         {DEALS.map(([k, l]) => <button key={k} type="button" aria-pressed={f.deal === k} onClick={() => setF((s) => ({ ...s, deal: k }))} className={`h-10 rounded-xl text-[12.5px] font-semibold ${f.deal === k ? 'bg-[#0b8a95] text-white' : 'border border-line text-ink'}`}>{l}</button>)}
       </div>
@@ -278,18 +279,28 @@ export function PostAdSheet({ onClose, onDone }) {
         )}
       </div>
       <div className="mt-2 flex flex-col gap-2 pb-2">
-        <input value={f.title} onChange={set('title')} placeholder={isJob ? 'Lavozim (masalan, Stomatolog kerak)' : 'Sarlavha (masalan, Kompozit A2)'} className={field(errs.title)} />
-        <textarea value={f.sub} onChange={set('sub')} rows={2} placeholder="Qisqacha tavsif" className="w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] outline-none focus:border-sea" />
+        <AdLabel text={isJob ? 'Lavozim' : 'Sarlavha'} required><input value={f.title} onChange={set('title')} placeholder={isJob ? 'Masalan, Stomatolog kerak' : 'Masalan, Kompozit A2'} className={field(errs.title)} /></AdLabel>
+        <AdLabel text="Qisqacha tavsif"><textarea value={f.sub} onChange={set('sub')} rows={2} placeholder="Qisqacha tavsif" className="w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] outline-none focus:border-sea" /></AdLabel>
         <div className="grid grid-cols-2 gap-2">
-          <input value={f.price} onChange={set('price')} inputMode="numeric" placeholder={isJob ? 'Maosh dan' : f.deal === 'rent' ? 'Narx / oy' : 'Narx, so‘m'} className={field(errs.price)} />
+          <AdLabel text={isJob ? 'Maosh (dan)' : f.deal === 'rent' ? 'Narx / oy, so‘m' : 'Narx, so‘m'} required><input value={f.price} onChange={set('price')} inputMode="numeric" placeholder={isJob ? 'Maosh dan' : f.deal === 'rent' ? 'Narx / oy' : 'Narx, so‘m'} className={field(errs.price)} /></AdLabel>
           {isJob
-            ? <input value={f.priceMax} onChange={set('priceMax')} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.price)} />
-            : <select value={f.cond} onChange={set('cond')} aria-label="Holati" className={field(false)}><option>Yangi</option><option>Ishlatilgan</option></select>}
-          <select value={f.city} onChange={set('city')} aria-label="Shahar" className={field(false)}>{AD_CITIES.map((c) => <option key={c}>{c}</option>)}</select>
-          <PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" />
+            ? <AdLabel text="Maosh (gacha)" required><input value={f.priceMax} onChange={set('priceMax')} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.price)} /></AdLabel>
+            : <AdLabel text="Holati"><select value={f.cond} onChange={set('cond')} aria-label="Holati" className={field(false)}><option>Yangi</option><option>Ishlatilgan</option></select></AdLabel>}
+          <AdLabel text="Shahar"><select value={f.city} onChange={set('city')} aria-label="Shahar" className={field(false)}>{AD_CITIES.map((c) => <option key={c}>{c}</option>)}</select></AdLabel>
+          <AdLabel text="Telefon" required><PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" /></AdLabel>
         </div>
+        <AdLabel text="E’lon amal qilish muddati (ixtiyoriy)"><input type="date" value={f.expires} min={new Date().toISOString().slice(0, 10)} onChange={set('expires')} className={field(errs.expires)} /></AdLabel>
         {tried && !ok && <p className="text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
       </div>
     </BottomSheet>
+  )
+}
+
+function AdLabel({ text, required, children }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1 block text-[12px] font-semibold text-ink-2">{text}{required && <span className="text-sale"> *</span>}</span>
+      {children}
+    </label>
   )
 }

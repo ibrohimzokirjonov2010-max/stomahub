@@ -4,10 +4,10 @@ import { bindBlob, touchBlob } from './recordSync'
 
 const photo = (src) => src
 
-export const CATEGORIES = ['Restavratsion material', 'Anesteziya', 'Implantlar', 'Endodontiya', 'Asboblar', 'Sarf materiallar', 'Dezinfeksiya', 'Profilaktika', 'Bondlar', 'Uskunalar']
+export const BASE_CATEGORIES = ['Restavratsion material', 'Anesteziya', 'Implantlar', 'Endodontiya', 'Asboblar', 'Sarf materiallar', 'Dezinfeksiya', 'Profilaktika', 'Bondlar', 'Uskunalar']
 export const UNITS = ['dona', 'quti', 'ml', 'g', 'kartrij', 'to‘plam', 'flakon']
-export const SUPPLIERS = ['3M', 'Inibsa', 'NeoBiotech', 'Meta Biomed', 'Osstem', 'Cerkamed', 'Unigloves', 'Euronda', 'Septodont', 'Ivoclar', 'Kerr', 'Dentsply', 'StomaHub']
-export const PLACES = ['Asosiy ombor', 'Shkaf A-1', 'Shkaf A-2', 'Xolodilnik', 'Steril zona']
+export const BASE_SUPPLIERS = ['3M', 'Inibsa', 'NeoBiotech', 'Meta Biomed', 'Osstem', 'Cerkamed', 'Unigloves', 'Euronda', 'Septodont', 'Ivoclar', 'Kerr', 'Dentsply', 'StomaHub']
+export const PLACES = ['Asosiy ombor', 'Shkaf A-1', 'Shkaf A-2', 'Muzlatkich', 'Steril zona']
 
 export const STATUSES = {
   kam: { label: 'Kam zahira', bg: '#fde8e8', color: '#dc2626' },
@@ -116,4 +116,53 @@ export function receiveStock(lines) {
   })
   rows = next
   emit()
+}
+
+// Per-user ombor preferences (own suppliers + own categories), stored in user_blobs kind 'ombor_prefs'.
+let prefs = { suppliers: [], categories: [] }
+const prefListeners = new Set()
+bindBlob('ombor_prefs', {
+  seed: { suppliers: [], categories: [] },
+  get: () => prefs,
+  empty: () => ({ suppliers: [], categories: [] }),
+  set: (next) => {
+    prefs = next && typeof next === 'object' ? { suppliers: Array.isArray(next.suppliers) ? next.suppliers : [], categories: Array.isArray(next.categories) ? next.categories : [] } : prefs
+    prefListeners.forEach((fn) => fn())
+  },
+})
+export function useOmborPrefs() {
+  return useSyncExternalStore((fn) => { prefListeners.add(fn); return () => prefListeners.delete(fn) }, () => prefs)
+}
+const uniq = (list) => [...new Set(list.map((x) => String(x || '').trim()).filter(Boolean))]
+export const suppliersOf = (p = prefs) => uniq([...BASE_SUPPLIERS, ...p.suppliers])
+export const categoriesOf = (p = prefs) => uniq([...BASE_CATEGORIES, ...p.categories])
+// Back-compat static exports (base lists); UI should prefer suppliersOf/categoriesOf.
+export const SUPPLIERS = BASE_SUPPLIERS
+export const CATEGORIES = BASE_CATEGORIES
+export function patchOmborPrefs(fn) {
+  const next = fn(prefs)
+  prefs = { suppliers: uniq(next.suppliers || []), categories: uniq(next.categories || []) }
+  prefListeners.forEach((l) => l())
+  touchBlob('ombor_prefs')
+}
+export const addSupplier = (name) => patchOmborPrefs((p) => ({ ...p, suppliers: [...p.suppliers, name] }))
+export const addCategory = (name) => patchOmborPrefs((p) => ({ ...p, categories: [...p.categories, name] }))
+export const removeCategory = (name) => patchOmborPrefs((p) => ({ ...p, categories: p.categories.filter((c) => c !== name) }))
+
+/** '2026-12-31' | '31.12.2026' -> days left from todayIso, or null */
+export function daysLeft(expiry, todayIso) {
+  const s = String(expiry || '')
+  const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})/) || null
+  const iso = m ? `${m[3]}-${m[2]}-${m[1]}` : s.slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null
+  return Math.round((Date.parse(`${iso}T00:00:00Z`) - Date.parse(`${todayIso}T00:00:00Z`)) / 86400000)
+}
+
+/** Real KPIs from the user's own stock rows. */
+export function omborStats(list) {
+  return {
+    count: list.length,
+    value: list.reduce((s, r) => s + (Number(r.price) || 0) * (Number(r.qty) || 0), 0),
+    low: list.filter((r) => (Number(r.qty) || 0) < (Number(r.min) || 0) || r.status === 'kam').length,
+  }
 }

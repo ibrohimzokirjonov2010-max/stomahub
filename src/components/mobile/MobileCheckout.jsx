@@ -16,6 +16,7 @@ import MapPicker, { MapPreview, withGeo } from '../MapPicker'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
 import { PROMOS } from './MobileCart'
+import { DEFAULT_PAYMENT, SHOW_DEMO_PAYMENTS, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
 import { profileStore, useProfile } from '../../profileStore'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
@@ -38,13 +39,15 @@ const PINS = [
   { x: 250, y: 214, district: 'Sergeli', address: 'Sergeli tumani, Yangi Sergeli ko‘chasi, 3-uy' },
 ]
 const SHOP = 'StomaHub do‘koni — Yakkasaroy, Shota Rustaveli ko‘chasi, 15'
-export const METHODS = {
+export const ALL_METHODS = {
   uzcard: ['UZCARD', 'Bank kartasi (demo)'],
   humo: ['HUMO', 'Bank kartasi (demo)'],
   click: ['Click', 'Click ilovasi (demo)'],
   payme: ['Payme', 'Payme ilovasi (demo)'],
   cash: ['Naqd', 'Olganda naqd to‘lash'],
 }
+// Demo card/Click/Payme are hidden until real payments are live (VITE_SHOW_DEMO_PAYMENTS=1 shows them).
+export const METHODS = SHOW_DEMO_PAYMENTS ? ALL_METHODS : { cash: ALL_METHODS.cash }
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
 const ORDER_KEY = 'stomahub-last-order'
 
@@ -67,9 +70,13 @@ function readOrder() {
 }
 
 export default function MobileCheckout() {
-  const { items, setItems, cartReady } = useCart()
+  const cart = useCart()
   const navigate = useNavigate()
   const loc = useLocation()
+  // "Hozir xarid qilish" → only that product; the cart stays untouched.
+  const [buyNow] = useState(() => readBuyNow(loc.state))
+  const items = buyNow ? [buyNow] : cart.items
+  const cartReady = buyNow ? true : cart.cartReady
   const [placed, setPlaced] = useState(() => (loc.state?.done ? readOrder() : null))
   const [step, setStep] = useState(1)
   const profile = useProfile()
@@ -98,7 +105,10 @@ export default function MobileCheckout() {
   const [allSaved, setAllSaved] = useState(false)
   const [showItems, setShowItems] = useState(false)
   const [tried, setTried] = useState(false)
-  const [method, setMethod] = useState('uzcard')
+  const [method, setMethod] = useState(DEFAULT_PAYMENT)
+  const [delivery, setDelivery] = useState(defaultDelivery)
+  const [invoice, setInvoice] = useState(false)
+  const [inv, setInv] = useState({ stir: '', company: '' })
   const [savedCard, setSavedCard] = useState(() => profile.cards.find((c) => c.id === profile.defaultPay)?.id || profile.cards[0]?.id || '')
   const [months, setMonths] = useState(6)
   const [cardNo, setCardNo] = useState({ num: '', exp: '' })
@@ -131,7 +141,9 @@ export default function MobileCheckout() {
     name: form.name.trim().length < 3 && 'Ism va familiyani kiriting',
     phone: phone.length !== 9 && PHONE_INCOMPLETE_MSG,
     address: mode === 'courier' && form.address.trim().length < 5 && 'Aniq manzilni kiriting',
+    when: (!delivery.date || delivery.date < todayISO() || !windowsFor(delivery.date).includes(delivery.slot)) && 'Sana va vaqt oralig‘ini tanlang',
   }
+  const invErr = invoiceError(invoice, inv)
   const cardDigits = cardNo.num.replace(/\D/g, '')
   const [mm, yy] = cardNo.exp.split('/').map(Number)
   const now = new Date()
@@ -164,7 +176,7 @@ export default function MobileCheckout() {
   }
   const next2 = () => {
     setPayTried(true)
-    if (cardErr.num || cardErr.exp) return
+    if (cardErr.num || cardErr.exp || invErr) return
     setStep(3)
   }
   const applyPromo = () => {
@@ -185,7 +197,7 @@ export default function MobileCheckout() {
       }
       const res = await createOrder({
         items, name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
-        address: withGeo(form.address, mode === 'pickup' ? null : form), note: form.note || '', pickup: mode === 'pickup',
+        address: withGeo(form.address, mode === 'pickup' ? null : form), note: orderNote(form.note, { date: delivery.date, slot: delivery.slot, pickup: mode === 'pickup', invoice, inv }), pickup: mode === 'pickup',
         paymentMethod: method, paymentRef,
       })
       const at = new Date()
@@ -194,11 +206,12 @@ export default function MobileCheckout() {
         at: `${at.getDate()} ${MON[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
         items: items.map((it) => ({ ...it })),
         goods, fee: 0, discount: 0, total: goods, method, months: 0, monthly: 0, paymentRef, demo: isDemoPayments(),
-        mode, eta: ship.range, days: ship.days, name: form.name.trim(), phone,
+        mode, eta: `${fmtDeliveryDate(delivery.date)}, ${delivery.slot}`, days: ship.days, invoice: invoice ? { ...inv } : null, name: form.name.trim(), phone,
         address: mode === 'pickup' ? SHOP : `${form.city}, ${form.address}`,
       }
       sessionStorage.setItem(ORDER_KEY, JSON.stringify(order))
-      setItems([])
+      if (buyNow) endBuyNow()
+      else cart.setItems([])
       profileStore.refreshOrders?.()
       setPlaced(order)
       navigate('.', { replace: true, state: { done: true } })
@@ -331,6 +344,8 @@ export default function MobileCheckout() {
               </div>
             </section>
 
+            <WhenPicker delivery={delivery} setDelivery={setDelivery} pickup={mode === 'pickup'} err={tried && errors.when} />
+
             <section className={`${card} mt-3 p-3`}>
               <Head icon={Truck} title="Yetkazish usuli" text="Sizga qulay usulni tanlang" />
               <div className="mt-3 space-y-2" role="radiogroup" aria-label="Yetkazish usuli">
@@ -387,7 +402,24 @@ export default function MobileCheckout() {
                   <p className="mt-2 text-[11.5px] text-ink-2">Oyiga <b className="text-[#c26a06]">{som(monthly)}</b> · {months} oy, birinchi to‘lov yetkazilganda</p>
                 </div>
               )}
-              {method === 'cash' && <p className="mt-2.5 rounded-xl bg-[#eef8f6] px-3 py-2 text-[11.5px] text-ink-2">Kuryerga naqd yoki terminal orqali karta bilan to‘laysiz.</p>}
+              {method === 'cash' && <p className="mt-2.5 rounded-xl bg-[#eef8f6] px-3 py-2 text-[11.5px] text-ink-2">Mahsulotni olganingizda naqd to‘laysiz.{SHOW_DEMO_PAYMENTS ? '' : ' Onlayn to‘lov tez orada qo‘shiladi.'}</p>}
+            </section>
+
+            <section className={`${card} mt-3 p-3`}>
+              <label className="flex items-start gap-2.5 text-[12.5px]">
+                <input type="checkbox" checked={invoice} onChange={(e) => setInvoice(e.target.checked)} className="mt-0.5 size-4 accent-[#0b8a7a]" />
+                <span><b className="block text-[13px] text-[#0d2a4a]">Hisob-faktura kerak</b><span className="text-ink-2">Klinika (yuridik shaxs) nomiga</span></span>
+              </label>
+              {invoice && (
+                <div className="mt-2.5 space-y-2">
+                  <Field label="STIR (9 ta raqam)" err={payTried && invErr && !/^\d{9}$/.test(inv.stir) && invErr}>
+                    <input inputMode="numeric" maxLength={9} value={inv.stir} onChange={(e) => setInv((v) => ({ ...v, stir: e.target.value.replace(/\D/g, '').slice(0, 9) }))} placeholder="123456789" className={inp} />
+                  </Field>
+                  <Field label="Kompaniya nomi" err={payTried && invErr && /^\d{9}$/.test(inv.stir) && invErr}>
+                    <input value={inv.company} maxLength={120} onChange={(e) => setInv((v) => ({ ...v, company: e.target.value }))} placeholder="“Smile Dent” MChJ" className={inp} />
+                  </Field>
+                </div>
+              )}
             </section>
 
             <section className={`${card} mt-3 p-3`}>
@@ -412,10 +444,12 @@ export default function MobileCheckout() {
             <section className={`${card} mt-3 p-3`}>
               <Head icon={FileText} title="Buyurtma xulosasi" text="Buyurtmangiz tafsilotlari" />
               <Summary items={items} goods={goods} ship={ship} mode={mode} city={form.city} discount={discount} total={total} />
-              <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-[#f3f7f8] p-2.5">
-                <ShieldCheck className="size-6 shrink-0 fill-[#0b8a7a] text-white" />
-                <p className="text-[11px] text-ink-2"><b className="block text-[12.5px] text-[#0d2a4a]">Xavfsiz to‘lov</b>Barcha to‘lovlar himoyalangan va shifrlangan</p>
-              </div>
+              {SHOW_DEMO_PAYMENTS && (
+                <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-[#f3f7f8] p-2.5">
+                  <ShieldCheck className="size-6 shrink-0 fill-[#0b8a7a] text-white" />
+                  <p className="text-[11px] text-ink-2"><b className="block text-[12.5px] text-[#0d2a4a]">Xavfsiz to‘lov</b>Barcha to‘lovlar himoyalangan va shifrlangan</p>
+                </div>
+              )}
             </section>
           </>
         )}
@@ -439,8 +473,8 @@ export default function MobileCheckout() {
               <div className="ml-[46px] mt-1 flex items-start justify-between gap-2">
                 <p className="text-[12px] text-ink-2"><b className="block text-[13px] text-[#0d2a4a]">{mode === 'pickup' ? 'Olib ketish' : 'Kuryer orqali'}</b>{mode === 'pickup' ? 'Do‘kondan olib ketasiz' : form.city === 'Toshkent' ? 'Toshkent bo‘ylab yetkazib berish' : `${form.city}ga yetkazib berish`}</p>
                 <span className="text-right">
-                  <span className="block whitespace-nowrap rounded-md bg-[#e3f4f1] px-1.5 py-0.5 text-[11px] font-medium text-[#0b6d73]">{ship.eta}</span>
-                  <span className={`mt-0.5 block text-[12px] font-semibold ${ship.fee ? 'text-[#0d2a4a]' : 'text-[#0b8a7a]'}`}>{ship.fee ? som(ship.fee) : 'Bepul'}</span>
+                  <span className="block whitespace-nowrap rounded-md bg-[#e3f4f1] px-1.5 py-0.5 text-[11px] font-medium text-[#0b6d73]">{fmtDeliveryDate(delivery.date)}, {delivery.slot}</span>
+                  <span className="mt-0.5 block text-[12px] font-semibold text-[#0d2a4a]">{mode === 'pickup' ? 'Bepul' : 'Kelishiladi'}</span>
                 </span>
               </div>
             </section>
@@ -609,7 +643,7 @@ function ShipOption({ on, onClick, icon: Icon, title, text, info }) {
       </span>
       <span className="shrink-0 text-right">
         <span className="block rounded-md bg-[#e3f4f1] px-1.5 py-0.5 text-[10.5px] font-medium text-[#0b6d73]">{info.badge}</span>
-        <span className={`mt-1 block text-[12px] font-semibold ${info.fee ? 'text-[#0d2a4a]' : 'text-[#0d2a4a]'}`}>{info.fee ? som(info.fee) : 'Bepul'}</span>
+        <span className={`mt-1 block text-[12px] font-semibold ${info.fee ? 'text-[#0d2a4a]' : 'text-[#0d2a4a]'}`}>{title === 'Olib ketish' ? 'Bepul' : 'Kelishiladi'}</span>
       </span>
     </button>
   )
@@ -640,7 +674,7 @@ function Summary({ items, goods, ship, mode, city, discount, total }) {
     <>
       <div className="mt-3 space-y-1.5 text-[12.5px]">
         <Row k={`Mahsulotlar (${items.length} ta)`} v={som(goods)} />
-        <Row k={`Yetkazish (${mode === 'pickup' ? 'olib ketish' : `${city}, kuryer`})`} v={ship.fee ? som(ship.fee) : 'Bepul'} tone={ship.fee ? '' : 'text-[#0b8a7a]'} />
+        <Row k={`Yetkazish (${mode === 'pickup' ? 'olib ketish' : `${city}, kuryer`})`} v={mode === 'pickup' ? 'Bepul' : 'Kelishiladi'} tone="text-[#0b8a7a]" />
         <Row k="Chegirma (promokod)" v={discount ? `− ${som(discount)}` : som(0)} tone="text-[#0b8a7a]" />
       </div>
       <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2.5">
@@ -807,5 +841,35 @@ function GeoSheet({ lat, lng, onClose, onPick }) {
       <MapPicker lat={p?.lat ?? lat} lng={p?.lng ?? lng} height={320} onChange={(v) => setP((old) => ({ ...v, geo: v.geo || old?.geo || null }))} />
       {p?.geo?.display && <p className="mt-1 text-[12px] text-ink-2">{p.geo.display}</p>}
     </BottomSheet>
+  )
+}
+
+function WhenPicker({ delivery, setDelivery, pickup, err }) {
+  const slots = windowsFor(delivery.date)
+  const setDate = (date) => {
+    if (!date || date < todayISO()) date = todayISO()
+    const open = windowsFor(date)
+    setDelivery((d) => ({ date, slot: open.includes(d.slot) ? d.slot : (open[0] || '') }))
+  }
+  return (
+    <section data-f="when" className="mt-3 rounded-2xl bg-white p-3 shadow-[0_1px_6px_rgb(11_31_58/0.06)]">
+      <div className="flex items-center gap-2.5">
+        <span className="grid size-9 place-items-center rounded-xl bg-[#e3f4f1] text-[#0b6d73]"><CalendarDays className="size-5" /></span>
+        <span><b className="block text-[14px] text-[#0d2a4a]">{pickup ? 'Olib ketish vaqti' : 'Yetkazish vaqti'}</b><span className="text-[11.5px] text-ink-2">Toshkent vaqti bo‘yicha</span></span>
+      </div>
+      <label className="mt-3 block text-[12px] font-semibold text-[#0d2a4a]">Sana
+        <input type="date" min={todayISO()} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#dfe8ec] bg-white px-3 text-[14px] font-normal outline-none focus:border-[#0b8a7a]" />
+      </label>
+      <p className="mt-2 text-[12px] font-semibold text-[#0d2a4a]">Vaqt oralig‘i</p>
+      {slots.length ? (
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          {slots.map((w) => (
+            <button key={w} type="button" aria-pressed={delivery.slot === w} onClick={() => setDelivery((d) => ({ ...d, slot: w }))} className={`h-10 rounded-xl border text-[12.5px] font-semibold ${delivery.slot === w ? 'border-[#0b8a7a] bg-[#e3f4f1] text-[#0b6d73]' : 'border-[#dfe8ec] text-ink-2'}`}>{w}</button>
+          ))}
+        </div>
+      ) : <p className="mt-1 text-[12px] text-sale">Bugun uchun bo‘sh vaqt qolmadi — boshqa kunni tanlang.</p>}
+      {err && <p className="mt-1 text-[11px] text-sale">{err}</p>}
+      <p className="mt-2 text-[11.5px] text-ink-2">Tanlandi: <b>{fmtDeliveryDate(delivery.date)}{delivery.slot ? `, ${delivery.slot}` : ''}</b></p>
+    </section>
   )
 }

@@ -8,7 +8,7 @@ import { allOrders, profileStore, useProfile } from '../../profileStore'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
-import { Logo, METHODS } from './MobileCheckout'
+import { Logo, ALL_METHODS as METHODS } from './MobileCheckout'
 import { SubTopBar } from './MobileManzillar'
 
 const teal = 'text-[#0b6d73]'
