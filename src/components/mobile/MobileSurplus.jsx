@@ -263,7 +263,7 @@ function FilterSheet({ initial, count, onClose, onApply }) {
 
 const field = 'h-11 w-full rounded-xl border border-line bg-white px-3 text-[13.5px] text-ink outline-none focus:border-sea'
 
-function PostSheet({ onClose, onSubmit }) {
+export function PostSheet({ onClose, onSubmit }) {
   const fileRef = useRef(null)
   const [f, setF] = useState({ name: '', brand: '', cat: 'komp', type: '', price: '', oldPrice: '', city: 'Toshkent', condition: 'Yopiq', expiry: '', qty: 1, image: '' })
   const [tried, setTried] = useState(false)

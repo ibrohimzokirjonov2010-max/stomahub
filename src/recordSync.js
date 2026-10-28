@@ -190,6 +190,9 @@ export function registerCatalog(kind, list) {
 }
 
 const SEED_KINDS = new Set(['course', 'certificate', 'book'])
+// kind:id of rows that have a real owner (seller/organizer). Ratings/discounts are only trusted on these.
+const ownedRows = new Set()
+export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)
 
 export async function loadCatalog() {
   if (!supabase) return
@@ -203,6 +206,7 @@ export async function loadCatalog() {
   ;(data || []).forEach((row) => {
     // Ownerless seed rows (demo courses/certificates/books) are not real content.
     if (!row.owner_id && SEED_KINDS.has(row.kind)) return
+    if (row.owner_id) ownedRows.add(`${row.kind}:${row.id}`)
     if (!grouped.has(row.kind)) grouped.set(row.kind, [])
     grouped.get(row.kind).push(row)
   })
