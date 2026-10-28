@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { trackLead } from '../lib/metaPixel'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, ClipboardList, Globe, Stethoscope, BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, UserPlus, UserRound, Users } from 'lucide-react'
 import { profileStore, useProfile } from '../profileStore'
@@ -476,12 +477,14 @@ function Auth({ mode }) {
         finishing.current = false
         setBusy(false)
         setInfo(t.confirmEmail)
+        trackLead({ content_name: 'royxat' })
         return
       }
     }
     try {
       const role = await applyAccount({ forceRole: true })
       flashToast('Muvaffaqiyatli ro‘yxatdan o‘tdingiz! Kabinetingizga xush kelibsiz.')
+      trackLead({ content_name: 'royxat' })
       navigate(destination(role), { replace: true })
     } catch (signError) {
       finishing.current = false
