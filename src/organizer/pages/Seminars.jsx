@@ -242,10 +242,12 @@ function Banner({ s, className = 'h-[76px] w-[248px]' }) {
   )
 }
 
+const realSpeaker = (n) => !!n && n.trim() && n.trim() !== 'Ma’ruzachi'
+
 function Meta({ s }) {
   return (
     <p className="mt-1 flex items-center gap-x-2 overflow-hidden whitespace-nowrap text-[11.5px]" style={{ color: MUTED }}>
-      <span className="inline-flex items-center gap-1"><User className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.speaker}</span>
+      {realSpeaker(s.speaker) && <span className="inline-flex items-center gap-1"><User className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.speaker}</span>}
       <span className="inline-flex items-center gap-1"><Calendar className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.date}</span>
       <span className="inline-flex items-center gap-1"><MapPin className="size-3.5 shrink-0" strokeWidth={1.8} /> {s.city}</span>
     </p>
