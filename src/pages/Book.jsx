@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { BookOpen, ChevronRight, CreditCard, Headset, Heart, Share2, ShieldCheck, ShoppingCart, Star, Truck, ZoomIn, X } from 'lucide-react'
 import { useCart } from '../cart'
+import BookPdfPanel from '../components/BookPdf'
 import { getBook, langLong, money, priceless, productOf, pubName } from '../booksData'
 
 export default function Book() {
@@ -85,6 +86,7 @@ export default function Book() {
             <Perk icon={CreditCard} title="Qulay to‘lov" sub="Click, Payme, Uzum" />
             <Perk icon={Headset} title="Qo‘llab-quvvatlash" sub="Savollar bo‘yicha yordam" />
           </div>
+          <BookPdfPanel book={book} />
         </div>
 
         <aside className="book-facts rounded-xl border border-[#e6eef3] bg-white p-3">

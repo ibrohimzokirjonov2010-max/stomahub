@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { getBook, productOf, readerOf, langLong, money } from '../../booksData'
 import { useCart } from '../../cart'
+import BookPdfPanel from '../BookPdf'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -149,6 +150,7 @@ function BookView({ id }) {
         ))}
       </div>
 
+      {b.pdf && <div className="mx-4 mt-3"><BookPdfPanel book={b} compact /></div>}
       {/* Tavsif */}
       <Card icon={FileText} title="Tavsif">
         <p className={`text-[12.5px] leading-[1.55] text-ink-2 ${more ? '' : 'line-clamp-3'}`}>{view.about}{more && <><br /><br />{view.more}<br /><span className="mt-1 block text-[11.5px] text-muted">ISBN: {b.isbn} · {b.year}-yil</span></>}</p>

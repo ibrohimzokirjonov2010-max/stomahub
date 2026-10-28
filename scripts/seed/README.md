@@ -12,3 +12,10 @@ Content: `marketplace-seed.json` (10 products, 2 books). Script: `seed-marketpla
 
 Products go live as `status='active'` under the profile `shop_name='StomaHub'`, `role='seller'`, `seller_status='approved'`. Stock starts at 10 and can be edited in the seller cabinet.
 Books go to `catalog_items(kind='book')` with `price: null` → shown as "Narxi kelishiladi" (no cart).
+
+## Book PDFs (needs migration 0022_book_files.sql)
+- The full PDF is uploaded unchanged to the **private** bucket `book-files/<book_id>/<name>.pdf`. It is linked as `payload.pdf` (`path`, `pages`, `size`) and `payload.pages` is set from `pdfinfo`.
+- The preview is the first 20 pages, rendered with `pdftoppm` to jpeg files in the public bucket `catalog/books/<book_id>/preview/` and stored as `payload.pdf.preview`. It uses page images rather than a PDF excerpt because the Terapevtik PDF has owner restrictions, which are not removed.
+- Who can open the full PDF: the user must have a `book_access(user_id, book_id)` row, or be the book owner or an admin. They get a 10-minute signed URL. To grant access after a sale (as the owner, admin or service role):
+  `insert into book_access (user_id, book_id, source) values ('<buyer uuid>', 'terapevtik-stomatologiya-2004', 'purchase');`
+- Source files are taken from `PDF_DIR` (default `/workspace/designs/marketplace-products`).

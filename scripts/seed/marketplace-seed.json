@@ -285,7 +285,13 @@
         "Plomba materiallari",
         "Tish kasalliklarining belgilari",
         "Davolash usullari"
-      ]
+      ],
+      "pdf": {
+        "file": "Terapevtik-stomatologiya-Ziyayeva-Bahodirova-2004.pdf",
+        "name": "Terapevtik-stomatologiya_Ziyayeva-Bahodirova_2004.pdf",
+        "pages": 288,
+        "previewPages": 20
+      }
     },
     {
       "id": "ortopedik-stomatologiya-propedevtikasi-2006",
@@ -293,7 +299,7 @@
       "title": "Ortopedik stomatologiya propedevtikasi",
       "author": "prof. X.I. Irsaliyev",
       "year": 2006,
-      "pages": 214,
+      "pages": 216,
       "lang": "uz",
       "script": "Kirill",
       "place": "Toshkent",
@@ -312,13 +318,19 @@
       "reviews": 0,
       "isbn": "",
       "blurb": "Protez materiallari, jag‘ tuzilishi va ortoped stomatolog ish joyi bo‘yicha o‘quv qo‘llanma.",
-      "about": "Professor X.I. Irsaliyevning «Ortopedik stomatologiya propedevtikasi» o‘quv qo‘llanmasi (Toshkent, «Yangiyo‘l poligraf servis», 2006, 214 bet, kirill yozuvida). Kitobda protez materiallari, jag‘ va tish qatorlarining tuzilishi hamda ortoped stomatolog ish joyini tashkil etish masalalari ko‘rib chiqilgan.",
+      "about": "Professor X.I. Irsaliyevning «Ortopedik stomatologiya propedevtikasi» o‘quv qo‘llanmasi (Toshkent, «Yangiyo‘l poligraf servis», 2006, 216 bet, kirill yozuvida). Kitobda protez materiallari, jag‘ va tish qatorlarining tuzilishi hamda ortoped stomatolog ish joyini tashkil etish masalalari ko‘rib chiqilgan.",
       "toc": [
         "Protez materiallari",
         "Jag‘ tuzilishi",
         "Ortoped stomatolog ish joyi"
       ],
-      "titleOriginal": "Ортопедик стоматология пропедевтикаси"
+      "titleOriginal": "Ортопедик стоматология пропедевтикаси",
+      "pdf": {
+        "file": "Ortopedik-stomatologiya-propedevtikasi-Irsaliyev-2006.pdf",
+        "name": "Ortopedik-stomatologiya-propedevtikasi_Irsaliyev_2006.pdf",
+        "pages": 216,
+        "previewPages": 20
+      }
     }
   ]
 }
