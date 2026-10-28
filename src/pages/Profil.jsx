@@ -700,7 +700,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
   const blank = () => ({ id: `a${Date.now().toString(36)}`, kind: 'home', name: profile.name || '', phone: profile.phone || '', city: profile.city || 'Toshkent', district: 'Markaz', street: '', extra: '' })
   const save = async () => {
     try {
-      const row = addr(form.id, form.kind, form.name, form.phone, form.district, form.street, form.extra, form.city)
+      const row = addr(form.id, form.kind, form.name, form.phone, form.district, form.street, form.extra, form.city, form.lat ?? null, form.lng ?? null)
       const exists = list.some((x) => x.id === row.id)
       const addresses = exists ? list.map((x) => (x.id === row.id ? row : x)) : [...list, row]
       profileStore.update({ addresses, defaultAddr: profile.defaultAddr || row.id })
@@ -754,6 +754,7 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
           <input className={field} placeholder="Shahar" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
           <input className={field} placeholder="Tuman" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
           <input className={field} placeholder="Ko‘cha, uy" value={form.street} onChange={(e) => setForm({ ...form, street: e.target.value })} />
+          <div className="sm:col-span-2"><MapPicker lat={form.lat} lng={form.lng} height={240} onChange={({ lat, lng, geo }) => setForm((f) => ({ ...f, lat, lng, ...(geo?.city ? { city: geo.city } : {}), ...(geo?.district ? { district: geo.district.replace(/ tumani$/i, '') } : {}), ...(geo?.street ? { street: geo.street } : {}) }))} /></div>
           <div className="flex gap-2 sm:col-span-2">
             <button type="button" onClick={save} className="h-10 rounded-xl bg-[#0F766E] px-4 text-[13px] font-semibold text-white">Saqlash</button>
             <button type="button" onClick={() => setForm(null)} className="h-10 rounded-xl border border-[#d7e5e3] px-4 text-[13px] font-semibold">Bekor</button>
