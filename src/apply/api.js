@@ -93,3 +93,32 @@ export async function loadPrefill() {
   ])
   return { profile: p.data || {}, settings: s.data || {} }
 }
+
+/** Organizer stage 1 -> org_status 'registered' (cabinet: Sozlamalar only). Needs 0026. */
+export async function registerOrganizer(v, addressWithGeo) {
+  if (!supabase || !uid()) return { ok: false, error: 'Avval kiring' }
+  const { data, error } = await supabase.rpc('register_organizer', {
+    p_owner_name: v.owner_name.trim(), p_org_name: v.org_name.trim(), p_address: addressWithGeo,
+    p_phone: v.phone, p_telegram: v.telegram.trim(), p_instagram: v.instagram.trim(), p_logo_url: v.logo_url || '',
+  })
+  if (error) return { ok: false, error: /register_organizer|schema cache/.test(error.message || '') ? 'Ro‘yxatdan o‘tish hali yoqilmagan (0026 migratsiyasi qo‘llanmagan).' : fail(error) }
+  await refreshSession()
+  return { ok: true, data }
+}
+
+/** Own profile + organizer_settings, used to prefill organizer stages and Sozlamalar. */
+export async function loadOrgPrefill() {
+  if (!supabase || !uid()) return { profile: {}, settings: {} }
+  const [p, s] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', uid()).maybeSingle(),
+    supabase.from('organizer_settings').select('*').eq('organizer_id', uid()).maybeSingle(),
+  ])
+  return { profile: p.data || {}, settings: s.data || {} }
+}
+
+/** Save organizer profile fields (0026 columns). Allowed for registered organizers too. */
+export async function saveOrgProfile(fields) {
+  if (!supabase || !uid()) return { ok: false, error: 'Avval kiring' }
+  const { error } = await supabase.from('organizer_settings').upsert({ organizer_id: uid(), ...fields, updated_at: new Date().toISOString() })
+  return error ? { ok: false, error: /column|schema cache/.test(error.message || '') ? 'Qo‘shimcha maydonlar 0026 migratsiyasidan keyin saqlanadi.' : fail(error) } : { ok: true }
+}

@@ -7,7 +7,7 @@ export const ADMIN_NAV = [
   { to: '/admin', label: 'Boshqaruv paneli', icon: LayoutDashboard, end: true },
   { to: '/admin/foydalanuvchilar', label: 'Foydalanuvchilar', icon: Users },
   { to: '/admin/sotuvchilar', label: 'Sotuvchilar', icon: Store },
-  { to: '/admin/arizalar', label: 'Sotuvchi arizalari', icon: FileCheck2 },
+  { to: '/admin/arizalar', label: 'Arizalar', icon: FileCheck2 },
   { to: '/admin/tashkilotchilar', label: 'Seminar tashkilotchilari', icon: GraduationCap },
   { to: '/admin/elonlar', label: 'E’lonlar', icon: Megaphone },
   { to: '/admin/buyurtmalar', label: 'Buyurtmalar', icon: ShoppingBag },

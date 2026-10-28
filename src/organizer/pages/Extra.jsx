@@ -1,3 +1,4 @@
+import OrgProfileCard from '../OrgProfileCard'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Megaphone, Star, Mic, ChartColumn, Settings, CircleQuestionMark } from 'lucide-react'
@@ -154,7 +155,8 @@ export function SettingsPage() {
     <div>
       <h1 className="text-[22px] font-bold">Sozlamalar</h1>
       <p className="mt-0.5 text-[13px] text-[#6e868c]">Tashkilotchi profili va bildirishnomalar.</p>
-      <Card className="mt-4" title="Profil">
+      <OrgProfileCard notify={notify} />
+      <Card className="mt-4" title="Hisob va bildirishnomalar">
         <form
           className="grid gap-3 sm:grid-cols-2"
           onSubmit={(e) => {

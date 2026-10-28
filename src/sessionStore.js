@@ -134,20 +134,7 @@ export async function ensureProfile({ role, name, fullName, phone, specialty, em
   return { ok: true, profile: state.profile }
 }
 
-// Tashkilotchi bo'lish = ariza. Kabinet faqat admin tasdiqlagach (org_status = 'approved') ochiladi.
-export async function becomeOrganizer() {
-  if (!supabase) return { ok: false, error: 'Supabase sozlanmagan' }
-  if (!state.user) await refreshSession()
-  if (!state.user) return { ok: false, error: 'Avval kiring' }
-  let { error } = await supabase.rpc('request_organizer_role')
-  if (error && /function|schema cache|not find/i.test(error.message || '')) {
-    // 0024 hali qo'llanmagan bo'lsa: arizani profilga yozamiz (gate baribir approved talab qiladi)
-    ;({ error } = await supabase.from('profiles').update({ role: 'organizer', org_status: 'pending', updated_at: new Date().toISOString() }).eq('id', state.user.id))
-  }
-  if (error) return { ok: false, error: error.message }
-  await refreshSession()
-  return { ok: true, profile: state.profile }
-}
+// Tashkilotchi bo'lish: /tashkilotchi-bolish (register_organizer) -> tasdiqlash arizasi (0026).
 
 /** Kabinetga kirish huquqi: admin yoki tasdiqlangan sotuvchi / tashkilotchi. */
 export function canUseSeller(profile) {
@@ -157,6 +144,11 @@ export function canUseSeller(profile) {
 export const SELLER_MEMBER_STATUSES = ['registered', 'pending', 'rejected', 'approved']
 export function canEnterSeller(profile) {
   return profile?.role === 'admin' || (profile?.role === 'seller' && SELLER_MEMBER_STATUSES.includes(profile?.seller_status))
+}
+/** Ro'yxatdan o'tgan tashkilotchi: kabinetga kiradi, lekin faqat Sozlamalar ishlaydi (0026). */
+export const ORG_MEMBER_STATUSES = ['registered', 'pending', 'rejected', 'approved']
+export function canEnterOrganizer(profile) {
+  return profile?.role === 'admin' || (profile?.role === 'organizer' && ORG_MEMBER_STATUSES.includes(profile?.org_status))
 }
 export function canUseOrganizer(profile) {
   return profile?.role === 'admin' || (profile?.role === 'organizer' && profile?.org_status === 'approved')

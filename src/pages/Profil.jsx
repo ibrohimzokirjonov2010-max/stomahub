@@ -14,7 +14,7 @@ import {
   ADDRESS_KINDS, COURSES, addr, allOrders, courseDone, flushProfile, profileStore, useProfile,
 } from '../profileStore'
 import { demoBadgeProps, isDemoPayments, linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
-import { canEnterSeller, signOut, useSession } from '../sessionStore'
+import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../sessionStore'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Ortoped stomatolog', 'Stomatolog', 'Terapevt', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba', 'Klinika egasi']
@@ -31,6 +31,7 @@ const NAV = [
   ['notifs', 'Bildirishnomalar'],
   ['security', 'Xavfsizlik'],
   ['seller', 'Sotuvchi bo‘lish'],
+  ['organizer', 'Tashkilotchi bo‘lish'],
   ['logout', 'Chiqish'],
 ]
 const NOTIF_TOGGLES = [
@@ -259,6 +260,10 @@ function Board({ initial }) {
   }
 
   const onNav = (id) => {
+    if (id === 'organizer') {
+      navigate(canEnterOrganizer(session.profile) ? '/tashkilotchi' : '/tashkilotchi-bolish')
+      return
+    }
     if (id === 'seller') {
       navigate(canEnterSeller(session.profile) ? '/sotuvchi' : '/sotuvchi-bolish')
       return
@@ -362,7 +367,7 @@ function Board({ initial }) {
                       : 'text-[#1a2b3c] hover:bg-[#f3faf8]'
                 }`}
               >
-                {id === 'seller' && canEnterSeller(session.profile) ? 'Sotuvchi kabineti' : id === 'logout' ? <span className="inline-flex items-center gap-2"><LogOut className="size-4" /> {label}</span> : label}
+                {id === 'seller' && canEnterSeller(session.profile) ? 'Sotuvchi kabineti' : id === 'organizer' && canEnterOrganizer(session.profile) ? 'Tashkilotchi kabineti' : id === 'logout' ? <span className="inline-flex items-center gap-2"><LogOut className="size-4" /> {label}</span> : label}
               </button>
             ))}
           </nav>
