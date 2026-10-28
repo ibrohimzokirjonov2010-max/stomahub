@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { VARIANT_TYPE_LABEL } from '../../config/productCatalog'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, ChevronDown, Heart, Share2, BadgeCheck, Star, MessageSquareText, Package, Truck, Minus, Plus,
@@ -38,7 +39,8 @@ function ProductView({ id }) {
   const variants = p.variants || [{ label: p.type.match(/\(([^)]+)\)/)?.[1] || p.type, price: p.price, oldPrice: p.oldPrice }]
   const [shot, setShot] = useState(0)
   const [variant, setVariant] = useState(0)
-  const [pick, setPick] = useState(1)
+  const minQty = Math.max(1, p.minQty || 1)
+  const [pick, setPick] = useState(minQty)
   const [liked, setLiked] = useState(false)
   const [moreText, setMoreText] = useState(false)
   const [chat, setChat] = useState(false)
@@ -55,7 +57,7 @@ function ProductView({ id }) {
   const inCart = items.find((it) => it.id === cartId)?.qty || 0
   const qty = inCart || pick
   const changeQty = (next) => {
-    if (!inCart) return setPick(Math.min(99, Math.max(1, next)))
+    if (!inCart) return setPick(Math.min(Math.max(99, minQty), Math.max(minQty, next)))
     if (next < 1) {
       remove(cartId)
       setPick(1)
@@ -75,7 +77,7 @@ function ProductView({ id }) {
   }
 
   const addToCart = () => {
-    add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0] }, qty)
+    add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0], minQty: p.minQty, priceTiers: variant ? [] : p.priceTiers, uom: p.uom }, qty)
     setToast(`${qty} ta ${p.name} savatga qo‘shildi`)
   }
 
@@ -156,7 +158,7 @@ function ProductView({ id }) {
         {/* Variant va miqdor */}
         <div className="mt-3 grid grid-cols-2 gap-3">
           {variants.length > 1 ? <label className="block">
-            <span className="text-[12px] text-ink-2">Hajm (variant)</span>
+            <span className="text-[12px] text-ink-2">{VARIANT_TYPE_LABEL[p.variantType] || 'Variant'}</span>
             <span className="relative mt-1 flex h-11 items-center rounded-xl border border-line">
               <select value={variant} onChange={(e) => setVariant(Number(e.target.value))} disabled={variants.length < 2} className="h-full w-full appearance-none rounded-xl bg-transparent pl-3 pr-8 text-[13.5px] font-medium text-ink outline-none disabled:opacity-100">
                 {variants.map((x, i) => <option key={x.label} value={i}>{x.label}</option>)}
@@ -167,7 +169,7 @@ function ProductView({ id }) {
           <div>
             <span className="text-[12px] text-ink-2">Miqdori</span>
             <div className="mt-1 flex h-11 items-center justify-between rounded-xl border border-line px-1">
-              <button type="button" onClick={() => changeQty(qty - 1)} disabled={!inCart && qty <= 1} aria-label="Kamaytirish" className="grid size-9 place-items-center rounded-lg text-ink disabled:text-muted/50">
+              <button type="button" onClick={() => changeQty(qty - 1)} disabled={!inCart && qty <= minQty} aria-label="Kamaytirish" className="grid size-9 place-items-center rounded-lg text-ink disabled:text-muted/50">
                 <Minus className="size-4" />
               </button>
               <span className="text-[14px] font-semibold text-ink">{qty}</span>
@@ -195,6 +197,32 @@ function ProductView({ id }) {
             </li>
           ))}
         </ul>
+
+        {/* Sotuvchi to‘ldirgan bo‘limlar (bo‘shlari ko‘rsatilmaydi) */}
+        {(minQty > 1 || p.priceTiers?.length > 0) && (
+          <div className="mt-3 rounded-xl bg-sea-50/70 p-2.5 text-[12px] text-ink-2">
+            {minQty > 1 && <p>Minimal buyurtma: <b>{minQty} {p.uom || 'dona'}</b></p>}
+            {p.priceTiers?.map((t) => <p key={t.min_qty}>{t.min_qty} {p.uom || 'dona'} dan — <b className="text-sea-600">{som(t.price)}</b></p>)}
+          </div>
+        )}
+        {[
+          ['Klinik qo‘llanish', p.clinicalUse, null],
+          ['Texnik xususiyatlar', '', p.techSpecs],
+          ['Sertifikat', '', p.certificate],
+          ['Yetkazib berish', p.deliveryInfo, null],
+          ['Qayta buyurtma', p.reorder?.enabled ? `Har ${p.reorder.intervalDays} kunda qayta buyurtma qilish tavsiya etiladi.` : '', null],
+        ].filter(([, text, rows]) => text || rows?.length).map(([title, text, rows]) => (
+          <section key={title}>
+            <h2 className="mt-4 text-[16px] font-bold text-ink">{title}</h2>
+            {text && <p className="mt-1 whitespace-pre-line text-[12.5px] leading-[1.55] text-ink-2">{text}</p>}
+            {rows?.length > 0 && <dl className="mt-1.5">{rows.map(([k, val, url], i) => (
+              <div key={`${k}-${i}`} className="grid grid-cols-2 gap-2 border-b border-line/70 py-1.5 text-[12px] last:border-0">
+                <dt className="text-muted">{k}</dt>
+                <dd className="text-ink">{url ? <a href={url} target="_blank" rel="noreferrer" className="text-sea underline">{val}</a> : val}</dd>
+              </div>
+            ))}</dl>}
+          </section>
+        ))}
 
         {/* Sotuvchi */}
         <h2 className="mt-4 text-[16px] font-bold text-ink">Sotuvchi</h2>

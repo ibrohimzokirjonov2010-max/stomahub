@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { initialCart } from './marketData'
 import { isUuid } from './buyerApi'
+import { tierPrice } from './config/productCatalog'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
 
 const CartContext = createContext(null)
@@ -29,16 +30,23 @@ export function CartProvider({ children }) {
     saveBlob('cart', { items })
   }, [items, cartReady])
 
+  // min order qty + wholesale tiers (0029): a line keeps basePrice/tiers/minQty, price follows qty
+  const priced = (it, qty) => {
+    const q = Math.max(it.minQty || 1, qty)
+    return it.tiers?.length ? { ...it, qty: q, price: tierPrice(it.basePrice ?? it.price, it.tiers, q) } : { ...it, qty: q }
+  }
   const setQty = (id, qty) =>
-    setItems((list) => list.map((it) => (it.id === id ? { ...it, qty: Math.max(1, qty) } : it)))
+    setItems((list) => list.map((it) => (it.id === id ? priced(it, qty) : it)))
 
   const add = (product, qty = 1) =>
     setItems((list) => {
       const id = product.id
       const found = list.find((it) => it.id === id)
-      if (found) return list.map((it) => (it.id === id ? { ...it, qty: it.qty + qty } : it))
+      if (found) return list.map((it) => (it.id === id ? priced(it, it.qty + qty) : it))
       const productId = product.productId || (isUuid(id) ? id : undefined)
-      return [...list, {
+      const minQty = Math.max(1, Number(product.minQty) || 1)
+      const tiers = Array.isArray(product.priceTiers) ? product.priceTiers : []
+      return [...list, priced({
         id,
         productId,
         sellerId: product.sellerId || product.seller_id || undefined,
@@ -48,8 +56,11 @@ export function CartProvider({ children }) {
         price: product.price,
         image: product.image || product.image_url || product.thumbs?.[0] || '',
         qty,
+        ...(minQty > 1 ? { minQty } : {}),
+        ...(tiers.length ? { tiers, basePrice: product.price } : {}),
+        ...(product.uom && product.uom !== 'dona' ? { uom: product.uom } : {}),
         ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
-      }]
+      }, qty)]
     })
 
   const remove = (id) => setItems((list) => list.filter((it) => it.id !== id))
