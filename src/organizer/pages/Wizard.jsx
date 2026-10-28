@@ -2,30 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Award, Calendar, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown,
+  Award, Calendar, Camera, Copy, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Crown,
   GraduationCap, Image as ImageIcon, Info, LayoutGrid, MapPin, Monitor, Pencil, Plus, Save, Star, Ticket, Trash2,
 } from 'lucide-react'
-import { ORG, num, som } from '../data'
+import { num, som } from '../data'
 import { useOrg } from '../Shell'
-import { getHub, saveSeminar } from '../../hubStore'
+import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
 import { useMobile } from '../../useMobile'
-import { ABOUT, CATS, COVERS, FORMATS, STEPS, TEAL, TOPICS, box, readImage, uzDate } from './wizardBits'
+import { CATS, EMPTY_DETAILS, FORMAT_OF, STEPS, TEAL, TOPICS, box, placeTypeOf, readImage, uzDate, validateStep } from './wizardBits'
+import WizardDetails from './WizardDetails'
 import { PromoModal, SpeakerModal, TicketModal } from './WizardModals'
 import WizardMobile from './WizardMobile'
 
 const TICKET_ICON = { ticket: Ticket, crown: Crown, cap: GraduationCap, star: Star, award: Award }
-
-const INITIAL_TICKETS = [
-  { id: 't1', name: 'Standart', price: 450000, seats: 100, perks: ['Seminarga kirish', 'Materiallar', 'Sertifikat'], active: true, basic: true, tone: 'teal', icon: 'ticket' },
-  { id: 't2', name: 'VIP', price: 850000, seats: 30, perks: ['Seminarga kirish', 'Maxsus materiallar', 'Oldingi qator o‘rinlar', 'Kofe-breyk', 'Sertifikat', 'Ma’ruzachilar bilan foto'], active: true, tone: 'gold', icon: 'crown' },
-  { id: 't3', name: 'Student', price: 250000, seats: 50, perks: ['Seminarga kirish', 'Materiallar', 'Sertifikat'], active: true, tone: 'violet', icon: 'cap' },
-]
-
-const INITIAL_PROMOS = [
-  { id: 'p1', code: 'EARLYBIRD', off: '-20%', note: '1-noy – 15-noy', on: true },
-  { id: 'p2', code: 'STUDENT50', off: '-50%', note: 'Talabalar uchun', on: true },
-  { id: 'p3', code: 'GROUPS', off: '-15%', note: '5+ kishilik guruh', on: true },
-]
 
 const CERTS = [
   { id: 'teal', name: 'Klassik (Teal)' },
@@ -87,7 +76,7 @@ function SelectBox({ value, onChange, options }) {
   )
 }
 
-function CertFace({ tone }) {
+function CertFace({ tone, org = '' }) {
   const skin = {
     teal: 'bg-[#0e6e72] text-[#f6e7c1]',
     gold: 'bg-[#f8f1dc] text-[#7a5b24]',
@@ -98,7 +87,7 @@ function CertFace({ tone }) {
   return (
     <div className={`relative aspect-[1.42/1] overflow-hidden rounded-lg ${skin} ${light ? 'border border-[#e6d7b0]' : ''}`}>
       <div className={`absolute inset-[7px] flex flex-col rounded border px-1.5 py-1 ${light ? 'border-[#d9c48a]' : 'border-[#f3e6c0]/80'}`}>
-        <div className="text-[7px] font-bold tracking-wide">⌂ StomaHub</div>
+        <div className="truncate text-[7px] font-bold tracking-wide">{org || 'Tashkilotchi'}</div>
         <p className="mt-1 text-center text-[8px] font-semibold tracking-[0.16em]">SERTIFIKAT</p>
         <p className="mt-1 text-center font-serif text-[12px] italic leading-none">Aliyeva Mohira</p>
         <div className="mt-auto flex items-end justify-between text-[6px] opacity-80">
@@ -137,7 +126,11 @@ export default function Wizard() {
   const [tabMkt, setTabMkt] = useState('promo')
   const [tag, setTag] = useState('')
   const lock = useRef(false)
+  const hub = useHub()
+  const orgName = hub.settings?.orgName || ''
+  const [copyOpen, setCopyOpen] = useState(false)
   const [form, setForm] = useState({
+    ...EMPTY_DETAILS,
     name: '',
     about: '',
     topic: 'Implantologiya',
@@ -167,7 +160,7 @@ export default function Wizard() {
     const s = getHub().seminars.find((x) => x.id === editing)
     if (!s) return
     if (s.form) {
-      setForm(s.form)
+      setForm({ ...EMPTY_DETAILS, ...s.form, placeType: s.form.placeType || placeTypeOf(s.form.format) })
       return
     }
     setForm((f) => ({
@@ -192,7 +185,13 @@ export default function Wizard() {
   }, [editing])
 
   const persist = (publish) => {
-    const res = saveSeminar(form, { publish, id: editing || undefined })
+    if (publish) {
+      for (const st of STEPS) {
+        const err = validateStep(st.id, form)
+        if (err) { setFormError(err); notify(err); go(STEPS.indexOf(st), true); return }
+      }
+    }
+    const res = saveSeminar({ ...form, format: FORMAT_OF[form.placeType] || form.format, program: (form.program || []).filter((r) => r.time || r.title) }, { publish, id: editing || undefined })
     if (!res.ok) {
       setFormError(res.error)
       notify(res.error)
@@ -203,7 +202,31 @@ export default function Wizard() {
     navigate('/tashkilotchi/seminarlar')
   }
 
-  const go = (index) => {
+    const copyFrom = (id) => {
+    const f = seminarFormCopy(id)
+    if (!f) return
+    setForm({ ...EMPTY_DETAILS, ...f, placeType: f.placeType || placeTypeOf(f.format) })
+    setCopyOpen(false)
+    notify('Ma’lumotlar nusxalandi — sana va joyni kiriting')
+    window.setTimeout(() => go(1, true), 60)
+  }
+  // Oldinga o‘tishda oraliqdagi barcha bosqichlar tekshiriladi
+  const go = (index, force = false) => {
+    if (!force && index > active) {
+      for (let k = active; k < Math.min(index, STEPS.length); k += 1) {
+        const err = validateStep(STEPS[k].id, form)
+        if (err) {
+          setFormError(err)
+          notify(err)
+          lock.current = true
+          setActive(k)
+          document.getElementById(STEPS[k].id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          window.setTimeout(() => { lock.current = false }, 700)
+          return
+        }
+      }
+      setFormError('')
+    }
     const i = Math.max(0, Math.min(STEPS.length - 1, index))
     lock.current = true
     setActive(i)
@@ -241,6 +264,8 @@ export default function Wizard() {
   }, [params])
 
   if (mobile) return <WizardMobile sheet={sheet} setSheet={setSheet} notify={notify} />
+  const previous = hub.seminars.filter((x) => x.id !== editing)
+  const num0 = (id) => STEPS.findIndex((x) => x.id === id) + 1
 
   const previewTags = ['Implantologiya', 'Amaliyot', 'Master-klass'].filter((t) => form.tags.includes(t))
   const addTag = () => {
@@ -257,7 +282,26 @@ export default function Wizard() {
             <ChevronLeft className="size-4" /> Mening seminarlarim
           </Link>
           <h1 className="mt-1 text-[22px] font-bold leading-tight tracking-tight">{editing ? 'Seminarni tahrirlash' : 'Yangi seminar yaratish'}</h1>
-          <p className="mt-0.5 text-[13px] text-[#6e868c]">Seminar haqida to‘liq ma’lumotlarni kiriting va e’lon qiling</p>
+          <div className="mt-0.5 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[13px] text-[#6e868c]">Seminar haqida to‘liq ma’lumotlarni kiriting va e’lon qiling</p>
+            {!editing && previous.length > 0 && (
+              <span className="relative">
+                <button type="button" onClick={() => setCopyOpen((v) => !v)} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3 text-[12.5px] font-semibold" style={{ color: TEAL }}>
+                  <Copy className="size-4" /> Oldingi seminardan nusxa olish
+                </button>
+                {copyOpen && (
+                  <span className="absolute right-0 z-30 mt-1 block max-h-72 w-[300px] overflow-auto rounded-xl border border-[#e6f1ef] bg-white p-1 shadow-lg">
+                    {previous.map((x) => (
+                      <button key={x.id} type="button" onClick={() => copyFrom(x.id)} className="block w-full rounded-lg px-2.5 py-2 text-left hover:bg-[#f4fbfa]">
+                        <span className="block truncate text-[12.5px] font-semibold text-[#143044]">{x.title}</span>
+                        <span className="block text-[11px] text-[#8aa0a4]">{x.date || 'Sanasiz'} · {x.badge || x.status}</span>
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
         </div>
 
         <nav className="sticky top-0 hidden self-start xl:col-start-1 xl:row-start-2 xl:block" aria-label="Bosqichlar">
@@ -279,7 +323,7 @@ export default function Wizard() {
 
         <div className="mt-3 min-w-0 space-y-3 xl:col-start-2 xl:row-start-2 xl:mt-0">
           <section id="info" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="1" title="Asosiy ma’lumotlar" sub="Seminar nomi, tavsifi, mavzusi va muqova rasmi" extra={(
+            <Head n={num0('info')} title="Asosiy ma’lumotlar" sub="Seminar nomi, tavsifi, mavzusi va muqova rasmi" extra={(
               <button type="button" onClick={() => persist(false)} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Save className="size-3.5" /> Qoralama saqlash
               </button>
@@ -319,9 +363,8 @@ export default function Wizard() {
                 </div>
               </div>
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="block"><Lab req>Mavzu / Yo‘nalish</Lab><SelectBox value={form.topic} onChange={(v) => set({ topic: v })} options={TOPICS} /></label>
-              <label className="block"><Lab req>Format</Lab><SelectBox value={form.format} onChange={(v) => set({ format: v })} options={FORMATS} /></label>
               <label className="block"><Lab>Bosh toifa</Lab><SelectBox value={form.category} onChange={(v) => set({ category: v })} options={CATS} /></label>
             </div>
             <div className="mt-3">
@@ -344,7 +387,7 @@ export default function Wizard() {
           </section>
 
           <section id="when" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="2" title="Sana va joy" sub="Seminar o‘tkazilish sanasi, vaqti va manzilini belgilang" />
+            <Head n={num0('when')} title="Sana va joy" sub="Seminar o‘tkazilish sanasi, vaqti va manzilini belgilang" />
             <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-2">
               <div className="min-w-0 flex-1 basis-[220px]">
                 <Lab req>Boshlanish sanasi va vaqti</Lab>
@@ -359,7 +402,7 @@ export default function Wizard() {
                 Bir necha kunlik seminar
               </button>
             </div>
-            <p className="mb-1.5 mt-3 text-[12.5px] font-medium text-[#1c4a5a]">Manzil turi <span className="text-[#e11d48]">*</span></p>
+            <p className="mb-1.5 mt-3 text-[12.5px] font-medium text-[#1c4a5a]">Format va manzil turi <span className="text-[#e11d48]">*</span></p>
             <div className="flex flex-wrap gap-2">
               {[
                 ['offline', 'Joyida (offline)', MapPin],
@@ -368,12 +411,18 @@ export default function Wizard() {
               ].map(([id, label, Icon]) => {
                 const on = form.placeType === id
                 return (
-                  <button key={id} type="button" onClick={() => set({ placeType: id })} className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-[12.5px] font-semibold ${on ? 'text-white' : 'border border-[#e4eeec] bg-white text-[#1c4a5a]'}`} style={on ? { background: TEAL } : undefined}>
+                  <button key={id} type="button" onClick={() => set({ placeType: id, format: FORMAT_OF[id] })} className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-[12.5px] font-semibold ${on ? 'text-white' : 'border border-[#e4eeec] bg-white text-[#1c4a5a]'}`} style={on ? { background: TEAL } : undefined}>
                     <Icon className="size-3.5" /> {label}
                   </button>
                 )
               })}
             </div>
+            {form.placeType === 'online' && (
+              <label className="mt-3 block">
+                <Lab req>Webinar platformasi yoki havolasi</Lab>
+                <input className={box} placeholder="Masalan: Zoom" value={form.place} onChange={(e) => set({ place: e.target.value })} />
+              </label>
+            )}
             {form.placeType !== 'online' && (
               <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_200px]">
                 <div className="space-y-3">
@@ -407,8 +456,13 @@ export default function Wizard() {
             )}
           </section>
 
+          <section id="details" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+            <Head n={num0('details')} title="Dastur va tafsilotlar" sub="Dastur, CME, amaliy qism va shartlar — bo‘sh qoldirilgan bo‘limlar sahifada ko‘rinmaydi" />
+            <div className="mt-3"><WizardDetails form={form} set={set} /></div>
+          </section>
+
           <section id="tickets" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="3" title="Chipta turlari" sub="Seminar uchun turli chipta turlarini qo‘shing" extra={(
+            <Head n={num0('tickets')} title="Chipta turlari" sub="Seminar uchun turli chipta turlarini qo‘shing" extra={(
               <button type="button" onClick={() => setModal('ticket')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Plus className="size-4" /> Chipta turi qo‘shish
               </button>
@@ -462,7 +516,7 @@ export default function Wizard() {
           </section>
 
           <section id="speakers" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="4" title="Ma’ruzachilar" sub="Seminarda ishtirok etadigan ma’ruzachilarni qo‘shing" extra={(
+            <Head n={num0('speakers')} title="Ma’ruzachilar" sub="Seminarda ishtirok etadigan ma’ruzachilarni qo‘shing" extra={(
               <button type="button" onClick={() => setModal('speaker')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Plus className="size-4" /> Ma’ruzachi qo‘shish
               </button>
@@ -486,7 +540,7 @@ export default function Wizard() {
           </section>
 
           <section id="cert" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="5" title="Sertifikat va dizayn" sub="Sertifikat shablonini tanlang yoki o‘z dizayningizni yuklang" />
+            <Head n={num0('cert')} title="Sertifikat va dizayn" sub="Sertifikat shablonini tanlang yoki o‘z dizayningizni yuklang" />
             <div className="mt-3 flex flex-wrap gap-1">
               {[
                 ['ready', 'Tayyor shablonlar'],
@@ -500,7 +554,7 @@ export default function Wizard() {
               <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
                 {CERTS.map((t) => (
                   <button key={t.id} type="button" onClick={() => set({ template: t.id })} className={`rounded-xl border p-2 text-left ${form.template === t.id ? 'border-[var(--color-org-teal)] ring-2 ring-[var(--color-org-teal)]/25' : 'border-[#e6f1ef]'}`}>
-                    <CertFace tone={t.id} />
+                    <CertFace tone={t.id} org={orgName} />
                     <p className="mt-1.5 text-center text-[12px] font-semibold">{t.name}</p>
                   </button>
                 ))}
@@ -518,7 +572,7 @@ export default function Wizard() {
           </section>
 
           <section id="marketing" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="6" title="Marketing va promo-kodlar" sub="Seminarga ko‘proq ishtirokchi jalb qiling" extra={(
+            <Head n={num0('marketing')} title="Marketing va promo-kodlar" sub="Seminarga ko‘proq ishtirokchi jalb qiling" extra={(
               <button type="button" onClick={() => setModal('promo')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Plus className="size-4" /> Promo-kod
               </button>
@@ -556,12 +610,14 @@ export default function Wizard() {
           </section>
 
           <section id="review" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n="7" title="Ko‘rib chiqish" sub="E’lon qilishdan oldin ma’lumotlarni tekshiring" />
+            <Head n={num0('review')} title="Ko‘rib chiqish" sub="E’lon qilishdan oldin ma’lumotlarni tekshiring" />
             <ul className="mt-3 space-y-1 text-[13px] text-[#3e5a62]">
-              <li><b>{form.name}</b> · {form.topic} · {form.format}</li>
+              <li><b>{form.name}</b> · {form.topic} · {FORMAT_OF[form.placeType]}</li>
               <li>{uzDate(form.start)} {form.startTime} — {uzDate(form.end)} {form.endTime}</li>
               <li>{form.place}</li>
               <li>{form.tickets.length} chipta · {form.speakers.length} ma’ruzachi · {CERTS.find((t) => t.id === form.template)?.name}</li>
+              {(form.cmeHours || form.cmePoints) && <li>CME: {[form.cmeHours && `${form.cmeHours} soat`, form.cmePoints && `${form.cmePoints} ball`].filter(Boolean).join(' · ')}</li>}
+              <li>Dastur: {(form.program || []).filter((r) => r.title).length} qator{form.practice?.on ? ' · amaliy qism bor' : ''}{form.liveSurgery?.on ? ' · jonli jarrohlik' : ''}</li>
             </ul>
           </section>
 
@@ -611,7 +667,7 @@ export default function Wizard() {
             <div className="mt-2 space-y-1.5 border-t border-[#f0f5f4] pt-2 text-[11.5px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1 text-[#7e9398]"><Monitor className="size-3.5" /> Format</span>
-                <span className="font-medium">{form.format}</span>
+                <span className="font-medium">{FORMAT_OF[form.placeType]}</span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1 text-[#7e9398]"><LayoutGrid className="size-3.5" /> Toifa</span>
@@ -625,11 +681,10 @@ export default function Wizard() {
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2 border-t border-[#f0f5f4] pt-2">
-              <img src={ORG.avatar} alt="" className="size-8 rounded-full object-cover" />
+              {hub.settings?.avatar ? <img src={hub.settings.avatar} alt="" className="size-8 rounded-full object-cover" /> : <span className="grid size-8 place-items-center rounded-full bg-[#e7f6f3] text-[12px] font-bold" style={{ color: TEAL }}>{(orgName || 'T').slice(0, 1).toUpperCase()}</span>}
               <div className="min-w-0 leading-tight">
                 <p className="text-[10.5px] text-[#8aa0a4]">Tashkilotchi</p>
-                <p className="truncate text-[12px] font-semibold">{ORG.name}</p>
-                <p className="text-[10.5px] text-[#8aa0a4]">{ORG.brand}</p>
+                <p className="truncate text-[12px] font-semibold">{orgName || 'Tashkilot nomi kiritilmagan'}</p>
               </div>
             </div>
             <div className="mt-1.5 flex items-center gap-2">

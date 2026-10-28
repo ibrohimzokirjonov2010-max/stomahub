@@ -9,7 +9,7 @@ import { useOrg } from '../Shell'
 import { checkInPayload, setQrSound, useHub } from '../../hubStore'
 const TABS = [
   { id: 'scan', label: 'QR skaner', icon: QrCode },
-  { id: 'manual', label: 'Manuel check-in', icon: UserRound },
+  { id: 'manual', label: 'Qo‘lda check-in', icon: UserRound },
   { id: 'history', label: 'Check-in tarixi', icon: Clock },
   { id: 'stats', label: 'Statistika', icon: BarChart3 },
   { id: 'settings', label: 'Sozlamalar', icon: Settings },
@@ -156,11 +156,11 @@ export default function Qr() {
           <div className="min-w-0">
             {tab === 'scan' && (
               <div className="relative h-[434px] overflow-hidden rounded-[20px]">
-                <CameraScan onCode={applyCode} onManual={() => setTab('manual')} manualLabel="Manuel check-in" />
+                <CameraScan onCode={applyCode} onManual={() => setTab('manual')} manualLabel="Qo‘lda check-in" />
               </div>
             )}
             {tab === 'manual' && (
-              <Panel title="Manuel check-in">
+              <Panel title="Qo‘lda check-in">
                 <label className="block text-[12.5px] font-semibold text-[#3e5962]">Ism yoki chipta kodi</label>
                 <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Aliyeva Mohira yoki STH-2026-0001" className="mt-1.5 h-10 w-full rounded-xl border border-[#e4eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" />
                 <button type="button" onClick={manual} className="mt-3 h-10 rounded-xl bg-[var(--color-org-teal)] px-4 text-[13px] font-semibold text-white">Check-in qilish</button>

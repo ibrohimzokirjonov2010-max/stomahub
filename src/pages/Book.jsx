@@ -4,6 +4,7 @@ import { BookOpen, ChevronRight, CreditCard, Headset, Heart, Share2, ShieldCheck
 import { useCart } from '../cart'
 import BookPdfPanel from '../components/BookPdf'
 import { getBook, langLong, money, priceless, productOf, pubName } from '../booksData'
+import { payPromo } from '../payments/paymentService'
 
 export default function Book() {
   const { id } = useParams()
@@ -85,7 +86,7 @@ export default function Book() {
           <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-ink-2 lg:grid-cols-4">
             <Perk icon={Truck} title="Tez yetkazib berish" sub="Toshkent 1–2 kun" />
             {!priceless(book) && <Perk icon={ShieldCheck} title="Original mahsulot" sub="Rasmiy nashr" />}
-            <Perk icon={CreditCard} title="Qulay to‘lov" sub="Click, Payme, Uzum" />
+            <Perk icon={CreditCard} title="Qulay to‘lov" sub={payPromo('Click, Payme, Uzum')} />
             <Perk icon={Headset} title="Qo‘llab-quvvatlash" sub="Savollar bo‘yicha yordam" />
           </div>
           <BookPdfPanel book={book} />

@@ -11,7 +11,7 @@ export default function OrganizerGate({ children }) {
   const [stuck, setStuck] = useState(false)
 
   const waitingSession = session.status === 'loading'
-  const waitingHub = session.status === 'authed' && canEnterOrganizer(session.profile) && (!hub.ready || hub.loading)
+  const waitingHub = session.status === 'authed' && canEnterOrganizer(session.profile) && !hub.ready
 
   useEffect(() => {
     if (!waitingSession && !waitingHub) {

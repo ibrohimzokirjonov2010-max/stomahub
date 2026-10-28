@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Star, BadgeCheck, PackageOpen, CalendarDays, Barcode, Boxes, MapPinned, Truck, FileText,
@@ -193,7 +194,7 @@ function ProductBody({ p }) {
           >
             <ShoppingCart className="size-4" /> Savatga qo‘shish
           </button>
-          <button disabled={p.stock < 1} onClick={() => { add({ ...p, image: p.thumbs[0] }, Math.min(qty, p.stock)); navigate('/buyurtma', { state: { from: 'market' } }) }} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
+          <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, Math.min(qty, p.stock), 'market')} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
             Hozir xarid qilish
           </button>
 
@@ -217,7 +218,7 @@ function ProductBody({ p }) {
       </div>
 
       {/* Tablar */}
-      <div className="mt-4 flex gap-1 overflow-x-auto no-scrollbar xl:-mt-3">
+      <div className="relative mt-4 flex gap-1 overflow-x-auto no-scrollbar">
         {tabs.map((t, i) => (
           <button
             key={t.key}

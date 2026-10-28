@@ -49,7 +49,7 @@ export function useBemorlar() {
 export const getBemor = (id) => rows.find((p) => p.id === id)
 
 export function addBemor(p) {
-  rows = [{ debt: Math.max(0, (p.total || 0) - (p.paid || 0)), teeth: {}, visits: [], docs: [], mini: mini(3), tags: ['Yangi'], allergy: [], diseases: [], ...p }, ...rows]
+  rows = [{ debt: Math.max(0, (p.total || 0) - (p.paid || 0)), teeth: {}, visits: [], docs: [], mini: mini(3), tags: ['Yangi'], allergy: [], diseases: [], created: Date.now(), ...p }, ...rows]
   emit()
 }
 

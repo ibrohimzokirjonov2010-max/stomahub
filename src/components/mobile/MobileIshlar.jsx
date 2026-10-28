@@ -4,7 +4,7 @@ import {
   Search, SlidersHorizontal, X, LayoutGrid, MapPin, ChevronDown, BriefcaseBusiness, Wallet, ArrowUpDown, Bookmark,
   CalendarDays, ArrowRight, Plus, Check, UserRound, FlaskConical, ClipboardList, Scissors, Baby, Sparkles, Stethoscope,
 } from 'lucide-react'
-import { jobs, cities, specs, types, typeName, exps, pay } from '../../ishlarData'
+import { jobs, cities, specs, types, typesFor, typeName, exps, pay } from '../../ishlarData'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
@@ -257,7 +257,7 @@ function PostJobSheet({ onClose, onDone }) {
         <input value={f.clinic} onChange={set('clinic')} placeholder="Klinika nomi" className={field(errs.clinic)} />
         <div className="grid grid-cols-2 gap-2">
           <select value={f.spec} onChange={set('spec')} className={field(false)}>{specs.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-          <select value={f.type} onChange={set('type')} className={field(false)}>{types.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+          <select value={f.type} onChange={set('type')} className={field(false)}>{typesFor(f.spec).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           <select value={f.city} onChange={set('city')} className={field(false)}>{cities.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
           <input value={f.district} onChange={set('district')} placeholder="Tuman" className={field(false)} />
           <input value={f.min} onChange={set('min')} inputMode="numeric" placeholder="Maosh dan" className={field(errs.pay)} />

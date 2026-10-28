@@ -50,7 +50,7 @@ const GROUPS = [
       { label: 'To‘lovlar', icon: Wallet, to: '/tolovlar', keys: ['tolov'] },
       { label: 'Xizmatlar', icon: HeartPulse, to: '/xizmatlar', keys: ['xizmatlar'] },
       { label: 'Ombor', icon: Warehouse, to: '/ombor', keys: ['ombor'] },
-      { label: 'Hisobotlar', icon: ChartPie, to: '/klinika', keys: ['hisobot'] },
+      { label: 'Hisobotlar', icon: ChartPie, to: '/hisobotlar', keys: ['hisobot'] },
     ],
   },
   {

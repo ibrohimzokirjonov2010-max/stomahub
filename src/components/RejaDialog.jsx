@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { ToothIcon } from './icons'
 import PersonAvatar from './PersonAvatar'
-import ToothChart, { Tooth, UPPER, LOWER, BABY_UPPER, BABY_LOWER, CONDITIONS } from './ToothChart'
+import ToothChart, { Tooth, UPPER, LOWER, BABY_UPPER, BABY_LOWER, CONDITIONS, SURFACES } from './ToothChart'
 import { useBemorlar } from '../bemorData'
 import { useXizmatlar } from '../xizmatData'
 import { DOCTORS, PLAN_STATUS, TODAY, money, nextPlanCode, useTemplates, doctorOf } from '../rejaData'
@@ -38,7 +38,7 @@ function fromPlan(p) {
 
 const blank = () => ({
   id: '', code: nextPlanCode(), patient: null, doctor: 'me', title: '', status: 'reja', start: TODAY, chair: 'Kreslo 1',
-  teeth: {}, items: [], groups: [], discount: 0, payMode: 'full', note: '', paid: 0, payments: [], visits: [], stages: [],
+  teeth: {}, surfaces: {}, items: [], groups: [], discount: 0, payMode: 'full', note: '', paid: 0, payments: [], visits: [], stages: [],
 })
 
 export default function RejaDialog({ initial, onClose, onSave }) {
@@ -48,6 +48,7 @@ export default function RejaDialog({ initial, onClose, onSave }) {
   const [form, setForm] = useState(() => (initial ? fromPlan(initial) : blank()))
   const [errors, setErrors] = useState({})
   const [dent, setDent] = useState('doimiy')
+  const [picked, setPicked] = useState(null)
   const [tool, setTool] = useState('')
   const [big, setBig] = useState(false)
   const [asTemplate, setAsTemplate] = useState(false)
@@ -96,6 +97,15 @@ export default function RejaDialog({ initial, onClose, onSave }) {
     if (next === 'healthy') delete teeth[n]
     else teeth[n] = next
     set('teeth', teeth)
+    setPicked(n)
+  }
+  const toggleSurface = (n, k) => {
+    const cur = (form.surfaces || {})[n] || []
+    const nextList = cur.includes(k) ? cur.filter((x) => x !== k) : SURFACES.map(([x]) => x).filter((x) => x === k || cur.includes(x))
+    const surfaces = { ...(form.surfaces || {}) }
+    if (nextList.length) surfaces[n] = nextList
+    else delete surfaces[n]
+    set('surfaces', surfaces)
   }
 
   const setRow = (id, patch) => set('items', form.items.map((r) => (r.id === id ? { ...r, ...patch } : r)))
@@ -191,7 +201,19 @@ export default function RejaDialog({ initial, onClose, onSave }) {
   const upper = dent === 'doimiy' ? UPPER : BABY_UPPER
   const lower = dent === 'doimiy' ? LOWER : BABY_LOWER
   const chart = (height) => (
-    <ToothChart upper={upper} lower={lower} height={height} stateOf={(n) => form.teeth[n]} onPick={tapTooth} />
+    <div>
+      <ToothChart upper={upper} lower={lower} height={height} stateOf={(n) => form.teeth[n]} surfacesOf={(n) => (form.surfaces || {})[n]} onPick={tapTooth} />
+      {picked && (upper.includes(picked) || lower.includes(picked)) && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
+          <span className="font-semibold text-ink-2">{picked}-tish yuzalari:</span>
+          {SURFACES.map(([k, l]) => {
+            const on = ((form.surfaces || {})[picked] || []).includes(k)
+            return <button key={k} type="button" title={l} aria-pressed={on} onClick={() => toggleSurface(picked, k)} className={`h-6 min-w-6 rounded-md px-1.5 font-bold ${on ? 'bg-[#f59e0b] text-white' : 'bg-[#f4f7fb] text-ink-2'}`}>{k}</button>
+          })}
+          <span className="text-muted">O — okklyuziya, M — mezial, D — distal, V — vestibulyar, L — lingval</span>
+        </div>
+      )}
+    </div>
   )
   const legend = (
     <ul className="space-y-0.5 rounded-xl bg-[#f6f9fc] p-2">

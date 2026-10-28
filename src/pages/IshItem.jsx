@@ -94,9 +94,9 @@ export default function IshItem() {
                 </div>
               </>
             )}
-            {tab === 1 && <Block title="Klinika haqida" body={view.aboutClinic} />}
-            {tab === 2 && <List title="Talablar" rows={view.requirements} />}
-            {tab === 3 && <List title="Imtiyozlar" rows={view.benefits} />}
+            {tab === 1 && <Block title="Klinika haqida" body={view.aboutClinic || "Klinika haqida ma’lumot kiritilmagan."} />}
+            {tab === 2 && <List title="Talablar" rows={view.requirements.length ? view.requirements : ["Ish beruvchi talablarni kiritmagan."]} />}
+            {tab === 3 && <List title="Imtiyozlar" rows={view.benefits.length ? view.benefits : ["Ish beruvchi imtiyozlarni kiritmagan."]} />}
             {tab === 4 && <Block title="Manzil" body={view.address} />}
             <div className="flex gap-2 rounded-xl bg-[#f3fbf8] p-3 text-[11px] leading-relaxed text-ink-2">
               <ShieldCheck className="mt-0.5 size-4 shrink-0 text-sea" />

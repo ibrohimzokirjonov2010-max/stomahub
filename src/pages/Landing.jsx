@@ -8,6 +8,7 @@ import {
   ArrowRight, BarChart3, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Globe, GraduationCap, Home, Mail, MapPin, Megaphone,
   Menu, MessageSquareMore, Phone, Search, ShoppingCart, Users, X, LayoutGrid, Bell, Wallet, FileText, Settings, Package, UserRound, Store,
 } from 'lucide-react'
+import { payPromo } from '../payments/paymentService'
 
 const T = '#0F766E'
 const NAV = [['Marketplace', '/marketplace'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Klinika CRM', '/klinika'], ['Ustalar', '/ustalar']]
@@ -45,7 +46,7 @@ const FAQ = [
   ['Seminarlarga qanday qatnashish mumkin?', 'Seminarlar sahifasidan kerakli seminarni tanlab, ro‘yxatdan o‘tasiz va elektron chipta olasiz.'],
   ['Klinika CRM’ni bir necha xodim ishlata oladimi?', 'Ha. Klinika egasi shifokor va administratorlarni qo‘shib, ularga alohida kirish beradi.'],
   ['Mahsulotlarni qanday xarid qilish mumkin?', 'Marketplace’da mahsulotni savatga qo‘shing, manzil va to‘lov usulini tanlab buyurtma bering.'],
-  ['To‘lovlarni qanday qabul qilish mumkin?', 'Click va Payme orqali onlayn, shuningdek naqd to‘lov qo‘llab-quvvatlanadi.'],
+  ['To‘lovlarni qanday qabul qilish mumkin?', payPromo('Click va Payme orqali onlayn, shuningdek naqd to‘lov qo‘llab-quvvatlanadi.', 'Naqd to‘lov qo‘llab-quvvatlanadi. Onlayn to‘lov tez orada ishga tushadi.')],
   ['Texnik yordam qanday ishlaydi?', `Savol bo‘lsa, ${CONTACT_PHONE} raqamiga qo‘ng‘iroq qiling yoki info@stomahub.uz manziliga yozing. Ish vaqti 09:00–21:00.`],
 ]
 

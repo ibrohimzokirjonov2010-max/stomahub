@@ -21,14 +21,6 @@ const TONE = {
   nofaol: ['bg-[#fde8ee]', 'text-[#e11d48]', 'bg-[#e11d48]'],
 }
 
-const MOBILE0 = [
-  { id: 'm1', code: 'STOMA50', off: `50 000 ${SO} chegirma`, used: 5, limit: 20, date: '30.10.2026', status: 'Faol' },
-  { id: 'm2', code: 'IMPLANT100', off: `100 000 ${SO} chegirma`, used: 12, limit: 30, date: '25.10.2026', status: 'Faol' },
-  { id: 'm3', code: 'TALABA30', off: `30 000 ${SO} chegirma`, used: 8, limit: 50, date: '21.10.2026', status: 'Faol' },
-  { id: 'm4', code: 'DOKTOR20', off: `20 000 ${SO} chegirma`, used: 18, limit: 50, date: '20.10.2026', status: 'Faol' },
-  { id: 'm5', code: 'ERTAQUSH25', off: `25 000 ${SO} chegirma`, used: 20, limit: 20, date: '15.10.2026', status: 'Tugagan' },
-  { id: 'm6', code: 'GURUH100', off: `100 000 ${SO} chegirma`, used: 7, limit: 10, date: '18.10.2026', status: 'Faol' },
-]
 
 const blank = { name: '', code: '', kind: 'foiz', value: '20', limit: '', limited: false, from: '', to: '', onlyTicket: false }
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek']
@@ -166,15 +158,15 @@ function DateField({ value, onChange, placeholder, bad }) {
   )
 }
 
-function Ring() {
+function Ring({ pct = 0 }) {
   const r = 16
   const c = 2 * Math.PI * r
-  const dash = 0.72 * c
+  const dash = (Math.max(0, Math.min(100, pct)) / 100) * c
   return (
     <svg width="46" height="46" viewBox="0 0 48 48" className="shrink-0" aria-hidden>
       <circle cx="24" cy="24" r={r} fill="none" stroke="#e5f2f0" strokeWidth="5" />
       <circle cx="24" cy="24" r={r} fill="none" stroke="#12a394" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${dash} ${c - dash}`} transform="rotate(-90 24 24)" />
-      <text x="24" y="25" textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill="#143044" fontFamily="Inter, sans-serif">72%</text>
+      <text x="24" y="25" textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill="#143044" fontFamily="Inter, sans-serif">{Math.round(pct)}%</text>
     </svg>
   )
 }
@@ -343,6 +335,12 @@ function Desktop() {
     reja: rows.filter((p) => p.status === 'reja').length,
     nofaol: rows.filter((p) => p.status === 'nofaol').length,
   }
+  const promoStats = rows.reduce((acc, p) => ({
+    used: acc.used + (Number(p.used) || 0),
+    limit: acc.limit + (Number(p.limit) && Number(p.limit) < 999 ? Number(p.limit) : 0),
+    discount: acc.discount + (Number(p.discountSum) || 0),
+    revenue: acc.revenue + (Number(p.revenueSum) || 0),
+  }), { used: 0, limit: 0, discount: 0, revenue: 0 })
   const current = SEMINARS.find((s) => s.id === picked) || SEMINARS[0] || { id: '', title: 'Seminar yo‘q', image: '/images/seminar-1.jpg', date: '' }
 
   const copy = (code) => {
@@ -400,7 +398,7 @@ function Desktop() {
           </button>
           {pickOpen && (
             <ul className="absolute right-0 z-40 mt-1 w-[300px] overflow-hidden rounded-xl border border-[#e6eeec] bg-white py-1 shadow-lg">
-              {SEMINARS.slice(0, 6).map((s) => (
+              {SEMINARS.map((s) => (
                 <li key={s.id}>
                   <button type="button" className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[#f4fbfa]" onClick={() => { setPicked(s.id); setPickOpen(false) }}>
                     <img src={s.image} alt="" className="h-8 w-10 rounded object-cover" />
@@ -417,10 +415,11 @@ function Desktop() {
       </div>
 
       <section className="grid grid-cols-4 gap-2.5">
-        <Kpi icon={BadgePercent} label="Jami promo-kodlar" value={String(rows.length)} foot="+3 bu oy" />
-        <Kpi icon={Users} label="Foydalanilgan" value="286" ring={<Ring />} />
-        <Kpi icon={Coins} label="Umumiy chegirma" value={`14 300 000 ${SO}`} valueClass="text-[15px]" />
-        <Kpi icon={TrendingUp} label={`Qo${APOST}shimcha tushum`} value={`42 800 000 ${SO}`} valueClass="text-[14.5px]" foot="↑ +28%" />
+        {/* Hammasi payments jadvalidagi promo bilan to‘langan qatorlardan (reconcilePromos) */}
+        <Kpi icon={BadgePercent} label="Jami promo-kodlar" value={hub.ready ? String(rows.length) : '…'} />
+        <Kpi icon={Users} label="Foydalanilgan" value={hub.ready ? String(promoStats.used) : '…'} ring={promoStats.limit ? <Ring pct={(promoStats.used / promoStats.limit) * 100} /> : null} />
+        <Kpi icon={Coins} label="Umumiy chegirma" value={hub.ready ? som(promoStats.discount) : '…'} valueClass="text-[15px]" />
+        <Kpi icon={TrendingUp} label="Promo orqali tushum" value={hub.ready ? som(promoStats.revenue) : '…'} valueClass="text-[14.5px]" />
       </section>
 
       <div className="mt-2 flex items-center justify-between gap-2">
@@ -441,7 +440,7 @@ function Desktop() {
               <Search className="size-3.5 shrink-0 text-[#93a8ad]" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Promo-kod nomi yoki kodi bo‘yicha qidiring..." className="min-w-0 flex-1 bg-transparent text-[11.5px] outline-none placeholder:text-[#a8b8bc]" />
             </label>
-            <Drop className="w-[132px]" value={seminar} onChange={setSeminar} options={[{ value: 'all', label: 'Barcha seminarlar' }, ...SEMINARS.slice(0, 5).map((s) => ({ value: s.id, label: s.topic }))]} />
+            <Drop className="w-[132px]" value={seminar} onChange={setSeminar} options={[{ value: 'all', label: 'Barcha seminarlar' }, ...SEMINARS.map((s) => ({ value: s.id, label: s.title }))]} />
             <Drop className="w-[108px]" value={kind} onChange={setKind} options={[{ value: 'all', label: 'Barcha turlar' }, { value: 'foiz', label: 'Foiz' }, { value: 'summa', label: 'Summa' }]} />
             <Drop className="w-[124px]" value={status} onChange={setStatus} options={[{ value: 'all', label: 'Barcha holatlar' }, ...Object.entries(STATUS).map(([value, label]) => ({ value, label }))]} />
             <button type="button" onClick={() => { setQ(''); setKind('all'); setStatus('all'); setSeminar('all'); setTab('all') }} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-[#e4eeec] bg-white px-2 text-[11.5px] font-medium text-[#1c4a5a] hover:bg-[#f7fbfb]">

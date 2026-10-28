@@ -7,6 +7,7 @@ export const filterChips = [
   { key: 'bond', label: 'Bondlar' },
   { key: 'endo', label: 'Endodontiya' },
   { key: 'impl', label: 'Implantlar' },
+  { key: 'orto', label: 'Ortodontiya' },
   { key: 'uch', label: 'Uchliklar' },
   { key: 'asb', label: 'Asboblar' },
   { key: 'usk', label: 'Uskunalar' },
@@ -15,7 +16,7 @@ export const filterChips = [
 
 export const categoryCounts = [
   ['all', 'Barchasi', 0], ['komp', 'Kompozitlar', 0], ['bond', 'Bondlar', 0], ['endo', 'Endodontiya', 0],
-  ['impl', 'Implantlar', 0], ['uch', 'Uchliklar', 0], ['asb', 'Asboblar', 0], ['usk', 'Uskunalar', 0], ['gig', 'Gigiyena', 0],
+  ['impl', 'Implantlar', 0], ['orto', 'Ortodontiya', 0], ['uch', 'Uchliklar', 0], ['asb', 'Asboblar', 0], ['usk', 'Uskunalar', 0], ['gig', 'Gigiyena', 0],
 ]
 
 export const brands = [
