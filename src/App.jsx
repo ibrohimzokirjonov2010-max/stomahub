@@ -16,6 +16,7 @@ import SeminarReg from './pages/SeminarReg'
 import Shell from './organizer/Shell'
 import OrganizerGate from './organizer/OrganizerGate'
 import { sellerRoutes } from './seller/routes'
+import SellerRegister from './apply/SellerRegister'
 import Dashboard from './organizer/pages/Dashboard'
 import Seminars from './organizer/pages/Seminars'
 import Participants from './organizer/pages/Participants'
@@ -141,6 +142,7 @@ export default function App() {
           />
           <Route path="/ortiqcha" element={<SurplusCatalog />} />
           <Route path="/seminarlar" element={<SeminarsCatalog />} />
+          <Route path="/sotuvchi-bolish" element={<SellerRegister />} />
           {sellerRoutes}
           {adminRoutes}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>

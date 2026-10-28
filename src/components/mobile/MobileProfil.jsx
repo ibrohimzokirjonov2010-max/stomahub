@@ -4,13 +4,14 @@ import {
   ArrowRight, BadgeCheck, Bell, Building, CalendarClock, CalendarDays, Camera, Check, ChevronDown, ChevronRight, CircleQuestionMark,
   ClipboardList, Coins, CreditCard, Crown, Gift, Globe, GraduationCap, Heart, ImagePlus, LogIn, LogOut, Mail, MapPin, Megaphone,
   Pencil, Percent, Phone, Plus, Search, Send, ShoppingBag, ShoppingCart, Sparkles, Trash2, Truck, UserRound, Wallet, Warehouse,
+  Store,
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { adPrice } from '../../elonlarData'
 import { fetchBonusLog, fetchNotifications, markNotificationsRead, useRemote } from '../../buyerApi'
 import { COURSES, allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
-import { signOut } from '../../sessionStore'
+import { canEnterSeller, signOut, useSession } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -60,6 +61,7 @@ function toAvatar(file) {
 
 export default function MobileProfil() {
   const navigate = useNavigate()
+  const sessionNow = useSession()
   const profile = useProfile()
   const { items } = useCart()
   const seminars = useSeminarStore()
@@ -100,6 +102,7 @@ export default function MobileProfil() {
 
   if (profile.loggedOut) return <SignIn profile={profile} onDone={() => setToast(`Xush kelibsiz, ${profile.name.split(' ')[0]}!`)} toast={toast} closeToast={closeToast} />
 
+  const member = canEnterSeller(sessionNow.profile)
   const groups = [
     [
       { id: 'orders', icon: ClipboardList, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Mening buyurtmalarim', text: 'Buyurtmalar tarixi va holati', count: orders.length, go: () => navigate('/profil/buyurtmalar') },
@@ -112,6 +115,7 @@ export default function MobileProfil() {
       { id: 'addresses', icon: MapPin, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Manzillarim', text: 'Yetkazib berish manzillari', go: () => navigate('/profil/manzillar') },
       { id: 'payments', icon: CreditCard, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'To‘lov usullari', text: 'Naqd to‘lov — mahsulotni olganda', go: () => navigate('/profil/tolov-usullari') },
       { id: 'notif', icon: Bell, tone: 'bg-[#fff4e0] text-[#e8a20c]', title: 'Bildirishnomalar', text: 'Yangiliklar va xabarlar' },
+      { id: 'seller', icon: Store, tone: 'bg-[#e3f5f3] text-sea', title: member ? 'Sotuvchi kabineti' : 'Sotuvchi bo‘lish', text: member ? 'Do‘koningizni boshqaring' : 'StomaHub’da mahsulot soting', go: () => navigate(member ? '/sotuvchi' : '/sotuvchi-bolish') },
       { id: 'lang', icon: Globe, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Til', text: LANGS.find((l) => l[0] === profile.lang)?.[1] },
       { id: 'help', icon: CircleQuestionMark, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Yordam', text: 'Savollar va qo‘llab-quvvatlash' },
       { id: 'logout', icon: LogOut, tone: 'bg-[#fdecec] text-sale', title: 'Chiqish', text: 'Hisobdan chiqish' },

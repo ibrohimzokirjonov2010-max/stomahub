@@ -5,7 +5,7 @@ import { Save, Store, Phone, MapPin, Clock, CalendarDays, Upload, UserPlus, Plus
 import { supabase } from '../../supabaseClient'
 import { useSession, signOut } from '../../sessionStore'
 import { useSellerData, upsertSettings, uploadMedia, deleteRow, logActivity } from '../api'
-import { Btn, Field, Input, Badge, Toggle, Th, Td, Err, toast } from '../components/ui'
+import { Btn, Field, Input, Textarea, Badge, Toggle, Th, Td, Err, toast } from '../components/ui'
 import Modal from '../components/shell/Modal'
 import Confirm from '../components/shell/Confirm'
 import Empty from '../components/shell/Empty'
@@ -43,7 +43,7 @@ export default function Sozlamalar() {
     if (d.loading || loaded.current) return
     loaded.current = true
     const s = d.settings || {}
-    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '' }))
+    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '', owner_name: s.owner_name || '', telegram: s.telegram || '', instagram: s.instagram || '', website: s.website || '', description: s.description || '', ext: 'telegram' in s }))
     setNotify({ ...DEFAULT_NOTIFY, ...(s.notify || {}) })
     const uid = session.user?.id
     if (uid && supabase) supabase.from('profiles').select('shop_name').eq('id', uid).maybeSingle().then(({ data }) => setShop((x) => ({ ...x, name: data?.shop_name || '' })))
@@ -53,7 +53,7 @@ export default function Sozlamalar() {
     if (!shop.name.trim()) return setErr('Do‘kon nomini kiriting.')
     setBusy(true); setErr('')
     const { error } = await supabase.from('profiles').update({ shop_name: shop.name.trim() }).eq('id', session.user.id)
-    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || '', notify })
+    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || '', notify, ...(shop.ext ? { owner_name: shop.owner_name.trim(), telegram: shop.telegram.trim(), instagram: shop.instagram.trim(), website: shop.website.trim(), description: shop.description.trim() } : {}) })
     setBusy(false)
     if (!r.ok) return setErr(r.error)
     window.dispatchEvent(new CustomEvent('shop-name', { detail: shop.name.trim() }))
@@ -83,10 +83,13 @@ export default function Sozlamalar() {
   const shopFields = (
     <div className="space-y-3">
       <Field label="Do‘kon nomi"><Input icon={Store} value={shop.name} onChange={(e) => setShop({ ...shop, name: e.target.value })} /></Field>
+      {shop.ext && <Field label="Egasining to‘liq ismi"><Input value={shop.owner_name} onChange={(e) => setShop({ ...shop, owner_name: e.target.value })} placeholder="Aliyev Vali" /></Field>}
+      {shop.ext && <Field label="Do‘kon tavsifi"><Textarea value={shop.description} onChange={(e) => setShop({ ...shop, description: e.target.value })} placeholder="Qanday mahsulotlar sotasiz" /></Field>}
       <Field label="Telefon raqam"><PhoneInput className="h-11" value={shop.phone} onChange={(v) => setShop({ ...shop, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" placeholder="+998 90 123 45 67" /></Field>
       <Field label="Manzil"><Input icon={MapPin} value={shop.address} onChange={(e) => setShop({ ...shop, address: e.target.value })} placeholder="Shahar, tuman, ko‘cha" /></Field>
       <MapPicker lat={shop.lat} lng={shop.lng} onChange={({ lat, lng, geo }) => setShop((x) => ({ ...x, lat, lng, ...(geo?.street ? { address: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) }))} />
       <div className="grid grid-cols-2 gap-3"><Field label="Ish kunlari"><Input icon={CalendarDays} value={shop.work_days} onChange={(e) => setShop({ ...shop, work_days: e.target.value })} /></Field><Field label="Ish vaqti"><Input icon={Clock} value={shop.work_hours} onChange={(e) => setShop({ ...shop, work_hours: e.target.value })} /></Field></div>
+      {shop.ext && <div className="grid gap-3 md:grid-cols-3"><Field label="Telegram"><Input value={shop.telegram} onChange={(e) => setShop({ ...shop, telegram: e.target.value })} placeholder="@dokon" /></Field><Field label="Instagram"><Input value={shop.instagram} onChange={(e) => setShop({ ...shop, instagram: e.target.value })} placeholder="@dokon" /></Field><Field label="Veb-sayt"><Input value={shop.website} onChange={(e) => setShop({ ...shop, website: e.target.value })} placeholder="dokon.uz" /></Field></div>}
       <Err>{err}</Err>
     </div>
   )

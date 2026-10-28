@@ -6,7 +6,7 @@ import { Clock3, ShieldAlert, Ban, Store, CalendarDays } from 'lucide-react'
  * Kabinetga huquqi yo'q foydalanuvchi uchun ekran. Kabinet ichidagi hech narsa ko'rsatilmaydi.
  * kind: 'seller' | 'organizer'; status: profildagi seller_status / org_status.
  */
-export default function NoAccess({ kind, status, role, onApply }) {
+export default function NoAccess({ kind, status, role, onApply, applyTo }) {
   const seller = kind === 'seller'
   const [shop, setShop] = useState('')
   const [busy, setBusy] = useState(false)
@@ -45,11 +45,14 @@ export default function NoAccess({ kind, status, role, onApply }) {
         </span>
         <h1 className="mt-4 text-[22px] font-extrabold leading-tight tracking-tight text-[#10283f]">{title}</h1>
         <p className="mt-2 text-[14px] leading-relaxed text-[#5c6e80]">{text}</p>
-        {canApply && seller && (
+        {canApply && applyTo && (
+          <Link to={applyTo} data-testid="become-seller" className="mt-5 grid h-12 w-full place-items-center rounded-xl bg-[#0f766e] text-[15px] font-semibold text-white hover:bg-[#115e59]">{seller ? 'Sotuvchi bo‘lish' : 'Tashkilotchi bo‘lish'}</Link>
+        )}
+        {canApply && seller && !applyTo && (
           <input value={shop} onChange={(e) => setShop(e.target.value)} placeholder="Do‘kon nomi" className="mt-5 h-12 w-full rounded-xl border border-[#dce5e7] px-4 text-[15px] outline-none focus:border-[#0f766e]" />
         )}
         {err && <p className="mt-3 text-[13px] font-medium text-[#d14343]">{err}</p>}
-        {canApply && (
+        {canApply && !applyTo && (
           <button type="submit" disabled={busy} className="mt-4 h-12 w-full rounded-xl bg-[#0f766e] text-[15px] font-semibold text-white hover:bg-[#115e59] disabled:opacity-60">
             {busy ? 'Yuborilmoqda…' : seller ? 'Sotuvchi bo‘lish uchun ariza' : 'Tashkilotchi bo‘lish uchun ariza'}
           </button>

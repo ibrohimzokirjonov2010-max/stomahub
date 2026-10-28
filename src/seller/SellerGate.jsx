@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { canUseSeller, useSession } from '../sessionStore'
+import { canEnterSeller, useSession } from '../sessionStore'
 import NoAccess from '../components/NoAccess'
-import { becomeSeller } from './api'
 
 export default function SellerGate({ children }) {
   const session = useSession()
@@ -12,8 +11,8 @@ export default function SellerGate({ children }) {
     const next = encodeURIComponent(`${location.pathname}${location.search}`)
     return <Navigate to={`/kirish?next=${next}&role=seller`} replace />
   }
-  if (!canUseSeller(session.profile)) {
-    return <NoAccess kind="seller" role={session.profile?.role} status={session.profile?.seller_status} onApply={becomeSeller} />
+  if (!canEnterSeller(session.profile)) {
+    return <NoAccess kind="seller" role={session.profile?.role} status={session.profile?.seller_status} applyTo="/sotuvchi-bolish" />
   }
   return children
 }

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, ChevronDown, Search, Store, House, Package, FileText, UserRound, Ellipsis, LogOut } from 'lucide-react'
+import { Bell, ChevronDown, Search, Store, House, Package, FileText, UserRound, Ellipsis, LogOut, Lock, ShieldCheck } from 'lucide-react'
 import { supabase } from '../supabaseClient'
-import { signOut, useSession } from '../sessionStore'
+import { canUseSeller, signOut, useSession } from '../sessionStore'
 import { SELLER_NAV } from './nav'
 import Logo from './components/shell/Logo'
 import Modal from './components/shell/Modal'
@@ -32,7 +32,11 @@ export default function SellerLayout() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0); setMore(false) }, [pathname])
   const hasNew = data.orders.some((o) => o.status === 'yangi')
-  const ctx = { shop, openQuick: (k = 'menu') => setQuick(k), openOrder: setOrderId }
+  const session = useSession()
+  const verified = canUseSeller(session.profile)
+  const nav = useNavigate()
+  const locked = (to) => !verified && to !== '/sotuvchi/sozlamalar'
+  const ctx = { shop, openQuick: (k = 'menu') => (verified ? setQuick(k) : nav('/sotuvchi/tasdiqlash')), openOrder: setOrderId }
 
   return (
     <div className="min-h-screen bg-[#F6FAFA] font-sans text-[#10283F]">
@@ -43,7 +47,7 @@ export default function SellerLayout() {
           {SELLER_NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end}
               className={({ isActive }) => `flex h-[46px] items-center gap-3.5 rounded-xl px-3.5 text-[15px] font-medium transition-colors ${isActive ? 'bg-[#F0FDFA] text-[#0F766E] shadow-[inset_0_0_0_1px_#CCFBF1]' : 'text-[#1F2A3C] hover:bg-[#F0FDFA] hover:text-[#0F766E]'}`}>
-              <Icon className="size-[21px]" strokeWidth={1.9} />{label}
+              <Icon className="size-[21px]" strokeWidth={1.9} />{label}{locked(to) && <Lock className="ml-auto size-4 text-[#8A98A8]" aria-label="Qulflangan" />}
             </NavLink>
           ))}
         </nav>
@@ -72,6 +76,8 @@ export default function SellerLayout() {
         </header>
 
         <main className="px-4 pb-28 md:px-6 md:pb-10 md:pt-6">
+          {!verified && <UnverifiedBanner status={session.profile?.seller_status} />}
+          {verified && <ApprovalNotice uid={session.user?.id} />}
           <Outlet context={ctx} />
         </main>
       </div>
@@ -85,7 +91,7 @@ export default function SellerLayout() {
           { to: '/sotuvchi/mijozlar', label: 'Mijozlar', icon: UserRound },
         ].map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => `flex flex-col items-center gap-1 text-[12px] font-medium ${isActive ? 'text-[#0F766E]' : 'text-[#4A5A6A]'}`}>
-            {({ isActive }) => (<><Icon className="size-[26px]" strokeWidth={1.8} fill={isActive ? '#0F766E' : 'none'} color={isActive ? '#0F766E' : 'currentColor'} />{label}</>)}
+            {({ isActive }) => (<><span className="relative"><Icon className="size-[26px]" strokeWidth={1.8} fill={isActive ? '#0F766E' : 'none'} color={isActive ? '#0F766E' : 'currentColor'} />{locked(to) && <Lock className="absolute -right-1.5 -top-1 size-3.5 rounded-full bg-white text-[#8A98A8]" />}</span>{label}</>)}
           </NavLink>
         ))}
         <button type="button" onClick={() => setMore(true)} className="flex flex-col items-center gap-1 text-[12px] font-medium text-[#4A5A6A]">
@@ -97,7 +103,7 @@ export default function SellerLayout() {
         <div className="grid grid-cols-2 gap-2.5">
           {SELLER_NAV.slice(4).map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} className="flex items-center gap-3 rounded-xl bg-[#F0FDFA] px-3.5 py-3 text-[14px] font-semibold text-[#10283F]">
-              <Icon className="size-5 text-[#0F766E]" />{label}
+              <Icon className="size-5 text-[#0F766E]" />{label}{locked(to) && <Lock className="ml-auto size-4 text-[#8A98A8]" />}
             </NavLink>
           ))}
         </div>
@@ -106,6 +112,40 @@ export default function SellerLayout() {
       <QuickActions open={quick} setOpen={setQuick} products={data.products} />
       <OrderDrawer orderId={orderId} onClose={() => setOrderId(null)} />
       <Toaster />
+    </div>
+  )
+}
+
+/** Shows unread "do‘kon tasdiqlandi" in-app notification (customer_notifications, link /sotuvchi). */
+function ApprovalNotice({ uid }) {
+  const [note, setNote] = useState(null)
+  useEffect(() => {
+    if (!supabase || !uid) return
+    supabase.from('customer_notifications').select('id,title,body').eq('user_id', uid).eq('link', '/sotuvchi').is('read_at', null)
+      .order('created_at', { ascending: false }).limit(1).then(({ data }) => setNote(data?.[0] || null))
+  }, [uid])
+  if (!note) return null
+  const close = () => { setNote(null); supabase.from('customer_notifications').update({ read_at: new Date().toISOString() }).eq('id', note.id).then(() => {}) }
+  return (
+    <div data-testid="approval-notice" role="status" className="mb-4 flex items-start gap-3 rounded-2xl bg-[#0F766E] p-4 text-white shadow-[0_10px_30px_rgb(15_118_110/0.25)]">
+      <ShieldCheck className="mt-0.5 size-6 shrink-0" />
+      <span className="min-w-0 flex-1"><b className="block text-[15px]">{note.title}</b><span className="text-[13.5px] text-white/90">{note.body}</span></span>
+      <button type="button" onClick={close} className="rounded-lg bg-white/15 px-3 py-1.5 text-[13px] font-semibold hover:bg-white/25">Yopish</button>
+    </div>
+  )
+}
+
+function UnverifiedBanner({ status }) {
+  const navigate = useNavigate()
+  const pending = status === 'pending'
+  return (
+    <div data-testid="unverified-banner" className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#CCFBF1] bg-[#F0FDFA] p-4 sm:flex-row sm:items-center">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#0F766E]"><ShieldCheck className="size-5" /></span>
+      <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-[#3D4E5F]">
+        <b className="block text-[14.5px] text-[#10283F]">{pending ? 'Arizangiz ko‘rib chiqilmoqda' : status === 'rejected' ? 'Arizangiz rad etildi' : 'Do‘koningiz hali tasdiqlanmagan'}</b>
+        {pending ? 'Tasdiqlangach mahsulot qo‘shish va boshqa bo‘limlar ochiladi. Hozircha do‘kon sozlamalarini to‘ldirishingiz mumkin.' : 'Hozircha faqat Sozlamalar ishlaydi. Mahsulot qo‘shish uchun tasdiqdan o‘ting.'}
+      </span>
+      {!pending && <button type="button" data-testid="banner-verify" onClick={() => navigate('/sotuvchi/tasdiqlash')} className="h-10 shrink-0 rounded-xl bg-[#0F766E] px-4 text-[14px] font-semibold text-white">{status === 'rejected' ? 'Qayta yuborish' : 'Tasdiqdan o‘tish'}</button>}
     </div>
   )
 }
