@@ -27,7 +27,7 @@ export default function MobileUchrashuvNew() {
     return patients.find((p) => p.id === location.state?.patientId) || null
   })
   const [find, setFind] = useState('')
-  const [doctor, setDoctor] = useState(edit?.doctor || 'ibrohim')
+  const [doctor, setDoctor] = useState(edit?.doctor || 'me')
   const [room, setRoom] = useState(edit?.room || 'Kreslo 1')
   const [service, setService] = useState(edit?.service || 'Konsultatsiya')
   const [date, setDate] = useState(() => {
@@ -110,7 +110,7 @@ export default function MobileUchrashuvNew() {
               {found.map((p) => <PatientRow key={p.id} p={p} onClick={() => choose(p)} />)}
               {!found.length && (
                 <div className="flex items-center justify-between gap-2 px-3 py-3">
-                  <span className="text-[12.5px] text-muted">Bemor topilmadi</span>
+                  <button type="button" onClick={() => choose({ id: '', name: find.trim(), phone: /^[+\d\s()-]{7,}$/.test(find.trim()) ? find.trim() : '' })} className="text-left text-[12.5px] font-semibold text-sea">«{find.trim()}» ni qo‘shish</button>
                   <Link to="/bemorlar/yangi" className="flex items-center gap-1 text-[12.5px] font-semibold text-sea"><UserPlus className="size-4" /> Yangi bemor</Link>
                 </div>
               )}
@@ -130,7 +130,7 @@ export default function MobileUchrashuvNew() {
 
         <div className="grid grid-cols-2 gap-2.5">
           <Field label="Shifokor" req>
-            <SelectBox value={doctor} onChange={setDoctor} options={doctors.map((d) => [d.id, d.name])} label="Shifokor" lead={<DocPic name={doctors.find((d) => d.id === doctor)?.name || ''} />} />
+            <SelectBox value={doctor} onChange={setDoctor} options={doctors.length ? doctors.map((d) => [d.id, d.name]) : [['me', 'Men']]} label="Shifokor" lead={<DocPic name={doctors.find((d) => d.id === doctor)?.name || ''} />} />
           </Field>
           <Field label="Kreslo" req>
             <SelectBox value={room} onChange={setRoom} options={rooms.map((r) => [r, r])} label="Kreslo" lead={<Armchair className="size-5 shrink-0 text-sea" strokeWidth={1.6} />} />

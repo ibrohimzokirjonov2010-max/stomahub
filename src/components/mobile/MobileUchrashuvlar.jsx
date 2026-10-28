@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { CalendarDays, CalendarClock, ChevronLeft, ChevronRight, Coffee, FileText, MessageCircle, MoreVertical, Phone, Plus, Send, Trash2, UserRound } from 'lucide-react'
+import { CalendarDays, CalendarClock, ChevronLeft, ChevronRight, FileText, MessageCircle, MoreVertical, Phone, Plus, Send, Trash2, UserRound } from 'lucide-react'
 import { useBemorlar } from '../../bemorData'
 import { MONTHS, doctors, isoOf, minutes, parts, setVisits, shift, todayIso, useVisits } from '../../uchrashuvData'
 import { MobileToast } from './parts'
@@ -55,24 +55,6 @@ const dayTitle = (iso) => {
   return `${DAY_LONG[dow(iso)]}, ${tail}`
 }
 
-let seeded = false
-function seedToday() {
-  if (seeded) return
-  seeded = true
-  const pic = (n) => `/images/bemorlar/bemor-${n}.jpg`
-  const mk = (start, dur, name, photo, service, detail, info, note, status, room) => ({
-    id: `m-${start}`, date: TODAY, start, dur, name, photo: pic(photo), service, detail, info, note, status, doctor: 'ibrohim', room,
-  })
-  const rows = [
-    mk('09:00', 45, 'Malika Karimova', 'malika', 'Gigiyena', 'Profilaktik ko‘rik', 'Umumiy ko‘rik', 'Tozalash va maslahat', 'yakun', 'Kreslo 1'),
-    mk('12:00', 60, 'Karimov Aziz', 'aziz', 'Davolash', 'Plomba davolash', 'Karies (16)', 'Anesteziya kerak', 'yakun', 'Kreslo 2'),
-    mk('14:00', 60, 'Ismoilova Madina', 'madina', 'Davolash', 'Endodontik davolash', 'Endodontiya (11)', 'Rentgen olingan', 'davol', 'Kreslo 1'),
-    mk('15:30', 30, 'Normatova Dilnoza', 'dilnoza', 'Ortodontik', 'Ortodontik konsultatsiya', 'Breket maslahati', 'Panoramik rentgen bilan', 'kutil', 'Kreslo 3'),
-    mk('17:00', 45, 'Tursunov Bobur', 'bobur', 'Konsultatsiya', 'Estetik restavratsiya', 'Viner konsultatsiyasi', 'Rang tanlash', 'tasdiq', 'Kreslo 1'),
-  ]
-  setVisits((list) => (list.some((v) => v.id.startsWith('m-')) ? list : [...list, ...rows]))
-}
-
 export default function MobileUchrashuvlar() {
   const visits = useVisits()
   const patients = useBemorlar()
@@ -85,16 +67,11 @@ export default function MobileUchrashuvlar() {
   const [undo, setUndo] = useState(null)
   const closeToast = useCallback(() => { setToast(''); setUndo(null) }, [])
 
-  useEffect(seedToday, [])
-
   const day = useMemo(() => visits.filter((v) => v.date === date).sort((a, b) => minutes(a.start) - minutes(b.start)), [visits, date])
   const rows = day.filter(TABS.find((t) => t[0] === tab)[2])
   const live = date === TODAY ? nowMinutes() : date < TODAY ? Infinity : -1
   const current = day.find((v) => v.status !== 'yakun' && v.status !== 'bekor' && minutes(v.start) + v.dur > live)?.id
-  const lunch = tab === 'all' && day.length > 0
-  const timeline = lunch
-    ? [...rows.filter((v) => minutes(v.start) < 13 * 60), { lunch: true }, ...rows.filter((v) => minutes(v.start) >= 13 * 60)]
-    : rows
+  const timeline = rows
 
   const setStatus = (v, s) => {
     setVisits((list) => list.map((x) => (x.id === v.id ? { ...x, status: s } : x)))
@@ -162,31 +139,20 @@ export default function MobileUchrashuvlar() {
       {timeline.length ? (
         <div className="relative mt-2 flex flex-col gap-2.5 px-3.5">
           <span className="absolute bottom-0 left-[62px] top-3 w-0.5 bg-[#cfe6e4]" />
-          {timeline.map((v) => v.lunch ? (
-            <div key="lunch" className="flex gap-2">
-              <div className="relative w-[50px] shrink-0 pt-2 text-[10.5px] leading-[15px] text-muted">13:00<br />14:00<span className="absolute right-[-3px] top-[15px] size-2 rounded-full bg-[#b7dcd9]" /></div>
-              <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl bg-[#e6f4f3] px-3 py-2.5">
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/80 text-[#0b6d73]"><Coffee className="size-5" strokeWidth={1.7} /></span>
-                <span className="min-w-0">
-                  <b className="block text-[13.5px] font-semibold text-[#0b6d73]">Tushlik tanaffusi</b>
-                  <span className="block text-[11.5px] text-[#5e88a0]">14:00 da davom etadi</span>
-                </span>
-              </div>
-            </div>
-          ) : (
+          {timeline.map((v) => (
             <div key={v.id} className="flex gap-2">
               <div className="relative w-[50px] shrink-0 pt-3">
                 <b className={`text-[13.5px] font-bold ${v.status === 'bekor' ? 'text-muted line-through' : 'text-[#0b6d73]'}`}>{v.start}</b>
                 <span className={`absolute right-[-5px] top-[15px] size-3 rounded-full border-2 border-[#0b6d73] ${v.id === current ? 'bg-[#0b6d73] ring-[3px] ring-[#cfe6e4]' : v.status === 'yakun' ? 'bg-[#0b6d73]/25' : 'bg-white'}`} />
               </div>
-              <VisitCard v={v} p={patientOf(v, patients)} onMenu={() => setSheet({ menu: v })} onChat={() => setSheet({ sms: v })} onCall={call} />
+              <VisitCard v={v} p={patientOf(v, patients)} onMenu={() => setSheet({ menu: v })} onChat={() => { const ph = v.phone || patientOf(v, patients)?.phone; if (ph) setSheet({ sms: v }); else setToast('Bemorning telefon raqami kiritilmagan') }} onCall={call} />
             </div>
           ))}
         </div>
       ) : (
         <div className="mx-3.5 mt-2 rounded-2xl bg-white px-6 py-10 text-center">
           <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#e6f4f3] text-[#0b6d73]"><CalendarClock className="size-7" strokeWidth={1.6} /></span>
-          <p className="mt-3 text-[14px] font-semibold text-ink">{day.length ? 'Bu bo‘limda uchrashuv yo‘q' : 'Bu kunga uchrashuv yo‘q'}</p>
+          <p className="mt-3 text-[14px] font-semibold text-ink">{day.length ? 'Bu bo‘limda uchrashuv yo‘q' : visits.length ? 'Bu kunga uchrashuv yo‘q' : 'Hali uchrashuvlar yo‘q'}</p>
           <p className="mt-1 text-[12px] text-muted">{day.length ? 'Boshqa bo‘limni tanlang' : 'Yangi uchrashuv belgilashingiz mumkin'}</p>
           {date >= TODAY && <button type="button" onClick={() => navigate('/uchrashuvlar/yangi', { state: { date } })} className="mt-3 h-9 rounded-xl bg-sea-50 px-4 text-[12.5px] font-semibold text-sea">Uchrashuv qo‘shish</button>}
         </div>
@@ -207,7 +173,7 @@ export default function MobileUchrashuvlar() {
           onRemove={() => remove(sheet.menu)}
         />
       )}
-      {sheet?.sms && <SmsSheet v={sheet.sms} onClose={() => setSheet(null)} onSent={() => { setSheet(null); setToast(`${sheet.sms.name}ga SMS yuborildi`) }} />}
+      {sheet?.sms && <SmsSheet v={sheet.sms} onClose={() => setSheet(null)} phone={sheet.sms.phone || patientOf(sheet.sms, patients)?.phone || ''} onSent={(text) => { const ph = (sheet.sms.phone || patientOf(sheet.sms, patients)?.phone || '').replace(/[^\d+]/g, ''); setSheet(null); if (!ph) { setToast('Bemorning telefon raqami kiritilmagan'); return } window.location.href = `sms:${ph}?body=${encodeURIComponent(text)}` }} />}
 
       <MobileToast text={toast} onClose={closeToast} action={undo && <button type="button" onClick={() => { undo(); closeToast() }} className="shrink-0 text-[13px] font-semibold text-[#5fe0c8]">Qaytarish</button>} />
       <MobileTabBar />
@@ -316,7 +282,7 @@ function MenuSheet({ v, p, onClose, onStatus, onSms, onRemove }) {
   )
 }
 
-function SmsSheet({ v, onClose, onSent }) {
+function SmsSheet({ v, phone, onClose, onSent }) {
   const when = `${v.date === TODAY ? 'bugun' : shortDate(v.date)} soat ${v.start}`
   const quick = [
     `Hurmatli ${v.name}, ${when} da qabulingiz bor. Kutib qolamiz!`,
@@ -328,13 +294,13 @@ function SmsSheet({ v, onClose, onSent }) {
     <BottomSheet
       title="SMS yuborish"
       onClose={onClose}
-      footer={<button type="button" disabled={!text.trim()} onClick={onSent} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-40"><Send className="size-[18px]" /> Yuborish</button>}
+      footer={<button type="button" disabled={!text.trim() || !phone} onClick={() => onSent(text)} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-40"><Send className="size-[18px]" /> Yuborish</button>}
     >
       <div className="mt-2 flex items-center gap-3 rounded-2xl bg-[#f2f8f8] p-3">
         <Face p={v} className="size-11" text="text-[13px]" />
         <div className="min-w-0">
           <p className="truncate text-[14px] font-bold text-ink">{v.name}</p>
-          <p className="text-[12px] text-muted">{shortDate(v.date)}, {v.start} · {v.detail || v.service}</p>
+          <p className="text-[12px] text-muted">{phone || 'Telefon kiritilmagan'} · {shortDate(v.date)}, {v.start}</p>
         </div>
       </div>
       <div className="mt-3 flex flex-col gap-2">

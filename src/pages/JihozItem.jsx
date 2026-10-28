@@ -167,17 +167,7 @@ export default function JihozItem() {
           )}
           {tab === 'reviews' && (
             <div className="mt-3 flex max-w-[640px] flex-col gap-2">
-              {[
-                ['Dr. Aziza', 'Ustanovka jim ishlaydi, kreslo bemor uchun qulay. O‘rnatish bir kunda bo‘ldi.'],
-                ['Klinika “Nur”', 'Kafolat hujjatlari joyida. Skaler va chiroq to‘liq komplektda keldi.'],
-                ['Dr. Jasur', 'Narx va servis mos tushdi. Muhandis sozlashni o‘zi qildi.'],
-              ].map(([name, text]) => (
-                <div key={name} className="rounded-xl bg-white p-3 shadow-card">
-                  <p className="text-[12px] font-bold">{name}</p>
-                  <p className="mt-1 flex gap-0.5">{[1, 2, 3, 4, 5].map((n) => <Star key={n} className="size-3 fill-star text-star" />)}</p>
-                  <p className="mt-1 text-[12px] text-ink-2">{text}</p>
-                </div>
-              ))}
+              <p className="rounded-xl bg-white p-3 text-[12px] text-muted shadow-card">Hali sharhlar yo‘q</p>
             </div>
           )}
 

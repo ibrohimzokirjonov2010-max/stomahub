@@ -17,7 +17,6 @@ export const KIND = {
   yangilik: { label: 'Yangiliklar', icon: Newspaper, cls: 'bg-[#fff3df] text-[#c77700]' },
 }
 const SORTS = [['new', 'Eng yangi'], ['top', 'Eng mashhur'], ['talk', 'Ko‘p muhokama qilingan']]
-const GALLERY = ['/images/seminars/teeth.jpg', '/images/bemorlar/bemor-intra.jpg', '/images/kategoriyalar/kat-implant.jpg', '/images/seminars/smile.jpg', '/images/bemorlar/bemor-opg.jpg', '/images/bemorlar/bemor-rvg.jpg']
 
 export const postLink = (p) => `${window.location.origin}/community/${p.id}`
 
@@ -334,15 +333,18 @@ function Composer({ withImages, onClose, onPublish }) {
       </button>
       {pick && (
         <div className="mt-2 grid grid-cols-3 gap-1.5">
-          {GALLERY.map((src) => {
-            const on = imgs.includes(src)
-            return (
-              <button key={src} type="button" onClick={() => setImgs((l) => (on ? l.filter((x) => x !== src) : l.length < 3 ? [...l, src] : l))} className={`relative h-[84px] overflow-hidden rounded-lg ${on ? 'ring-2 ring-sea' : ''}`}>
-                <img src={src} alt="" className="size-full object-cover" />
-                {on && <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-sea text-[10px] font-bold text-white">{imgs.indexOf(src) + 1}</span>}
-              </button>
-            )
-          })}
+          {imgs.map((src, i) => (
+            <button key={i} type="button" onClick={() => setImgs((l) => l.filter((_, j) => j !== i))} className="relative h-[84px] overflow-hidden rounded-lg ring-2 ring-sea">
+              <img src={src} alt="" className="size-full object-cover" />
+              <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-sea text-[10px] font-bold text-white">{i + 1}</span>
+            </button>
+          ))}
+          {imgs.length < 3 && (
+            <label className="grid h-[84px] cursor-pointer place-items-center rounded-lg border border-dashed border-line text-[12px] text-muted">
+              + Rasm
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setImgs((l) => (l.length < 3 ? [...l, r.result] : l)); r.readAsDataURL(f); e.target.value = '' }} />
+            </label>
+          )}
         </div>
       )}
       <p className="mt-2 text-[11px] text-muted">Bemor yuzi va shaxsiy ma’lumotlari ko‘rinmasligiga ishonch hosil qiling. 3 tagacha rasm.</p>

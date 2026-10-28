@@ -20,12 +20,6 @@ const INITIAL_TICKETS = [
   { id: 't3', name: 'Student', price: 250000, seats: 50, perks: ['Seminarga kirish', 'Materiallar', 'Sertifikat'], active: true, tone: 'violet', icon: 'cap' },
 ]
 
-const INITIAL_SPEAKERS = [
-  { id: 's1', name: 'Dr. Alisher Karimov', role: 'Implantolog', city: 'Toshkent', avatar: '/images/ustalar/usta-jasur.jpg' },
-  { id: 's2', name: 'Dr. Malika Tursunova', role: 'Jarroh stomatolog', city: 'Samarqand', avatar: '/images/forma/woman-navy.jpg' },
-  { id: 's3', name: 'Dr. Javohir Sodiqov', role: 'Protezist', city: 'Toshkent', avatar: '/images/ustalar/usta-dilshod.jpg' },
-]
-
 const INITIAL_PROMOS = [
   { id: 'p1', code: 'EARLYBIRD', off: '-20%', note: '1-noy – 15-noy', on: true },
   { id: 'p2', code: 'STUDENT50', off: '-50%', note: 'Talabalar uchun', on: true },
@@ -658,7 +652,7 @@ export default function Wizard() {
       </div>
 
       <TicketModal open={modal === 'ticket'} onClose={() => setModal(null)} onSave={(t) => { set({ tickets: [...form.tickets, t] }); setModal(null); notify('Chipta turi qo‘shildi') }} />
-      <SpeakerModal open={modal === 'speaker'} onClose={() => setModal(null)} photo={INITIAL_SPEAKERS[0].avatar} onSave={(s) => { set({ speakers: [...form.speakers, s] }); setModal(null); notify('Ma’ruzachi qo‘shildi') }} />
+      <SpeakerModal open={modal === 'speaker'} onClose={() => setModal(null)} photo="" onSave={(s) => { set({ speakers: [...form.speakers, s] }); setModal(null); notify('Ma’ruzachi qo‘shildi') }} />
       <PromoModal open={modal === 'promo'} onClose={() => setModal(null)} onSave={(p) => { set({ promos: [...form.promos, p] }); setModal(null); notify('Promo-kod qo‘shildi') }} />
     </div>
   )

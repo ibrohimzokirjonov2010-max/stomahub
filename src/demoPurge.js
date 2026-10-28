@@ -39,6 +39,7 @@ export function scrubBlobPayload(kind, payload) {
   if (kind === 'plans' && payload && typeof payload === 'object') {
     return { ...payload, plans: scrubDemoList(payload.plans || []) }
   }
+  if (kind === 'visits' && Array.isArray(payload)) return scrubDemoList(payload.filter((v) => !/^(m-|u\d)/.test(String(v?.id || ''))))
   if (Array.isArray(payload)) return scrubDemoList(payload)
   return payload
 }

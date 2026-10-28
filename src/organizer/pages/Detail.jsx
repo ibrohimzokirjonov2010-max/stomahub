@@ -55,11 +55,11 @@ function modelFor(id, seminars = []) {
     bring: ['Noutbuk', 'Shaxsiy asboblar', 'Qulay kiyim'],
     refundPeople: sem.sold,
     refundSum: sem.revenue || 0,
-    speakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '/images/bemorlar/bemor-sardor.jpg' }]).map((sp) => ({
-      name: sp.name, specialty: sp.role || sem.topic, bio: sp.bio || sem.days, avatar: sp.avatar || '/images/bemorlar/bemor-sardor.jpg',
+    speakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '' }]).map((sp) => ({
+      name: sp.name, specialty: sp.role || sem.topic, bio: sp.bio || sem.days, avatar: sp.avatar || '',
     })),
-    mobileSpeakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '/images/bemorlar/bemor-sardor.jpg' }]).map((sp) => ({
-      name: sp.name, role: sp.role || sem.topic, avatar: sp.avatar || '/images/bemorlar/bemor-sardor.jpg',
+    mobileSpeakers: (sem.speakers || [{ name: sem.speaker, role: sem.topic, avatar: '' }]).map((sp) => ({
+      name: sp.name, role: sp.role || sem.topic, avatar: sp.avatar || '',
     })),
     liveStatus: sem.status,
   }

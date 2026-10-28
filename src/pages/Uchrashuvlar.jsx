@@ -100,7 +100,7 @@ export default function Uchrashuvlar() {
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <Chip on={doc === 'all'} onClick={() => setDoc('all')}>Barchasi</Chip>
-          {doctors.filter((d) => d.id !== 'ibrohim').map((d) => (
+          {doctors.map((d) => (
             <Chip key={d.id} on={doc === d.id} onClick={() => setDoc(d.id)}>
               <b className="grid size-5 place-items-center rounded-full bg-sea-50 text-[9px] text-sea">{d.name.split(' ')[1][0]}</b>
               <span className="text-left leading-tight"><span className="block">{d.name}</span><span className="block text-[9px] font-normal text-muted">{d.role}</span></span>
@@ -267,10 +267,9 @@ function Month({ anchor, rows, focus, onPick }) {
 }
 
 function VisitModal({ patients, draft, onClose, onSave }) {
-  const malika = patients.find((p) => p.id === 'malika-karimova')
-  const [patient, setPatient] = useState(malika || null)
+  const [patient, setPatient] = useState(null)
   const [find, setFind] = useState('')
-  const [doctor, setDoctor] = useState('ibrohim')
+  const [doctor, setDoctor] = useState('me')
   const [room, setRoom] = useState('Kreslo 1')
   const [service, setService] = useState('Konsultatsiya')
   const [date, setDate] = useState(draft?.date || tashkentToday())
@@ -289,7 +288,7 @@ function VisitModal({ patients, draft, onClose, onSave }) {
   const save = () => {
     if (!patient || !room || !date || !time) { setErr('Bemor, kreslo, sana va vaqt majburiy.'); return }
     onSave({
-      date, start: time, dur, name: patient.name, photo: patient.photo || '', service, status: 'tasdiq', doctor, room, note, sms, isNew: true,
+      date, start: time, dur, name: patient.name, photo: patient.photo || '', phone: patient.phone || '', patientId: patient.id || '', service, status: 'tasdiq', doctor, room, note, sms, isNew: true,
     })
   }
 
@@ -318,7 +317,7 @@ function VisitModal({ patients, draft, onClose, onSave }) {
                   {find && (
                     <span className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-white py-1 shadow-card">
                       {found.map((p) => <button key={p.id} type="button" onClick={() => { setPatient(p); setFind('') }} className="block w-full px-2 py-1 text-left text-[12px] hover:bg-sea-50">{p.name}</button>)}
-                      {found.length === 0 && <span className="block px-2 py-1 text-[12px] text-muted">Topilmadi</span>}
+                      {found.length === 0 && <button type="button" onClick={() => { setPatient({ id: '', name: find.trim(), phone: '' }); setFind('') }} className="block w-full px-2 py-1 text-left text-[12px] font-semibold text-sea hover:bg-sea-50">«{find.trim()}» ni qo‘shish</button>}
                     </span>
                   )}
                 </span>
@@ -326,7 +325,7 @@ function VisitModal({ patients, draft, onClose, onSave }) {
             </label>
             <label className="text-[12px] font-medium">Shifokor
               <select value={doctor} onChange={(e) => setDoctor(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-[12.5px]">
-                {doctors.map((d) => <option key={d.id} value={d.id}>{d.name} — {d.role}</option>)}
+                {doctors.length ? doctors.map((d) => <option key={d.id} value={d.id}>{d.name} — {d.role}</option>) : <option value="me">Men</option>}
               </select>
             </label>
             <label className="text-[12px] font-medium">Kreslo *

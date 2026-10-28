@@ -13,7 +13,7 @@ import { supabase } from '../supabaseClient'
 import { profileStore } from '../profileStore'
 import { useCrmStats } from '../crmStats'
 import {
-  TODAY, DEFAULT_CHAIRS, SLOTS, LUNCH, SERVICES, CITY_LIST, STATUS, MONTHS_CAP, WD, WD_LONG,
+  TODAY, DEFAULT_CHAIRS, SLOTS, SERVICES, CITY_LIST, STATUS, MONTHS_CAP, WD, WD_LONG,
   chairsFromSettings, shiftIso, weekday, label, avatarOf,
 } from '../klinikaData'
 import { scrubClinicBoard } from '../demoPurge'
@@ -440,7 +440,7 @@ function Ring({ value }) {
 
 function ChairColumn({ chair, index, visits, menu, setMenu, onStatus, onCancel, onBook }) {
   const busy = visits.some((x) => x.status === 'qabulda')
-  const rows = [...SLOTS.slice(0, 2), LUNCH, ...SLOTS.slice(2)]
+  const rows = SLOTS
   return (
     <div className="min-w-0 rounded-xl border border-line p-2">
       <div className="mb-1.5 flex items-center gap-1.5 px-1">
@@ -451,14 +451,6 @@ function ChairColumn({ chair, index, visits, menu, setMenu, onStatus, onCancel, 
       </div>
       <div className="space-y-1.5">
         {rows.map((time) => {
-          if (time === LUNCH) {
-            return (
-              <div key={time} className="grid grid-cols-[38px_minmax(0,1fr)] items-center gap-1.5">
-                <span className="text-[11px] text-muted">{time}</span>
-                <span className="flex h-7 items-center gap-1.5 rounded-lg bg-[#f1f5f9] px-2 text-[11px] text-muted"><Coffee className="size-3.5" /> Tushlik</span>
-              </div>
-            )
-          }
           const x = visits.find((y) => y.time === time)
           const key = `v-${index}-${time}`
           return (
@@ -850,7 +842,7 @@ function SettingsDialog({ value, onClose, onSave }) {
         <Field label="Kreslo soni">
           <input type="number" min="0" max="12" value={form.chair_count ?? 0} onChange={(e) => set('chair_count', Number(e.target.value) || 0)} className={input} />
         </Field>
-        <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Tushlik: {LUNCH}. Kreslo soni 0 bo‘lsa jadval bo‘sh holatda chiqadi.</p>
+        <p className="rounded-xl bg-[#f4f8fb] px-3 py-2 text-[11.5px] text-ink-2">Kreslo soni 0 bo‘lsa jadval bo‘sh holatda chiqadi.</p>
       </div>
     </Dialog>
   )

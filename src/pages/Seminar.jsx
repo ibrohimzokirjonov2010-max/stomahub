@@ -317,20 +317,7 @@ export default function Seminar() {
         <section id="sem-reviews" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
           <h2 className="text-[15px] font-bold">Ishtirokchilar sharhlari</h2>
           <div className="sem-reviews mt-3">
-            {[
-              ['Dr. Malika Saidova', 'Stomatolog, Toshkent', face('bemor-malika'), 'Juda foydali seminar bo‘ldi. Jonli jarrohlik va amaliy mashg‘ulotlar katta tajriba berdi.'],
-              ['Dr. Bekzod Inomov', 'Stomatolog, Samarqand', face('bemor-bobur'), 'Amaliy qismi a’lo darajada tashkil etilgan. Tavsiya qilaman!'],
-              ['Dr. Gulnora Karimova', 'Stomatolog, Buxoro', face('bemor-dilnoza'), 'Nazariy ma’lumotlar va klinik holatlar muhokamasi juda foydali bo‘ldi.'],
-            ].map(([name, role, avatar, text]) => (
-              <article key={name} className="rounded-xl border border-line p-3">
-                <div className="flex items-center gap-2">
-                  <img src={avatar} alt="" className="size-9 rounded-full object-cover" />
-                  <span className="min-w-0"><b className="block truncate text-[12.5px]">{name}</b><span className="text-[11px] text-muted">{role}</span></span>
-                </div>
-                <p className="mt-1.5 flex">{Array.from({ length: 5 }, (_, i) => <Star key={i} className="size-3.5 fill-star text-star" />)}</p>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-ink-2">{text}</p>
-              </article>
-            ))}
+            <p className="text-[12px] text-muted">Hali sharhlar yo‘q</p>
           </div>
         </section>
       </div>
