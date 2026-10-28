@@ -42,7 +42,7 @@ const CRM = ['Bemorlar kartasi va davolash rejalari', 'Uchrashuvlar va kalendar'
 const STEPS = [['Ro‘yxatdan o‘ting', 'Bir necha daqiqada hisob yarating'], ['Kerakli yo‘nalishni tanlang', 'Marketplace, ta’lim yoki Klinika CRM'], ['Imkoniyatlardan foydalaning', 'O‘zingiz va klinikangizni rivojlantiring']]
 const APP = ['Marketplace va buyurtmalar', 'Seminarlar va onlayn darslar', 'Uchrashuvlar va kalendar', 'Bemorlar kartasi', 'To‘lovlar va bildirishnomalar', 'Har doim yoningizda']
 const FAQ = [
-  ['StomaHub’dan foydalanish pullikmi?', 'Ro‘yxatdan o‘tish va asosiy bo‘limlar bepul. Marketplace mahsulotlari, seminarlar va ayrim kurslar alohida narxlanadi.'],
+  ['StomaHub’dan foydalanish pullikmi?', 'Ro‘yxatdan o‘tish bepul. Klinika CRM — muddatsiz bepul: bemorlar kartasi, uchrashuvlar kalendari, davolash rejalari va to‘lovlar hisobi uchun pul olinmaydi. Marketplace mahsulotlari, seminarlar va ayrim kurslar alohida narxlanadi.'],
   ['Seminarlarga qanday qatnashish mumkin?', 'Seminarlar sahifasidan kerakli seminarni tanlab, ro‘yxatdan o‘tasiz va elektron chipta olasiz.'],
   ['Klinika CRM’ni bir necha xodim ishlata oladimi?', 'Ha. Klinika egasi shifokor va administratorlarni qo‘shib, ularga alohida kirish beradi.'],
   ['Mahsulotlarni qanday xarid qilish mumkin?', 'Marketplace’da mahsulotni savatga qo‘shing, manzil va to‘lov usulini tanlab buyurtma bering.'],
