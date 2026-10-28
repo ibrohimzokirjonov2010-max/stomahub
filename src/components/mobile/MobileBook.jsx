@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { goBuyNow } from '../../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Heart, UserRound, Star, ShoppingCart, BookOpen, FileText, Globe, File, ChevronDown, ChevronRight, ListOrdered, MessageCircle, MoreHorizontal, Check, Truck,
@@ -56,8 +57,7 @@ function BookView({ id }) {
   const subtitle = b.blurb
 
   const buy = () => {
-    if (!inCart) add({ id: cartId, name: `${b.title} (${fmt === 'pdf' ? 'PDF' : 'bosma'})`, type: 'Kitob', price, image: b.cover })
-    navigate('/buyurtma', { state: { from: 'market' } })
+    goBuyNow(navigate, { id: cartId, name: `${b.title} (${fmt === 'pdf' ? 'PDF' : 'bosma'})`, type: 'Kitob', price, image: b.cover }, 1, 'market')
   }
   const toCart = () => {
     if (inCart) return navigate('/buyurtma', { state: { from: 'market' } })
