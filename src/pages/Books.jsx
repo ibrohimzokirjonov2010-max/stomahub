@@ -10,7 +10,7 @@ import {
   books, library, perks, money,
 } from '../booksData'
 
-const empty = { formats: [], langs: [], publishers: [], yearFrom: 2015, yearTo: 2026, priceFrom: 0, priceTo: 5000000, stock: 'all', sort: 'popular', cat: 'all' }
+const empty = { formats: [], langs: [], publishers: [], yearFrom: 1990, yearTo: 2026, priceFrom: 0, priceTo: 5000000, stock: 'all', sort: 'popular', cat: 'all' }
 
 export default function BooksRoute() {
   const [q, setQ] = useState('')
@@ -22,7 +22,7 @@ export default function BooksRoute() {
 }
 
 function Books({ query }) {
-  useCatalogVersion()
+  const catalogV = useCatalogVersion()
   const featuredBook = books.find((b) => b.featured) || books[0] || null
   const [f, setF] = useState(empty)
   const [ask, setAsk] = useState(false)
@@ -44,7 +44,7 @@ function Books({ query }) {
       preorder: books.filter((b) => b.stock === 'preorder').length,
     },
     publisher: Object.fromEntries(publisherOptions.map(([k]) => [k, books.filter((b) => b.publisher === k).length])),
-  }), [])
+  }), [catalogV])
 
   const text = query.trim().toLowerCase()
   const list = useMemo(() => books
@@ -63,7 +63,7 @@ function Books({ query }) {
       if (f.sort === 'rich') return b.price - a.price
       if (f.sort === 'fresh') return b.year - a.year
       return books.indexOf(a) - books.indexOf(b)
-    }), [f, text])
+    }), [f, text, catalogV])
 
   return (
     <div className="pb-8 pt-3">
@@ -100,7 +100,7 @@ function Books({ query }) {
             ))}
           </FilterBlock>
           <FilterBlock title="Nashr yili">
-            <RangePair from={f.yearFrom} to={f.yearTo} min={2015} max={2026} onFrom={(n) => patch({ yearFrom: n })} onTo={(n) => patch({ yearTo: n })} />
+            <RangePair from={f.yearFrom} to={f.yearTo} min={1990} max={2026} onFrom={(n) => patch({ yearFrom: n })} onTo={(n) => patch({ yearTo: n })} />
           </FilterBlock>
           <FilterBlock title="Narx oralig‘i (so‘m)">
             <RangePair from={f.priceFrom} to={f.priceTo} min={0} max={5000000} step={50000} money onFrom={(n) => patch({ priceFrom: n })} onTo={(n) => patch({ priceTo: n })} />
@@ -227,7 +227,7 @@ function BookCard({ book }) {
       </div>
       <div className="mt-auto pt-2">
         <CartButton book={book} />
-        <Link to={`/kitoblar/${book.id}/oqish`} className="mt-1 block h-7 w-full text-center text-[10.5px] font-semibold leading-7 text-sea hover:underline">Namuna o‘qish</Link>
+        {book.price != null && <Link to={`/kitoblar/${book.id}/oqish`} className="mt-1 block h-7 w-full text-center text-[10.5px] font-semibold leading-7 text-sea hover:underline">Namuna o‘qish</Link>}
       </div>
     </article>
   )
@@ -236,6 +236,7 @@ function BookCard({ book }) {
 function CartButton({ book, wide }) {
   const { add, items } = useCart()
   const inCart = items.some((it) => it.id === book.id)
+  if (book.price == null) return <Link to={`/kitoblar/${book.id}`} className="flex h-8 w-full items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea">Batafsil</Link>
   return (
     <button
       onClick={() => { if (!inCart) add({ id: book.id, name: book.title, type: 'Kitob', price: book.price, image: book.cover }) }}

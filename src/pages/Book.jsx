@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { BookOpen, ChevronRight, CreditCard, Headset, Heart, Share2, ShieldCheck, ShoppingCart, Star, Truck, ZoomIn, X } from 'lucide-react'
 import { useCart } from '../cart'
-import { getBook, langLong, money, productOf, pubName } from '../booksData'
+import { getBook, langLong, money, priceless, productOf, pubName } from '../booksData'
 
 export default function Book() {
   const { id } = useParams()
@@ -64,22 +64,24 @@ export default function Book() {
           </div>
           <h1 className="mt-2 text-[22px] font-extrabold leading-tight text-ink">{book.title}</h1>
           <p className="mt-1 text-[12px] text-muted">Muallif: {book.author}</p>
-          <p className="mt-1 flex items-center gap-1 text-[12px]"><Stars n={5} /> <span className="font-bold">{book.rating}</span> <button onClick={() => setTab('reviews')} className="text-muted">({book.reviews} ta sharh)</button></p>
+          <p className="mt-1 flex items-center gap-1 text-[12px]"><Stars n={Math.round(book.rating || 0)} /> <span className="font-bold">{book.rating}</span> <button onClick={() => setTab('reviews')} className="text-muted">({book.reviews} ta sharh)</button></p>
           <p className="mt-2 text-[22px] font-extrabold text-ink">{money(price)}</p>
+          {priceless(book) ? <p className="mt-2 rounded-lg bg-sea-50 px-3 py-2 text-[11.5px] text-ink-2">Narx sotuvchi bilan kelishiladi. Buyurtma uchun StomaHub bilan bog‘laning.</p> : <>
           <p className="mt-3 text-[12px] font-bold">Formatni tanlang</p>
           <div className="mt-1.5 grid grid-cols-2 gap-2">
             <Format on={format === 'print'} onClick={() => setFormat('print')} icon={BookOpen} title="Qog‘oz nashr" price={money(book.price)} />
             <Format on={format === 'pdf'} onClick={() => setFormat('pdf')} icon={BookOpen} title="Elektron nashr (PDF)" price={money(view.pdf)} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Link to={`/kitoblar/${book.id}/oqish`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5 text-sea" /> O‘qib ko‘rish (1-bob)</Link>
+            {!priceless(book) && <Link to={`/kitoblar/${book.id}/oqish`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5 text-sea" /> O‘qib ko‘rish (1-bob)</Link>}
             <button onClick={put} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-sea px-3 text-[12px] font-semibold text-sea"><ShoppingCart className="size-3.5" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}</button>
             <button onClick={() => { put(); setBought(true) }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white">{bought ? 'Qabul qilindi' : 'Sotib olish'}</button>
           </div>
+          </>}
           {shared && <p className="mt-1 text-[11px] text-sea">Havola nusxalandi</p>}
           <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] text-ink-2 lg:grid-cols-4">
             <Perk icon={Truck} title="Tez yetkazib berish" sub="Toshkent 1–2 kun" />
-            <Perk icon={ShieldCheck} title="Original mahsulot" sub="Rasmiy nashr" />
+            {!priceless(book) && <Perk icon={ShieldCheck} title="Original mahsulot" sub="Rasmiy nashr" />}
             <Perk icon={CreditCard} title="Qulay to‘lov" sub="Click, Payme, Uzum" />
             <Perk icon={Headset} title="Qo‘llab-quvvatlash" sub="Savollar bo‘yicha yordam" />
           </div>
@@ -89,9 +91,11 @@ export default function Book() {
           <p className="text-[13px] font-bold">Kitob ma’lumotlari</p>
           <Fact k="Sahifalar" v={`${book.pages} sahifa`} />
           <Fact k="Til" v={langLong[book.lang]} />
-          <Fact k="Nashriyot" v={pubName[book.publisher]} />
+          <Fact k="Nashriyot" v={book.publisherName || pubName[book.publisher]} />
+          {book.place && <Fact k="Nashr joyi" v={book.place} />}
+          {book.script && <Fact k="Yozuv" v={book.script} />}
           <Fact k="Nashr yili" v={book.year} />
-          <Fact k="ISBN" v={book.isbn} />
+          {book.isbn && <Fact k="ISBN" v={book.isbn} />}
           <Fact k="Muqova" v={view.binding} />
         </aside>
 

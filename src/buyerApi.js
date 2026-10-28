@@ -27,6 +27,8 @@ export const toMarketProduct = (row) => ({
   image: row.image_url || (Array.isArray(row.images) ? row.images[0] : '') || '/images/market/p1.jpg',
   images: Array.isArray(row.images) ? row.images : [],
   variants: Array.isArray(row.variants) ? row.variants : [],
+  documents: Array.isArray(row.documents) ? row.documents : [],
+  specs: Array.isArray(row.specs) ? row.specs.filter((x) => Array.isArray(x) && x.length === 2) : [],
   description: row.description || '',
   rating: 0,
   reviews: 0,

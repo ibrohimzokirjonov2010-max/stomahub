@@ -54,7 +54,7 @@ function ProductBody({ p }) {
       <div className="min-w-0">
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted">
-        {['Marketplace', 'Materiallar', p.crumb || 'Bond'].map((c) => (
+        {['Marketplace', p.category || 'Mahsulot'].map((c) => (
           <span key={c} className="flex items-center gap-1.5">
             <Link to="/marketplace" className="hover:text-sea">{c}</Link> <ChevronRight className="size-3" />
           </span>
@@ -87,9 +87,6 @@ function ProductBody({ p }) {
         <div className="min-w-0">
           <div className="flex items-center gap-2.5">
             <span className="text-[12.5px] text-ink-2">{p.brand}</span>
-            <span className="flex items-center gap-1 rounded-full bg-sea-50 px-2 py-0.5 text-[8.5px] font-medium text-ink-2">
-              <BadgeCheck className="size-3 fill-sea text-white" /> Rasmiy distribyutor
-            </span>
           </div>
           <h1 className="mt-1 text-[25px] font-extrabold leading-tight tracking-tight text-ink">{p.name}</h1>
           <p className="text-[15px] text-muted">{p.type}</p>
@@ -111,14 +108,14 @@ function ProductBody({ p }) {
           </div>
 
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {[['Sertifikat (PDF)', '1.2 MB'], ['Yo‘riqnoma (PDF)', '0.8 MB']].map(([t, s]) => (
+            {(Array.isArray(p.documents) ? p.documents : []).filter((d) => d?.url).map((d) => [d.name || 'Hujjat', d.size || '', d.url]).map(([t, s, url]) => (
               <div key={t} className="flex items-center gap-2.5 rounded-xl bg-white p-3 shadow-card">
                 <FileText className="size-[22px] shrink-0 text-sale" strokeWidth={1.5} />
                 <div className="flex-1 leading-tight">
                   <p className="whitespace-nowrap text-[10px] font-medium text-ink">{t}</p>
                   <p className="mt-0.5 text-[8.5px] text-muted">{s}</p>
                 </div>
-                <a href="#" className="rounded-md bg-sea-50 px-2 py-1 text-[9px] font-semibold text-sea-600 hover:bg-sea-100">Yuklash</a>
+                <a href={url} target="_blank" rel="noreferrer" className="rounded-md bg-sea-50 px-2 py-1 text-[9px] font-semibold text-sea-600 hover:bg-sea-100">Yuklash</a>
               </div>
             ))}
           </div>

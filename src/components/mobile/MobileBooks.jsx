@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Search, SlidersHorizontal, LayoutGrid, BookOpen, FileText, ChevronDown, Heart, Star, ShoppingCart, X, Check, Scissors, Bone, Library, Sparkles, Crown } from 'lucide-react'
 import { books, shelf, langOptions, publisherOptions, sorts, money, productOf } from '../../booksData'
 import { useCart } from '../../cart'
+import { useCatalogVersion } from '../../recordSync'
 import { MobileTopBar, MobileToast, QtyStepper, GoCartButton } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 
-export const ALL_BOOKS = [...books, ...shelf.filter((b) => b.id === 'klinik')]
+export const allBooks = () => [...books, ...shelf.filter((b) => b.id === 'klinik')]
 
 const CATS = [
   ['all', 'Barchasi', LayoutGrid],
@@ -31,7 +32,7 @@ const SORT_SHORT = { popular: 'Mashhurligi', rating: 'Reyting', cheap: 'Arzonroq
 const PRICES = [['200000', '200 000 gacha'], ['400000', '400 000 gacha'], ['600000', '600 000 gacha']]
 const EMPTY = { langs: [], pubs: [], price: '', stock: '' }
 
-export const bookPrice = (b, fmt) => (fmt === 'pdf' && b.formats.includes('print') ? productOf(b).pdf : b.price)
+export const bookPrice = (b, fmt) => (fmt === 'pdf' && b.formats.includes('print') && b.price != null ? productOf(b).pdf : b.price)
 export const bookCartId = (b, fmt) => `${b.id}-${fmt}`
 export const defaultFormat = (b) => (b.formats.includes('print') ? 'print' : 'pdf')
 
@@ -44,6 +45,7 @@ export function bookBadge(b) {
 
 export default function MobileBooks() {
   const navigate = useNavigate()
+  const catalogV = useCatalogVersion()
   const { items, add, setQty, remove } = useCart()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('all')
@@ -64,16 +66,17 @@ export default function MobileBooks() {
 
   const base = useMemo(() => {
     const s = q.trim().toLowerCase()
-    return ALL_BOOKS
+    return allBooks()
       .filter((b) => cat === 'all' || b.cats.includes(cat))
       .filter((b) => !fmt || b.formats.includes(fmt))
       .filter((b) => !s || `${b.title} ${b.author} ${b.isbn}`.toLowerCase().includes(s))
-  }, [q, cat, fmt])
+  }, [q, cat, fmt, catalogV])
   const list = useMemo(() => base.filter((b) => matches(b, filter)).sort(SORT_FN[sort]), [base, filter, sort, matches])
   const active = filter.langs.length + filter.pubs.length + (filter.price ? 1 : 0) + (filter.stock ? 1 : 0)
 
   const qtyOf = (id) => items.find((it) => it.id === id)?.qty || 0
   const put = (b, f) => {
+    if (b.price == null) { navigate(`/kitoblar/${b.id}`); return }
     add({ id: bookCartId(b, f), name: `${b.title} (${f === 'pdf' ? 'PDF' : 'bosma'})`, type: 'Kitob', price: bookPrice(b, f), image: b.cover })
     setToast(`${b.title} savatga qo‘shildi`)
   }
@@ -210,7 +213,7 @@ function BookCard({ b, fmt, qty, liked, onLike, onAdd, onInc, onDec }) {
           </div>
         ) : (
           <button type="button" onClick={onAdd} className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-sea text-[13px] font-semibold text-white active:scale-[0.98]">
-            <ShoppingCart className="size-4" /> Savatga
+            {b.price == null ? 'Batafsil' : <><ShoppingCart className="size-4" /> Savatga</>}
           </button>
         )}
       </div>

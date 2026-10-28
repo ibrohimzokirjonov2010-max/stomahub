@@ -122,15 +122,13 @@ function ProductView({ id }) {
 
       <div className="px-3.5">
         <div className="mt-3 flex items-center gap-2 text-[11.5px]">
-          <span className="flex items-center gap-1 font-bold tracking-wide text-ink"><BadgeCheck className="size-[18px] fill-ok text-white" /> ORIGINAL</span>
-          <span className="h-3 w-px bg-line" />
-          <Link to={`/marketplace?brand=${encodeURIComponent(p.brand)}`} className="flex items-center gap-0.5 text-ink-2">{p.brand} <ChevronRight className="size-3.5" /></Link>
+          {p.brand ? <Link to={`/marketplace?brand=${encodeURIComponent(p.brand)}`} className="flex items-center gap-0.5 text-ink-2">{p.brand} <ChevronRight className="size-3.5" /></Link> : <span className="text-ink-2">{p.category}</span>}
         </div>
         <h1 className="mt-1.5 text-[21px] font-bold leading-tight text-ink">{p.name}</h1>
         <div className="mt-1.5 flex items-center gap-2 text-[12.5px] text-muted">
           {p.stock > 0 ? `Omborda ${p.stock} dona` : 'Tugagan'}
           <span className="mx-1 h-3 w-px bg-line" />
-          <MessageSquareText className="size-4" /> 128 ta sharh
+          <MessageSquareText className="size-4" /> {p.reviews || 0} ta sharh
         </div>
 
         {/* Narx */}
@@ -151,13 +149,13 @@ function ProductView({ id }) {
         <button type="button" onClick={() => setToast('Buyurtma bugun 18:00 gacha berilsa, ertaga yetkaziladi')} className="mt-3 flex w-full items-center justify-between gap-2 rounded-xl bg-sea-50/70 px-2.5 py-2.5 text-left">
           <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[11.5px] font-semibold text-sea-600"><Package className="size-[17px]" /> Omborda bor</span>
           <span className="flex min-w-0 items-center gap-1 text-[10px] text-ink-2">
-            <Truck className="size-4 shrink-0" /> <span className="truncate">Toshkent bo‘ylab 1 kunda yetkazib berish</span> <ChevronRight className="size-4 shrink-0" />
+            <Truck className="size-4 shrink-0" /> <span className="truncate">Yetkazib berish shartlari</span> <ChevronRight className="size-4 shrink-0" />
           </span>
         </button>
 
         {/* Variant va miqdor */}
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <label className="block">
+          {variants.length > 1 ? <label className="block">
             <span className="text-[12px] text-ink-2">Hajm (variant)</span>
             <span className="relative mt-1 flex h-11 items-center rounded-xl border border-line">
               <select value={variant} onChange={(e) => setVariant(Number(e.target.value))} disabled={variants.length < 2} className="h-full w-full appearance-none rounded-xl bg-transparent pl-3 pr-8 text-[13.5px] font-medium text-ink outline-none disabled:opacity-100">
@@ -165,7 +163,7 @@ function ProductView({ id }) {
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 size-4 text-ink-2" />
             </span>
-          </label>
+          </label> : <div />}
           <div>
             <span className="text-[12px] text-ink-2">Miqdori</span>
             <div className="mt-1 flex h-11 items-center justify-between rounded-xl border border-line px-1">

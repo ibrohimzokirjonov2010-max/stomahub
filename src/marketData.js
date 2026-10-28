@@ -79,9 +79,15 @@ export function productById(id) {
     short: s.description ? s.description.slice(0, 180) : '',
     description: s.description || 'Sotuvchi tavsif qo‘shmagan.',
     features: [],
-    highlights: null,
+    highlights: s.specs?.length ? s.specs.map(([k, v]) => `${k}: ${v}`) : null,
     variants: s.variants?.length ? s.variants.map((v) => ({ label: v.name || v.label || v.sku, sku: v.sku, price: Number(v.price) || s.price, stock: Number(v.stock) || 0 })) : null,
-    specs: [['Brend', s.brand || '—'], ['Kategoriya', s.cat || '—'], ['Sotuvchi', s.seller || '—'], ['Omborda', `${s.stock} dona`]],
+    specs: [
+      ...(s.brand ? [['Brend', s.brand]] : []),
+      ...(s.specs || []),
+      ['Kategoriya', s.category || '—'],
+      ['Sotuvchi', s.seller || '—'],
+      ['Omborda', `${s.stock} dona`],
+    ],
   }
 }
 
