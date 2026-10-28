@@ -216,3 +216,11 @@ export function csvDownload(filename, rows) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click()
   setTimeout(() => URL.revokeObjectURL(a.href), 2000)
 }
+
+// Remove a seller's own uploaded files (best effort) by public URL.
+export async function removeMedia(urls = []) {
+  if (!supabase || !uid()) return
+  const mark = '/storage/v1/object/public/seller-media/'
+  const paths = urls.filter(Boolean).map((u) => { const i = String(u).indexOf(mark); return i < 0 ? null : decodeURIComponent(String(u).slice(i + mark.length).split('?')[0]) }).filter((p) => p && p.startsWith(`${uid()}/`))
+  if (paths.length) await supabase.storage.from('seller-media').remove(paths).catch(() => {})
+}

@@ -53,7 +53,7 @@ export default function Sozlamalar() {
     if (!shop.name.trim()) return setErr('Do‘kon nomini kiriting.')
     setBusy(true); setErr('')
     const { error } = await supabase.from('profiles').update({ shop_name: shop.name.trim() }).eq('id', session.user.id)
-    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || null, notify })
+    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || '', notify })
     setBusy(false)
     if (!r.ok) return setErr(r.error)
     window.dispatchEvent(new CustomEvent('shop-name', { detail: shop.name.trim() }))
