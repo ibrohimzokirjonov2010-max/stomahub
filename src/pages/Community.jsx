@@ -9,6 +9,7 @@ import {
   TOPICS, CATS, catTopic, KINDS, KIND_LABEL, SAMPLE_SHOTS,
 } from '../communityData'
 import { useProfile } from '../profileStore'
+import { imgIcon } from '../components/tealIcons'
 
 const CLINIC = [
   ['shikoyat', 'Shikoyat', 'Bemorning shikoyatlari va anamnezi...'],
@@ -556,7 +557,11 @@ function Tag({ tag }) {
   return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{tag.t}</span>
 }
 
+const TEAL_KIND = { keys: imgIcon('forum', 'klinik-holatlar'), savol: imgIcon('forum', 'savollar'), muhokama: imgIcon('forum', 'muhokama') }
+
 function KindIcon({ id, bg, color }) {
+  const Teal = TEAL_KIND[id]
+  if (Teal) return <span className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ background: bg }}><Teal className="size-8" /></span>
   const Icon = id === 'savol' ? HelpCircle : id === 'muhokama' ? MessagesSquare : id === 'maqola' ? FileText : null
   return (
     <span className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ background: bg, color }}>

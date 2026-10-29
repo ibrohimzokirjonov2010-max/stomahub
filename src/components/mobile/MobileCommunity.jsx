@@ -9,12 +9,13 @@ import { FEED_TABS, useFeed, feed, countComments } from '../../communityFeed'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
+import { imgIcon } from '../tealIcons'
 
 export const KIND = {
-  case: { label: 'Klinik case', icon: ToothIcon, cls: 'bg-[#e8f1ff] text-[#2f6fe4]' },
+  case: { label: 'Klinik case', icon: imgIcon('forum', 'klinik-holatlar'), cls: 'bg-[#e8f1ff] text-[#2f6fe4]' },
   maslahat: { label: 'Maslahatlar', icon: Lightbulb, cls: 'bg-[#e3f8ef] text-[#1f9d63]' },
-  savol: { label: 'Savollar', icon: HelpCircle, cls: 'bg-[#f3e8ff] text-[#8b3fd6]' },
-  yangilik: { label: 'Yangiliklar', icon: Newspaper, cls: 'bg-[#fff3df] text-[#c77700]' },
+  savol: { label: 'Savollar', icon: imgIcon('forum', 'savollar'), cls: 'bg-[#f3e8ff] text-[#8b3fd6]' },
+  yangilik: { label: 'Yangiliklar', icon: imgIcon('forum', 'yangiliklar'), cls: 'bg-[#fff3df] text-[#c77700]' },
 }
 const SORTS = [['new', 'Eng yangi'], ['top', 'Eng mashhur'], ['talk', 'Ko‘p muhokama qilingan']]
 
@@ -30,7 +31,7 @@ export function Avatar({ p, size = 'size-11' }) {
 export function KindBadge({ kind }) {
   const k = KIND[kind]
   const Icon = k.icon
-  return <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-[10.5px] font-semibold ${k.cls}`}><Icon className="size-3.5" /> {k.label}</span>
+  return <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-[10.5px] font-semibold ${k.cls}`}><Icon className={Icon.raster ? 'size-4' : 'size-3.5'} /> {k.label}</span>
 }
 
 export function PostImages({ p, onOpen }) {
