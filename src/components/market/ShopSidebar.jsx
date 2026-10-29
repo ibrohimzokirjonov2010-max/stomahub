@@ -8,7 +8,7 @@ import {
   Wrench, MessagesSquare, Newspaper, Rss, Briefcase,
   ChevronDown, LogOut, X,
 } from 'lucide-react'
-import { MenuIcons as M } from '../tealIcons'
+import { MenuIcons as M, SectionIcons as SI } from '../tealIcons'
 import { profileStore } from '../../profileStore'
 import { signOut, useSession } from '../../sessionStore'
 import { todayIso, useVisits } from '../../uchrashuvData'
@@ -23,8 +23,8 @@ const GROUPS = [
       { label: 'Kategoriyalar', icon: LayoutGrid, to: '/kategoriyalar', keys: ['cats'] },
       { label: 'Brendlar', icon: BadgeCheck, to: '/brendlar', keys: ['brands'] },
       { label: 'Aksiyalar', icon: M.aksiyalar, to: '/aksiyalar', keys: ['aksiya'] },
-      { label: 'Forma', icon: Shirt, to: '/forma', keys: ['forma'] },
-      { label: 'Jihozlar', icon: Monitor, to: '/jihozlar', keys: ['jihozlar'] },
+      { label: 'Forma', icon: SI.forma, to: '/forma', keys: ['forma'] },
+      { label: 'Jihozlar', icon: SI.jihozlar, to: '/jihozlar', keys: ['jihozlar'] },
       { label: 'Ishlatilgan va ortiqcha', icon: Recycle, to: '/ortiqcha', keys: ['surplus'] },
     ],
   },

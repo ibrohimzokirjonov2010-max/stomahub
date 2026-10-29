@@ -5,7 +5,7 @@ import {
   X, Home, CalendarDays, ShoppingBag, Recycle, Shirt, GraduationCap, BookOpen, Wrench,
   Megaphone, Briefcase, Stethoscope, User, Store, Presentation, LogOut, LogIn, ChevronRight,
 } from 'lucide-react'
-import { MenuIcons as M } from '../tealIcons'
+import { MenuIcons as M, SectionIcons } from '../tealIcons'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
 
 // Faqat mavjud marshrutlar (App.jsx). Laboratoriya va Konsultatsiyalar uchun marshrut yo'q.
@@ -14,7 +14,8 @@ const ITEMS = [
   { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays },
   { to: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { to: '/ortiqcha', label: 'Ortiqcha materiallar', icon: Recycle },
-  { to: '/forma', label: 'Forma', icon: Shirt },
+  { to: '/forma', label: 'Forma', icon: SectionIcons.forma },
+  { to: '/jihozlar', label: 'Jihozlar', icon: SectionIcons.jihozlar },
   { to: '/talim', label: 'Ta’lim / Kurslar', icon: M.talim },
   { to: '/kitoblar', label: 'Kitoblar', icon: BookOpen },
   { to: '/ustalar', label: 'Ustalar', icon: Wrench },

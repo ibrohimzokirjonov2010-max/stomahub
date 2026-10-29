@@ -22,11 +22,11 @@ const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: SectionIcons.seminarlar, color: '#14a39a', bg: '#e3f6f3' },
   { to: '/marketplace', label: 'Marketplace', icon: SectionIcons.marketplace, color: '#2f6fe4', bg: '#e8f0fd' },
   { to: '/ortiqcha', label: 'Ortiqcha material', icon: SectionIcons.ortiqcha, color: '#f08a24', bg: '#fdf0e3' },
-  { to: '/forma', label: 'Forma', icon: Shirt, color: '#7c4ddb', bg: '#efe8fc' },
+  { to: '/forma', label: 'Forma', icon: SectionIcons.forma, color: '#7c4ddb', bg: '#efe8fc' },
   { to: '/talim', label: 'Ta’lim', icon: MenuIcons.talim, color: '#e5486e', bg: '#fde8ee' },
   { to: '/kitoblar', label: 'Kitoblar', icon: SectionIcons.kitoblar, color: '#2f6fe4', bg: '#e8f0fd' },
   { to: '/ustalar', label: 'Ustalar', icon: WrenchIcon, color: '#14a39a', bg: '#e3f6f3' },
-  { to: '/jihozlar', label: 'Laboratoriya', icon: SectionIcons.jihozlar, color: '#7c4ddb', bg: '#efe8fc' },
+  { to: '/jihozlar', label: 'Jihozlar', icon: SectionIcons.jihozlar, color: '#7c4ddb', bg: '#efe8fc' },
 ]
 
 const SECTIONS = [
