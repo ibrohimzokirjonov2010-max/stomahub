@@ -7,6 +7,7 @@ import {
   GraduationCap, Heart, IdCard, LogOut, MapPin, Pencil, Phone, Plus, Shield,
   ShoppingBag, Star, Trash2, Wallet,
 } from 'lucide-react'
+import { MenuIcons as M } from '../components/tealIcons'
 import ShopLayout from '../components/market/ShopLayout'
 import { fetchNotifications, markNotificationsRead, useRemote } from '../buyerApi'
 import { marketProducts, som } from '../marketData'
@@ -278,11 +279,11 @@ function Board({ initial }) {
   }
 
   const stats = [
-    { label: 'Buyurtmalar', value: orders.length, icon: ShoppingBag, tone: 'bg-[#e7f6f4] text-[#0F766E]' },
-    { label: 'Sertifikatlar', value: certCount, icon: IdCard, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
-    { label: 'Kurslar', value: myCourses.length, icon: GraduationCap, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
+    { label: 'Buyurtmalar', value: orders.length, icon: M.buyurtmalar, tone: 'bg-[#e7f6f4] text-[#0F766E]' },
+    { label: 'Sertifikatlar', value: certCount, icon: M.sertifikatlar, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
+    { label: 'Kurslar', value: myCourses.length, icon: M.kurslar, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
     { label: 'Bonus ballar', value: fmtBonus(profile.bonus), icon: Star, tone: 'bg-[#fff6df] text-[#d97706]' },
-    { label: 'Saqlanganlar', value: favCount, icon: Heart, tone: 'bg-[#fde8ef] text-[#e11d48]' },
+    { label: 'Saqlanganlar', value: favCount, icon: M.saqlanganlar, tone: 'bg-[#fde8ef] text-[#e11d48]' },
   ]
 
   return (
@@ -343,7 +344,7 @@ function Board({ initial }) {
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5">
         {stats.map((s) => (
           <div key={s.label} className={`${card} flex items-center gap-3 p-3.5`}>
-            <span className={`grid size-10 place-items-center rounded-xl ${s.tone}`}><s.icon className="size-5" /></span>
+            <span className={`grid size-10 place-items-center rounded-xl ${s.tone}`}><s.icon className={s.icon.raster ? 'size-8' : 'size-5'} /></span>
             <div className="min-w-0">
               <p className="truncate text-[18px] font-extrabold leading-none text-[#12263a]">{s.value}</p>
               <p className="mt-1 truncate text-[12px] text-[#6b7c8f]">{s.label}</p>

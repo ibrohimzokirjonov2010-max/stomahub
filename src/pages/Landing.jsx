@@ -9,6 +9,7 @@ import {
   Menu, MessageSquareMore, Phone, Search, ShoppingCart, Users, X, LayoutGrid, Bell, Wallet, FileText, Settings, Package, UserRound, Store,
 } from 'lucide-react'
 import { payPromo } from '../payments/paymentService'
+import { SectionIcons, MenuIcons } from '../components/tealIcons'
 
 const T = '#0F766E'
 const NAV = [['Marketplace', '/marketplace'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Klinika CRM', '/klinika'], ['Ustalar', '/ustalar']]
@@ -22,13 +23,13 @@ function Tooth(props) {
 }
 
 const FEATURES = [
-  [ShoppingCart, 'Marketplace', 'Stomatologik mahsulotlar, uskuna va materiallar', '/marketplace'],
-  [GraduationCap, 'Onlayn darslar', 'Professional kurslar va video darslar', '/talim'],
-  [CalendarDays, 'Seminarlar', 'Amaliy seminarlar va master-klasslar', '/seminarlar'],
-  [BookOpen, 'Kitoblar', 'Stomatologiyaga oid kitoblar va qo‘llanmalar', '/kitoblar'],
-  [BarChart3, 'Klinika CRM', 'Bemorlar, uchrashuvlar, davolash rejalari, to‘lovlar', '/klinika'],
+  [SectionIcons.marketplace, 'Marketplace', 'Stomatologik mahsulotlar, uskuna va materiallar', '/marketplace'],
+  [MenuIcons.talim, 'Onlayn darslar', 'Professional kurslar va video darslar', '/talim'],
+  [SectionIcons.seminarlar, 'Seminarlar', 'Amaliy seminarlar va master-klasslar', '/seminarlar'],
+  [SectionIcons.kitoblar, 'Kitoblar', 'Stomatologiyaga oid kitoblar va qo‘llanmalar', '/kitoblar'],
+  [MenuIcons.klinika, 'Klinika CRM', 'Bemorlar, uchrashuvlar, davolash rejalari, to‘lovlar', '/klinika'],
   [Tooth, 'Ustalar laboratoriyalari', 'Tish texniklari va laboratoriyalar', '/ustalar'],
-  [MessageSquareMore, 'Konsultatsiyalar', 'Hamkasblar bilan maslahat va tajriba almashish', '/community'],
+  [SectionIcons.forum, 'Konsultatsiyalar', 'Hamkasblar bilan maslahat va tajriba almashish', '/community'],
   [Megaphone, 'E’lonlar', 'Ish, hamkorlik va xizmatlar e’lonlari', '/elonlar'],
 ]
 const ROLES = [
@@ -130,7 +131,7 @@ export default function Landing() {
         <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
           {FEATURES.map(([I, t, d, to]) => (
             <Link key={t} to={to} className="group rounded-2xl border border-[#e8eff1] bg-white p-4 shadow-[0_6px_20px_rgb(16_40_50/0.04)] transition hover:-translate-y-0.5 hover:border-[#b9dfd9] sm:p-5">
-              <span className="grid size-12 place-items-center rounded-2xl bg-[#e6f4f1] text-[#0F766E] sm:size-14"><I className="size-7 sm:size-8" strokeWidth={2} /></span>
+              <span className="grid size-12 place-items-center rounded-2xl bg-[#e6f4f1] text-[#0F766E] sm:size-14"><I className={I.raster ? 'size-10 sm:size-12' : 'size-7 sm:size-8'} strokeWidth={2} /></span>
               <b className="mt-4 block text-[15px] text-[#0f2438] sm:text-[17px]">{t}</b>
               <p className="mt-1.5 text-[12.5px] leading-snug text-[#5c6e80] sm:text-[14.5px]">{d}</p>
             </Link>

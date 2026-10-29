@@ -30,6 +30,7 @@ import { products as uniforms } from '../../formaData'
 import { allAds, adsStore, useAds, PostAdSheet } from '../mobile/MobileElonlar'
 import { PostSheet } from '../mobile/MobileSurplus'
 import { addSurplusItem } from '../../surplusData'
+import { imgIcon } from '../tealIcons'
 
 /* ---- helpers ---- */
 const chipsFrom = (pairs, icons) => pairs.filter(([k]) => k !== 'all').map(([key, label]) => ({ key, label, icon: icons[key] }))
@@ -93,7 +94,7 @@ export function useFormaSection() {
   }, [v])
 }
 
-const MARKET_ICONS = { 'Restavratsion materiallar': Sparkles, Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: Wrench, Uskunalar: Armchair, 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiena vositalari': Pill, Boshqa: Package }
+const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
 export function useMarketSection() {
   const { products, status } = useMarket()
   return useMemo(() => {
@@ -119,7 +120,7 @@ export function useMarketSection() {
   }, [products, status])
 }
 
-const SEM_ICONS = { impl: Bone, endo: Syringe, orto: Smile, estet: Sparkles, paro: Heart, surg: Scissors, other: GraduationCap }
+const SEM_ICONS = { impl: imgIcon('seminarlar', 'implantologiya'), endo: imgIcon('seminarlar', 'endodontiya'), orto: imgIcon('seminarlar', 'ortodontiya'), estet: Sparkles, paro: Heart, surg: imgIcon('seminarlar', 'jarrohlik'), other: GraduationCap }
 const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
 export function useSeminarsSection() {
   const hub = useHub()
@@ -142,7 +143,7 @@ export function useSeminarsSection() {
   }, [hub])
 }
 
-const BOOK_ICONS = { terapiya: Sparkles, endo: Syringe, impl: Bone, ortoped: Crown, orto: Smile, surgery: Scissors, anatomy: Stethoscope, atlas: Images }
+const BOOK_ICONS = { terapiya: imgIcon('kitoblar', 'terapevtik'), endo: Syringe, impl: Bone, ortoped: imgIcon('kitoblar', 'ortopedik'), orto: imgIcon('kitoblar', 'ortodontik'), surgery: imgIcon('kitoblar', 'jarrohlik'), anatomy: Stethoscope, atlas: imgIcon('kitoblar', 'atlaslar') }
 export function useBooksSection() {
   const v = useCatalogVersion()
   return useMemo(() => {
@@ -207,7 +208,7 @@ export function useUstalarSection() {
   }, [v])
 }
 
-const JIHOZ_ICONS = { unit: Armchair, cbct: ScanLine, scan: Scan, autoclave: ShieldCheck, micro: Microscope, compressor: Wind, handpiece: Wrench, lamp: Lightbulb }
+const JIHOZ_ICONS = { unit: imgIcon('jihozlar', 'stomatologik-kreslolar'), cbct: imgIcon('jihozlar', 'rentgen-apparatlari'), scan: imgIcon('jihozlar', 'skanerlar-3d'), autoclave: imgIcon('jihozlar', 'avtoklavlar'), micro: imgIcon('jihozlar', 'mikroskoplar'), compressor: imgIcon('jihozlar', 'kompressorlar'), handpiece: Wrench, lamp: Lightbulb }
 export function useJihozSection() {
   const v = useCatalogVersion()
   return useMemo(() => {
@@ -254,7 +255,7 @@ export function useIshlarSection() {
   }, [v])
 }
 
-const SURPLUS_ICONS = { komp: Sparkles, bond: FlaskConical, sement: Layers, impl: Bone, instr: Wrench, anes: Syringe, other: Package }
+const SURPLUS_ICONS = { komp: imgIcon('ortiqcha-material', 'kompozitlar'), bond: FlaskConical, sement: Layers, impl: Bone, instr: Wrench, anes: imgIcon('ortiqcha-material', 'anestetiklar'), other: imgIcon('ortiqcha-material', 'boshqalar') }
 export function useSurplusSection() {
   const v = useCatalogVersion()
   const [rev, setRev] = useState(0)

@@ -115,10 +115,14 @@ export function CategoryChips({ cats, value, onChange, desktop }) {
     <div data-testid="catalog-chips" className={`mt-3 flex gap-2.5 overflow-x-auto pb-1 no-scrollbar ${desktop ? '' : '-mx-3.5 px-3.5'}`}>
       {all.map(({ key, label, icon: Icon = Tag }) => {
         const on = value === key
+        const raster = !!Icon.raster
+        const tone = raster
+          ? (on ? 'bg-[#e6f4f1] ring-2 ring-sea shadow-[0_6px_14px_-6px_rgb(11_138_149/0.7)]' : 'border border-line/70 bg-white')
+          : (on ? 'bg-sea text-white shadow-[0_6px_14px_-6px_rgb(11_138_149/0.7)]' : 'border border-line/70 bg-white text-[#1f5fa8]')
         return (
           <button key={key} type="button" aria-pressed={on} onClick={() => onChange(on && key !== 'all' ? 'all' : key)} className={`flex shrink-0 flex-col items-center gap-1 ${desktop ? 'w-[92px]' : 'w-[64px]'}`}>
-            <span className={`grid place-items-center rounded-2xl transition ${desktop ? 'size-[64px]' : 'size-[54px]'} ${on ? 'bg-sea text-white shadow-[0_6px_14px_-6px_rgb(11_138_149/0.7)]' : 'border border-line/70 bg-white text-[#1f5fa8]'}`}>
-              <Icon className={desktop ? 'size-[28px]' : 'size-[26px]'} strokeWidth={1.5} />
+            <span className={`grid place-items-center rounded-2xl transition ${desktop ? 'size-[64px]' : 'size-[54px]'} ${tone}`}>
+              <Icon className={raster ? (desktop ? 'size-[40px]' : 'size-[36px]') : (desktop ? 'size-[28px]' : 'size-[26px]')} strokeWidth={1.5} />
             </span>
             <span className={`w-full truncate text-center ${desktop ? 'text-[12px]' : 'text-[10.5px]'} ${on ? 'font-semibold text-sea' : 'text-ink-2'}`}>{label}</span>
           </button>

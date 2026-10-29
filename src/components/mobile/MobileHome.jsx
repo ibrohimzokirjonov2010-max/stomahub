@@ -16,16 +16,17 @@ import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast } from './parts'
 import { initialsOf, looksLikeDemoName } from '../../demoPurge'
 import { useSession } from '../../sessionStore'
+import { SectionIcons, MenuIcons } from '../tealIcons'
 
 const QUICK = [
-  { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays, color: '#14a39a', bg: '#e3f6f3' },
-  { to: '/marketplace', label: 'Marketplace', icon: BagIcon, color: '#2f6fe4', bg: '#e8f0fd' },
-  { to: '/ortiqcha', label: 'Ortiqcha material', icon: Package, color: '#f08a24', bg: '#fdf0e3' },
+  { to: '/seminarlar', label: 'Seminarlar', icon: SectionIcons.seminarlar, color: '#14a39a', bg: '#e3f6f3' },
+  { to: '/marketplace', label: 'Marketplace', icon: SectionIcons.marketplace, color: '#2f6fe4', bg: '#e8f0fd' },
+  { to: '/ortiqcha', label: 'Ortiqcha material', icon: SectionIcons.ortiqcha, color: '#f08a24', bg: '#fdf0e3' },
   { to: '/forma', label: 'Forma', icon: Shirt, color: '#7c4ddb', bg: '#efe8fc' },
-  { to: '/talim', label: 'Ta’lim', icon: GraduationCap, color: '#e5486e', bg: '#fde8ee' },
-  { to: '/kitoblar', label: 'Kitoblar', icon: BookOpen, color: '#2f6fe4', bg: '#e8f0fd' },
+  { to: '/talim', label: 'Ta’lim', icon: MenuIcons.talim, color: '#e5486e', bg: '#fde8ee' },
+  { to: '/kitoblar', label: 'Kitoblar', icon: SectionIcons.kitoblar, color: '#2f6fe4', bg: '#e8f0fd' },
   { to: '/ustalar', label: 'Ustalar', icon: WrenchIcon, color: '#14a39a', bg: '#e3f6f3' },
-  { to: '/jihozlar', label: 'Laboratoriya', icon: FlaskConical, color: '#7c4ddb', bg: '#efe8fc' },
+  { to: '/jihozlar', label: 'Laboratoriya', icon: SectionIcons.jihozlar, color: '#7c4ddb', bg: '#efe8fc' },
 ]
 
 const SECTIONS = [
@@ -164,8 +165,8 @@ export default function MobileHome() {
         <nav className="mt-3 grid grid-cols-4 gap-y-3 rounded-2xl bg-white px-1.5 py-3.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
           {QUICK.map(({ to, label, icon: Icon, color, bg }) => (
             <Link key={label} to={to} className="flex flex-col items-center gap-1.5 px-0.5 text-center active:scale-95">
-              <span className="grid size-[50px] place-items-center rounded-2xl" style={{ background: bg }}>
-                <Icon className="size-[26px]" fill={color} stroke="#fff" strokeWidth={1.6} />
+              <span className="grid size-[50px] place-items-center rounded-2xl" style={{ background: Icon.raster ? '#e6f4f1' : bg }}>
+                {Icon.raster ? <Icon className="size-[38px]" /> : <Icon className="size-[26px]" fill={color} stroke="#fff" strokeWidth={1.6} />}
               </span>
               <span className="text-[12px] font-medium leading-[1.2] text-ink-2">{label}</span>
             </Link>

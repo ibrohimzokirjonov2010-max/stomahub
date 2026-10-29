@@ -5,6 +5,7 @@ import {
   X, Home, CalendarDays, ShoppingBag, Recycle, Shirt, GraduationCap, BookOpen, Wrench,
   Megaphone, Briefcase, Stethoscope, User, Store, Presentation, LogOut, LogIn, ChevronRight,
 } from 'lucide-react'
+import { MenuIcons as M } from '../tealIcons'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
 
 // Faqat mavjud marshrutlar (App.jsx). Laboratoriya va Konsultatsiyalar uchun marshrut yo'q.
@@ -14,12 +15,12 @@ const ITEMS = [
   { to: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { to: '/ortiqcha', label: 'Ortiqcha materiallar', icon: Recycle },
   { to: '/forma', label: 'Forma', icon: Shirt },
-  { to: '/talim', label: 'Ta’lim / Kurslar', icon: GraduationCap },
+  { to: '/talim', label: 'Ta’lim / Kurslar', icon: M.talim },
   { to: '/kitoblar', label: 'Kitoblar', icon: BookOpen },
   { to: '/ustalar', label: 'Ustalar', icon: Wrench },
   { to: '/elonlar', label: 'E’lonlar', icon: Megaphone },
-  { to: '/ishlar', label: 'Vakansiyalar', icon: Briefcase },
-  { to: '/klinika', label: 'Klinika CRM', icon: Stethoscope },
+  { to: '/ishlar', label: 'Vakansiyalar', icon: M.vakansiyalar },
+  { to: '/klinika', label: 'Klinika CRM', icon: M.klinika },
   { to: '/profil', label: 'Profil', icon: User },
 ]
 
@@ -76,7 +77,7 @@ export default function MobileMenu({ open, onClose }) {
         <Link to={it.to} onClick={onClose} aria-current={active ? 'page' : undefined}
           className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium ${active ? 'bg-[#0F766E]/10 text-[#0F766E]' : 'text-ink active:bg-[#eef7f8]'}`}>
           <span className={`grid size-9 place-items-center rounded-lg ${active ? 'bg-[#0F766E] text-white' : 'bg-[#eef7f8] text-[#0F766E]'}`}>
-            <Icon className="size-[18px]" strokeWidth={1.9} />
+            <Icon className={Icon.raster ? 'size-7' : 'size-[18px]'} strokeWidth={1.9} />
           </span>
           <span className="flex-1">{it.label}</span>
           <ChevronRight className="size-4 text-slate-400" />
