@@ -1,22 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, CreditCard, Download, Info, Mail, MapPin, UserRound, X,
+  ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, Download, Info, Mail, MapPin, UserRound, X,
 } from 'lucide-react'
 import { buildSeminarPage } from '../seminarsData'
 import { addMessage, publicRecord, quotePromo, useHub } from '../hubStore'
 import { register } from '../components/mobile/seminarStore'
 import { som } from '../marketData'
-import { cardBrand, cvvRequired, validateCard } from '../cardCheck'
-import { useCountdown } from '../payBits'
 import LiveQr from '../components/LiveQr'
 import { tashkentWhen } from '../time'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
-
-const PAY = {
-  click: 'https://my.click.uz/services/pay',
-  payme: 'https://payme.uz',
-}
 
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Gigiyenist', 'Boshqa']
 const CLINICS = ['DentAKI Clinic', 'EMU Universiteti', 'Nexus Clinic', 'Hyatt Regency', 'Boshqa']
@@ -30,7 +23,7 @@ export default function SeminarReg() {
   const view = useMemo(() => (seminar ? profile(seminar) : null), [seminar])
   const [step, setStep] = useState(1)
   const [method, setMethod] = useState('click')
-  const [sheet, setSheet] = useState(true)
+  const [pending, setPending] = useState(false)
   const [form, setForm] = useState({ name: '', phone: '', email: '', spec: '', clinic: '', city: '' })
   const [error, setError] = useState('')
   const [paidAt, setPaidAt] = useState('')
@@ -70,14 +63,10 @@ export default function SeminarReg() {
       return
     }
     setError('')
-    setMethod('click')
-    setSheet(true)
+    // Bepul chipta: to‘lov bosqichisiz darhol tasdiqlanadi.
+    if (amount === 0) { accept('free'); return }
+    setMethod('cash')
     setStep(2)
-  }
-
-  const pick = (id) => {
-    setMethod(id)
-    setSheet(true)
   }
 
   const applyCode = () => {
@@ -98,7 +87,7 @@ export default function SeminarReg() {
       city: form.city,
       spec: form.spec,
       ticketName: plan.name,
-      methodLabel: payId === 'payme' ? 'Payme' : payId === 'uzcard' ? 'Uzcard' : 'Click',
+      methodLabel: payId === 'free' ? 'Bepul' : 'Naqd',
       gross: plan.price,
       promo: discount ? promo.trim() : '',
       title: view.title,
@@ -111,7 +100,8 @@ export default function SeminarReg() {
     }
     if (!res?.ok) { setError(res?.error || 'To‘lov amalga oshmadi'); return }
     setPass(res.info || null)
-    if (!opts.demo && PAY[payId]) window.open(PAY[payId], '_blank', 'noopener,noreferrer')
+    // To‘lov hech qachon mijoz tomonida "to‘landi" deb belgilanmaydi: pullik chipta tashkilotchi tasdiqlaguncha kutilmoqda.
+    setPending(amount > 0 || !!res.pending)
     setPaidAt(tashkentWhen(new Date()))
     setMethod(payId)
     setStep(3)
@@ -213,24 +203,14 @@ export default function SeminarReg() {
                 {promoMsg && <span className="text-[12.5px] text-[#0f766e]">{promoMsg}</span>}
                 {discount > 0 && <span className="text-[12.5px] text-muted line-through">{som(view.price)}</span>}
               </div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                <Method id="click" on={method === 'click'} title="Click" text="Click orqali to‘lov" onClick={() => pick('click')} />
-                <Method id="payme" on={method === 'payme'} title="Payme" text="Payme orqali to‘lov" onClick={() => pick('payme')} />
-                <Method id="uzcard" on={method === 'uzcard'} title="Uzcard / Humo" text="Uzcard, Humo, Visa" onClick={() => pick('uzcard')} />
+              <div data-testid="pay-pending-note" className="mt-3 rounded-xl border border-[#f5d48a] bg-[#fff8e6] px-3 py-3 text-[13px] text-ink-2">
+                <b className="block text-ink">To‘lov: naqd yoki o‘tkazma — tashkilotchi orqali</b>
+                Onlayn to‘lov hozircha ulanmagan. Ro‘yxatdan o‘tganingizdan so‘ng arizangiz <b>“To‘lov kutilmoqda”</b> holatida bo‘ladi; tashkilotchi to‘lovni qabul qilib, tasdiqlaydi.
               </div>
-              {sheet && method !== 'uzcard' && (
-                <PaySheet
-                  method={method}
-                  amount={amount}
-                  order={view.order}
-                  onClose={() => setSheet(false)}
-                  onBack={() => { setSheet(false); setStep(1) }}
-                  onPay={() => accept(method, { demo: true })}
-                />
-              )}
-              {sheet && method === 'uzcard' && (
-                <Uzcard amount={amount} onClose={() => setSheet(false)} onBack={() => { setSheet(false); setStep(1) }} onPay={() => accept('uzcard', { demo: true })} />
-              )}
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={() => setStep(1)} className="h-10 rounded-xl border border-line px-4 text-[13px] font-semibold">Orqaga</button>
+                <button type="button" data-testid="reg-submit-pending" onClick={() => accept('cash')} className="h-10 rounded-xl bg-[#149e86] px-4 text-[13px] font-semibold text-white">Ro‘yxatdan o‘tish</button>
+              </div>
             </section>
           )}
 
@@ -240,7 +220,7 @@ export default function SeminarReg() {
                 <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#e7f8f4] text-[#149e86]"><Check className="size-6" /></span>
                 <div>
                   <b className="block text-[16px]">Siz seminarga ro‘yxatdan o‘tdingiz!</b>
-                  <span className="text-[12.5px] text-muted">To‘lov muvaffaqiyatli amalga oshirildi. Quyida elektron chiptangiz va seminar tafsilotlari.</span>
+                  <span className="text-[12.5px] text-muted">{pending ? 'To‘lov kutilmoqda: tashkilotchi naqd/o‘tkazma to‘lovni qabul qilgach, chiptangiz tasdiqlanadi.' : amount === 0 ? 'Bepul chipta — ro‘yxatdan o‘tish tasdiqlandi. Quyida elektron chiptangiz.' : 'Quyida elektron chiptangiz va seminar tafsilotlari.'}</span>
                 </div>
               </div>
               <article className="rounded-2xl border border-line bg-white p-4 shadow-card">
@@ -304,8 +284,9 @@ export default function SeminarReg() {
             <div className="mt-3 rounded-xl border border-line p-3 text-[12.5px]">
               <b className="mb-2 block">Buyurtma ma’lumotlari</b>
               <Row k="Buyurtma raqami" v={`#${pass?.order || view.order}`} />
-              <Row k="To‘lov usuli" v={method === 'payme' ? 'Payme' : method === 'uzcard' ? 'Uzcard / Humo' : 'Click'} />
-              <Row k="To‘lov sanasi" v={paidAt} />
+              <Row k="To‘lov usuli" v={amount === 0 ? 'Bepul' : 'Naqd / o‘tkazma'} />
+              <Row k="To‘lov holati" v={pending ? 'To‘lov kutilmoqda' : 'Tasdiqlangan'} />
+              <Row k="Ro‘yxat sanasi" v={paidAt} />
               <Row k="Seminar narxi" v={som(amount)} />
             </div>
           )}
@@ -379,7 +360,7 @@ function profile(d) {
 function Stepper({ step }) {
   const items = [
     ['Ma’lumotlar', step > 1 ? 'Shaxsiy ma’lumotlar kiritildi' : 'Shaxsiy ma’lumotlaringizni kiriting'],
-    ['To‘lov', step > 2 ? 'To‘lov amalga oshirildi' : 'To‘lov usulini tanlang'],
+    ['To‘lov', step > 2 ? 'Ariza qabul qilindi' : 'Naqd / o‘tkazma'],
     [step === 3 ? 'Tasdiqlandi' : 'Tasdiqlash', step === 3 ? 'Siz seminarga ro‘yxatdan o‘tdingiz' : 'Ma’lumotlarni tekshiring, tasdiqlang'],
   ]
   return (
@@ -412,115 +393,6 @@ function Field({ label, required, children }) {
   )
 }
 
-function Method({ id, on, title, text, onClick }) {
-  return (
-    <button type="button" onClick={onClick} className="relative flex items-center gap-2 rounded-xl border bg-white px-3 py-3 text-left" style={{ borderColor: on ? '#149e86' : '#e7ecf3', boxShadow: on ? 'inset 0 0 0 1px #149e86' : 'none' }}>
-      <Mark id={id} />
-      <span className="min-w-0">
-        <b className="block text-[13px]">{title}</b>
-        <span className="block text-[11px] text-muted">{text}</span>
-      </span>
-      {on ? <span className="absolute right-2 top-2 grid size-4 place-items-center rounded-full bg-[#149e86] text-white"><Check className="size-3" /></span> : <span className="absolute right-2 top-2 size-4 rounded-full border border-line" />}
-    </button>
-  )
-}
-
-function Mark({ id }) {
-  if (id === 'click') return <span className="grid size-9 place-items-center rounded-full bg-[#e7f8f4] text-[13px] font-bold text-[#149e86]">C</span>
-  if (id === 'payme') return <span className="grid size-9 place-items-center rounded-lg bg-[#e7f8f4] text-[14px] font-bold text-[#12a150]">P</span>
-  return <span className="grid size-9 place-items-center rounded-lg bg-[#f4f7fb] text-ink-2"><CreditCard className="size-4" /></span>
-}
-
-function PaySheet({ method, amount, order, onClose, onBack, onPay }) {
-  const link = PAY[method]
-  const brand = method === 'payme' ? 'Payme' : 'Click'
-  const { left, text } = useCountdown(300)
-  return (
-    <div className="relative mx-auto mt-4 max-w-[560px] rounded-2xl border border-line bg-white px-4 py-5 text-center shadow-card">
-      <button type="button" onClick={onClose} className="absolute right-3 top-3 grid size-8 place-items-center rounded-lg text-muted" aria-label="Yopish"><X className="size-4" /></button>
-      <div className="mx-auto grid place-items-center">
-        <Mark id={method} />
-        <b className="mt-1 text-[18px]">{brand}</b>
-      </div>
-      <p className="mt-3 text-[12px] text-muted">To‘lov summasi</p>
-      <b className="block text-[26px]">{som(amount)}</b>
-      <p className="text-[12px] text-muted">Buyurtma raqami: #{order}</p>
-      <div className="mx-auto mt-3 grid size-40 place-items-center rounded-xl border border-line" aria-hidden>
-        <LiveQr text={`${brand}:${order}:${amount}`} className="size-32" />
-      </div>
-      <p className="mx-auto mt-3 max-w-[380px] text-[12.5px] text-ink-2">Telefoningiz kamerasi yoki {brand} ilovasi bilan QR kodni skanerlang — to‘lov summasi avtomatik to‘ldiriladi.</p>
-      <a href={link} target="_blank" rel="noreferrer" className="mt-1 inline-block text-[12px] font-semibold text-sea">{link}</a>
-      <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-muted">
-        {['Skanerlang', 'Ilovada tasdiqlang', 'Tayyor'].map((t, i) => (
-          <div key={t}>
-            <span className="mx-auto grid size-6 place-items-center rounded-full bg-[#e7f8f4] text-[11px] font-bold text-[#149e86]">{i + 1}</span>
-            <b className="mt-1 block text-ink">{t}</b>
-            <span>{['QR kodni skanerlang', 'To‘lovni ilovada tasdiqlang', 'To‘lov avtomatik tasdiqlanadi'][i]}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-2 text-[12.5px] text-muted">
-          <span className={`size-2 rounded-full ${left ? 'bg-[#f0b429]' : 'bg-[#e11d48]'}`} />
-          {left ? 'To‘lov kutilmoqda...' : 'Vaqt tugadi'}
-        </span>
-        <span className="font-mono text-[15px] font-bold tabular-nums text-ink" aria-live="polite">{text}</span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-        <button type="button" onClick={onBack} className="h-10 rounded-xl border border-line px-3 text-[12.5px] font-semibold">Orqaga</button>
-        <button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-3 text-[12.5px] font-semibold">Bekor qilish</button>
-        <button type="button" onClick={onPay} className="h-10 rounded-xl bg-[#149e86] px-3 text-[12.5px] font-semibold text-white">To‘lovni tekshirish <span className="font-medium opacity-80">(demo)</span></button>
-      </div>
-    </div>
-  )
-}
-
-function Uzcard({ amount, onClose, onBack, onPay }) {
-  const [num, setNum] = useState('')
-  const [exp, setExp] = useState('')
-  const [cvv, setCvv] = useState('')
-  const [errs, setErrs] = useState({})
-  const digits = num.replace(/\D/g, '')
-  const brand = cardBrand(digits)
-  const needCvv = cvvRequired(digits)
-  const submit = () => {
-    const next = validateCard({ num, exp, cvv })
-    setErrs(next)
-    if (Object.keys(next).length) return
-    onPay()
-  }
-  return (
-    <div className="relative mx-auto mt-4 max-w-[560px] rounded-2xl border border-line bg-white px-4 py-5 shadow-card">
-      <button type="button" onClick={onClose} className="absolute right-3 top-3" aria-label="Yopish"><X className="size-4 text-muted" /></button>
-      <b className="block text-center text-[16px]">Uzcard / Humo</b>
-      <p className="mt-1 text-center text-[13px] text-muted">To‘lov summasi {som(amount)}</p>
-      <div className="mt-3 space-y-2">
-        <label className="block text-[12px] font-semibold">
-          Karta raqami
-          <input inputMode="numeric" autoComplete="cc-number" value={digits.replace(/(\d{4})(?=\d)/g, '$1 ')} onChange={(e) => { setNum(e.target.value.replace(/\D/g, '').slice(0, 16)); setErrs((x) => ({ ...x, num: '' })) }} placeholder="8600 0000 0000 0000" className={`mt-1 h-11 w-full rounded-xl border px-3 text-[13px] font-normal outline-none ${errs.num ? 'border-[#e11d48]' : 'border-line'}`} />
-          {errs.num && <span className="mt-1 block font-medium text-[#e11d48]">{errs.num}</span>}
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="block text-[12px] font-semibold">
-            Amal qilish muddati
-            <input inputMode="numeric" autoComplete="cc-exp" value={exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setExp(d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d); setErrs((x) => ({ ...x, exp: '' })) }} placeholder="MM/YY" className={`mt-1 h-11 w-full rounded-xl border px-3 text-[13px] font-normal outline-none ${errs.exp ? 'border-[#e11d48]' : 'border-line'}`} />
-            {errs.exp && <span className="mt-1 block font-medium text-[#e11d48]">{errs.exp}</span>}
-          </label>
-          <label className="block text-[12px] font-semibold">
-            CVV {needCvv ? '' : <span className="font-normal text-muted">(ixtiyoriy)</span>}
-            <input inputMode="numeric" autoComplete="cc-csc" value={cvv} onChange={(e) => { setCvv(e.target.value.replace(/\D/g, '').slice(0, 3)); setErrs((x) => ({ ...x, cvv: '' })) }} placeholder={needCvv ? 'CVV' : 'Uzcard/Humo'} className={`mt-1 h-11 w-full rounded-xl border px-3 text-[13px] font-normal outline-none ${errs.cvv ? 'border-[#e11d48]' : 'border-line'}`} />
-            {errs.cvv ? <span className="mt-1 block font-medium text-[#e11d48]">{errs.cvv}</span> : <span className="mt-1 block font-normal text-muted">{brand === 'visa' || brand === 'mc' ? 'Visa va Mastercard uchun CVV kerak' : 'Uzcard va Humo uchun CVV shart emas'}</span>}
-          </label>
-        </div>
-      </div>
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={onBack || onClose} className="h-11 flex-1 rounded-xl border border-line text-[13px] font-semibold">Orqaga</button>
-        <button type="button" onClick={submit} className="h-11 flex-[1.4] rounded-xl bg-[#149e86] text-[13px] font-semibold text-white">To‘lovni tasdiqlash</button>
-      </div>
-    </div>
-  )
-}
-
 function Row({ k, v }) {
   return <div className="mt-1.5 flex items-center justify-between gap-2"><span className="text-muted">{k}</span><b>{v}</b></div>
 }
@@ -534,7 +406,7 @@ function Tooth() {
 }
 
 function downloadTicket(view, form, method, paidAt) {
-  const brand = method === 'payme' ? 'Payme' : method === 'uzcard' ? 'Uzcard / Humo' : 'Click'
+  const brand = method === 'free' ? 'Bepul' : 'Naqd / o‘tkazma (to‘lov tashkilotchi tasdiqlaydi)'
   const text = `StomaHub elektron chipta\n#${view.order}\n${view.longTitle}\n${view.doctor}\n${view.when}\n${view.place}, ${view.address}\n${form.name}\n+998 ${form.phone}\n${brand}\n${paidAt}\n${som(view.price)}\n`
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)

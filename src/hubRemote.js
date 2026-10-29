@@ -425,7 +425,17 @@ export async function remoteRegister(input) {
     person,
     payment: data.payment,
     seminar: data.seminar,
+    // 0032 migratsiyasidan keyin server pullik ro‘yxatni "wait" holatida qaytaradi.
+    pending: data.pending != null ? !!data.pending : person?.pay === 'wait' ? true : undefined,
   }
+}
+
+/** Tashkilotchi naqd/o‘tkazma to‘lovni qabul qilganini tasdiqlaydi (faqat server tomonida, 0032). */
+export async function pushConfirmPayment(registrationId) {
+  const { data, error } = await supabase.rpc('confirm_registration_payment', { p_registration_id: String(registrationId) })
+  if (error) throw new Error(friendlySupabaseError(error))
+  if (!data?.ok) throw new Error(data?.error || 'To‘lovni tasdiqlab bo‘lmadi')
+  return { ok: true, sum: Number(data.sum) || 0 }
 }
 
 async function logActivity(uid, item) {

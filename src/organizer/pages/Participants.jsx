@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { PAY_LABEL, som } from '../data'
 import { useOrg } from '../Shell'
-import { addParticipant, checkIn, downloadText, newestSeminar, removeParticipant, useHub } from '../../hubStore'
+import { addParticipant, checkIn, confirmPayment, downloadText, newestSeminar, removeParticipant, useHub } from '../../hubStore'
 import { Btn, Field, Modal, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
 import { FACE } from './participantsData'
@@ -383,6 +383,7 @@ function DesktopParticipants() {
                       <td className="px-1" onClick={(e) => e.stopPropagation()}>
                         <VertMenu
                           items={[
+                            ...(p.pay === 'wait' ? [{ label: 'To‘lovni tasdiqlash', onClick: () => { confirmPayment(p.id); notify(`${p.name} — to‘lov tasdiqlandi`) } }] : []),
                             { label: 'Email', onClick: () => { setSelected(p.id); setMail(true) } },
                             { label: 'O‘chirish', danger: true, onClick: () => { removeParticipant(p.id); notify('O‘chirildi') } },
                           ]}
@@ -502,6 +503,11 @@ function DesktopParticipants() {
               <p className="text-[10.5px] leading-tight text-[#8aa0a4]">Kirish paytida skanerlang</p>
             </div>
             {person.arrived && <p className="mt-2 text-center text-[12px] font-semibold text-[#16a34a]">Keldi</p>}
+            {person.pay === 'wait' && (
+              <button type="button" data-testid="confirm-payment" onClick={() => { confirmPayment(person.id); notify(`${person.name} — to‘lov tasdiqlandi`) }} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-[#f5d48a] bg-[#fff8e6] text-[12.5px] font-semibold text-[#8a5a00]">
+                To‘lovni tasdiqlash (naqd/o‘tkazma qabul qilindi)
+              </button>
+            )}
             <button type="button" onClick={() => { checkIn(person.id); notify(`${person.name} — Keldi`) }} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-xl text-[12.5px] font-semibold text-white" style={{ background: TEAL }}>
               <Check className="size-4" strokeWidth={2.6} /> {person.arrived ? 'Qayta belgilash' : 'QR check-in qilish'}
             </button>
@@ -833,6 +839,9 @@ function MobileParticipants() {
             </div>
             <p className="text-[13px]">Chipta: <b>{sheet.ticket}</b></p>
             <p className="mt-1 text-[13px]">To‘lov: <b>{M_PAY[sheet.pay]}</b></p>
+            {sheet.pay === 'wait' && (
+              <button type="button" onClick={() => { confirmPayment(sheet.id); notify(`${sheet.name} — to‘lov tasdiqlandi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-[#f5d48a] bg-[#fff8e6] text-[13px] font-semibold text-[#8a5a00]">To‘lovni tasdiqlash</button>
+            )}
             <button type="button" onClick={() => { checkIn(sheet.id); notify(`${sheet.name} — Keldi`); setSheet(null) }} className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-white" style={{ background: TEAL }}>
               <Check className="size-4" /> QR check-in qilish
             </button>

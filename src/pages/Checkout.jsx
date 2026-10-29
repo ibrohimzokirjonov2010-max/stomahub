@@ -43,6 +43,20 @@ const ORIGIN = {
 
 const input = 'h-11 w-full rounded-xl border border-[#e6ebf2] bg-white text-[13px] text-ink outline-none focus:border-sea'
 
+const PLACED_KEY = 'stomahub:checkout-placed'
+function readPlaced(key) {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(PLACED_KEY) || 'null')
+    return raw && raw.key === key && Date.now() - raw.at < 10 * 60 * 1000 ? raw.snap : null
+  } catch { return null }
+}
+function savePlaced(key, snap) {
+  try { sessionStorage.setItem(PLACED_KEY, JSON.stringify({ at: Date.now(), key, snap })) } catch { /* ignore */ }
+}
+export function clearPlaced() {
+  try { sessionStorage.removeItem(PLACED_KEY) } catch { /* ignore */ }
+}
+
 export default function Checkout() {
   const loc = useLocation()
   const origin = ORIGIN[loc.state?.from] || ORIGIN.market
@@ -76,7 +90,9 @@ export default function Checkout() {
   const [payOpen, setPayOpen] = useState(false)
   const [allSaved, setAllSaved] = useState(false)
   const [zoom, setZoom] = useState(1)
-  const [placed, setPlaced] = useState(null)
+  // Muvaffaqiyatli buyurtma: komponent qayta yuklansa ham (buyNow/savat bo‘shagach) tasdiq ekrani saqlanadi.
+  const [placed, setPlacedState] = useState(() => readPlaced(loc.key))
+  const setPlaced = (snap) => { savePlaced(loc.key, snap); setPlacedState(snap) }
   const [orderId] = useState(() => `SH-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`)
   const savedRows = (profile.accountLive ? profile.addresses : []).map((row) => ({
     id: row.id,

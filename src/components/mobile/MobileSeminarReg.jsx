@@ -78,7 +78,7 @@ function RegView({ id, seminar }) {
   const [cert, setCert] = useState(true)
   const [agree, setAgree] = useState(true)
   const [tried, setTried] = useState(false)
-  const [method, setMethod] = useState('click')
+  const [method, setMethod] = useState('cash')
   const [months, setMonths] = useState(6)
   const [cardNo, setCardNo] = useState({ num: '', exp: '', cvv: '' })
   const [payTried, setPayTried] = useState(false)
@@ -101,7 +101,7 @@ function RegView({ id, seminar }) {
   const discount = applied?.discount || 0
   const total = subtotal - discount
   const monthly = Math.ceil(total / months / 1000) * 1000
-  const payNow = method === 'split' ? monthly : total
+  const payNow = total
 
   const phone = form.phone.replace(/\D/g, '')
   const errors = {
@@ -120,6 +120,7 @@ function RegView({ id, seminar }) {
       if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' })
       return
     }
+    if (total <= 0) { confirmPaid(); return }
     setStep(2)
   }
 
@@ -137,11 +138,8 @@ function RegView({ id, seminar }) {
     setToast(`Promokod qo‘llandi: −${q.discount.toLocaleString('ru-RU')} so‘m`)
   }
 
-  const pay = () => {
-    setPayTried(true)
-    if (cardErr.num || cardErr.exp || cardErr.cvv) return
-    setPaying(true)
-  }
+  // Onlayn to‘lov ulanmagan: pullik ro‘yxat "To‘lov kutilmoqda" holatida yaratiladi, tashkilotchi tasdiqlaydi.
+  const pay = () => { confirmPaid() }
 
   const confirmPaid = useCallback(async () => {
     const count = Object.values(store.registered).filter((r) => r.order).length
@@ -151,9 +149,9 @@ function RegView({ id, seminar }) {
       res = await register(s.id, {
       order: `SEM-${2041 + count}`,
       plan: `${ticket === 'vip' ? 'VIP' : 'Standart'} · ${format === 'online' ? 'Onlayn' : 'Oflayn'}`,
-      ticket, ticketName: ticket === 'vip' ? 'VIP' : 'Standart', format, cert, method,
-      methodLabel: METHODS[method]?.[0] || 'Click',
-      months: method === 'split' ? months : 0,
+      ticket, ticketName: ticket === 'vip' ? 'VIP' : 'Standart', format, cert, method: total > 0 ? 'cash' : 'free',
+      methodLabel: total > 0 ? 'Naqd' : 'Bepul',
+      months: 0,
       name: form.name.trim(), phone, email: form.email.trim(),
       city: form.city, clinic: form.clinic, spec: form.spec,
       gross: subtotal, price: total, paid: payNow, promo: applied?.code || '',
@@ -258,39 +256,11 @@ function RegView({ id, seminar }) {
         ) : (
           <>
             <div className={`${card} mt-3 px-3.5 pb-3.5`}>
-              <Section icon={CreditCard} title="To‘lov usulini tanlang" first />
-              <div className="grid grid-cols-2 gap-2.5">
-                {Object.keys(METHODS).map((k) => (
-                  <Method key={k} id={k} on={method === k} onClick={() => { setMethod(k); setPayTried(false) }} />
-                ))}
+              <Section icon={CreditCard} title="To‘lov" first />
+              <div data-testid="pay-pending-note" className="rounded-xl border border-[#f5d48a] bg-[#fff8e6] p-3 text-[12.5px] leading-snug text-ink-2">
+                <b className="block text-[13px] text-[#0d2a4a]">Naqd yoki o‘tkazma — tashkilotchi orqali</b>
+                Onlayn to‘lov hozircha ulanmagan. Ro‘yxatdan o‘tgach arizangiz <b>“To‘lov kutilmoqda”</b> holatida bo‘ladi; tashkilotchi to‘lovni qabul qilib, tasdiqlaydi.
               </div>
-              {method === 'card' && (
-                <div className="mt-3 space-y-2.5">
-                  <Field label="Karta raqami" err={payTried && cardErr.num}>
-                    <input inputMode="numeric" autoComplete="cc-number" value={cardDigits.replace(/(\d{4})(?=\d)/g, '$1 ')} onChange={(e) => setCardNo((c) => ({ ...c, num: e.target.value.replace(/\D/g, '').slice(0, 16) }))} placeholder="8600 0000 0000 0000" className={input} />
-                  </Field>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <Field label="Muddati" err={payTried && cardErr.exp}>
-                      <input inputMode="numeric" autoComplete="cc-exp" value={cardNo.exp} onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setCardNo((c) => ({ ...c, exp: d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d })) }} placeholder="MM/YY" className={input} />
-                    </Field>
-                    <Field label={needCvv ? 'CVV' : 'CVV (ixtiyoriy)'} err={payTried && cardErr.cvv}>
-                      <input inputMode="numeric" autoComplete="cc-csc" value={cardNo.cvv} onChange={(e) => setCardNo((c) => ({ ...c, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) }))} placeholder={needCvv ? 'CVV' : 'shart emas'} className={input} />
-                    </Field>
-                  </div>
-                  <p className="text-[11px] text-muted">{brand === 'visa' || brand === 'mc' ? 'Visa va Mastercard uchun CVV kerak' : 'Uzcard va Humo uchun CVV shart emas'}</p>
-                </div>
-              )}
-              {method === 'split' && (
-                <div className="mt-3 rounded-xl bg-[#f3faf9] p-3">
-                  <p className="text-[12px] font-semibold text-ink">Muddatni tanlang</p>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    {SPLITS.map((n) => (
-                      <button key={n} type="button" aria-pressed={months === n} onClick={() => setMonths(n)} className={`h-10 rounded-xl border text-[12.5px] font-semibold ${months === n ? 'border-[#0b6d73] bg-[#0b6d73] text-white' : 'border-[#dbecea] bg-white text-ink'}`}>{n} oy</button>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-[11.5px] text-ink-2">Oyiga <b className="text-[#0b6d73]">{som(monthly)}</b> · {months} oy davomida, ustama 0%</p>
-                </div>
-              )}
             </div>
 
             <div className={`${card} mt-3 px-3.5 pb-3.5`}>
@@ -336,8 +306,8 @@ function RegView({ id, seminar }) {
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 rounded-t-2xl border-t border-line bg-white px-3.5 pb-[calc(10px+env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
         <div className="min-w-0 flex-1">
-          <p className="text-[11.5px] text-ink-2">{step === 1 ? 'Jami summa' : method === 'split' ? `1-oy to‘lovi (${months} oydan)` : 'To‘lov summasi'}</p>
-          <p className="whitespace-nowrap text-[19px] font-extrabold leading-tight text-[#0b6d73]">{som(step === 1 ? subtotal : payNow)}</p>
+          <p className="text-[11.5px] text-ink-2">{step === 1 ? 'Jami summa' : 'To‘lov summasi'}</p>
+          <p className="whitespace-nowrap text-[19px] font-extrabold leading-tight text-[#0b6d73]">{som(step === 1 ? subtotal : total)}</p>
         </div>
         {step === 1 ? (
           <button type="button" onClick={toPay} className="flex h-[52px] w-[58%] flex-col items-center justify-center rounded-xl bg-[#0b6d73] text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.98]">
@@ -346,12 +316,11 @@ function RegView({ id, seminar }) {
           </button>
         ) : (
           <button type="button" onClick={pay} className="flex h-[52px] w-[58%] items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] px-2 text-[13.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.98]">
-            <span className="truncate">To‘lash {som(payNow)}</span> <ArrowRight className="size-4 shrink-0" />
+            <span className="truncate">Ro‘yxatdan o‘tish</span> <ArrowRight className="size-4 shrink-0" />
           </button>
         )}
       </div>
 
-      {paying && <Paying method={method} amount={payNow} onCancel={() => setPaying(false)} onDone={confirmPaid} />}
       {terms && (
         <BottomSheet title="Qatnashish shartlari" onClose={() => setTerms(false)} footer={<button type="button" onClick={() => { setAgree(true); setTerms(false) }} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white">Tanishdim, roziman</button>}>
           <ul className="mt-2 space-y-2.5 text-[12.5px] leading-snug text-ink-2">
@@ -508,27 +477,6 @@ export function PayLogo({ id, size = 'size-9' }) {
   return <span className={`grid ${size} shrink-0 place-items-center rounded-full bg-[#e3f4f1] text-[#0b6d73]`}><ChartPie className="size-[18px]" /></span>
 }
 
-function Method({ id, on, onClick }) {
-  const [title, text] = METHODS[id]
-  return (
-    <button type="button" aria-pressed={on} onClick={onClick} className={`relative flex items-start gap-2 rounded-xl border p-2.5 text-left transition ${on ? 'border-[#0b6d73] bg-[#eef8f6] shadow-[inset_0_0_0_1px_#0b6d73]' : 'border-[#dbe5e8] bg-white'}`}>
-      <PayLogo id={id} size="size-8" />
-      <span className="min-w-0 flex-1">
-        <span className={`block whitespace-nowrap pr-5 text-[12.5px] font-bold ${on ? 'text-[#0b6d73]' : 'text-[#0d2a4a]'}`}>{title}</span>
-        <span className="mt-0.5 block text-[10px] leading-snug text-ink-2">{text}</span>
-        {id === 'card' && (
-          <span className="mt-1 flex gap-1">
-            <span className="rounded bg-[#0a4d8c] px-1 text-[7.5px] font-extrabold leading-[14px] text-white">UZCARD</span>
-            <span className="rounded bg-[#1c8a3e] px-1 text-[7.5px] font-extrabold leading-[14px] text-white">HUMO</span>
-            <span className="text-[10px] font-black italic leading-[14px] text-[#1a1f71]">VISA</span>
-          </span>
-        )}
-      </span>
-      <span className="absolute right-2 top-2"><Radio on={on} /></span>
-    </button>
-  )
-}
-
 function SumRow({ k, v, green }) {
   return (
     <p className="flex items-center justify-between gap-3">
@@ -552,76 +500,13 @@ function UzFlag() {
   )
 }
 
-function Paying({ method, amount, onCancel, onDone }) {
-  const wallet = method === 'click' || method === 'payme' || method === 'uzum'
-  if (wallet) return <WalletPay method={method} amount={amount} onCancel={onCancel} onDone={onDone} />
-  return <AutoPay method={method} amount={amount} onCancel={onCancel} onDone={onDone} />
-}
-
-function WalletPay({ method, amount, onCancel, onDone }) {
-  const { left, text } = useCountdown(300)
-  const brand = METHODS[method]?.[0] || 'To‘lov'
-  return (
-    <div className="fixed inset-0 z-[70] flex flex-col justify-end bg-ink/45">
-      <div role="dialog" aria-modal="true" aria-label="To‘lov" className="rounded-t-3xl bg-white px-5 pb-[calc(18px+env(safe-area-inset-bottom))] pt-5 text-center">
-        <div className="mx-auto w-fit"><PayLogo id={method} size="size-12" /></div>
-        <p className="mt-2 text-[13px] text-ink-2">{brand} orqali to‘lov</p>
-        <p className="text-[24px] font-extrabold text-[#0d2a4a]">{som(amount)}</p>
-        <div className="mx-auto mt-3 grid size-36 place-items-center rounded-xl border border-line">
-          <LiveQr text={`${brand}:${amount}`} className="size-28" />
-        </div>
-        <p className="mt-2 text-[12px] text-ink-2">{brand} ilovasida QR kodni skanerlang.</p>
-        <p className="mt-2 text-[12.5px] text-muted" aria-live="polite">{left ? 'To‘lov kutilmoqda...' : 'Vaqt tugadi'}</p>
-        <p className="font-mono text-[20px] font-bold tabular-nums text-[#0d2a4a]">{text}</p>
-        <button type="button" onClick={onDone} className="mt-3 h-11 w-full rounded-xl bg-[#0b6d73] text-[13.5px] font-semibold text-white">To‘lovni tekshirish <span className="font-medium opacity-80">(demo)</span></button>
-        <button type="button" onClick={onCancel} className="mt-2 h-11 w-full rounded-xl border border-line text-[13.5px] font-semibold text-ink">Bekor qilish</button>
-      </div>
-    </div>
-  )
-}
-
-function AutoPay({ method, amount, onCancel, onDone }) {
-  const [phase, setPhase] = useState(0)
-  const done = useRef(onDone)
-  done.current = onDone
-  useEffect(() => {
-    const a = setTimeout(() => setPhase(1), 900)
-    const b = setTimeout(() => setPhase(2), 1900)
-    const c = setTimeout(() => done.current(), 2500)
-    return () => { clearTimeout(a); clearTimeout(b); clearTimeout(c) }
-  }, [])
-  const steps = [`${METHODS[method][0]} bilan bog‘lanilmoqda`, 'To‘lov tasdiqlanmoqda', 'Chipta tayyorlanmoqda']
-  return (
-    <div className="fixed inset-0 z-[70] flex flex-col justify-end bg-ink/45">
-      <div role="dialog" aria-modal="true" aria-label="To‘lov" className="rounded-t-3xl bg-white px-5 pb-[calc(18px+env(safe-area-inset-bottom))] pt-5 text-center">
-        <div className="mx-auto w-fit"><PayLogo id={method} size="size-12" /></div>
-        <p className="mt-2 text-[13px] text-ink-2">{METHODS[method][0]} orqali to‘lov</p>
-        <p className="text-[24px] font-extrabold text-[#0d2a4a]">{som(amount)}</p>
-        <ul className="mx-auto mt-4 max-w-[260px] space-y-2.5 text-left">
-          {steps.map((t, i) => (
-            <li key={t} className={`flex items-center gap-2.5 text-[13px] ${phase >= i ? 'text-[#0d2a4a]' : 'text-muted'}`}>
-              {phase > i ? <span className="grid size-5 place-items-center rounded-full bg-[#0b6d73] text-white"><Check className="size-3" strokeWidth={3.5} /></span>
-                : phase === i ? <LoaderCircle className="size-5 animate-spin text-[#0b6d73]" />
-                  : <span className="size-5 rounded-full border-[1.5px] border-line" />}
-              {t}
-            </li>
-          ))}
-        </ul>
-        <button type="button" onClick={onCancel} className="mt-5 h-11 w-full rounded-xl border border-line text-[13.5px] font-semibold text-ink">Bekor qilish</button>
-      </div>
-    </div>
-  )
-}
-
-/* ---------- 3-bosqich: tasdiqlandi ---------- */
-
 function Done({ s, m, reg }) {
   const navigate = useNavigate()
   const { items } = useCart()
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const order = reg.order
-  const methodLabel = reg.method === 'split' ? `Bo‘lib to‘lash (${reg.months} oy)` : METHODS[reg.method]?.[0] || 'Click'
+  const methodLabel = reg.method === 'free' ? 'Bepul' : reg.method === 'cash' ? 'Naqd / o‘tkazma' : METHODS[reg.method]?.[0] || 'Naqd'
   const place = reg.format === 'online' ? 'Online (Zoom)' : m.place
   const address = reg.format === 'online' ? 'Havola email orqali yuboriladi' : m.address
 
@@ -671,7 +556,7 @@ function Done({ s, m, reg }) {
           </span>
           <div className="min-w-0">
             <p className="text-[15.5px] font-bold leading-tight text-[#0d2a4a]">Siz seminarga ro‘yxatdan o‘tdingiz!</p>
-            <p className="mt-1 text-[11.5px] leading-snug text-ink-2">To‘lov muvaffaqiyatli amalga oshirildi. Elektron chiptangiz quyida ko‘rsatilgan.</p>
+            <p className="mt-1 text-[11.5px] leading-snug text-ink-2">{reg.pending ? 'To‘lov kutilmoqda: tashkilotchi naqd/o‘tkazma to‘lovni qabul qilgach, chiptangiz tasdiqlanadi.' : 'Ro‘yxatdan o‘tish tasdiqlandi. Elektron chiptangiz quyida ko‘rsatilgan.'}</p>
           </div>
         </div>
 

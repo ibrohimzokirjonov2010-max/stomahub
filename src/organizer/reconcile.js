@@ -8,8 +8,11 @@ import { tashkentToday } from '../tashkentDate'
  */
 
 // Test / E2E seminarlar: UI da yashiriladi (o‘chirish SQL — 0030_organizer_audit.sql, qo‘llanmagan)
-const TEST_TITLE = /(^|[\s_-])(test|e2e|demo)([\s_-]|$)|img check|live new|\b\d{12,}\b/i
+// Faqat aniq avtomatik test yozuvlari: "E2E ..." prefiksi, "[test]" tegi, is_test bayrog‘i yoki E2E vaqt-belgisi.
+// Oddiy "test"/"demo" so‘zlari bor haqiqiy seminarlar (masalan "Demo-kun: implant") yashirilmaydi.
+const TEST_TITLE = /^\s*e2e[\s_:-]|\[(test|e2e)\]|img check|live new|\b\d{12,}\b/i
 export function isTestSeminar(s) {
+  if (s?.is_test === true || s?.isTest === true) return true
   return TEST_TITLE.test(String(s?.title || '')) || TEST_TITLE.test(String(s?.id || '').replace(/-/g, ' '))
 }
 
@@ -79,13 +82,13 @@ export function reconcileHub(next, { cabinet } = {}) {
   if (!cabinet) return { ...next, catalog, seminars: catalog.filter((s) => (next.seminars || []).some((x) => x.id === s.id)) }
   const participants = next.participants || []
   const payments = next.payments || []
-  const seminars = (next.seminars || []).filter((s) => !isTestSeminar(s)).map((s) => reconcileSeminar(s, participants, payments, today))
+  const seminars = (next.seminars || []).map((s) => reconcileSeminar(s, participants, payments, today))
   const visible = new Set(seminars.map((s) => s.id))
   return {
     ...next,
     catalog,
     seminars,
-    hiddenTests: (next.seminars || []).filter((s) => isTestSeminar(s)).map((s) => s.id),
+    hiddenTests: [], // tashkilotchi kabinetida o‘z seminarlari hech qachon yashirilmaydi
     participants: participants.filter((p) => visible.has(p.seminarId)),
     payments: payments.filter((p) => visible.has(p.seminarId)),
     certs: (next.certs || []).filter((c) => visible.has(c.seminarId)),

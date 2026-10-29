@@ -6,7 +6,7 @@ import { tashkentClock, tashkentDate } from './time'
 import { tashkentToday } from './tashkentDate'
 import { isTestSeminar } from './organizer/reconcile'
 import {
-  pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushDuplicate, pushMessage,
+  pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
   pushSettingsBundle, pushSpeaker, pushTickets, pushWithdraw, remoteRegister, subscribeHub,
 } from './hubRemote'
@@ -421,6 +421,20 @@ function bumpSeminar(list, id, { sold = 0, revenue = 0, checked = 0 } = {}) {
   })
 }
 
+/** Tashkilotchi naqd/o‘tkazma to‘lovni qabul qildi: "Kutilmoqda" → "To‘langan" (server RPC orqali). */
+export function confirmPayment(id) {
+  const person = state.participants.find((p) => p.id === id)
+  if (!person || person.pay !== 'wait') return null
+  patch((s) => ({
+    ...s,
+    participants: s.participants.map((p) => (p.id === id ? { ...p, pay: 'paid' } : p)),
+    payments: s.payments.map((p) => (p.participantId === id && p.state === 'wait' ? { ...p, state: 'ok' } : p)),
+    activity: pushActivity(s.activity, { icon: 'wallet', title: `${person.name} — to‘lov tasdiqlandi`, text: s.seminars.find((x) => x.id === person.seminarId)?.title || '' }),
+  }))
+  remote(() => pushConfirmPayment(id))
+  return { ...person, pay: 'paid' }
+}
+
 export function checkIn(id) {
   const person = state.participants.find((p) => p.id === id)
   if (!person) return null
@@ -526,7 +540,7 @@ export async function registerSale(input) {
     activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qabul qilindi', text: `${person?.name || ''} — ${(res.paid || 0).toLocaleString('ru-RU')} so‘m` }),
   }))
   scheduleRefresh()
-  return { ok: true, paid: res.paid, discount: res.discount, person, payment }
+  return { ok: true, paid: res.paid, discount: res.discount, person, payment, pending: res.pending }
 }
 
 export function refundPayment(id) {
