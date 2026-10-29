@@ -76,6 +76,9 @@ export function useSellerData() {
 // ---- derived numbers -------------------------------------------------------------
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 export const netOf = (o) => Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0))
+// 12% komissiya faqat yetkazilgan (Yetkazildi) buyurtmalardan olinadi; qolganlari — Kutilmoqda.
+export const isDelivered = (o) => o?.status === 'yetkazildi'
+export const commissionText = (o, fmt) => (isDelivered(o) ? fmt(commissionOf(o)) : 'Kutilmoqda')
 export const commissionOf = (o) => Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
 export const payoutOf = (o) => Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
 
@@ -105,7 +108,7 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
 export function monthStats(orders, month /* Date or null = all */) {
   const inRange = orders.filter((o) => o.status !== 'bekor_qilindi' && (!month || (new Date(o.created_at).getMonth() === month.getMonth() && new Date(o.created_at).getFullYear() === month.getFullYear())))
   const sum = inRange.reduce((s, o) => s + Number(o.subtotal || 0), 0)
-  return { sum, count: inRange.length, avg: inRange.length ? Math.round(sum / inRange.length) : 0, commission: Math.round(sum * COMMISSION_RATE) }
+  return { sum, count: inRange.length, avg: inRange.length ? Math.round(sum / inRange.length) : 0, commission: inRange.filter(isDelivered).reduce((s, o) => s + commissionOf(o), 0) }
 }
 
 export function popularProducts(orders, products, limit = 4) {

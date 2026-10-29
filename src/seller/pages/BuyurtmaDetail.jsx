@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, RefreshCw, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink } from 'lucide-react'
-import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync } from '../api'
+import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync, commissionText } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Menu, Err } from '../components/ui'
 import Empty from '../components/shell/Empty'
@@ -148,7 +148,7 @@ export default function BuyurtmaDetail() {
             <h3 className="text-[15px] font-bold">To‘lov ma’lumotlari</h3>
             <div className="mt-3 space-y-1.5"><Row l="Mahsulotlar jami" v={som(o.subtotal)} />{Number(o.discount_amount) > 0 && <Row l="Chegirma" v={`−${som(o.discount_amount)}`} />}<Row l="Yetkazib berish" v={som(o.delivery_fee || 0)} /></div>
             <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Jami summa</span><span>{som(total)}</span></div>
-            <Row l="StomaHub komissiyasi (12%)" v={som(o.commission)} />
+            <Row l="StomaHub komissiyasi (12%)" v={commissionText(o, som)} />
             <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Sizga tushadi</span><span>{som(o.payout)}</span></div>
             <div className="flex gap-2 rounded-lg bg-[#F0FDFA] p-3 text-[12px] text-[#3D4E5F]"><Info className="size-5 shrink-0 text-[#0F766E]" /><div><b className="text-[#10283F]">To‘lov naqd pulda amalga oshiriladi.</b><br />Xaridordan to‘lov yetkazilganda qabul qilinadi.</div></div>
           </div>
@@ -206,7 +206,7 @@ export default function BuyurtmaDetail() {
           <div className={`${card} p-3`}><h3 className="text-[13.5px] font-bold">Ichki izoh (sotuvchi)</h3><Textarea rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Faqat siz ko‘rasiz" className="mt-2" />{note !== (o.internal_note || '') && <Btn size="sm" className="mt-2" disabled={a.busy} onClick={saveNote}>Saqlash</Btn>}</div>
           <div className="rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] p-3 text-[13px]">
             <h3 className="flex items-center gap-2 font-bold text-[#0F766E]"><Calculator className="size-5" />Buyurtma summasi</h3>
-            <div className="mt-2 space-y-1"><Row l="Mahsulotlar jami:" v={som(o.subtotal)} />{Number(o.discount_amount) > 0 && <Row l="Chegirma:" v={`−${som(o.discount_amount)}`} />}{Number(o.delivery_fee) > 0 && <Row l="Yetkazish:" v={som(o.delivery_fee)} />}<Row l="Komissiya (12%):" v={som(o.commission)} /></div>
+            <div className="mt-2 space-y-1"><Row l="Mahsulotlar jami:" v={som(o.subtotal)} />{Number(o.discount_amount) > 0 && <Row l="Chegirma:" v={`−${som(o.discount_amount)}`} />}{Number(o.delivery_fee) > 0 && <Row l="Yetkazish:" v={som(o.delivery_fee)} />}<Row l="Komissiya (12%):" v={commissionText(o, som)} /></div>
             <div className="mt-2 flex justify-between border-t border-[#CCFBF1] pt-2 font-bold"><span>Mijozdan olinadigan summa:</span><span className="text-[15px]">{som(total)}</span></div>
           </div>
           <div className="grid grid-cols-2 gap-2.5 pb-4">

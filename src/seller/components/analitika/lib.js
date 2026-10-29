@@ -20,7 +20,7 @@ export function days(r) { const out = []; const d = new Date(`${r.from}T12:00:00
 export function summary(list) {
   const sum = list.reduce((s, o) => s + netOf(o), 0)
   const buyers = new Set(list.map((o) => o.customer_id || o.customer_phone || o.customer_name)).size
-  return { sum, count: list.length, avg: list.length ? Math.round(sum / list.length) : 0, commission: list.reduce((s, o) => s + commissionOf(o), 0), buyers }
+  return { sum, count: list.length, avg: list.length ? Math.round(sum / list.length) : 0, commission: list.filter((o) => o.status === 'yetkazildi').reduce((s, o) => s + commissionOf(o), 0), buyers }
 }
 export function daily(list, r, pick = netOf) { const m = Object.fromEntries(days(r).map((d) => [d, 0])); list.forEach((o) => { const d = dayOf(o.created_at); if (d in m) m[d] += pick(o) }); return m }
 // mahsulot bo'yicha: sotilgan dona va summa (chegirma ulushi taqsimlanadi)

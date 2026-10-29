@@ -5,7 +5,7 @@ import { dmy, hm, monthTitle, som, MONTHS } from '../../format'
 import ProductThumb from './ProductThumb'
 import Empty from '../shell/Empty'
 
-const MSTATUS = { yangi: 'Yangi', tasdiqlandi: 'Tasdiqlandi', tayyorlanmoqda: 'Tayyorlanmoqda', yetkazilmoqda: 'Yetkazilmoqda', yetkazildi: 'Yakunlangan', bekor_qilindi: 'Bekor qilindi' }
+const MSTATUS = { yangi: 'Yangi', tasdiqlandi: 'Tasdiqlandi', tayyorlanmoqda: 'Tayyorlanmoqda', yetkazilmoqda: 'Yetkazilmoqda', yetkazildi: 'Yetkazildi', bekor_qilindi: 'Bekor qilindi' }
 
 export function Welcome({ shop }) {
   return (
