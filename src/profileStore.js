@@ -40,6 +40,7 @@ const EMPTY_ACCOUNT = {
   plus: false,
   bonus: 0,
   loggedOut: false,
+  ownerUid: '',
   notif: { email: true, sms: false, market: true, courses: true, promo: false },
   addresses: [],
   defaultAddr: '',
@@ -69,6 +70,8 @@ let hydratedUid = null
 function read() {
   try {
     const v = JSON.parse(localStorage.getItem(KEY))
+    // Legacy caches have no owner — they may belong to a previous account on this device.
+    if (v && !v.ownerUid) { localStorage.removeItem(KEY); return { ...DEFAULT, accountLive: false } }
     return v ? { ...DEFAULT, ...v, notif: { ...DEFAULT.notif, ...v.notif }, accountLive: false } : { ...DEFAULT, accountLive: false }
   } catch {
     return { ...DEFAULT, accountLive: false }
@@ -346,10 +349,11 @@ async function hydrateProfile(nextUid) {
     listeners.forEach((l) => l())
     return
   }
-  // Clear local UI immediately for non-demo accounts, but do NOT sync children yet.
-  if (!isDemoUser()) {
+  // Account switch (or first hydrate in this tab): never show another user's cached data.
+  if (!isDemoUser() && (state.ownerUid !== nextUid || hydratedUid !== nextUid)) {
     applyingRemote = true
-    state = { ...EMPTY_ACCOUNT }
+    try { localStorage.removeItem(KEY) } catch { /* ignore */ }
+    state = { ...EMPTY_ACCOUNT, ownerUid: nextUid }
     applyingRemote = false
     listeners.forEach((l) => l())
   }
@@ -408,18 +412,19 @@ async function hydrateProfile(nextUid) {
     accountLive: true,
     loggedOut: false,
     syncError: '',
-    name: (profile?.name && !looksLikeDemoName(profile.name) ? profile.name : (looksLikeDemoName(state.name) ? '' : (profile?.name || state.name))) || profile?.name || '',
-    role: profile?.specialty || state.role,
+    ownerUid: nextUid,
+    name: (() => { const n = (profile?.full_name || profile?.name || '').trim(); return looksLikeDemoName(n) ? '' : n })(),
+    role: profile?.specialty || '',
     clinic: profile?.clinic || clinicRow?.name || '',
-    city: profile?.city || state.city,
+    city: profile?.city || '',
     district: profile?.district || '',
     phone: localPhone(profile?.phone),
-    email: profile?.email || state.email,
+    email: profile?.email || '',
     avatar: profile?.avatar_url || '',
     license: profile?.license || '',
     experience: profile?.experience_years ? String(profile.experience_years) : '',
     about: profile?.about || '',
-    verified: !!profile?.verified,
+    verified: !!(profile?.verified || profile?.doctor_verified || profile?.license_status === 'approved'),
     lang: profile?.lang || 'uz',
     plus: !!profile?.plus,
     bonus: profile?.bonus || 0,
@@ -522,4 +527,14 @@ export const learningStats = (profile, catalog = []) => {
   })
   const certificates = (profile?.certificates || []).length
   return { hours: Math.round(hours), completed, certificates, current, any: hours > 0 || completed + current + certificates > 0 }
+}
+
+/** Wipe every per-user cache on this device (logout / account switch). */
+export function clearLocalUserData() {
+  hydratedUid = null
+  clearTimeout(pushTimer)
+  try { localStorage.removeItem(KEY) } catch { /* ignore */ }
+  try { sessionStorage.clear() } catch { /* ignore */ }
+  state = { ...DEFAULT, accountLive: false, loggedOut: true }
+  listeners.forEach((l) => l())
 }

@@ -21,7 +21,6 @@ import { useAds } from './MobileElonlar'
 import { CITIES } from './MobileCheckout'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
-const AVATAR = '/images/yangiliklar/yang-sardor.jpg'
 const card = 'rounded-2xl bg-white shadow-[0_1px_6px_rgb(11_31_58/0.06)]'
 const navy = 'text-[#0d2a4a]'
 const LANGS = [['uz', 'O‘zbekcha'], ['ru', 'Русский'], ['en', 'English']]
@@ -151,10 +150,9 @@ export default function MobileProfil() {
         {profile.syncError && <p className="mt-2 rounded-xl bg-[#fff4f4] px-3 py-2 text-[12.5px] text-[#b42318]">{profile.syncError}</p>}
 
         <section className="relative mt-2 overflow-hidden rounded-2xl border border-[#dcefed] bg-[linear-gradient(105deg,#f4fbfb_0%,#e9f6f5_55%,#e2f2f1_100%)] p-3.5">
-          <img src="/images/ishlar/ish-chair.jpg" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[50%] object-cover object-[28%_50%] opacity-70 [mask-image:linear-gradient(90deg,transparent_0%,rgb(0_0_0/0.5)_45%,#000_80%)]" />
           <div className="relative flex items-center gap-3.5">
             <div className="relative shrink-0">
-              <img src={profile.avatar || AVATAR} alt={profile.name} className="size-[104px] rounded-full border-4 border-white object-cover object-top shadow-[0_4px_14px_rgb(13_42_74/0.15)]" />
+              {profile.avatar ? <img src={profile.avatar} alt={profile.name} className="size-[104px] rounded-full border-4 border-white object-cover object-top shadow-[0_4px_14px_rgb(13_42_74/0.15)]" /> : <span className="grid size-[104px] place-items-center rounded-full border-4 border-white bg-[#e8eef5] text-[#8aa0b8] shadow-[0_4px_14px_rgb(13_42_74/0.15)]"><UserRound className="size-12" /></span>}
               <button type="button" onClick={() => fileRef.current?.click()} aria-label="Rasmni o‘zgartirish" className="absolute bottom-0.5 right-0.5 grid size-8 place-items-center rounded-full bg-white text-sea shadow-[0_2px_8px_rgb(13_42_74/0.18)]">
                 <Camera className="size-4" />
               </button>
@@ -162,8 +160,8 @@ export default function MobileProfil() {
             </div>
             <div className="min-w-0 flex-1">
               <p className={`flex items-center gap-1 text-[17px] font-bold leading-tight ${navy}`}>
-                <span className="truncate">{displayName}</span>
-                {profile.plus ? <Crown className="size-[18px] shrink-0 fill-[#f5b301] text-[#f5b301]" /> : <BadgeCheck className="size-[18px] shrink-0 fill-[#1f6fd1] text-white" />}
+                {profile.name ? <span className="truncate">{displayName}</span> : <button type="button" onClick={() => (profile.accountLive ? setSheet('edit') : navigate('/kirish'))} className="truncate text-left text-ink-2 underline decoration-dotted">{profile.accountLive ? 'Ismingizni kiriting' : 'Mehmon'}</button>}
+                {profile.plus ? <Crown className="size-[18px] shrink-0 fill-[#f5b301] text-[#f5b301]" /> : profile.verified ? <BadgeCheck className="size-[18px] shrink-0 fill-[#1f6fd1] text-white" aria-label="Tasdiqlangan" /> : null}
               </p>
               <p className="mt-0.5 text-[12.5px] text-ink-2">{profile.role}</p>
               <button type="button" onClick={() => setSheet('clinic')} className="mt-1.5 flex max-w-full items-center gap-1.5 text-left text-[11.5px] text-ink-2"><Building className="size-3.5 shrink-0" /> <span className="truncate">{profile.clinic}</span></button>
@@ -340,7 +338,7 @@ function EditSheet({ profile, onPick, onClose, onSaved }) {
   return (
     <BottomSheet title="Profilni tahrirlash" onClose={onClose} footer={<button type="button" onClick={save} className="h-12 flex-1 rounded-xl bg-sea text-[14.5px] font-semibold text-white">Saqlash</button>}>
       <div className="mt-3 flex items-center gap-3">
-        <img src={profile.avatar || AVATAR} alt="" className="size-16 rounded-full object-cover object-top" />
+        {profile.avatar ? <img src={profile.avatar} alt="" className="size-16 rounded-full object-cover object-top" /> : <span className="grid size-16 place-items-center rounded-full bg-[#e8eef5] text-[#8aa0b8]"><UserRound className="size-8" /></span>}
         <div className="flex flex-col items-start gap-1">
           <button type="button" onClick={onPick} className="flex items-center gap-1.5 text-[13px] font-semibold text-sea"><ImagePlus className="size-4" /> Rasmni o‘zgartirish</button>
           {profile.avatar && <button type="button" onClick={() => profileStore.update({ avatar: '' })} className="flex items-center gap-1.5 text-[12.5px] font-medium text-sale"><Trash2 className="size-3.5" /> Rasmni o‘chirish</button>}
