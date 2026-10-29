@@ -21,6 +21,7 @@ export const SectionIcons = {
   ortiqcha: imgIcon('sections', 'ortiqcha-material'),
   kitoblar: imgIcon('sections', 'kitoblar'),
   jihozlar: imgIcon('sections', 'jihozlar'),
+  forma: imgIcon('bolim', 'forma'),
 }
 
 export const NavIcons = {
