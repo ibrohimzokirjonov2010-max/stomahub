@@ -5,6 +5,7 @@ import {
   BadgeCheck, MapPin, Settings, ArrowRight, UserPlus, CalendarPlus, CalendarDays, UserRound, CircleDollarSign, Armchair,
   ChevronLeft, ChevronRight, MoreVertical, MoreHorizontal, Plus, Search, SlidersHorizontal, Clock, X, Phone, Check, AlertTriangle, Coffee, Truck,
 } from 'lucide-react'
+import { MenuIcons as M } from '../components/tealIcons'
 import ShopLayout from '../components/market/ShopLayout'
 import AppointmentForm from '../components/crm/AppointmentForm'
 import PatientForm from '../components/crm/PatientForm'
@@ -216,7 +217,7 @@ export default function Klinika() {
       <div className="space-y-3 pb-8 pt-3" onClick={() => menu && setMenu(null)}>
         <section className="klk-head">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sea-50 text-sea"><ToothIcon className="size-8" /></span>
+            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sea-50 text-sea"><M.klinika className="size-11" /></span>
             <div className="min-w-0">
               <h1 className="flex items-center gap-1.5 text-[22px] font-extrabold tracking-tight text-ink">{settings.name || 'Mening klinikam'} <BadgeCheck className="size-5 fill-sea text-white" /></h1>
               <p className="mt-1 flex flex-wrap items-center gap-3 text-[11.5px] text-muted">

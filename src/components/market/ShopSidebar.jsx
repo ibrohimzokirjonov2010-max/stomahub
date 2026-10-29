@@ -8,6 +8,7 @@ import {
   Wrench, MessagesSquare, Newspaper, Rss, Briefcase,
   ChevronDown, LogOut, X,
 } from 'lucide-react'
+import { MenuIcons as M } from '../tealIcons'
 import { profileStore } from '../../profileStore'
 import { signOut, useSession } from '../../sessionStore'
 import { todayIso, useVisits } from '../../uchrashuvData'
@@ -21,7 +22,7 @@ const GROUPS = [
       { label: 'Marketplace', icon: Store, to: '/marketplace', keys: ['all', 'market'] },
       { label: 'Kategoriyalar', icon: LayoutGrid, to: '/kategoriyalar', keys: ['cats'] },
       { label: 'Brendlar', icon: BadgeCheck, to: '/brendlar', keys: ['brands'] },
-      { label: 'Aksiyalar', icon: Tag, to: '/aksiyalar', keys: ['aksiya'] },
+      { label: 'Aksiyalar', icon: M.aksiyalar, to: '/aksiyalar', keys: ['aksiya'] },
       { label: 'Forma', icon: Shirt, to: '/forma', keys: ['forma'] },
       { label: 'Jihozlar', icon: Monitor, to: '/jihozlar', keys: ['jihozlar'] },
       { label: 'Ishlatilgan va ortiqcha', icon: Recycle, to: '/ortiqcha', keys: ['surplus'] },
@@ -30,27 +31,27 @@ const GROUPS = [
   {
     id: 'talim',
     title: 'Ta’lim va rivojlanish',
-    icon: BookOpen,
+    icon: M.talim,
     items: [
       { label: 'Seminarlar', icon: Presentation, to: '/seminarlar', keys: ['seminars'] },
-      { label: 'Onlayn darslar', icon: MonitorPlay, to: '/talim', keys: ['education'] },
+      { label: 'Onlayn darslar', icon: M.kurslar, to: '/talim', keys: ['education'] },
       { label: 'Kitoblar', icon: BookOpen, to: '/kitoblar', keys: ['books'] },
-      { label: 'Sertifikatlarim', icon: IdCard, to: '/sertifikatlar', keys: ['certs'] },
+      { label: 'Sertifikatlarim', icon: M.sertifikatlar, to: '/sertifikatlar', keys: ['certs'] },
     ],
   },
   {
     id: 'klinika',
     title: 'Klinika CRM',
-    icon: FolderOpen,
+    icon: M.klinika,
     items: [
-      { label: 'Bemorlar CRM', icon: Users, to: '/bemorlar', keys: ['bemorlar'] },
-      { label: 'Qabul jadvali', icon: CalendarDays, to: '/klinika', keys: ['klinika'] },
+      { label: 'Bemorlar CRM', icon: M.bemorlar, to: '/bemorlar', keys: ['bemorlar'] },
+      { label: 'Qabul jadvali', icon: M.qabullar, to: '/klinika', keys: ['klinika'] },
       { label: 'Uchrashuvlar', icon: CalendarCheck, to: '/uchrashuvlar', keys: ['uchrashuv'], badge: 'today' },
-      { label: 'Davolash rejalari', icon: ClipboardList, to: '/davolash-rejalari', keys: ['rejalar'] },
-      { label: 'To‘lovlar', icon: Wallet, to: '/tolovlar', keys: ['tolov'] },
+      { label: 'Davolash rejalari', icon: M.rejalar, to: '/davolash-rejalari', keys: ['rejalar'] },
+      { label: 'To‘lovlar', icon: M.tolovlar, to: '/tolovlar', keys: ['tolov'] },
       { label: 'Xizmatlar', icon: HeartPulse, to: '/xizmatlar', keys: ['xizmatlar'] },
-      { label: 'Ombor', icon: Warehouse, to: '/ombor', keys: ['ombor'] },
-      { label: 'Hisobotlar', icon: ChartPie, to: '/hisobotlar', keys: ['hisobot'] },
+      { label: 'Ombor', icon: M.ombor, to: '/ombor', keys: ['ombor'] },
+      { label: 'Hisobotlar', icon: M.hisobotlar, to: '/hisobotlar', keys: ['hisobot'] },
     ],
   },
   {
@@ -59,7 +60,7 @@ const GROUPS = [
     icon: Handshake,
     items: [
       { label: 'Ustalar', icon: Wrench, to: '/ustalar', keys: ['ustalar'] },
-      { label: 'Vakansiyalar', icon: Briefcase, to: '/ishlar', keys: ['ishlar'] },
+      { label: 'Vakansiyalar', icon: M.vakansiyalar, to: '/ishlar', keys: ['ishlar'] },
     ],
   },
   {
@@ -120,7 +121,7 @@ export default function ShopSidebar({ active = 'all', open, onClose, flush = fal
         </nav>
 
         <div className="border-t border-[#e7eef3] px-3 py-3">
-          <Item to="/sozlamalar" icon={Settings} label="Sozlamalar" onClick={onClose} />
+          <Item to="/sozlamalar" icon={M.sozlamalar} label="Sozlamalar" onClick={onClose} />
           <SignOutRow onClick={onClose} />
         </div>
       </aside>
@@ -138,7 +139,7 @@ function Group({ group, open, onToggle, active, todayCount, onNavigate }) {
         aria-expanded={open}
         className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[15px] font-semibold transition ${open ? 'text-[#0b8a84]' : 'text-[#17324d] hover:bg-[#f3faf8]'}`}
       >
-        <Icon className="size-5 shrink-0 text-[#0b8a84]" strokeWidth={1.8} />
+        <Icon className={`${Icon.raster ? 'size-7' : 'size-5'} shrink-0 text-[#0b8a84]`} strokeWidth={1.8} />
         <span className="min-w-0 flex-1 truncate">{group.title}</span>
         <ChevronDown className={`size-4 shrink-0 text-[#0b8a84] transition ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -186,7 +187,7 @@ function Item({ to, state, icon: Icon, label, active, badge, onClick, nested }) 
   }`
   const inner = (
     <>
-      <Icon className={`shrink-0 text-[#0b8a84] ${nested ? 'size-[18px]' : 'size-5'}`} strokeWidth={1.8} />
+      <Icon className={`shrink-0 text-[#0b8a84] ${Icon.raster ? (nested ? 'size-6' : 'size-7') : nested ? 'size-[18px]' : 'size-5'}`} strokeWidth={1.8} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#0b8a84] px-1.5 text-[11px] font-bold text-white">{badge}</span>}
     </>

@@ -6,6 +6,7 @@ import {
   Pencil, Percent, Phone, Plus, Search, Send, ShoppingBag, ShoppingCart, Sparkles, Trash2, Truck, UserRound, Wallet, Warehouse,
   Store,
 } from 'lucide-react'
+import { MenuIcons as M } from '../tealIcons'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { adPrice } from '../../elonlarData'
@@ -105,21 +106,21 @@ export default function MobileProfil() {
   const orgMember = canEnterOrganizer(sessionNow.profile)
   const groups = [
     [
-      { id: 'orders', icon: ClipboardList, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Mening buyurtmalarim', text: 'Buyurtmalar tarixi va holati', count: orders.length, go: () => navigate('/profil/buyurtmalar') },
-      { id: 'favs', icon: Heart, tone: 'bg-[#fde8ef] text-[#e04f7d]', title: 'Sevimlilar', text: 'Mahsulotlar, seminarlar va e’lonlar', count: favCount, go: () => navigate('/profil/sevimlilar') },
-      { id: 'courses', icon: GraduationCap, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Kurslarim', text: 'Onlayn kurslar va sertifikatlar', count: myCourseCount, go: () => navigate('/profil/kurslar') },
+      { id: 'orders', icon: M.buyurtmalar, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Mening buyurtmalarim', text: 'Buyurtmalar tarixi va holati', count: orders.length, go: () => navigate('/profil/buyurtmalar') },
+      { id: 'favs', icon: M.sevimlilar, tone: 'bg-[#fde8ef] text-[#e04f7d]', title: 'Sevimlilar', text: 'Mahsulotlar, seminarlar va e’lonlar', count: favCount, go: () => navigate('/profil/sevimlilar') },
+      { id: 'courses', icon: M.kurslar, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Kurslarim', text: 'Onlayn kurslar va sertifikatlar', count: myCourseCount, go: () => navigate('/profil/kurslar') },
       { id: 'seminars', icon: CalendarDays, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Seminarlarim', text: 'Ro‘yxatdan o‘tgan seminarlar', count: semCount, go: () => navigate('/profil/seminarlar') },
       { id: 'ads', icon: Megaphone, tone: 'bg-[#e3f5f3] text-sea', title: 'E’lonlarim', text: 'Ish va xizmat e’lonlarim', count: myAds.length },
     ],
     [
       { id: 'addresses', icon: MapPin, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Manzillarim', text: 'Yetkazib berish manzillari', go: () => navigate('/profil/manzillar') },
-      { id: 'payments', icon: CreditCard, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'To‘lov usullari', text: 'Naqd to‘lov — mahsulotni olganda', go: () => navigate('/profil/tolov-usullari') },
-      { id: 'notif', icon: Bell, tone: 'bg-[#fff4e0] text-[#e8a20c]', title: 'Bildirishnomalar', text: 'Yangiliklar va xabarlar' },
+      { id: 'payments', icon: M.hamyon, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'To‘lov usullari', text: 'Naqd to‘lov — mahsulotni olganda', go: () => navigate('/profil/tolov-usullari') },
+      { id: 'notif', icon: M.bildirishnomalar, tone: 'bg-[#fff4e0] text-[#e8a20c]', title: 'Bildirishnomalar', text: 'Yangiliklar va xabarlar' },
       { id: 'seller', icon: Store, tone: 'bg-[#e3f5f3] text-sea', title: member ? 'Sotuvchi kabineti' : 'Sotuvchi bo‘lish', text: member ? 'Do‘koningizni boshqaring' : 'StomaHub’da mahsulot soting', go: () => navigate(member ? '/sotuvchi' : '/sotuvchi-bolish') },
       { id: 'organizer', icon: CalendarDays, tone: 'bg-[#e3f5f3] text-sea', title: orgMember ? 'Tashkilotchi kabineti' : 'Tashkilotchi bo‘lish', text: orgMember ? 'Seminarlaringizni boshqaring' : 'Seminar va kurslar tashkil qiling', go: () => navigate(orgMember ? '/tashkilotchi' : '/tashkilotchi-bolish') },
       { id: 'lang', icon: Globe, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Til', text: LANGS.find((l) => l[0] === profile.lang)?.[1] },
-      { id: 'help', icon: CircleQuestionMark, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Yordam', text: 'Savollar va qo‘llab-quvvatlash' },
-      { id: 'logout', icon: LogOut, tone: 'bg-[#fdecec] text-sale', title: 'Chiqish', text: 'Hisobdan chiqish' },
+      { id: 'help', icon: M.yordam, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Yordam', text: 'Savollar va qo‘llab-quvvatlash' },
+      { id: 'logout', icon: M.chiqish, tone: 'bg-[#fdecec] text-sale', title: 'Chiqish', text: 'Hisobdan chiqish' },
     ],
   ]
 
@@ -227,9 +228,9 @@ export default function MobileProfil() {
         <BottomSheet title={profile.clinic} onClose={close}>
           <p className="text-[12px] text-muted">Klinikangizni boshqarish</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            {[[UserRound, 'Bemorlar', '/bemorlar'], [CalendarClock, 'Uchrashuvlar', '/uchrashuvlar'], [Wallet, 'To‘lovlar', '/tolovlar'], [Warehouse, 'Ombor', '/ombor']].map(([Icon, label, to]) => (
+            {[[M.bemorlar, 'Bemorlar', '/bemorlar'], [M.qabullar, 'Uchrashuvlar', '/uchrashuvlar'], [M.tolovlar, 'To‘lovlar', '/tolovlar'], [M.ombor, 'Ombor', '/ombor']].map(([Icon, label, to]) => (
               <Link key={to} to={to} className="flex items-center gap-2.5 rounded-2xl border border-line p-3 text-[13.5px] font-semibold text-ink active:bg-page">
-                <span className="grid size-9 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Icon className="size-[18px]" /></span> {label}
+                <span className="grid size-9 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Icon className={Icon.raster ? 'size-7' : 'size-[18px]'} /></span> {label}
               </Link>
             ))}
           </div>
@@ -455,7 +456,7 @@ function PlusSheet({ plus, onClose, onToast }) {
       <ul className="mt-3 space-y-2.5">
         {perks.map(([Icon, text]) => (
           <li key={text} className="flex items-center gap-3 text-[13px] text-ink">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Icon className="size-[18px]" /></span> {text}
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Icon className={Icon.raster ? 'size-7' : 'size-[18px]'} /></span> {text}
           </li>
         ))}
       </ul>
@@ -484,7 +485,7 @@ function NotifSheet({ notif, onClose }) {
       <ul className="mt-2 divide-y divide-[#eef2f4]">
         {rows.map(([id, Icon, title, text]) => (
           <li key={id} className="flex items-center gap-3 py-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Icon className="size-[18px]" /></span>
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Icon className={Icon.raster ? 'size-7' : 'size-[18px]'} /></span>
             <span className="min-w-0 flex-1">
               <span className={`block text-[13.5px] font-semibold ${navy}`}>{title}</span>
               <span className="block text-[11.5px] text-muted">{text}</span>

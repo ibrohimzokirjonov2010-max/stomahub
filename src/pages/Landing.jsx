@@ -9,7 +9,7 @@ import {
   Menu, MessageSquareMore, Phone, Search, ShoppingCart, Users, X, LayoutGrid, Bell, Wallet, FileText, Settings, Package, UserRound, Store,
 } from 'lucide-react'
 import { payPromo } from '../payments/paymentService'
-import { SectionIcons } from '../components/tealIcons'
+import { SectionIcons, MenuIcons } from '../components/tealIcons'
 
 const T = '#0F766E'
 const NAV = [['Marketplace', '/marketplace'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Klinika CRM', '/klinika'], ['Ustalar', '/ustalar']]
@@ -24,10 +24,10 @@ function Tooth(props) {
 
 const FEATURES = [
   [SectionIcons.marketplace, 'Marketplace', 'Stomatologik mahsulotlar, uskuna va materiallar', '/marketplace'],
-  [GraduationCap, 'Onlayn darslar', 'Professional kurslar va video darslar', '/talim'],
+  [MenuIcons.talim, 'Onlayn darslar', 'Professional kurslar va video darslar', '/talim'],
   [SectionIcons.seminarlar, 'Seminarlar', 'Amaliy seminarlar va master-klasslar', '/seminarlar'],
   [SectionIcons.kitoblar, 'Kitoblar', 'Stomatologiyaga oid kitoblar va qo‘llanmalar', '/kitoblar'],
-  [BarChart3, 'Klinika CRM', 'Bemorlar, uchrashuvlar, davolash rejalari, to‘lovlar', '/klinika'],
+  [MenuIcons.klinika, 'Klinika CRM', 'Bemorlar, uchrashuvlar, davolash rejalari, to‘lovlar', '/klinika'],
   [Tooth, 'Ustalar laboratoriyalari', 'Tish texniklari va laboratoriyalar', '/ustalar'],
   [SectionIcons.forum, 'Konsultatsiyalar', 'Hamkasblar bilan maslahat va tajriba almashish', '/community'],
   [Megaphone, 'E’lonlar', 'Ish, hamkorlik va xizmatlar e’lonlari', '/elonlar'],

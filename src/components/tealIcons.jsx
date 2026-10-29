@@ -27,3 +27,17 @@ export const NavIcons = {
   home: imgIcon('nav', 'bosh-sahifa'),
   profil: imgIcon('nav', 'profil'),
 }
+
+// Menyu ikonkalari (kat-talim, kat-forum-2, kat-klinika, kat-hisobim varaqlari)
+export const MenuIcons = {
+  talim: imgIcon('talim', 'talim'), kurslar: imgIcon('talim', 'kurslar'), vebinarlar: imgIcon('talim', 'vebinarlar'),
+  sertifikatlar: imgIcon('talim', 'sertifikatlar'), testlar: imgIcon('talim', 'testlar'), maqolalar: imgIcon('talim', 'maqolalar'),
+  forum: imgIcon('forum-menu', 'forum'), yangiMavzu: imgIcon('forum-menu', 'yangi-mavzu'), meningMavzularim: imgIcon('forum-menu', 'mening-mavzularim'),
+  mashhur: imgIcon('forum-menu', 'mashhur'), saqlanganlar: imgIcon('forum-menu', 'saqlanganlar'), bildirishnomalar: imgIcon('forum-menu', 'bildirishnomalar'),
+  klinika: imgIcon('klinika', 'mening-klinikam'), bemorlar: imgIcon('klinika', 'bemorlar'), qabullar: imgIcon('klinika', 'qabullar'),
+  rejalar: imgIcon('klinika', 'davolash-rejalari'), tolovlar: imgIcon('klinika', 'tolovlar'), ombor: imgIcon('klinika', 'ombor'),
+  xodimlar: imgIcon('klinika', 'xodimlar'), hisobotlar: imgIcon('klinika', 'hisobotlar'), vakansiyalar: imgIcon('klinika', 'vakansiyalar'),
+  hisobim: imgIcon('hisobim', 'mening-hisobim'), buyurtmalar: imgIcon('hisobim', 'buyurtmalar'), sevimlilar: imgIcon('hisobim', 'sevimlilar'),
+  hamyon: imgIcon('hisobim', 'hamyon'), aksiyalar: imgIcon('hisobim', 'aksiyalar'), xabarlar: imgIcon('hisobim', 'xabarlar'),
+  sozlamalar: imgIcon('hisobim', 'sozlamalar'), yordam: imgIcon('hisobim', 'yordam'), chiqish: imgIcon('hisobim', 'chiqish'),
+}
