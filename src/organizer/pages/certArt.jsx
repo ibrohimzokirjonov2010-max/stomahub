@@ -35,13 +35,14 @@ export function MiniCert({ issued = true }) {
   )
 }
 
-function CertArt({ name, course, date, qr = false, cme = '', org = '' }) {
+export function CertArt({ name, course, date, qr = false, cme = '', org = '', design = '' }) {
   const uid = useId().replace(/:/g, '')
   const teal = `${uid}-teal`
   const gold = `${uid}-gold`
   const seal = `${uid}-seal`
   return (
     <div className="relative h-[348px] w-[260px] overflow-hidden bg-[#fffef9] shadow-[0_8px_22px_rgb(16_70_68/0.12)]">
+      {design ? <img src={design} alt="" className="absolute inset-0 size-full object-cover" /> : (
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 260 348" aria-hidden>
         <defs>
           <linearGradient id={teal} x1="0" y1="0" x2="1" y2="1">
@@ -76,7 +77,7 @@ function CertArt({ name, course, date, qr = false, cme = '', org = '' }) {
         <rect x="10" y="10" width="240" height="328" fill="none" stroke="#e4cb86" strokeWidth="1.15" />
         <rect x="14" y="14" width="232" height="320" fill="none" stroke="#14786f" strokeWidth="0.55" opacity="0.7" />
         <path d="M10 30V10h20M230 10h20v20M10 318v20h20M230 338h20v-20" fill="none" stroke="#c9a24b" strokeWidth="1.35" />
-      </svg>
+      </svg>)}
 
       <div className="relative flex h-full flex-col items-center px-7 pb-3 pt-[58px] text-center">
         <div className="flex items-center gap-1 text-[12.5px] font-bold tracking-tight text-[#0e756f]">

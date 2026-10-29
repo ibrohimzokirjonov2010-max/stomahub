@@ -137,15 +137,32 @@ function SeminarView({ id }) {
       {/* Ma'ruzachi */}
       {!s.noSpeaker && (
       <button type="button" onClick={() => setSheet('speaker')} className="mx-3 mt-3 flex w-[calc(100%-24px)] items-center gap-3 rounded-2xl bg-white p-2.5 text-left shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-        <img src={s.speaker.avatar} alt={s.speaker.name} className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" />
+        {s.speaker.avatar ? <img src={s.speaker.avatar} alt={s.speaker.name} className="h-[76px] w-[84px] shrink-0 rounded-xl object-cover" /> : <span className="grid h-[76px] w-[84px] shrink-0 place-items-center rounded-xl bg-[#e6f4f3] text-[26px] font-bold text-sea">{(s.speaker.name || '?').slice(0, 1)}</span>}
         <span className="min-w-0 flex-1">
           <span className="block text-[10.5px] text-muted">Ma’ruzachi</span>
           <span className="block text-[15px] font-bold text-[#0d3b44]">{s.speaker.name}</span>
           <span className="block text-[11px] text-ink-2">{s.speaker.role}</span>
-          <span className="mt-0.5 line-clamp-2 block text-[10.5px] leading-snug text-muted">{s.speaker.bio}</span>
+          {s.speaker.bio && <span className="mt-0.5 line-clamp-2 block text-[10.5px] leading-snug text-muted">{s.speaker.bio}</span>}
         </span>
         <ChevronRight className="size-5 shrink-0 text-ink-2" />
       </button>
+      )}
+
+      {s.organizer && (s.speakersAll || []).length > 1 && (
+        <div className="mx-3 mt-2 flex gap-2 overflow-x-auto no-scrollbar">
+          {s.speakersAll.slice(1).map((sp) => (
+            <div key={sp.name} className="flex w-[220px] shrink-0 items-center gap-2 rounded-2xl bg-white p-2">
+              {sp.avatar ? <img src={sp.avatar} alt="" className="size-11 rounded-xl object-cover" /> : <span className="grid size-11 place-items-center rounded-xl bg-[#e6f4f3] font-bold text-sea">{sp.name.slice(0, 1)}</span>}
+              <span className="min-w-0"><b className="block truncate text-[12.5px] text-ink">{sp.name}</b><span className="block truncate text-[10.5px] text-muted">{sp.role}</span></span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {s.organizer && (s.galleryList || []).length > 0 && (
+        <div className="mx-3 mt-2.5 flex gap-2 overflow-x-auto no-scrollbar" aria-label="Galereya">
+          {s.galleryList.map((src) => <img key={src} src={src} alt="" className="h-[86px] w-[124px] shrink-0 rounded-xl object-cover" />)}
+        </div>
       )}
 
       {/* Tablar */}
@@ -231,10 +248,34 @@ function SeminarView({ id }) {
             <span className="block text-[13px] font-bold text-ink">{s.online ? 'Online (Zoom)' : s.venue.name}</span>
             <span className="block text-[11px] text-muted">{s.online ? 'Havola ro‘yxatdan o‘tgach yuboriladi' : s.venue.address}</span>
           </span>
-          <MapArt className="h-[64px] w-[118px] shrink-0 rounded-xl" />
+          {s.organizer ? (s.venue.image && !s.online && <img src={s.venue.image} alt="" className="h-[64px] w-[118px] shrink-0 rounded-xl object-cover" />) : <MapArt className="h-[64px] w-[118px] shrink-0 rounded-xl" />}
           <ChevronRight className="size-4 shrink-0 text-ink-2" />
         </a>
+        {s.organizer && !s.online && (s.venue.notes || []).length > 0 && (
+          <ul className="mt-2 space-y-1">{s.venue.notes.map((t) => <li key={t} className="flex items-start gap-1.5 text-[11.5px] text-ink-2"><Check className="mt-0.5 size-3.5 shrink-0 text-sea" /> {t}</li>)}</ul>
+        )}
       </section>
+
+      {s.organizer && (s.faqList || []).length > 0 && (
+        <section className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+          <h2 className="text-[17px] font-bold text-[#0d3b44]">Savol-javob</h2>
+          {s.faqList.map((r) => (
+            <details key={r.q} className="border-b border-line py-2 last:border-0">
+              <summary className="cursor-pointer text-[12.5px] font-semibold text-ink">{r.q}</summary>
+              <p className="mt-1 whitespace-pre-line text-[12px] leading-[1.5] text-ink-2">{r.a}</p>
+            </details>
+          ))}
+        </section>
+      )}
+
+      {s.organizer && (s.orgName || s.contact?.phone || s.contact?.telegram) && (
+        <section className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+          <h2 className="text-[17px] font-bold text-[#0d3b44]">Tashkilotchi</h2>
+          {s.orgName && <p className="mt-1 text-[13px] font-semibold text-ink">{s.orgName}</p>}
+          {s.contact?.phone && <a href={`tel:${s.contact.phone.replace(/[^\d+]/g, '')}`} className="mt-0.5 block text-[12px] text-ink-2">{s.contact.phone}</a>}
+          {s.contact?.telegram && <a href={/^https?:/.test(s.contact.telegram) ? s.contact.telegram : `https://t.me/${s.contact.telegram.replace(/^@/, '')}`} target="_blank" rel="noreferrer" className="mt-0.5 block text-[12px] font-semibold text-sea">Telegram: {s.contact.telegram}</a>}
+        </section>
+      )}
 
       {/* Pastki panel */}
       <div className="app-action-bar fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
@@ -273,11 +314,11 @@ function SeminarView({ id }) {
       {sheet === 'speaker' && (
         <BottomSheet title="Ma’ruzachi" onClose={() => setSheet(null)}>
           <div className="mt-2 flex items-center gap-3">
-            <img src={s.speaker.avatar} alt="" className="size-16 rounded-2xl object-cover" />
+            {s.speaker.avatar && <img src={s.speaker.avatar} alt="" className="size-16 rounded-2xl object-cover" />}
             <div>
               <p className="text-[16px] font-bold text-ink">{s.speaker.name}</p>
               <p className="text-[12px] text-ink-2">{s.speaker.role}</p>
-              <p className="mt-0.5 text-[11.5px] text-muted">★ {s.speaker.rating} · {s.speaker.reviews} ta sharh</p>
+              {s.speaker.rating > 0 && <p className="mt-0.5 text-[11.5px] text-muted">★ {s.speaker.rating} · {s.speaker.reviews} ta sharh</p>}
             </div>
           </div>
           <ul className="mt-3 space-y-2">
@@ -285,6 +326,7 @@ function SeminarView({ id }) {
               <li key={l} className="flex items-center gap-2 text-[13px] text-ink"><Check className="size-4 text-sea" /> {l}</li>
             ))}
           </ul>
+          {s.organizer && s.speaker.bio && <p className="mt-3 whitespace-pre-line text-[12.5px] leading-[1.55] text-ink-2">{s.speaker.bio}</p>}
         </BottomSheet>
       )}
 
