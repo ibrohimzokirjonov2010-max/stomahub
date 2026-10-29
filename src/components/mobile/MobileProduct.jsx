@@ -85,7 +85,7 @@ function ProductView({ id }) {
     <div className="min-h-screen bg-white pb-[150px]">
       {/* Galereya */}
       <div
-        className="relative h-[252px] overflow-hidden bg-[#f3f6f9]"
+        className="relative box-content h-[260px] overflow-hidden bg-white pt-[calc(var(--safe-top)+56px)]"
         onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
           if (touch.current == null || n < 2) return
@@ -97,7 +97,7 @@ function ProductView({ id }) {
         <img
           src={p.images[shot] || thumbs[shot]}
           alt={p.name}
-          className={p.images.length > 1 ? `size-full object-cover ${shot === 0 && p.images[0].includes('g-main') ? 'scale-[1.26]' : ''}` : 'size-full bg-white object-contain px-10 pb-4 pt-14'}
+          className="size-full bg-white object-contain px-4 pb-3"
         />
         <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/marketplace'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />
