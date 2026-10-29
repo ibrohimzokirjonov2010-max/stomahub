@@ -27,7 +27,7 @@ const BADGE = {
 const inTab = (o, tab) => (tab === 'active' ? o.status === 'processing' || o.status === 'shipping' : o.status === tab)
 
 function parseAt(at) {
-  const m = at.match(/^(\d+) (\S+), (\d{4}) (\d{2}):(\d{2})$/)
+  const m = String(at || '').match(/^(\d+) (\S+), (\d{4}) (\d{2}):(\d{2})$/)
   if (!m) return null
   return new Date(Number(m[3]), Math.max(0, MON.indexOf(m[2])), Number(m[1]), Number(m[4]), Number(m[5]))
 }
@@ -138,7 +138,7 @@ export default function MobileBuyurtmalar() {
 }
 
 function StatusBadge({ status }) {
-  const [Icon, label] = BADGE[status]
+  const [Icon, label] = BADGE[status] || BADGE.processing
   const bad = status === 'cancelled'
   return (
     <span className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[11.5px] font-medium ${bad ? 'bg-[#fdecec] text-sale' : `bg-[#e3f4f1] ${teal}`}`}>
