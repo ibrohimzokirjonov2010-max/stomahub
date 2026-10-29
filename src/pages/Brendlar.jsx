@@ -19,6 +19,7 @@ const countries = {
   fi: ['🇫🇮', 'Finlandiya'],
   cn: ['🇨🇳', 'Xitoy'],
   br: ['🇧🇷', 'Braziliya'],
+  xx: ['🌐', 'Boshqa'],
 }
 
 const brands = [
@@ -50,10 +51,16 @@ export default function Brendlar() {
   const [letter, setLetter] = useState('all')
   const [country, setCountry] = useState('all')
 
-  const brandsLive = useMemo(() => brands.map((b) => ({
-    ...b,
-    count: (market.products || []).filter((p) => String(p.brand || '').toLowerCase().includes(String(b.name).split(/\s|\n/)[0].toLowerCase())).length,
-  })), [market.products])
+  // Sonlar faqat Marketplace'dagi real (faol) mahsulotlarning brand maydonidan hisoblanadi.
+  const brandsLive = useMemo(() => {
+    const products = market.products || []
+    const keyOf = (name) => String(name).split(/\s|\n/)[0].toLowerCase()
+    const known = brands.map((b) => ({ ...b, count: products.filter((p) => String(p.brand || '').toLowerCase().includes(keyOf(b.name))).length }))
+    const extra = [...new Set(products.map((p) => String(p.brand || '').trim()).filter(Boolean))]
+      .filter((name) => !brands.some((b) => name.toLowerCase().includes(keyOf(b.name))))
+      .map((name) => ({ name, mark: name, color: '#0F766E', country: 'xx', to: `/marketplace?brand=${encodeURIComponent(name)}`, count: products.filter((p) => String(p.brand || '').trim() === name).length }))
+    return [...known, ...extra].sort((a, b) => b.count - a.count)
+  }, [market.products])
 
   const list = useMemo(() => {
     const text = q.trim().toLowerCase()
@@ -117,7 +124,7 @@ export default function Brendlar() {
                     <ChevronRight className="size-3.5 shrink-0 text-muted" />
                   </span>
                   <span className="mt-0.5 text-[10px] text-muted">{flag} {place}</span>
-                  <span className="text-[11px] font-semibold text-sea">{n(b.count)} ta mahsulot</span>
+                  <span className="text-[11px] font-semibold text-sea">{b.count ? `${n(b.count)} ta mahsulot` : 'Hozircha mahsulot yo‘q'}</span>
                 </Link>
               )
             })}

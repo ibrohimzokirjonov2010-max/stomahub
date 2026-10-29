@@ -3,6 +3,8 @@ import { FACES, IMG } from './organizer/data'
 import { seminars as CATALOG } from './seminarsData'
 import { friendlySupabaseError, supabase } from './supabaseClient'
 import { tashkentClock, tashkentDate } from './time'
+import { tashkentToday } from './tashkentDate'
+import { isTestSeminar } from './organizer/reconcile'
 import {
   pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
@@ -112,9 +114,15 @@ export function retryHub() {
   return hydrate()
 }
 
+let hydratedFor = null
 async function hydrate() {
   const seen = epoch
-  commit({ ...state, loading: true, error: '' })
+  // Bir xil foydalanuvchi uchun qayta yuklash fonda bo‘ladi — kabinet qayta "yuklanmoqda" holatiga tushmaydi
+  const { data } = await supabase.auth.getSession().catch(() => ({ data: {} }))
+  const who = data?.session?.user?.id || 'anon'
+  const silent = state.ready && hydratedFor === who
+  if (!silent) commit({ ...(hydratedFor && hydratedFor !== who ? EMPTY : state), loading: true, ready: hydratedFor === who && state.ready, error: '' })
+  hydratedFor = who
   try {
     const next = await pullHub()
     if (seen !== epoch) return
@@ -193,6 +201,7 @@ export function saveSeminar(form, { publish, id } = {}) {
     return {
       id: t.id, name: t.name, price: Number(t.price) || 0, seats: total, total, sold: soldN,
       left: Math.max(0, total - soldN), active: t.active !== false, perks: t.perks || [], icon: t.icon || 'gem', note: t.note || '',
+      earlyPrice: Number(t.earlyPrice) || 0, earlyUntil: t.earlyUntil || '',
     }
   })
   const speakerName = form.speakers?.[0]?.name || existing?.speaker || 'Ma’ruzachi'
@@ -345,6 +354,29 @@ export function duplicateSeminar(id) {
   return copyId
 }
 
+// "Oldingi seminardan nusxa olish": barcha maydonlar, dastur, chiptalar, ma’ruzachilar ko‘chiriladi;
+// sana va joy tozalanadi. Natija — yangi (saqlanmagan) forma; saqlansa qoralama bo‘ladi.
+export function seminarFormCopy(id) {
+  const src = state.seminars.find((s) => s.id === id)
+  if (!src) return null
+  const base = src.form || {
+    name: src.title, about: src.about || '', topic: src.topic, format: src.formatDetail, category: src.category,
+    tags: src.tags || [], cover: src.cover || src.image, thumbs: [], tickets: src.tickets || [], speakers: src.speakers || [],
+    template: src.template || 'teal', promos: [],
+  }
+  const stamp = Math.random().toString(36).slice(2, 6)
+  return {
+    ...base,
+    name: `${base.name || src.title} (nusxa)`,
+    start: '', end: '', startTime: base.startTime || '10:00', endTime: base.endTime || '18:00',
+    place: '', address: '', lat: null, lng: null, placeImg: '', city: '',
+    tickets: (base.tickets || []).map((t) => ({ ...t, id: `${t.id}-${stamp}`, sold: 0, earlyUntil: '', earlyPrice: t.earlyPrice || '' })),
+    speakers: (base.speakers || []).map((sp) => ({ ...sp })),
+    program: (base.program || []).map((r) => ({ ...r })),
+    promos: [],
+  }
+}
+
 export function confirmHeld(id) {
   const real = id === 'implant' ? 'implant-nov' : id
   patch((s) => ({
@@ -476,6 +508,7 @@ export async function registerSale(input) {
   const pool = [...(state.catalog || []), ...state.seminars]
   const sem = pool.find((item) => item.id === input.seminarId)
   if (sem?.status === 'bekor') return { ok: false, error: 'Seminar bekor qilingan' }
+  if (sem?.regClosed || sem?.past) return { ok: false, error: 'Seminar yakunlangan — ro‘yxat yopiq' }
   if (!supabase) return { ok: false, error: state.error || 'Supabase sozlanmagan' }
   const res = await remoteRegister(input)
   if (!res.ok) return res
@@ -608,7 +641,8 @@ export function walletOf(s = state) {
       feeTotal += fee
     }
     let bucket = 'refund'
-    if (p.state === 'ok' && (sem?.held || sem?.status === 'yakunlangan')) {
+    // Pul faqat seminar o‘tkazilgani tasdiqlangach chiqariladi (avtomatik "Yakunlangan" holat pulni ochmaydi)
+    if (p.state === 'ok' && (sem?.held || (sem?.dbStatus || sem?.status) === 'yakunlangan')) {
       bucket = 'paid'
       ready += net
     } else if (p.state === 'ok') {
@@ -653,11 +687,21 @@ function spanHours(a = '10:00', b = '18:00') {
   return diff > 0 ? `${Math.round(diff / 6) / 10} soat` : ''
 }
 
+const listOf = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x || '').trim()).filter(Boolean)
+
+/** Early bird: belgilangan sanagacha (Toshkent, shu kun ham) arzon narx, keyin asosiy narx. */
+export function earlyActive(t, today = tashkentToday()) {
+  return !!(Number(t?.earlyPrice) > 0 && t?.earlyUntil && today <= t.earlyUntil)
+}
+export function currentPrice(t, today = tashkentToday()) {
+  return earlyActive(t, today) ? Number(t.earlyPrice) : Number(t?.price) || 0
+}
+
 export function toPublic(s) {
   const [y, m, d] = (s.start || isoFromLabel(s.date)).split('-').map(Number)
   const date = new Date(y, (m || 1) - 1, d || 1)
   const active = (s.tickets || []).filter((t) => t.active !== false && t.price)
-  const price = active.length ? Math.min(...active.map((t) => Number(t.price) || 0)) : 450000
+  const price = active.length ? Math.min(...active.map((t) => currentPrice(t))) : 0
   const seats = (s.tickets || []).reduce((n, t) => n + (Number(t.seats || t.total) || 0), 0) || s.seats || 30
   const sold = s.sold || 0
   const cat = TOPIC_CAT[s.topic] || 'other'
@@ -681,25 +725,38 @@ export function toPublic(s) {
       name: s.speakers?.[0]?.name || s.speaker,
       role: s.speakers?.[0]?.role || s.topic,
       avatar: s.speakers?.[0]?.avatar || FACES[0],
+      years: s.speakers?.[0]?.years || '', clinic: s.speakers?.[0]?.clinic || '', certs: s.speakers?.[0]?.certs || '', degree: s.speakers?.[0]?.degree || '',
     },
-    cme: 6,
+    cme: Number(s.form?.cmePoints) || 0,
     left: Math.max(0, seats - sold),
     seats,
     price,
     tickets: (s.tickets || []).filter((t) => t.active !== false && t.price).map((t) => ({
-      id: t.id, name: t.name, price: Number(t.price) || 0, seats: Number(t.seats || t.total) || 0, left: t.left, perks: t.perks || [],
+      id: t.id, name: t.name, price: currentPrice(t), basePrice: Number(t.price) || 0, earlyPrice: Number(t.earlyPrice) || 0, earlyUntil: t.earlyUntil || '', earlyActive: earlyActive(t), seats: Number(t.seats || t.total) || 0, left: t.left, perks: t.perks || [],
     })),
     format: online ? 'Online' : hybrid ? 'Offline + jonli efir' : 'Offline',
     image: s.cover && !String(s.cover).startsWith('data:') ? s.cover : (s.image || IMG.teeth),
     status: s.status,
     cancelled: s.status === 'bekor',
+    // Faqat tashkilotchi kiritgan dastur / o‘rganiladigan mavzular (bo‘lmasa bo‘sh — sahifada bo‘lim yashiriladi)
+    program: Array.isArray(s.program) ? s.program : Array.isArray(s.form?.program) ? s.form.program : [],
+    learnList: Array.isArray(s.learn) ? s.learn : listOf(s.form?.learn),
+    audience: listOf(s.form?.audience),
+    includesList: listOf(s.form?.includes),
+    practice: s.form?.practice || null,
+    refundPolicy: String(s.form?.refundPolicy || '').trim(),
+    liveSurgery: s.form?.liveSurgery?.on ? s.form.liveSurgery : null,
+    cmeHours: Number(s.form?.cmeHours) || 0,
+    cmePoints: Number(s.form?.cmePoints) || 0,
+    orgName: s.form?.orgName || '',
+    regClosed: !!(s.regClosed || s.past),
     organizer: true,
   }
 }
 
 export function publicRecords(s = state) {
   const source = Array.isArray(s.catalog) ? s.catalog : s.seminars
-  const extra = source.filter((x) => x.published && x.status !== 'qoralama').map(toPublic)
+  const extra = source.filter((x) => x.published && x.status !== 'qoralama' && !isTestSeminar(x)).map(toPublic)
   // Real-data mode: once hub hydrated from Supabase, never merge sample seminarsData seeds.
   if (s.ready || s.catalog?.length || s.seminars?.length) return extra
   return CATALOG.map((x) => ({ ...x }))

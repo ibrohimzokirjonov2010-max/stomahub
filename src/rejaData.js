@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
 import { shiftIso } from './klinikaData'
+import { tashkentToday } from './tashkentDate'
 
-export const TODAY = '2026-10-25'
+// Bugungi sana (Asia/Tashkent) — avval '2026-10-25' qattiq yozilgan edi
+export const TODAY = tashkentToday()
 export const CHAIR_LIST = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3']
 export const TIMES = ['09:00', '10:00', '11:30', '13:00', '14:00', '15:30', '17:00']
 export const PAY_METHODS = ['Naqd', 'Plastik karta', 'Click', 'Payme', 'Bank o‘tkazmasi']

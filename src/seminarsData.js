@@ -94,6 +94,24 @@ export function seminarPage(id) {
   return buildSeminarPage(s)
 }
 
+const PRACTICE_KIND = { model: 'model', fantom: 'fantom', bemor: 'jonli bemor' }
+const MATERIALS_BY = { tashkilotchi: 'materiallarni tashkilotchi beradi', ishtirokchi: 'materiallarni ishtirokchi olib keladi', aralash: 'materiallar qisman tashkilotchidan' }
+export function practiceText(p) {
+  if (!p?.on) return ''
+  return [
+    `Amaliy qism: ${PRACTICE_KIND[p.kind] || p.kind || 'amaliyot'}da`,
+    Number(p.perPerson) ? `har bir ishtirokchiga ${Number(p.perPerson)} ta ${p.unit === 'tish' ? 'tish' : 'implant'}` : '',
+    MATERIALS_BY[p.materials] || '',
+  ].filter(Boolean).join(', ')
+}
+function organizerPerks(s) {
+  const out = []
+  if (s.practice?.on) out.push(['Amaliy qism', practiceText(s.practice).replace(/^Amaliy qism: /, '')])
+  if (s.cmePoints || s.cmeHours) out.push(['Sertifikat', [s.cmeHours ? `${s.cmeHours} soat` : '', s.cmePoints ? `${s.cmePoints} CME ball` : ''].filter(Boolean).join(', ')])
+  if (s.liveSurgery) out.push(['Jonli jarrohlik', s.liveSurgery.text || 'Namoyish'])
+  return out
+}
+
 export function buildSeminarPage(s) {
   const speaker = {
     name: s.speaker?.name || 'Ma’ruzachi',
@@ -101,7 +119,14 @@ export function buildSeminarPage(s) {
     avatar: s.speaker?.avatar || '/images/avatar.jpg',
     rating: Number(s.speaker?.rating) || 0,
     reviews: Number(s.speaker?.reviews) || 0,
-    lines: ['Klinik amaliyot va o‘qitish', s.city, `${s.cme || 6} ballik dastur muallifi`],
+    lines: s.organizer
+      ? [
+          s.speaker?.degree,
+          s.speaker?.years ? `${s.speaker.years} yillik tajriba` : '',
+          s.speaker?.clinic,
+          s.speaker?.certs ? `Sertifikatlar: ${s.speaker.certs}` : '',
+        ].filter(Boolean)
+      : ['Klinik amaliyot va o‘qitish', s.city, `${s.cme || 6} ballik dastur muallifi`],
   }
 
   return {
@@ -117,11 +142,19 @@ export function buildSeminarPage(s) {
     modeText: s.format.startsWith('Offline +') ? 'Zalda va onlayn qatnashish' : 'Zalda qatnashish',
     hero: s.image,
     about: s.organizer ? String(s.text || s.title) : `${s.title} — ${String(s.text || '').toLowerCase()}. Dastur nazariy qism, klinik holatlar va amaliy mashg‘ulotdan iborat. Ishtirokchilar sertifikat va CME ball oladi.`,
-    learn: learnByCat[s.cat] || learnByCat.other,
-    perks: [['Amaliy mashg‘ulot', 'Kichik guruhlarda ishlash'], ['Sertifikat', `CME ${s.cme || 6} ball`], ['Materiallar', 'Tashkilotchi taqdim etadi'], ['Networking', 'Hamkasblar bilan tanishish']],
+    learn: s.organizer ? (s.learnList || []).filter(Boolean) : (learnByCat[s.cat] || learnByCat.other),
+    perks: s.organizer ? organizerPerks(s) : [['Amaliy mashg‘ulot', 'Kichik guruhlarda ishlash'], ['Sertifikat', `CME ${s.cme || 6} ball`], ['Materiallar', 'Tashkilotchi taqdim etadi'], ['Networking', 'Hamkasblar bilan tanishish']],
+    audience: s.organizer ? (s.audience || []) : null,
+    practice: s.organizer ? practiceText(s.practice) : '',
+    refundPolicy: s.organizer ? (s.refundPolicy || '') : '',
+    liveSurgery: s.organizer && s.liveSurgery ? (s.liveSurgery.text || 'Jonli jarrohlik namoyishi') : '',
+    cmeLine: s.organizer && (s.cmeHours || s.cmePoints) ? [s.cmeHours ? `${s.cmeHours} soat` : '', s.cmePoints ? `${s.cmePoints} CME ball` : ''].filter(Boolean).join(' · ') : '',
+    regClosed: !!s.regClosed,
     speaker,
     scheduleTitle: `Dastur (${s.day} ${s.mon})`,
-    schedule: scheduleFor(s),
+    schedule: s.organizer
+      ? (s.program || []).map((p) => Array.isArray(p) ? p : [p?.time || '', p?.title || p?.text || '', p?.sub || '']).filter((p) => p[1])
+      : scheduleFor(s),
     gear: ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
     venue: { name: s.place, address: `${s.city}`, image: pic('hotel'), map: `https://maps.google.com/?q=${encodeURIComponent((s.place || '') + ' ' + (s.city || ''))}` },
     seatsBanner: s.left,
@@ -130,9 +163,10 @@ export function buildSeminarPage(s) {
           id: t.id,
           name: t.name,
           price: Number(t.price) || 0,
-          oldPrice: 0,
-          discount: '',
-          perks: t.perks?.length ? t.perks : ['Seminarga kirish', 'Sertifikat'],
+          oldPrice: t.earlyActive ? Number(t.basePrice) || 0 : 0,
+          discount: t.earlyActive ? 'Early bird' : '',
+          earlyUntil: t.earlyActive ? t.earlyUntil : '',
+          perks: (t.perks || []).filter(Boolean),
           left: t.left,
           seats: t.seats || t.total,
         }))
@@ -180,7 +214,9 @@ export function seminarView(record) {
   const month = MONTHS[page.mon]
   const d = Number(page.day)
   const items = page.schedule.filter(([, t]) => !BREAKS.test(t))
-  const program = card.days > 1
+  const program = page.organizer
+    ? (items.length ? [{ label: '1-kun', date: `${d} ${month}`, items }] : [])
+    : card.days > 1
     ? [
         { label: '1-kun', date: `${d} ${month}`, items: items.slice(0, 4) },
         {
@@ -204,6 +240,7 @@ export function seminarView(record) {
     hero: card.image,
     timeLabel: `${page.time}${card.days > 1 ? ` (${card.days} kun)` : ''}`,
     program,
+    includes: page.organizer ? (page.includesList?.length ? page.includesList : [...new Set(page.plans.flatMap((p) => p.perks || []))]) : null,
     speaker: { ...page.speaker, bio: page.speaker.lines.join('. ') + '.' },
   }
 }

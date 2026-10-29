@@ -11,7 +11,7 @@ import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet } from './MobileMutaxassislar'
-import { TYPE_CLS, expText, findJob, jobsStore, useJobs } from './MobileIshlar'
+import { TYPE_CLS, findJob, jobsStore, useJobs } from './MobileIshlar'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const GRAPH = { full: '6/1', part: 'Yarim kun', shift: '2/2 smena', remote: 'Moslashuvchan' }
@@ -26,12 +26,6 @@ const DUTIES = {
   assistent: ['Shifokorga to‘rt qo‘lda yordam berish', 'Asboblarni sterilizatsiya qilish', 'Kabinetni tayyorlash', 'Bemorlarni kutib olish'],
   admin: ['Bemorlarni ro‘yxatga olish', 'Telefon qo‘ng‘iroqlariga javob berish', 'Qabul jadvalini yuritish', 'Kassa va hujjatlar bilan ishlash'],
 }
-const NEEDS = {
-  assistent: ['O‘rta tibbiy yoki tibbiy ma’lumot', 'Sterilizatsiya qoidalarini bilish', 'Diqqatli va tartibli bo‘lish', 'Jamoada ishlay olish'],
-  admin: ['Kompyuterda ishlay olish', 'Muloqot madaniyati', 'Rus va o‘zbek tillarini bilish', 'Mas’uliyatlilik'],
-  texnik: ['Tish texnigi diplomi', 'Keramika bilan ishlash tajribasi', 'CAD/CAM dasturlarini bilish', 'Aniqlik va sabr'],
-}
-const OFFER = ['Qulay va zamonaviy ish sharoiti', 'Zamonaviy uskunalar va materiallar', 'Doimiy rivojlanish va malaka oshirish imkoniyatlari', 'Barqaror va o‘z vaqtida maosh']
 
 export default function MobileIsh() {
   const { id } = useParams()
@@ -66,9 +60,9 @@ function JobView({ id }) {
   const v = viewOf(j)
   const isSaved = saved.has(j.id)
   const isApplied = applied.has(j.id)
-  const needs = j.requirements || NEEDS[j.spec] || ['Stomatologiya yo‘nalishi bo‘yicha oliy ma’lumot', expText(j), 'Zamonaviy davolash usullarini bilish', 'Mas’uliyatlilik va kommunikativlik']
+  const needs = Array.isArray(j.requirements) ? j.requirements : []
   const duties = DUTIES[j.spec] || DUTIES.terapevt
-  const offer = j.benefits ? [...j.benefits, ...OFFER].slice(0, 4) : OFFER
+  const offer = Array.isArray(j.benefits) ? j.benefits : []
   const similar = jobs.filter((x) => x.spec === j.spec && x.id !== j.id).slice(0, 6)
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/ishlar'))
 
@@ -122,9 +116,9 @@ function JobView({ id }) {
           </div>
         </section>
 
-        <Block icon={FileText} title="Talablar" items={needs} />
+        {needs.length > 0 && <Block icon={FileText} title="Talablar" items={needs} />}
         <Block icon={ListChecks} title="Vazifalar" items={duties} />
-        <Block icon={Gift} title="Biz taklif qilamiz" items={offer} />
+        {offer.length > 0 && <Block icon={Gift} title="Biz taklif qilamiz" items={offer} />}
 
         {v.original && (
           <section className="mt-2.5 rounded-2xl bg-white p-3.5 text-[12px] text-ink-2 shadow-[0_1px_4px_rgb(11_31_58/0.05)]">
@@ -172,7 +166,7 @@ function JobView({ id }) {
       )}
       {sheet === 'clinic' && (
         <BottomSheet title={j.clinic} onClose={() => setSheet(null)}>
-          <p className="mt-1 text-[13px] leading-snug text-ink-2">{v.aboutClinic}</p>
+          {v.aboutClinic && <p className="mt-1 text-[13px] leading-snug text-ink-2">{v.aboutClinic}</p>}
           <div className="mt-3 grid grid-cols-3 gap-1.5">
             {v.gallery.map((src, i) => <button key={src + i} type="button" onClick={() => { setSheet(null); setZoom(i) }} className="h-20 overflow-hidden rounded-lg"><img src={src} alt="" className="size-full object-cover" /></button>)}
           </div>

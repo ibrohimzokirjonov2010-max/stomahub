@@ -97,7 +97,6 @@ export default function XizmatDialog({ initial, onClose, onSave }) {
     if (!form.cat) next.cat = 'Kategoriyani tanlang'
     if (!(Number(form.price) > 0)) next.price = 'Narx 0 dan katta bo‘lsin'
     if (!(Number(form.duration) > 0)) next.duration = 'Davomiylikni kiriting'
-    if (!form.tags.length) next.tags = 'Kamida bitta teg qo‘shing'
     setErrors(next)
     if (Object.keys(next).length) return
     onSave({
@@ -167,7 +166,7 @@ export default function XizmatDialog({ initial, onClose, onSave }) {
                 </Label>
               </Card>
 
-              <Card title="Rasm / ikonka">
+              <Card title="Qo‘shimcha: rasm" collapsible defaultOpen={Boolean(initial?.image)}>
                 <div className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] gap-3">
                   <button type="button" onClick={() => imageInput.current?.click()} className="relative grid min-h-[132px] place-items-center overflow-hidden rounded-xl border border-dashed border-[#bcd3e4] bg-[#f3f8fc] p-2 text-center hover:border-sea">
                     {form.image ? (
@@ -234,13 +233,16 @@ export default function XizmatDialog({ initial, onClose, onSave }) {
                     </button>
                   </Label>
                 </div>
+              </Card>
+
+              <Card title="Qo‘shimcha: materiallar va teglar" collapsible defaultOpen={Boolean(initial?.materials || initial?.tags?.length)}>
                 <Label text="Foydalaniladigan materiallar">
                   <span className="relative block">
                     <Box className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
                     <input value={form.materials} onChange={(e) => set('materials', e.target.value)} placeholder="Masalan: Kompozit, Adgeziv, Lokal anestetik..." className={`${field} pl-9`} />
                   </span>
                 </Label>
-                <Label text="Teglar (kalit so‘zlar)" required error={errors.tags}>
+                <Label text="Teglar (ixtiyoriy)">
                   <div className={`flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border bg-white px-3 py-1.5 focus-within:border-sea ${errors.tags ? 'border-[#fca5a5]' : 'border-[#e6ebf2]'}`}>
                     <Tag className="size-4 shrink-0 text-muted" />
                     {form.tags.map((t) => (
@@ -264,7 +266,7 @@ export default function XizmatDialog({ initial, onClose, onSave }) {
                 </Label>
               </Card>
 
-              <Card title="Rang va ikonka">
+              <Card title="Qo‘shimcha: rang va ikonka" collapsible>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="mb-1.5 text-[11.5px] font-medium text-ink-2">Rang</p>
@@ -288,7 +290,7 @@ export default function XizmatDialog({ initial, onClose, onSave }) {
                 </div>
               </Card>
 
-              <Card title="Xizmat hujjatlari (ixtiyoriy)">
+              <Card title="Qo‘shimcha: hujjatlar (ixtiyoriy)" collapsible defaultOpen={Boolean(initial?.docs?.length)}>
                 <button type="button" onClick={() => docInput.current?.click()} className="flex w-full items-center justify-center gap-3 rounded-xl border border-dashed border-[#bcd3e4] bg-[#f3f8fc] py-4 hover:border-sea">
                   <UploadCloud className="size-7 text-sea" />
                   <span className="text-left">
@@ -324,11 +326,17 @@ export default function XizmatDialog({ initial, onClose, onSave }) {
   )
 }
 
-function Card({ title, children }) {
+function Card({ title, children, collapsible, defaultOpen = false }) {
+  const [open, setOpen] = useState(!collapsible || defaultOpen)
   return (
     <section className="space-y-3 rounded-xl bg-white p-3.5 shadow-[0_1px_2px_rgb(15_23_42/0.05)]">
-      <h3 className="text-[13px] font-bold text-ink">{title}</h3>
-      {children}
+      {collapsible ? (
+        <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between text-left">
+          <h3 className="text-[13px] font-bold text-ink">{title}</h3>
+          {open ? <ChevronUp className="size-4 text-muted" /> : <ChevronDown className="size-4 text-muted" />}
+        </button>
+      ) : <h3 className="text-[13px] font-bold text-ink">{title}</h3>}
+      {open && children}
     </section>
   )
 }

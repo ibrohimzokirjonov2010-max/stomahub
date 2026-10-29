@@ -1,4 +1,5 @@
 import { friendlySupabaseError, supabase } from './supabaseClient'
+import { reconcileHub } from './organizer/reconcile'
 import { displayClock, displayDate, displayWhen, tashkentClock } from './time'
 
 function reviveId(id) {
@@ -74,7 +75,11 @@ function seminarFromRow(row, tickets) {
     form: row.form,
     speakers: row.speakers || [],
     wizardPromos: row.form?.promos || [],
-    tickets: list.map(ticketFromRow),
+    // early bird maydonlari tickets jadvalida yo‘q — form.tickets dan qo‘shiladi
+    tickets: list.map((t) => {
+      const extra = (row.form?.tickets || []).find((x) => String(x.id) === String(t.id)) || {}
+      return { ...ticketFromRow(t), earlyPrice: Number(extra.earlyPrice) || 0, earlyUntil: extra.earlyUntil || '' }
+    }),
   }
 }
 
@@ -133,6 +138,20 @@ function paymentFromRow(row) {
     avatar: row.avatar,
     face: row.face || 0,
   }
+}
+
+/** Rekvizit qo‘shimcha maydonlari detail ichida JSON sifatida saqlanadi (sxema o‘zgarmaydi). */
+function parseReq(detail) {
+  try {
+    const v = JSON.parse(detail || '')
+    return v && typeof v === 'object' ? { bank: v.bank || '', mfo: v.mfo || '', account: v.account || '', stir: v.stir || '' } : {}
+  } catch { return {} }
+}
+
+/** Ma’ruzachi qo‘shimcha ma’lumotlari links[0] ({ kind: 'meta' }) ichida saqlanadi. */
+function speakerExtra(links) {
+  const meta = (links || []).find((l) => l && typeof l === 'object' && l.kind === 'meta') || {}
+  return { years: meta.years || '', clinic: meta.clinic || '', certs: meta.certs || '', degree: meta.degree || '' }
 }
 
 function slimText(value, fallback = '') {
@@ -258,32 +277,24 @@ export async function pullHub() {
     throw error
   }
   const uid = await userId()
-  let organizer = false
-  let profile = null
-  if (uid) {
-    profile = await must(supabase.from('profiles').select('role,name,email').eq('id', uid).maybeSingle())
-    organizer = profile?.role === 'organizer'
-  }
+  // Profil va ommaviy katalog parallel yuklanadi (avval ketma-ket 6 ta so‘rov edi)
+  const publicSeminars = () => supabase.from('seminars').select('*').eq('published', true).neq('status', 'qoralama').order('sort_at', { ascending: true })
+  const [profile, catalogRows] = await Promise.all([
+    uid ? must(supabase.from('profiles').select('role,name,email').eq('id', uid).maybeSingle()) : null,
+    must(publicSeminars()),
+  ])
+  // Kabinet (tashkilotchi yoki admin) faqat O‘Z ma’lumotlarini ko‘radi
+  const organizer = profile?.role === 'organizer' || profile?.role === 'admin'
 
-  const ownQuery = supabase.from('seminars').select('*').order('sort_at', { ascending: true })
-  const seminarRows = await must(organizer
-    ? ownQuery.eq('organizer_id', uid)
-    : ownQuery.eq('published', true).neq('status', 'qoralama'))
-  const catalogRows = organizer
-    ? await must(supabase.from('seminars').select('*').eq('published', true).neq('status', 'qoralama').order('sort_at', { ascending: true }))
-    : seminarRows
-
+  const [seminarRows, promoRows, myRegistrations] = await Promise.all([
+    organizer ? must(supabase.from('seminars').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })) : catalogRows,
+    organizer
+      ? must(supabase.from('promo_codes').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }))
+      : must(supabase.from('promo_codes').select('*').eq('status', 'faol').order('sort_at', { ascending: true })),
+    uid ? must(supabase.from('registrations').select('*').eq('customer_id', uid)) : [],
+  ])
   const ids = [...new Set([...(seminarRows || []), ...(catalogRows || [])].map((row) => row.id))]
-  const ticketRows = ids.length
-    ? await must(supabase.from('tickets').select('*').in('seminar_id', ids))
-    : []
-  const promoRows = organizer
-    ? await must(supabase.from('promo_codes').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }))
-    : await must(supabase.from('promo_codes').select('*').eq('status', 'faol').order('sort_at', { ascending: true }))
-
-  const myRegistrations = uid
-    ? await must(supabase.from('registrations').select('*').eq('customer_id', uid))
-    : []
+  const ticketRows = ids.length ? await must(supabase.from('tickets').select('*').in('seminar_id', ids)) : []
 
   const next = {
     ...EMPTY,
@@ -293,9 +304,9 @@ export async function pullHub() {
     myRegistrations: myRegistrations || [],
   }
 
-  if (!organizer) return next
+  if (!organizer) return reconcileHub(next)
 
-  const [registrations, payments, certs, wallet, requisites, activity, reviews, speakers, settings, messages] = await Promise.all([
+  const [registrations, payments, certs, wallet, requisites, activity, reviews, speakers, settings, messages, application] = await Promise.all([
     must(supabase.from('registrations').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
     must(supabase.from('payments').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
     must(supabase.from('certificates').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
@@ -306,8 +317,10 @@ export async function pullHub() {
     must(supabase.from('organizer_speakers').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
     must(supabase.from('organizer_settings').select('*').eq('organizer_id', uid).maybeSingle()),
     must(supabase.from('support_messages').select('*').eq('organizer_id', uid).order('created_at', { ascending: true })),
+    supabase.from('seller_applications').select('*').eq('user_id', uid).eq('kind', 'organizer').order('created_at', { ascending: false }).limit(1).then((r) => r.data?.[0] || null, () => null),
   ])
-
+  next.cabinet = true
+  next.application = application
   const prefix = `${uid}:`
   next.participants = (registrations || []).map(personFromRow)
   next.payments = (payments || []).map(paymentFromRow)
@@ -333,23 +346,24 @@ export async function pullHub() {
     id: String(row.id).startsWith(prefix) ? String(row.id).slice(prefix.length) : row.id,
     label: row.label,
     detail: row.detail,
+    ...parseReq(row.detail),
   }))
   next.activity = (activity || []).map((row) => ({ icon: row.icon, title: row.title, text: row.text, time: displayClock(row.time_label, row.created_at) }))
   next.reviews = (reviews || []).map((row) => ({
     name: row.name, clinic: row.clinic, stars: row.stars, text: row.text, date: row.date_label, avatar: row.avatar,
   }))
   next.speakers = (speakers || []).map((row) => ({
-    id: row.id, name: row.name, role: row.role, city: row.city, avatar: row.avatar, bio: row.bio, links: row.links || [],
+    id: row.id, name: row.name, role: row.role, city: row.city, avatar: row.avatar, bio: row.bio, links: row.links || [], ...speakerExtra(row.links),
   }))
   if (settings) {
-    next.settings = { name: settings.name || profile?.name || '', email: settings.email || profile?.email || '', notes: settings.notes !== false, city: settings.city || 'Toshkent' }
+    next.settings = { name: settings.name || profile?.name || '', email: settings.email || profile?.email || '', notes: settings.notes !== false, city: settings.city || 'Toshkent', orgName: settings.org_name || '', legal: settings.marketing?.legal || {}, onboarding: settings.marketing?.onboarding || {} }
     next.qrSound = settings.qr_sound !== false
     next.marketing = { push: true, email: true, telegram: false, budget: '', ...(settings.marketing || {}) }
   } else if (profile) {
     next.settings = { ...next.settings, name: profile.name || '', email: profile.email || '' }
   }
   next.messages = (messages || []).map((row) => ({ id: row.id, text: row.body, at: row.at_label }))
-  return next
+  return reconcileHub(next, { cabinet: true })
 }
 
 let channel = null
@@ -587,7 +601,11 @@ export async function pushSettingsBundle({ settings, marketing, qrSound }) {
     notes: settings?.notes !== false,
     city: settings?.city || 'Toshkent',
     qr_sound: qrSound !== false,
-    marketing: marketing || {},
+    marketing: {
+      ...(marketing || {}),
+      ...(settings?.legal ? { legal: settings.legal } : {}),
+      ...(settings?.onboarding ? { onboarding: settings.onboarding } : {}),
+    },
   })
   if (error) throw error
   if (settings?.name) {

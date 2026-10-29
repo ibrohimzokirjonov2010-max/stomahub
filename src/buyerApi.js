@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
+import { normCategory } from './config/productCatalog'
 
 // ---- marketplace feed (active seller products) -------------------------------------
 let marketState = { status: 'idle', error: '' }
@@ -10,7 +11,9 @@ const emit = () => marketListeners.forEach((l) => l())
 const CAT_KEY = {
   'Restavratsion materiallar': 'komp', Implantlar: 'impl', 'Yordamchi materiallar': 'bond', 'Sarflanadigan materiallar': 'gig',
   'Endodontik asboblar': 'endo', Instrumentlar: 'asb', Uskunalar: 'usk', 'Himoya vositalari': 'gig', 'O‘lchov materiallari': 'komp',
-  Ortodontiya: 'asb', 'Gigiena vositalari': 'gig', Boshqa: 'asb',
+  Ortodontiya: 'orto', 'Gigiena vositalari': 'gig', Boshqa: 'asb',
+  Implantologiya: 'impl', Sterilizatsiya: 'usk', 'Qolip materiallari': 'komp', 'Qolip (ottisk) materiallari': 'komp', 'Izolyatsiya materiallari': 'komp',
+  'Estetik stomatologiya': 'komp', Laboratoriya: 'lab',
 }
 
 export const toMarketProduct = (row) => ({
@@ -20,8 +23,8 @@ export const toMarketProduct = (row) => ({
   name: row.name,
   type: [row.category, row.unit].filter(Boolean).join(' · ') || row.category || '',
   brand: row.brand || '',
-  cat: CAT_KEY[row.category] || 'asb',
-  category: row.category || '',
+  cat: CAT_KEY[normCategory(row.category)] || 'asb',
+  category: normCategory(row.category),
   price: Number(row.price) || 0,
   stock: Number(row.stock) || 0,
   image: row.image_url || (Array.isArray(row.images) ? row.images[0] : '') || '/images/market/p1.jpg',
@@ -30,6 +33,20 @@ export const toMarketProduct = (row) => ({
   documents: Array.isArray(row.documents) ? row.documents : [],
   specs: Array.isArray(row.specs) ? row.specs.filter((x) => Array.isArray(x) && x.length === 2) : [],
   description: row.description || '',
+  // 0029: product page tabs + purchase terms + medical device info
+  country: row.country || '',
+  unit: row.unit || '',
+  clinicalUse: row.clinical_use || '',
+  deliveryInfo: row.delivery_info || '',
+  reorder: row.reorder && typeof row.reorder === 'object' && row.reorder.enabled ? { enabled: true, intervalDays: Number(row.reorder.interval_days) || 30 } : null,
+  variantType: row.variant_type || '',
+  uom: row.uom || 'dona',
+  minQty: Math.max(1, Number(row.min_qty) || 1),
+  priceTiers: Array.isArray(row.price_tiers) ? row.price_tiers.filter((t) => Number(t?.min_qty) > 1 && Number(t?.price) > 0) : [],
+  regCertNo: row.reg_cert_no || '',
+  lotNo: row.lot_no || '',
+  storageTemp: row.storage_temp || '',
+  expiresOn: row.expires_on || '',
   rating: 0,
   reviews: 0,
   live: true,
@@ -89,7 +106,20 @@ export async function createOrder({ items, name, phone, city, address, note, pic
   })
   if (error) throw new Error(friendlySupabaseError(error))
   loadMarketProducts()
+  notifySellers(data?.orders || [])
   return { orders: data?.orders || [], payment_method: data?.payment_method || pay, payment_ref: data?.payment_ref || paymentRef }
+}
+
+// Fire-and-forget: Telegram message to each seller about the new order (api/notify/new-order).
+async function notifySellers(orders) {
+  try {
+    const ids = orders.map((o) => o.id).filter(Boolean)
+    if (!ids.length || typeof fetch !== 'function') return
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    if (!token) return
+    fetch('/api/notify/new-order', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ ids }) }).catch(() => {})
+  } catch { /* notification is best effort */ }
 }
 
 // ---- buyer orders ---------------------------------------------------------------------

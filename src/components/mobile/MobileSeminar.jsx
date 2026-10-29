@@ -43,6 +43,9 @@ function SeminarView({ id }) {
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const refs = useRef({})
+  // Tashkilotchi seminarlarida faqat u kiritgan bandlar; bo‘sh bo‘limlar yashiriladi
+  const includes = s ? (s.includes ? s.includes.map((t) => [Check, t]) : INCLUDES) : []
+  const tabs = TABS.filter(([k]) => (k !== 'program' || s?.program?.length) && (k !== 'includes' || includes.length))
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -148,7 +151,7 @@ function SeminarView({ id }) {
       {/* Tablar */}
       <div className="sticky top-0 z-20 mt-3 overflow-x-auto bg-[#f6f9fb] px-3 py-2 backdrop-blur no-scrollbar">
         <div className="flex w-max gap-2">
-          {TABS.map(([key, label, Icon]) => (
+          {tabs.map(([key, label, Icon]) => (
             <button key={key} type="button" onClick={() => goTo(key)} aria-current={tab === key ? 'true' : undefined} className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-medium transition ${tab === key ? 'bg-sea text-white shadow-[0_4px_12px_-4px_rgb(11_138_149/0.6)]' : 'border border-line bg-white text-ink'}`}>
               <Icon className="size-4" strokeWidth={1.7} /> {label}
             </button>
@@ -161,7 +164,7 @@ function SeminarView({ id }) {
         <p className="mt-1 text-[12px] leading-[1.55] text-ink-2">{s.about}</p>
       </section>
 
-      <section ref={(el) => { refs.current.program = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+      {s.program.length > 0 && <section ref={(el) => { refs.current.program = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Seminar dasturi</h2>
         <div className="mt-2 flex flex-col gap-3">
           {s.program.map((day) => (
@@ -182,19 +185,43 @@ function SeminarView({ id }) {
             </div>
           ))}
         </div>
-      </section>
+      </section>}
 
-      <section ref={(el) => { refs.current.includes = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+      {s.learn?.length > 0 && s.organizer && <section className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+        <h2 className="text-[17px] font-bold text-[#0d3b44]">Nimalarni o‘rganasiz?</h2>
+        <ul className="mt-1.5 space-y-1">{s.learn.map((t) => <li key={t} className="flex items-start gap-1.5 text-[12px] text-ink"><Check className="mt-0.5 size-3.5 shrink-0 text-sea" /> {t}</li>)}</ul>
+      </section>}
+
+      {s.audience?.length > 0 && <section className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+        <h2 className="text-[17px] font-bold text-[#0d3b44]">Kimlar uchun?</h2>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">{s.audience.map((t) => <span key={t} className="rounded-full bg-[#f3f6fa] px-2.5 py-1 text-[11px] font-medium text-ink-2">{t}</span>)}</div>
+      </section>}
+
+      {(s.practice || s.liveSurgery || s.cmeLine) && <section className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+        <h2 className="text-[17px] font-bold text-[#0d3b44]">Amaliyot va sertifikat</h2>
+        <ul className="mt-1.5 space-y-1 text-[12px] text-ink">
+          {s.practice && <li className="flex items-start gap-1.5"><Check className="mt-0.5 size-3.5 shrink-0 text-sea" /> {s.practice}</li>}
+          {s.liveSurgery && <li className="flex items-start gap-1.5"><Check className="mt-0.5 size-3.5 shrink-0 text-sea" /> Jonli jarrohlik: {s.liveSurgery}</li>}
+          {s.cmeLine && <li className="flex items-start gap-1.5"><Check className="mt-0.5 size-3.5 shrink-0 text-sea" /> Sertifikat: {s.cmeLine}</li>}
+        </ul>
+      </section>}
+
+      {includes.length > 0 && <section ref={(el) => { refs.current.includes = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Narxga nimalar kiradi?</h2>
         <div className="mt-2 grid grid-cols-3 gap-2">
-          {INCLUDES.map(([Icon, label]) => (
+          {includes.map(([Icon, label]) => (
             <div key={label} className="flex flex-col items-center gap-1 rounded-xl border border-[#d8eeec] bg-[#f3fafa] px-1 py-2 text-center">
               <Icon className="size-5 text-sea" strokeWidth={1.6} />
               <span className="text-[10px] leading-tight text-ink-2">{label}</span>
             </div>
           ))}
         </div>
-      </section>
+      </section>}
+
+      {s.refundPolicy && <section className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
+        <h2 className="text-[17px] font-bold text-[#0d3b44]">Bekor qilish va qaytarish</h2>
+        <p className="mt-1 whitespace-pre-line text-[12px] leading-[1.55] text-ink-2">{s.refundPolicy}</p>
+      </section>}
 
       <section ref={(el) => { refs.current.venue = el }} className="mx-3 mt-2.5 rounded-2xl bg-white p-3">
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Manzil</h2>
@@ -236,8 +263,8 @@ function SeminarView({ id }) {
                 <span className="rounded-md bg-sale px-1.5 font-bold text-white">-{s.off}%</span>
               </p>}
             </div>
-            <button type="button" disabled={s.cancelled} onClick={() => { if (!s.cancelled) navigate(`/seminarlar/${s.id}/royxat`) }} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:bg-[#fde8e8] disabled:text-[#dc2626] disabled:shadow-none">
-              {s.cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'} {!s.cancelled && <ArrowRight className="size-[18px]" />}
+            <button type="button" disabled={s.cancelled || s.regClosed} onClick={() => { if (!s.cancelled && !s.regClosed) navigate(`/seminarlar/${s.id}/royxat`) }} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:bg-[#fde8e8] disabled:text-[#dc2626] disabled:shadow-none">
+              {s.regClosed ? 'Yakunlangan — ro‘yxat yopiq' : s.cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'} {!s.cancelled && !s.regClosed && <ArrowRight className="size-[18px]" />}
             </button>
           </>
         )}

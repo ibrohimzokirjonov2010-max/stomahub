@@ -341,28 +341,69 @@ function Radio({ checked, label, onChange }) {
   )
 }
 
+const reqInput = (bad) => `mt-1 h-10 w-full rounded-xl border px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)] ${bad ? 'border-[#f2a7b6]' : 'border-[#e3eeec]'}`
+const digits = (v, n) => String(v || '').replace(/\D/g, '').slice(0, n)
+
+// Rekvizit validatsiyasi: bank (nomi, MFO 5 raqam, hisob 20 raqam, STIR 9 raqam) yoki karta (16 raqam)
+export function validateRequisite(f) {
+  const e = {}
+  if (f.kind === 'card') {
+    if (!f.label.trim()) e.label = 'Karta nomini kiriting'
+    if (digits(f.card, 16).length !== 16) e.card = 'Karta raqami 16 ta raqam bo‘lsin'
+  } else {
+    if (f.bank.trim().length < 2) e.bank = 'Bank nomini kiriting'
+    if (digits(f.mfo, 5).length !== 5) e.mfo = 'MFO 5 ta raqam bo‘lsin'
+    if (digits(f.account, 20).length !== 20) e.account = 'Hisob raqami 20 ta raqam bo‘lsin'
+    if (digits(f.stir, 9).length !== 9) e.stir = 'STIR 9 ta raqam bo‘lsin'
+  }
+  return e
+}
+
 function AddRequisite({ onClose, onSave }) {
-  const [name, setName] = useState('')
-  const [detail, setDetail] = useState('')
-  const [bad, setBad] = useState(false)
+  const [f, setF] = useState({ kind: 'bank', label: '', card: '', bank: '', mfo: '', account: '', stir: '' })
+  const [err, setErr] = useState({})
+  const set = (k, n) => (e) => setF({ ...f, [k]: n ? digits(e.target.value, n) : e.target.value })
+  const submit = (e) => {
+    e.preventDefault()
+    const v = validateRequisite(f)
+    setErr(v)
+    if (Object.keys(v).length) return
+    if (f.kind === 'card') {
+      const c = digits(f.card, 16)
+      onSave({ id: c.slice(-4), label: f.label.trim(), detail: `**** ${c.slice(-4)}` })
+    } else {
+      const acc = digits(f.account, 20)
+      onSave({ id: acc.slice(-4), label: f.bank.trim(), detail: `Hisob ${acc} · MFO ${f.mfo} · STIR ${f.stir}`, bank: f.bank.trim(), mfo: f.mfo, account: acc, stir: f.stir })
+    }
+  }
+  const Err = ({ k }) => (err[k] ? <span className="mt-0.5 block text-[11.5px] font-normal text-[#e11d48]">{err[k]}</span> : null)
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center bg-[#0e2a3a]/30 p-4" onClick={onClose}>
-      <form
-        className="w-full max-w-[400px] rounded-2xl bg-white p-4 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={(e) => { e.preventDefault(); if (!name.trim() || !detail.trim()) { setBad(true); return } onSave({ id: detail.replace(/\D/g, '').slice(-4) || String(Date.now()).slice(-4), label: name.trim(), detail: detail.trim() }) }}
-      >
+      <form className="w-full max-w-[420px] rounded-2xl bg-white p-4 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={submit} noValidate>
         <div className="flex items-center justify-between">
           <h3 className="text-[15px] font-bold">Rekvizit qo‘shish</h3>
           <button type="button" aria-label="Yopish" onClick={onClose} className="grid size-8 place-items-center rounded-lg text-[#6e868c]"><X className="size-4" /></button>
         </div>
-        <label className="mt-3 block text-[12.5px] font-medium">Nomi
-          <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" placeholder="Karta yoki bank" />
-        </label>
-        <label className="mt-3 block text-[12.5px] font-medium">Raqam
-          <input value={detail} onChange={(e) => setDetail(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e3eeec] px-3 text-[13px] outline-none focus:border-[var(--color-org-teal)]" placeholder="Hisob yoki karta raqami" />
-        </label>
-        {bad && <p className="mt-2 text-[12px] text-[#e11d48]">Ikkala maydonni ham to‘ldiring</p>}
+        <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-[#eef7f5] p-1 text-[12.5px] font-semibold">
+          {[['bank', 'Bank hisobi'], ['card', 'Karta']].map(([k, t]) => (
+            <button key={k} type="button" onClick={() => { setF({ ...f, kind: k }); setErr({}) }} className={`h-8 rounded-lg ${f.kind === k ? 'bg-white text-[var(--color-org-teal)] shadow-sm' : 'text-[#6e868c]'}`}>{t}</button>
+          ))}
+        </div>
+        {f.kind === 'card' ? (
+          <>
+            <label className="mt-3 block text-[12.5px] font-medium">Nomi<input value={f.label} onChange={set('label')} className={reqInput(err.label)} placeholder="Masalan: Uzcard (asosiy)" /><Err k="label" /></label>
+            <label className="mt-3 block text-[12.5px] font-medium">Karta raqami<input inputMode="numeric" value={f.card} onChange={set('card', 16)} className={reqInput(err.card)} placeholder="16 ta raqam" /><Err k="card" /></label>
+          </>
+        ) : (
+          <>
+            <label className="mt-3 block text-[12.5px] font-medium">Bank nomi<input value={f.bank} onChange={set('bank')} className={reqInput(err.bank)} placeholder="Masalan: Kapitalbank" /><Err k="bank" /></label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="mt-3 block text-[12.5px] font-medium">MFO<input inputMode="numeric" value={f.mfo} onChange={set('mfo', 5)} className={reqInput(err.mfo)} placeholder="5 ta raqam" /><Err k="mfo" /></label>
+              <label className="mt-3 block text-[12.5px] font-medium">STIR<input inputMode="numeric" value={f.stir} onChange={set('stir', 9)} className={reqInput(err.stir)} placeholder="9 ta raqam" /><Err k="stir" /></label>
+            </div>
+            <label className="mt-3 block text-[12.5px] font-medium">Hisob raqami<input inputMode="numeric" value={f.account} onChange={set('account', 20)} className={reqInput(err.account)} placeholder="20 ta raqam" /><span className="mt-0.5 block text-[11px] text-[#8aa0a4]">{digits(f.account, 20).length}/20</span><Err k="account" /></label>
+          </>
+        )}
         <button type="submit" className="mt-3 h-10 w-full rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white">Saqlash</button>
       </form>
     </div>

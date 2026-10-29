@@ -264,7 +264,7 @@ function Chips({ s }) {
 }
 
 function Progress({ s }) {
-  const pct = Math.round((s.sold / s.seats) * 100)
+  const pct = s.seats ? Math.min(100, Math.round(((s.sold || 0) / s.seats) * 100)) : 0
   return (
     <div className="w-[158px] shrink-0">
       <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ function SeminarLine({ s }) {
 }
 
 function SeminarTile({ s }) {
-  const pct = Math.round((s.sold / s.seats) * 100)
+  const pct = s.seats ? Math.min(100, Math.round(((s.sold || 0) / s.seats) * 100)) : 0
   return (
     <article className="overflow-hidden rounded-2xl border border-[#e7f1ef] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.03)]">
       <Banner s={s} className="h-[92px] w-full rounded-none" />

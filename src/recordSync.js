@@ -23,6 +23,16 @@ export function accountReady() {
   return ready
 }
 
+const readyListeners = new Set()
+const emitReady = () => readyListeners.forEach((fn) => fn())
+/** true once the signed-in user's blobs are pulled (or there is no backend / no user). */
+export function useBlobsReady() {
+  return useSyncExternalStore((fn) => {
+    readyListeners.add(fn)
+    return () => readyListeners.delete(fn)
+  }, () => !supabase || ready || pendingUid === null)
+}
+
 export function getSyncError() {
   return syncError
 }
@@ -168,6 +178,7 @@ function setUid(next) {
   pendingUid = next
   ready = false
   accountListeners.forEach((listener) => listener(uid))
+  emitReady()
 }
 
 async function bootAccount(nextUid) {
@@ -181,6 +192,7 @@ async function bootAccount(nextUid) {
   setUid(nextUid)
   await pullBlobs()
   ready = true
+  emitReady()
 }
 
 const targets = []
@@ -189,7 +201,8 @@ export function registerCatalog(kind, list) {
   targets.push({ kind, list })
 }
 
-const SEED_KINDS = new Set(['course', 'certificate', 'book'])
+// job: 248 ta egasiz demo vakansiya, deal: soxta reyting/sotuvli demo aksiyalar, channel: o‘ylab topilgan obunachi sonli demo kanallar.
+const SEED_KINDS = new Set(['course', 'certificate', 'book', 'job', 'deal', 'channel'])
 // kind:id of rows that have a real owner (seller/organizer). Ratings/discounts are only trusted on these.
 const ownedRows = new Set()
 export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)

@@ -991,13 +991,8 @@ function SecurityBlock() {
   return (
     <section className={card}>
       <SectionHead title="Xavfsizlik" />
-      <div className="flex items-start gap-3 rounded-xl bg-[#f4f8f7] p-3">
-        <Shield className="mt-0.5 size-5 text-[#0F766E]" />
-        <div>
-          <p className="text-[14px] font-bold text-[#12263a]">Hisob himoyasi</p>
-          <p className="mt-1 text-[13px] text-[#5b6b7d]">Parolni o‘zgartirish va ikki bosqichli tasdiqlash tez orada qo‘shiladi. Hozircha sessiyani chiqish orqali yakunlang.</p>
-        </div>
-      </div>
+      <PasswordChange />
+      <MfaTotp />
       <div className="mt-3 flex items-start gap-3 rounded-xl bg-[#f4f8f7] p-3">
         <Globe className="mt-0.5 size-5 text-[#0F766E]" />
         <div>
@@ -1047,6 +1042,112 @@ function DoctorVerify({ license }) {
       <p className="mt-1 text-[#5C6E80]">Faqat retsept bilan sotiladigan dori va materiallarni tasdiqlangan shifokorlar buyurtma qila oladi.</p>
       {status === 'rejected' && st.license_reject_reason && <p className="mt-1 text-[#b42318]">Sabab: {st.license_reject_reason}</p>}
       {msg && <p role="status" className="mt-1">{msg}</p>}
+    </div>
+  )
+}
+
+const secInput = 'h-10 w-full rounded-xl border border-[#dbe5ee] bg-white px-3 text-[13.5px] outline-none focus:border-[#0F766E]'
+const secBtn = 'h-10 rounded-xl bg-[#0F766E] px-4 text-[13px] font-semibold text-white disabled:opacity-50'
+
+function PasswordChange() {
+  const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
+  const submit = async (e) => {
+    e.preventDefault()
+    if (pw.length < 8) return setMsg({ err: true, t: 'Parol kamida 8 ta belgidan iborat bo‘lsin' })
+    if (pw !== pw2) return setMsg({ err: true, t: 'Parollar mos kelmadi' })
+    if (!supabase) return setMsg({ err: true, t: 'Server bilan aloqa sozlanmagan' })
+    setBusy(true); setMsg(null)
+    const { error } = await supabase.auth.updateUser({ password: pw })
+    setBusy(false)
+    if (error) return setMsg({ err: true, t: /reauth|nonce/i.test(error.message) ? 'Xavfsizlik uchun qayta kiring va yana urinib ko‘ring' : `Xatolik: ${error.message}` })
+    setPw(''); setPw2(''); setMsg({ err: false, t: 'Parol yangilandi' })
+  }
+  return (
+    <form onSubmit={submit} className="flex items-start gap-3 rounded-xl bg-[#f4f8f7] p-3">
+      <Shield className="mt-0.5 size-5 shrink-0 text-[#0F766E]" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[14px] font-bold text-[#12263a]">Parolni o‘zgartirish</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <label className="block"><span className="mb-1 block text-[12px] font-semibold text-[#5b6b7d]">Yangi parol</span>
+            <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} className={secInput} /></label>
+          <label className="block"><span className="mb-1 block text-[12px] font-semibold text-[#5b6b7d]">Parolni tasdiqlang</span>
+            <input type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} className={secInput} /></label>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <button type="submit" disabled={busy || !pw} className={secBtn}>{busy ? 'Saqlanmoqda…' : 'Parolni yangilash'}</button>
+          {msg && <span className={`text-[12.5px] ${msg.err ? 'text-[#e11d48]' : 'text-[#0F766E]'}`}>{msg.t}</span>}
+        </div>
+      </div>
+    </form>
+  )
+}
+
+function MfaTotp() {
+  const [factors, setFactors] = useState(null)
+  const [enroll, setEnroll] = useState(null)
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
+  const load = async () => {
+    if (!supabase?.auth?.mfa) return setFactors([])
+    const { data, error } = await supabase.auth.mfa.listFactors()
+    setFactors(error ? [] : (data?.totp || []).filter((f) => f.status === 'verified'))
+  }
+  useEffect(() => { load() }, [])
+  const start = async () => {
+    setBusy(true); setMsg(null)
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: `StomaHub ${Date.now()}` })
+    setBusy(false)
+    if (error) return setMsg({ err: true, t: `Yoqib bo‘lmadi: ${error.message}` })
+    setEnroll(data)
+  }
+  const verify = async () => {
+    setBusy(true); setMsg(null)
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: enroll.id, code: code.trim() })
+    setBusy(false)
+    if (error) return setMsg({ err: true, t: 'Kod noto‘g‘ri yoki muddati o‘tgan' })
+    setEnroll(null); setCode(''); setMsg({ err: false, t: 'Ikki bosqichli tasdiqlash yoqildi' }); load()
+  }
+  const cancel = async () => { if (enroll) await supabase.auth.mfa.unenroll({ factorId: enroll.id }); setEnroll(null); setCode('') }
+  const disable = async (id) => {
+    setBusy(true)
+    const { error } = await supabase.auth.mfa.unenroll({ factorId: id })
+    setBusy(false)
+    setMsg(error ? { err: true, t: `O‘chirib bo‘lmadi: ${error.message}` } : { err: false, t: 'Ikki bosqichli tasdiqlash o‘chirildi' })
+    load()
+  }
+  const on = factors?.length > 0
+  return (
+    <div className="mt-3 flex items-start gap-3 rounded-xl bg-[#f4f8f7] p-3">
+      <BadgeCheck className="mt-0.5 size-5 shrink-0 text-[#0F766E]" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[14px] font-bold text-[#12263a]">Ikki bosqichli tasdiqlash (Authenticator ilovasi) <span className="ml-1 rounded bg-[#fef3c7] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#92400e]">Beta</span></p>
+        <p className="mt-1 text-[13px] text-[#5b6b7d]">{factors === null ? 'Tekshirilmoqda…' : on ? 'Yoqilgan. Diqqat: kirishda kod so‘rash (2-bosqich) hali ulanmagan — tez orada.' : 'O‘chirilgan. Google Authenticator yoki shunga o‘xshash ilova bilan yoqing.'}</p>
+        {enroll ? (
+          <div className="mt-2 flex flex-wrap items-start gap-3">
+            <img src={enroll.totp.qr_code} alt="QR kod" className="size-36 rounded-lg bg-white p-1" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="text-[12px] text-[#5b6b7d]">QR kodni skanerlang yoki kalitni kiriting: <code className="break-all text-[#12263a]">{enroll.totp.secret}</code></p>
+              <label className="block"><span className="mb-1 block text-[12px] font-semibold text-[#5b6b7d]">Ilovadagi 6 xonali kod</span>
+                <input inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} className={secInput} /></label>
+              <div className="flex gap-2">
+                <button type="button" disabled={busy || code.length !== 6} onClick={verify} className={secBtn}>Tasdiqlash</button>
+                <button type="button" onClick={cancel} className="h-10 rounded-xl border border-[#dbe5ee] bg-white px-4 text-[13px] font-semibold text-[#12263a]">Bekor qilish</button>
+              </div>
+            </div>
+          </div>
+        ) : factors !== null && (
+          <div className="mt-2">
+            {on
+              ? <button type="button" disabled={busy} onClick={() => disable(factors[0].id)} className="h-10 rounded-xl border border-[#fecdd3] bg-white px-4 text-[13px] font-semibold text-[#e11d48]">O‘chirish</button>
+              : <button type="button" disabled={busy || !supabase} onClick={start} className={secBtn}>Yoqish</button>}
+          </div>
+        )}
+        {msg && <p className={`mt-2 text-[12.5px] ${msg.err ? 'text-[#e11d48]' : 'text-[#0F766E]'}`}>{msg.t}</p>}
+      </div>
     </div>
   )
 }

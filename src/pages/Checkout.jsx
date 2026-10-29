@@ -11,6 +11,7 @@ import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
 import { createCharge, demoBadgeProps, isDemoPayments } from '../payments/paymentService'
+import { DEFAULT_PAYMENT, SHOW_DEMO_PAYMENTS, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG } from '../components/PhoneInput'
 
 
@@ -24,13 +25,15 @@ const CITIES = {
   Nukus: ['Markaz'],
 }
 
-const METHODS = [
+const ALL_METHODS = [
   { id: 'uzcard', title: 'UZCARD', text: 'Bank kartasi orqali (demo)', hint: 'Demo' },
   { id: 'humo', title: 'HUMO', text: 'Bank kartasi orqali (demo)', hint: 'Demo' },
   { id: 'click', title: 'Click', text: 'Click ilovasi orqali (demo)', hint: 'Demo' },
   { id: 'payme', title: 'Payme', text: 'Payme ilovasi orqali (demo)', hint: 'Demo' },
   { id: 'cash', title: 'Naqd to‘lov', text: 'Mahsulotni olganda naqd to‘lanadi', hint: 'Olganda' },
 ]
+// Demo card/Click/Payme are hidden until real payments are live (VITE_SHOW_DEMO_PAYMENTS=1 shows them).
+const METHODS = SHOW_DEMO_PAYMENTS ? ALL_METHODS : ALL_METHODS.filter((m) => m.id === 'cash')
 
 const ORIGIN = {
   market: { label: 'Marketplace', to: '/marketplace', active: 'market' },
@@ -43,10 +46,14 @@ const input = 'h-11 w-full rounded-xl border border-[#e6ebf2] bg-white text-[13p
 export default function Checkout() {
   const loc = useLocation()
   const origin = ORIGIN[loc.state?.from] || ORIGIN.market
-  const { items, total, clear } = useCart()
+  const cart = useCart()
+  // "Hozir xarid qilish" → only that product; the cart is left untouched.
+  const [buyNow] = useState(() => readBuyNow(loc.state))
+  const items = buyNow ? [buyNow] : cart.items
+  const total = items.reduce((s, it) => s + it.qty * it.price, 0)
   const profile = useProfile()
   const [step, setStep] = useState(1)
-  const [method, setMethod] = useState('uzcard')
+  const [method, setMethod] = useState(DEFAULT_PAYMENT)
   const [shipMode, setShipMode] = useState('courier')
   const [form, setForm] = useState({
     name: '',
@@ -61,7 +68,9 @@ export default function Checkout() {
   const [promoOpen, setPromoOpen] = useState(false)
   const [discount, setDiscount] = useState(0)
   const [promoMsg, setPromoMsg] = useState('')
-  const [invoice, setInvoice] = useState(true)
+  const [invoice, setInvoice] = useState(false)
+  const [inv, setInv] = useState({ stir: '', company: '' })
+  const [delivery, setDelivery] = useState(defaultDelivery)
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState('')
   const [payOpen, setPayOpen] = useState(false)
@@ -123,6 +132,14 @@ export default function Checkout() {
         setError('Ism, telefon, shahar, tuman va aniq manzil majburiy.')
         return
       }
+      if (!delivery.date || delivery.date < todayISO() || !windowsFor(delivery.date).includes(delivery.slot)) {
+        setError('Yetkazish sanasi va vaqtini tanlang (o‘tgan vaqt tanlab bo‘lmaydi).')
+        return
+      }
+    }
+    if (step === 2) {
+      const bad = invoiceError(invoice, inv)
+      if (bad) { setError(bad); return }
     }
     setError('')
     setStep((n) => Math.min(3, n + 1))
@@ -149,14 +166,15 @@ export default function Checkout() {
         phone: form.phone,
         city: [form.city, form.district].filter(Boolean).join(', '),
         address: withGeo(form.address, shipMode === 'courier' ? form : null),
-        note: form.note || '',
+        note: orderNote(form.note, { date: delivery.date, slot: delivery.slot, pickup: shipMode !== 'courier', invoice, inv }),
         pickup: shipMode !== 'courier',
         paymentMethod: method,
         paymentRef,
       })
       const codes = (res.orders || []).map((o) => o.code).join(', ')
-      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice, paymentRef, demo: isDemoPayments() }
-      clear()
+      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice, inv: { ...inv }, delivery: { ...delivery }, paymentRef, demo: isDemoPayments() }
+      if (buyNow) endBuyNow()
+      else cart.clear()
       profileStore.refreshOrders?.()
       setPayOpen(false)
       setPlaced(snap)
@@ -224,6 +242,8 @@ export default function Checkout() {
                         allSaved={allSaved}
                         setAllSaved={setAllSaved}
                         savedRows={savedRows}
+                        delivery={delivery}
+                        setDelivery={setDelivery}
                       />
                     )}
                     {step === 2 && (
@@ -240,6 +260,8 @@ export default function Checkout() {
                         grand={grand}
                         invoice={invoice}
                         setInvoice={setInvoice}
+                        inv={inv}
+                        setInv={setInv}
                         onBack={() => { setError(''); setStep(1) }}
                         onNext={next}
                       />
@@ -250,6 +272,9 @@ export default function Checkout() {
                         form={form}
                         shipMode={shipMode}
                         pay={pay}
+                        delivery={delivery}
+                        invoice={invoice}
+                        inv={inv}
                         agree={agree}
                         setAgree={setAgree}
                         onBack={() => { setError(''); setStep(2) }}
@@ -325,7 +350,7 @@ function Stepper({ step }) {
   )
 }
 
-function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoom, allSaved, setAllSaved, savedRows }) {
+function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoom, allSaved, setAllSaved, savedRows, delivery, setDelivery }) {
   const districts = CITIES[form.city] || []
   const saved = allSaved ? savedRows : savedRows.slice(0, 2)
   return (
@@ -398,10 +423,12 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         <h2 className="text-[16px] font-bold">Yetkazish usuli</h2>
         <p className="mt-0.5 text-[12px] text-muted">Sizga qulay yetkazish usulini tanlang</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="Narx sotuvchi bilan" price="Kelishiladi" />
+          <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="Narxi sotuvchi bilan kelishiladi" price="Kelishiladi" />
           <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘ziroq olib ketish" meta="Bepul" />
         </div>
       </section>
+
+      <DeliveryWhen delivery={delivery} setDelivery={setDelivery} pickup={shipMode !== 'courier'} />
 
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <h2 className="text-[16px] font-bold">Qo‘shimcha ma’lumot</h2>
@@ -412,7 +439,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
   )
 }
 
-function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods, ship, discount, grand, invoice, setInvoice, onBack, onNext }) {
+function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods, ship, discount, grand, invoice, setInvoice, inv, setInv, onBack, onNext }) {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl bg-white p-4 shadow-card">
@@ -435,10 +462,9 @@ function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods
             </button>
           ))}
         </div>
-        <div className="mt-3 flex gap-2 rounded-xl bg-[#eefbf6] px-3 py-2.5 text-[12.5px] text-[#157a45]">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-          <p><b>To‘lovlar xavfsiz.</b> Barcha to‘lovlar shifrlangan va to‘liq himoyalangan. Sizning ma’lumotlaringiz xavfsiz.</p>
-        </div>
+        {SHOW_DEMO_PAYMENTS ? null : (
+          <p className="mt-3 rounded-xl bg-[#eefbf6] px-3 py-2.5 text-[12.5px] text-[#157a45]">Hozircha to‘lov faqat naqd — mahsulotni olganingizda. Onlayn to‘lov tez orada qo‘shiladi.</p>
+        )}
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-card">
@@ -454,7 +480,7 @@ function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <h2 className="text-[15px] font-bold">To‘lov ma’lumotlari</h2>
         <Row k="Mahsulotlar" v={som(goods)} />
-        <Row k="Yetkazish" v={som(ship)} />
+        <Row k="Yetkazish" v="Kelishiladi" />
         <Row k="Chegirma (promokod)" v={som(discount)} />
         <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
           <b>Jami to‘lov</b>
@@ -464,6 +490,16 @@ function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods
           <input type="checkbox" checked={invoice} onChange={(e) => setInvoice(e.target.checked)} className="mt-0.5 accent-[#0b8a95]" />
           <span><b>Hisob-faktura</b><br /><span className="text-muted">Menga elektron hisob-faktura (PDF) yuborilsin</span></span>
         </label>
+        {invoice && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="STIR (INN)" required>
+              <input inputMode="numeric" maxLength={9} value={inv.stir} onChange={(e) => setInv((v) => ({ ...v, stir: e.target.value.replace(/\D/g, '').slice(0, 9) }))} placeholder="9 ta raqam" className={`${input} px-3`} />
+            </Field>
+            <Field label="Kompaniya nomi" required>
+              <input value={inv.company} maxLength={120} onChange={(e) => setInv((v) => ({ ...v, company: e.target.value }))} placeholder="Masalan: “Smile Dent” MChJ" className={`${input} px-3`} />
+            </Field>
+          </div>
+        )}
       </section>
 
       <div className="flex items-center justify-between">
@@ -474,7 +510,7 @@ function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods
   )
 }
 
-function StepReview({ items, form, shipMode, pay, agree, setAgree, onBack, onEdit, onConfirm }) {
+function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree, setAgree, onBack, onEdit, onConfirm }) {
   return (
     <div className="space-y-4">
       <div className="buy-review">
@@ -511,8 +547,8 @@ function StepReview({ items, form, shipMode, pay, agree, setAgree, onBack, onEdi
                 <span className="text-[12px] text-muted">{shipMode === 'courier' ? 'Manzilingizga yetkazib berish' : 'Do‘kondan o‘ziroq olib ketish'}</span>
               </span>
             </div>
-            <p className="mt-2 text-[13px] font-semibold">27 okt 2026, Seshanba</p>
-            <p className="text-[12px] text-muted">10:00 – 18:00 oralig‘ida</p>
+            <p className="mt-2 text-[13px] font-semibold">{fmtDeliveryDate(delivery.date)}</p>
+            <p className="text-[12px] text-muted">{delivery.slot} oralig‘ida (Toshkent vaqti)</p>
           </section>
           <section className="rounded-2xl bg-white p-4 shadow-card">
             <Head n="4" title="To‘lov usuli" onEdit={() => onEdit(2)} />
@@ -523,6 +559,7 @@ function StepReview({ items, form, shipMode, pay, agree, setAgree, onBack, onEdi
                 <span className="text-[12px] text-muted">{pay.text}</span>
               </span>
             </div>
+            {invoice && <p className="mt-2 text-[12px] text-ink-2">Hisob-faktura: <b>{inv.company}</b>, STIR {inv.stir}</p>}
           </section>
         </div>
       </div>
@@ -565,7 +602,7 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
         </ul>
         <div className="mt-2 space-y-1.5 text-[12.5px]">
           <Row k={`Mahsulotlar (${items.length} ta)`} v={som(goods)} />
-          <Row k="Yetkazish" v={som(ship)} />
+          <Row k="Yetkazish" v="Kelishiladi" />
           {step === 3 && <Row k="Chegirma (promokod)" v={som(discount)} />}
           <div className="flex items-center justify-between">
             <span className="text-muted">Promokod</span>
@@ -588,7 +625,7 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
             Davom etish <ArrowRight className="size-4" />
           </button>
         )}
-        <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-muted"><Lock className="size-3" /> Xavfsiz to‘lov va ma’lumotlaringiz himoyalangan</p>
+        {SHOW_DEMO_PAYMENTS && <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-muted"><Lock className="size-3" /> Xavfsiz to‘lov va ma’lumotlaringiz himoyalangan</p>}
       </div>
       {step < 3 ? (
         <div className="flex gap-2 rounded-2xl bg-[#eefbf6] p-3 text-[12px] text-[#157a45]">
@@ -612,16 +649,17 @@ function Done({ placed, origin }) {
         <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#e5f7ea] text-[#17803d]"><Check className="size-6" /></span>
         <div>
           <h1 className="text-[22px] font-extrabold">Buyurtmangiz qabul qilindi</h1>
-          <p className="mt-1 text-[13px] text-muted">To‘lov tasdiqlandi. Buyurtma raqami <b className="text-ink">#{placed.id}</b></p>
+          <p className="mt-1 text-[13px] text-muted">{placed.method.id === 'cash' ? 'To‘lov mahsulotni olganda naqd.' : 'To‘lov tasdiqlandi.'} Buyurtma raqami <b className="text-ink">#{placed.id}</b></p>
         </div>
       </div>
       <div className="mt-4 space-y-1 text-[13px]">
         <Row k="To‘lov usuli" v={placed.method.title} />
-        <Row k="Yetkazish" v={placed.shipMode === 'courier' ? 'Kuryer orqali' : 'Olib ketish'} />
+        <Row k="Usul" v={placed.shipMode === 'courier' ? 'Kuryer orqali' : 'Olib ketish'} />
         <Row k="Manzil" v={`${placed.form.city}, ${placed.form.address}`} />
+        {placed.delivery && <Row k={placed.shipMode === 'courier' ? 'Yetkazish' : 'Olib ketish'} v={`${fmtDeliveryDate(placed.delivery.date)}, ${placed.delivery.slot}`} />}
         <Row k="Jami" v={som(placed.grand)} />
       </div>
-      <p className="mt-3 text-[12.5px] text-muted">Mahsulotlar tekshiruvdan so‘ng omborga qo‘shildi. Yetkazish 27 okt 2026, 10:00 – 18:00 oralig‘ida.</p>
+      <p className="mt-3 text-[12.5px] text-muted">Sotuvchi buyurtmani tasdiqlagach, yetkazish vaqti va narxini siz bilan kelishadi. Holatini “Buyurtmalarim”da kuzating.</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link to={origin.to} className="inline-flex h-10 items-center rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">{origin.label}ga qaytish</Link>
         <Link to="/ombor" className="inline-flex h-10 items-center rounded-xl border border-[#d7e0ea] px-4 text-[13px] font-semibold">Omborni ko‘rish</Link>
@@ -810,6 +848,7 @@ function Qr({ seed }) {
 function downloadInvoice(snap) {
   const lines = [
     `StomaHub hisob-faktura #${snap.id}`,
+    ...(snap.inv?.stir ? [`Xaridor: ${snap.inv.company}, STIR ${snap.inv.stir}`] : []),
     `To'lov: ${snap.method.title}`,
     `Jami: ${snap.grand}`,
     ...snap.items.map((it) => `${it.name} x ${it.qty} = ${it.price * it.qty}`),
@@ -821,4 +860,37 @@ function downloadInvoice(snap) {
   a.download = `${snap.id}.txt`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function DeliveryWhen({ delivery, setDelivery, pickup }) {
+  const slots = windowsFor(delivery.date)
+  const setDate = (date) => {
+    if (!date || date < todayISO()) date = todayISO()
+    const open = windowsFor(date)
+    setDelivery((d) => ({ date, slot: open.includes(d.slot) ? d.slot : (open[0] || '') }))
+  }
+  return (
+    <section className="rounded-2xl bg-white p-4 shadow-card" data-testid="delivery-when">
+      <h2 className="flex items-center gap-2 text-[16px] font-bold"><CalendarDays className="size-4 text-sea" /> {pickup ? 'Olib ketish sanasi va vaqti' : 'Yetkazish sanasi va vaqti'}</h2>
+      <p className="mt-0.5 text-[12px] text-muted">Qulay kun va vaqt oralig‘ini tanlang (Toshkent vaqti). Sotuvchi tasdiqlaganda aniqlashtiriladi.</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-[220px_1fr]">
+        <Field label="Sana" required>
+          <input type="date" min={todayISO()} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className={`${input} px-3`} />
+        </Field>
+        <div className="text-[12.5px] font-semibold">
+          <span>Vaqt oralig‘i <span className="text-[#e11d48]">*</span></span>
+          <div className="mt-1.5 font-normal">
+          {slots.length ? (
+            <div className="flex flex-wrap gap-2">
+              {slots.map((w) => (
+                <button key={w} type="button" onClick={() => setDelivery((d) => ({ ...d, slot: w }))} className={`h-11 rounded-xl border px-3 text-[13px] font-semibold ${delivery.slot === w ? 'border-sea bg-sea-50 text-sea' : 'border-[#e6ebf2] text-ink-2'}`}>{w}</button>
+              ))}
+            </div>
+          ) : <p className="flex h-11 items-center text-[12.5px] text-[#e11d48]">Bugun uchun bo‘sh vaqt qolmadi — boshqa kunni tanlang.</p>}
+          </div>
+        </div>
+      </div>
+      <p className="mt-2 text-[12px] text-ink-2">Tanlandi: <b>{fmtDeliveryDate(delivery.date)}{delivery.slot ? `, ${delivery.slot}` : ''}</b></p>
+    </section>
+  )
 }

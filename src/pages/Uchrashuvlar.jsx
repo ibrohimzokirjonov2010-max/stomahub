@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Bell, Calendar, Check, ChevronLeft, ChevronRight, Clock, Plus, Search, Users, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
+import AppointmentForm from '../components/crm/AppointmentForm'
+import { chairNames, useClinicSettings } from '../clinicSettings'
 import { tashkentToday } from '../tashkentDate'
-import { useBemorlar } from '../bemorData'
 import {
-  MONTHS, WDS, alignWeek, clockRange, doctors, isoOf, labelRange, longDate, minutes, parts, rooms, services, setVisits, useVisits, shift, tones, weekDays, weekdayIndex,
+  MONTHS, WDS, alignWeek, clockRange, doctors, isoOf, labelRange, longDate, minutes, parts, setVisits, useVisits, shift, tones, weekDays, weekdayIndex,
 } from '../uchrashuvData'
 
 const HOUR = 44
@@ -12,7 +13,7 @@ const START = 8 * 60
 const SLOTS = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30']
 
 export default function Uchrashuvlar() {
-  const patients = useBemorlar()
+  const clinic = useClinicSettings()
   const rows = useVisits()
   const setRows = setVisits
   const [anchor, setAnchor] = useState(() => alignWeek(tashkentToday()))
@@ -59,7 +60,6 @@ export default function Uchrashuvlar() {
   }
 
   const save = (visit) => {
-    setRows((list) => [...list, { ...visit, id: `n${Date.now()}` }])
     setFocus(visit.date)
     if (!weekDays(anchor).some((day) => day.iso === visit.date)) setAnchor(alignWeek(visit.date))
     setOpen(false)
@@ -94,7 +94,7 @@ export default function Uchrashuvlar() {
           </select>
           <select value={room} onChange={(e) => setRoom(e.target.value)} className="h-8 rounded-lg border border-line bg-white px-2 text-[12.5px]">
             <option value="all">Barcha xonalar</option>
-            {rooms.map((r) => <option key={r}>{r}</option>)}
+            {[...new Set([...chairNames(clinic), ...rows.map((r) => r.room).filter(Boolean)])].map((r) => <option key={r}>{r}</option>)}
           </select>
         </div>
 
@@ -173,7 +173,7 @@ export default function Uchrashuvlar() {
           </aside>
         </div>
       </div>
-      {open && <VisitModal patients={patients} draft={draft} onClose={() => setOpen(false)} onSave={save} />}
+      {open && <AppointmentForm initial={draft || {}} onClose={() => setOpen(false)} onSaved={save} />}
     </ShopLayout>
   )
 }
@@ -261,132 +261,6 @@ function Month({ anchor, rows, focus, onPick }) {
             </button>
           )
         })}
-      </div>
-    </div>
-  )
-}
-
-function VisitModal({ patients, draft, onClose, onSave }) {
-  const [patient, setPatient] = useState(null)
-  const [find, setFind] = useState('')
-  const [doctor, setDoctor] = useState('me')
-  const [room, setRoom] = useState('Kreslo 1')
-  const [service, setService] = useState('Konsultatsiya')
-  const [date, setDate] = useState(draft?.date || tashkentToday())
-  const [cursor, setCursor] = useState(draft?.date || tashkentToday())
-  const [time, setTime] = useState(draft?.start || '10:30')
-  const [dur, setDur] = useState(30)
-  const [sms, setSms] = useState(true)
-  const [note, setNote] = useState('')
-  const [err, setErr] = useState('')
-
-  const found = patients.filter((p) => `${p.name} ${p.phone}`.toLowerCase().includes(find.trim().toLowerCase())).slice(0, 6)
-  const { y, m } = parts(cursor)
-  const lead = weekdayIndex(isoOf(y, m, 1))
-  const count = new Date(y, m, 0).getDate()
-
-  const save = () => {
-    if (!patient || !room || !date || !time) { setErr('Bemor, kreslo, sana va vaqt majburiy.'); return }
-    onSave({
-      date, start: time, dur, name: patient.name, photo: patient.photo || '', phone: patient.phone || '', patientId: patient.id || '', service, status: 'tasdiq', doctor, room, note, sms, isNew: true,
-    })
-  }
-
-  return (
-    <div className="bemor-shade" onClick={onClose}>
-      <div className="bemor-dialog shadow-card" onClick={(e) => e.stopPropagation()}>
-        <div className="bemor-dialog-head flex items-start justify-between px-4 pt-3">
-          <div>
-            <h2 className="text-[16px] font-bold">Yangi uchrashuv</h2>
-            <p className="text-[12px] text-muted">Uchrashuv ma’lumotlarini kiriting</p>
-          </div>
-          <button onClick={onClose} aria-label="Yopish" className="grid size-8 place-items-center text-muted"><X className="size-4" /></button>
-        </div>
-        <div className="bemor-dialog-body px-4 pb-2">
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="text-[12px] font-medium">Bemor
-              {patient ? (
-                <span className="mt-1 flex items-center gap-2 rounded-lg border border-line px-2 py-1.5">
-                  <Face src={patient.photo} name={patient.name} />
-                  <span className="min-w-0 flex-1"><span className="block truncate text-[12.5px] font-semibold">{patient.name}</span><span className="block text-[10.5px] text-muted">{patient.phone} · {patient.age}</span></span>
-                  <button type="button" onClick={() => setPatient(null)} aria-label="Olib tashlash"><X className="size-3.5 text-muted" /></button>
-                </span>
-              ) : (
-                <span className="relative mt-1 block">
-                  <span className="flex h-9 items-center gap-1 rounded-lg border border-line px-2"><Search className="size-3.5 text-muted" /><input value={find} onChange={(e) => setFind(e.target.value)} placeholder="Bemorni qidirish..." className="w-full bg-transparent text-[12.5px] outline-none" /></span>
-                  {find && (
-                    <span className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-white py-1 shadow-card">
-                      {found.map((p) => <button key={p.id} type="button" onClick={() => { setPatient(p); setFind('') }} className="block w-full px-2 py-1 text-left text-[12px] hover:bg-sea-50">{p.name}</button>)}
-                      {found.length === 0 && <button type="button" onClick={() => { setPatient({ id: '', name: find.trim(), phone: '' }); setFind('') }} className="block w-full px-2 py-1 text-left text-[12px] font-semibold text-sea hover:bg-sea-50">«{find.trim()}» ni qo‘shish</button>}
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
-            <label className="text-[12px] font-medium">Shifokor
-              <select value={doctor} onChange={(e) => setDoctor(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-[12.5px]">
-                {doctors.length ? doctors.map((d) => <option key={d.id} value={d.id}>{d.name} — {d.role}</option>) : <option value="me">Men</option>}
-              </select>
-            </label>
-            <label className="text-[12px] font-medium">Kreslo *
-              <select value={room} onChange={(e) => setRoom(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-[12.5px]">{rooms.map((r) => <option key={r}>{r}</option>)}</select>
-            </label>
-            <label className="text-[12px] font-medium">Xizmat
-              <select value={service} onChange={(e) => setService(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-[12.5px]">{services.map((s) => <option key={s}>{s}</option>)}</select>
-            </label>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[12px] font-medium">Sana *</p>
-              <div className="mt-1 rounded-lg border border-line p-2">
-                <div className="mb-1 flex items-center justify-between text-[12px] font-semibold">
-                  <button type="button" onClick={() => setCursor(m === 1 ? isoOf(y - 1, 12, 1) : isoOf(y, m - 1, 1))} aria-label="Oldingi oy"><ChevronLeft className="size-4" /></button>
-                  <span className="capitalize">{MONTHS[m - 1]} {y}</span>
-                  <button type="button" onClick={() => setCursor(m === 12 ? isoOf(y + 1, 1, 1) : isoOf(y, m + 1, 1))} aria-label="Keyingi oy"><ChevronRight className="size-4" /></button>
-                </div>
-                <div className="grid grid-cols-7 text-center text-[10px] text-muted">{['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].map((w) => <span key={w}>{w}</span>)}</div>
-                <div className="grid grid-cols-7 text-center text-[11px]">
-                  {Array.from({ length: lead }).map((_, i) => <span key={`e${i}`} />)}
-                  {Array.from({ length: count }, (_, i) => i + 1).map((d) => {
-                    const iso = isoOf(y, m, d)
-                    return <button type="button" key={d} onClick={() => setDate(iso)} className={`mx-auto my-0.5 grid size-6 place-items-center rounded-full ${iso === date ? 'bg-sea text-white' : ''}`}>{d}</button>
-                  })}
-                </div>
-              </div>
-            </div>
-            <div>
-              <p className="text-[12px] font-medium">Vaqt *</p>
-              <div className="mt-1 grid grid-cols-4 gap-1">
-                {SLOTS.map((s) => (
-                  <button type="button" key={s} onClick={() => setTime(s)} className={`h-7 rounded-md text-[11px] font-semibold ${time === s ? 'bg-sea text-white' : 'bg-[#f4f7fb] text-ink-2'}`}>{s}</button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <label className="text-[12px] font-medium">Davomiyligi *
-              <select value={dur} onChange={(e) => setDur(Number(e.target.value))} className="mt-1 h-9 w-full rounded-lg border border-line px-2 text-[12.5px]">
-                {[15, 30, 45, 60, 90].map((n) => <option key={n} value={n}>{n} daqiqa</option>)}
-              </select>
-            </label>
-            <div className="text-[12px] font-medium">SMS eslatma
-              <button type="button" onClick={() => setSms((v) => !v)} className="mt-1 flex h-9 w-full items-center gap-2 rounded-lg border border-line px-2 text-left text-[12px] font-normal">
-                <Bell className="size-3.5 text-sea" />
-                <span className="flex-1">Bemorga SMS eslatma yuborish</span>
-                <span className={`relative h-5 w-9 rounded-full ${sms ? 'bg-sea' : 'bg-line'}`}><span className={`absolute top-0.5 size-4 rounded-full bg-white transition ${sms ? 'left-4' : 'left-0.5'}`} /></span>
-              </button>
-            </div>
-          </div>
-          <label className="mt-2 block text-[12px] font-medium">Izoh
-            <textarea value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Qo‘shimcha ma’lumot (ixtiyoriy)..." className="mt-1 h-14 w-full resize-none rounded-lg border border-line px-2 py-1.5 text-[12.5px] outline-none" />
-            <span className="block text-right text-[10px] text-muted">{note.length}/500</span>
-          </label>
-          {err && <p className="text-[12px] text-sale">{err}</p>}
-        </div>
-        <div className="bemor-dialog-foot flex items-center justify-between border-t border-line px-4 py-3">
-          <button onClick={onClose} className="h-9 rounded-lg border border-line px-5 text-[13px] font-semibold">Bekor qilish</button>
-          <button onClick={save} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-5 text-[13px] font-semibold text-white"><Calendar className="size-3.5" /> Saqlash</button>
-        </div>
       </div>
     </div>
   )

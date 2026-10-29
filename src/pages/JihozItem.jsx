@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Star, Heart, ShoppingCart, Minus, Plus, ChevronRight, X, BadgeCheck, Truck, Check, MapPin } from 'lucide-react'
 import { useCart } from '../cart'
@@ -93,7 +94,7 @@ export default function JihozItem() {
                   <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
                 </button>
               </div>
-              <button onClick={() => { put(); navigate('/buyurtma', { state: { from: 'jihoz' } }) }} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600">Hozir sotib olish</button>
+              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty, 'jihoz')} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600">Hozir sotib olish</button>
               <button onClick={() => setAsk(true)} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Konsultatsiya so‘rash</button>
             </div>
           </div>
@@ -193,8 +194,6 @@ export default function JihozItem() {
             <p className="text-[10px] text-muted">Sotuvchi</p>
             <p className="text-[14px] font-extrabold text-ink">{product.brand} Uzbekistan</p>
             <p className="inline-flex items-center gap-1 text-[11px] text-sea"><BadgeCheck className="size-3.5" /> Rasmiy distribyutor</p>
-            <p className="mt-1 flex items-center gap-1 text-[11px]"><Star className="size-3 fill-star text-star" /> 4.9 <span className="text-muted">(128 sharh)</span></p>
-            <p className="text-[11px] text-muted">550+ mahsulot</p>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               <Link to={`/jihozlar?brand=${encodeURIComponent(product.brand)}`} className="flex h-8 items-center justify-center rounded-lg bg-sea text-[10px] font-semibold text-white">Do‘konni ko‘rish</Link>
               <Link to={`/jihozlar?brand=${encodeURIComponent(product.brand)}`} className="flex h-8 items-center justify-center rounded-lg border border-line text-[10px] font-semibold text-ink">Barcha mahsulotlar</Link>

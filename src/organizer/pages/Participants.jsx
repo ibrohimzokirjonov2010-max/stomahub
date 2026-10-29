@@ -204,7 +204,7 @@ function DesktopParticipants() {
   const current = allMode ? null : (SEMINARS.find((s) => s.id === seminar) || SEMINARS[0])
   const headSeats = allMode ? SEMINARS.reduce((n, s) => n + (Number(s.seats) || 0), 0) : (current?.seats || rows.length)
   const headTitle = allMode ? 'Barcha seminarlar' : (current?.title || 'Seminar')
-  const headImage = allMode ? (newestSeminar(SEMINARS)?.image || '/images/seminars/teeth.jpg') : (current?.id === 'endo' ? '/images/bemorlar/bemor-intra.jpg' : current?.image)
+  const headImage = allMode ? (newestSeminar(SEMINARS)?.image || '/images/seminars/teeth.jpg') : current?.image
   const filtered = useMemo(() => {
     const s = `${query} ${q}`.trim().toLowerCase()
     return rows.filter((p) => {
@@ -513,8 +513,8 @@ function DesktopParticipants() {
         )}
       </div>
 
-      <AddModal open={add} onClose={() => setAdd(false)} onSave={(row) => {
-        const person = addParticipant({ ...row, seminarId: allMode ? (newestSeminar(SEMINARS)?.id || '') : seminar })
+      <AddModal open={add} seminars={SEMINARS} defaultSeminar={allMode ? '' : seminar} onClose={() => setAdd(false)} onSave={(row) => {
+        const person = addParticipant(row)
         setSelected(person.id)
         setPanel(true)
         setPagerFree(true)
@@ -562,37 +562,56 @@ function Phone(props) {
   )
 }
 
-function AddModal({ open, onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', ticket: 'Standart', city: 'Toshkent' })
+function ticketNames(sem) {
+  const list = Array.isArray(sem?.tickets) ? sem.tickets : (Array.isArray(sem?.form?.tickets) ? sem.form.tickets : [])
+  return list.map((t) => t?.name || t?.title).filter(Boolean)
+}
+
+function AddModal({ open, onClose, onSave, seminars = [], defaultSeminar = '' }) {
+  const blank = { name: '', phone: '', email: '', ticket: '', seminarId: defaultSeminar }
+  const [form, setForm] = useState(blank)
   const [errors, setErrors] = useState({})
+  useEffect(() => { if (open) setForm((f) => ({ ...f, seminarId: defaultSeminar || f.seminarId })) }, [open, defaultSeminar])
+  const sem = seminars.find((s) => s.id === form.seminarId)
+  const tickets = ticketNames(sem)
   const save = () => {
     const e = {}
+    if (!sem) e.seminarId = 'Seminarni tanlang'
     if (form.name.trim().length < 3) e.name = 'Ism-familiyani kiriting'
     if (!/^\+998\s?\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$/.test(form.phone.trim())) e.phone = 'Telefon +998 formatida bo‘lsin'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email noto‘g‘ri'
+    if (sem && tickets.length && !tickets.includes(form.ticket)) e.ticket = 'Chipta turini tanlang'
     setErrors(e)
     if (Object.keys(e).length) return
     onSave({
       id: Date.now(),
-      ...form,
-      clinic: 'Yangi klinika',
+      name: form.name.trim(),
+      phone: form.phone,
+      email: form.email.trim(),
+      ticket: form.ticket || tickets[0] || '',
+      seminarId: sem.id,
       pay: 'wait',
       registered: 'Bugun',
-      role: 'Stomatolog',
-      avatar: '/images/seller-2.jpg',
     })
-    setForm({ name: '', phone: '', email: '', ticket: 'Standart', city: 'Toshkent' })
+    setForm(blank)
     setErrors({})
   }
   return (
     <Modal open={open} title="Ishtirokchi qo‘shish" onClose={onClose}>
       <div className="space-y-3">
+        <Field label="Seminar" req error={errors.seminarId}>
+          <select className={inputCls(errors.seminarId)} value={form.seminarId} onChange={(e) => setForm({ ...form, seminarId: e.target.value, ticket: '' })}>
+            <option value="">— Seminarni tanlang —</option>
+            {seminars.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+          </select>
+        </Field>
         <Field label="Ism-familiya" req error={errors.name}><input className={inputCls(errors.name)} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Aliyeva Mohira" /></Field>
         <Field label="Telefon" req error={errors.phone}><PhoneInput className={inputCls(errors.phone)} value={form.phone} onChange={(v) => setForm({ ...form, phone: toE164(v) || extractUzLocalDigits(v) })} valueMode="e164" invalid={!!errors.phone} placeholder="+998 90 123 45 67" /></Field>
         <Field label="Email" req error={errors.email}><input className={inputCls(errors.email)} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="m.aliyeva@mail.uz" /></Field>
-        <Field label="Chipta turi">
-          <select className={inputCls()} value={form.ticket} onChange={(e) => setForm({ ...form, ticket: e.target.value })}>
-            <option>Standart</option><option>VIP</option><option>Student</option><option>Guruh</option>
+        <Field label="Chipta turi" req error={errors.ticket}>
+          <select className={inputCls(errors.ticket)} value={form.ticket} disabled={!sem || !tickets.length} onChange={(e) => setForm({ ...form, ticket: e.target.value })}>
+            <option value="">{!sem ? 'Avval seminarni tanlang' : tickets.length ? '— Tanlang —' : 'Bu seminarda chipta yo‘q'}</option>
+            {tickets.map((t) => <option key={t}>{t}</option>)}
           </select>
         </Field>
         <div className="flex justify-end gap-2 pt-2">
