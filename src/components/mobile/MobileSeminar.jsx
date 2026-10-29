@@ -95,7 +95,7 @@ function SeminarView({ id }) {
   return (
     <div className="min-h-screen bg-[#f6f9fb] pb-[150px]">
       {/* Hero */}
-      <div className="relative h-[300px] overflow-hidden bg-[#0b4f55]">
+      <div className="relative h-[calc(300px+var(--safe-top))] overflow-hidden bg-[#0b4f55]">
         <img src={s.hero} alt="" className={`absolute inset-0 size-full object-cover ${s.id === 'implant-toj' ? '-scale-x-100' : ''}`} />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0b4f55]/10 via-[#0b4f55]/55 to-[#0b4f55]/95" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0b4f55]/60 to-transparent" />
