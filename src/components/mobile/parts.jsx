@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import MobileMenu, { MenuButton } from './MobileMenu'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, Bell, Check, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { useCart } from '../../cart'
@@ -16,9 +17,15 @@ export function BrandLogo({ className = 'h-8', to = '/' }) {
 export function MobileTopBar({ onSearch, onBell, search = true }) {
   const { items } = useCart()
   const navigate = useNavigate()
+  const [menu, setMenu] = useState(false)
+  const closeMenu = useCallback(() => setMenu(false), [])
   return (
     <header className="app-topbar sticky top-0 z-30 -mx-3.5 -mt-3 flex items-center justify-between bg-[#eef7f8]/95 px-3.5 pb-1 backdrop-blur">
-      <BrandLogo />
+      <div className="flex items-center gap-0.5">
+        <MenuButton onClick={() => setMenu(true)} />
+        <BrandLogo />
+      </div>
+      <MobileMenu open={menu} onClose={closeMenu} />
       <div className="flex items-center gap-1">
         {search && (
           <button type="button" onClick={onSearch} aria-label="Qidirish" className="grid size-10 place-items-center rounded-full bg-white/80 text-ink shadow-[0_1px_3px_rgb(11_31_58/0.08)]">
