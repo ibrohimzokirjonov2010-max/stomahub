@@ -9,10 +9,12 @@ import { num, som } from '../data'
 import { useOrg } from '../Shell'
 import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
 import { useMobile } from '../../useMobile'
-import { CATS, EMPTY_DETAILS, FORMAT_OF, STEPS, TEAL, TOPICS, box, placeTypeOf, readImage, uzDate, validateStep } from './wizardBits'
+import { CATS, EMPTY_DETAILS, FORMAT_OF, STEPS, TEAL, TOPICS, box, placeTypeOf, uploadImage, uzDate, validateStep } from './wizardBits'
 import WizardDetails from './WizardDetails'
 import { PromoModal, SpeakerModal, TicketModal } from './WizardModals'
 import WizardMobile from './WizardMobile'
+import { CertUpload, ContactField, FaqField, GalleryField, PosterField, VenueNotesField, cmeText, useCertBackground } from './WizardExtras'
+import { CertFrame } from './certArt'
 
 const TICKET_ICON = { ticket: Ticket, crown: Crown, cap: GraduationCap, star: Star, award: Award }
 
@@ -191,7 +193,7 @@ export default function Wizard() {
         if (err) { setFormError(err); notify(err); go(STEPS.indexOf(st), true); return }
       }
     }
-    const res = saveSeminar({ ...form, format: FORMAT_OF[form.placeType] || form.format, program: (form.program || []).filter((r) => r.time || r.title) }, { publish, id: editing || undefined })
+    const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: (form.program || []).filter((r) => r.time || r.title) }, { publish, id: editing || undefined })
     if (!res.ok) {
       setFormError(res.error)
       notify(res.error)
@@ -323,12 +325,12 @@ export default function Wizard() {
 
         <div className="mt-3 min-w-0 space-y-3 xl:col-start-2 xl:row-start-2 xl:mt-0">
           <section id="info" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n={num0('info')} title="Asosiy ma’lumotlar" sub="Seminar nomi, tavsifi, mavzusi va muqova rasmi" extra={(
+            <Head n={num0('info')} title="Asosiy ma’lumotlar" sub="Seminar nomi, tavsifi, poster va galereya" extra={(
               <button type="button" onClick={() => persist(false)} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Save className="size-3.5" /> Qoralama saqlash
               </button>
             )} />
-            <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_196px]">
+            <div className="mt-3">
               <div className="space-y-3">
                 <label className="block">
                   <Lab req>Seminar nomi</Lab>
@@ -342,27 +344,9 @@ export default function Wizard() {
                   </span>
                 </label>
               </div>
-              <div>
-                <Lab>Seminar muqova rasmi</Lab>
-                <div className="flex h-[132px] flex-col rounded-xl border border-dashed border-[#cfe0dc] bg-[#f7fbfb] p-2">
-                  <label className="grid flex-1 cursor-pointer place-items-center text-center">
-                    <span>
-                      <ImageIcon className="mx-auto size-5" style={{ color: TEAL }} />
-                      <span className="mt-1 block text-[12.5px] font-semibold text-[#143044]">Rasm yuklash</span>
-                      <span className="mt-0.5 block text-[10.5px] leading-tight text-[#8aa0a4]">JPG, PNG (min. 1920×1080)</span>
-                    </span>
-                    <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => readImage(e.target.files?.[0], (src) => set({ cover: src, thumbs: [src, ...form.thumbs].slice(0, 4) }), () => notify('Faqat JPG yoki PNG'))} />
-                  </label>
-                  <div className="mt-1.5 flex gap-1">
-                    {form.thumbs.slice(0, 4).map((src) => (
-                      <button key={src} type="button" onClick={() => set({ cover: src })} className={`h-8 flex-1 overflow-hidden rounded-md ${form.cover === src ? 'ring-2 ring-[var(--color-org-teal)]' : ''}`}>
-                        <img src={src} alt="" className="size-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
+            <div className="mt-3"><PosterField form={form} set={set} notify={notify} /></div>
+            <div className="mt-3"><GalleryField form={form} set={set} notify={notify} /></div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="block"><Lab req>Mavzu / Yo‘nalish</Lab><SelectBox value={form.topic} onChange={(v) => set({ topic: v })} options={TOPICS} /></label>
               <label className="block"><Lab>Bosh toifa</Lab><SelectBox value={form.category} onChange={(v) => set({ category: v })} options={CATS} /></label>
@@ -443,6 +427,7 @@ export default function Wizard() {
                       <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.address} onChange={(e) => set({ address: e.target.value })} />
                     </span>
                   </label>
+                  <VenueNotesField form={form} set={set} />
                     <MapPicker lat={form.lat} lng={form.lng} height={220} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { address: geo.street, ...(geo.city ? { city: geo.city } : {}) } : {}) })} />
                 </div>
                 <label className="relative block h-[108px] cursor-pointer overflow-hidden rounded-xl bg-[#f4fbfa]">
@@ -450,7 +435,7 @@ export default function Wizard() {
                   <span className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1 rounded-lg bg-white/92 py-1 text-[11px] font-semibold shadow-sm" style={{ color: TEAL }}>
                     <Camera className="size-3.5" /> Manzil rasmini yuklash
                   </span>
-                  <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => readImage(e.target.files?.[0], (src) => set({ placeImg: src }))} />
+                  <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0], 'seminars').then((src) => set({ placeImg: src }), (err) => notify(err?.message || 'Yuklab bo‘lmadi'))} />
                 </label>
               </div>
             )}
@@ -459,6 +444,8 @@ export default function Wizard() {
           <section id="details" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('details')} title="Dastur va tafsilotlar" sub="Dastur, CME, amaliy qism va shartlar — bo‘sh qoldirilgan bo‘limlar sahifada ko‘rinmaydi" />
             <div className="mt-3"><WizardDetails form={form} set={set} /></div>
+            <div className="mt-4 border-t border-[#f0f5f4] pt-3"><FaqField form={form} set={set} /></div>
+            <div className="mt-4 border-t border-[#f0f5f4] pt-3"><ContactField form={form} set={set} /></div>
           </section>
 
           <section id="tickets" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
@@ -524,7 +511,7 @@ export default function Wizard() {
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {form.speakers.map((s) => (
                 <article key={s.id} className="flex items-center gap-2 rounded-2xl border border-[#e7f0ee] p-2.5">
-                  <img src={s.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover" />
+                  <img src={s.avatar || s.photo} alt="" className="size-11 shrink-0 rounded-full object-cover" />
                   <div className="min-w-0 flex-1">
                     <p className="text-[12.5px] font-bold leading-tight">{s.name}</p>
                     <p className="text-[12px] leading-tight" style={{ color: TEAL }}>{s.role}</p>
@@ -561,13 +548,10 @@ export default function Wizard() {
               </div>
             )}
             {tabCert === 'upload' && (
-              <label className="mt-3 grid h-28 cursor-pointer place-items-center rounded-xl border border-dashed border-[#cfe0dc] bg-[#f7fbfb] text-[13px] text-[#5e787e]">
-                O‘z dizaynini yuklash
-                <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={() => notify('Dizayn yuklandi')} />
-              </label>
+              <CertUpload form={form} set={set} notify={notify} orgName={orgName} dateText={uzDate(form.start)} />
             )}
             {tabCert === 'info' && (
-              <p className="mt-3 text-[13px] leading-relaxed text-[#5e787e]">Sertifikatda ishtirokchi ismi, seminar nomi va sana avtomatik qo‘yiladi. Shablon: {CERTS.find((t) => t.id === form.template)?.name}.</p>
+              <p className="mt-3 text-[13px] leading-relaxed text-[#5e787e]">Sertifikatda ishtirokchi ismi, seminar nomi va sana avtomatik qo‘yiladi. {form.certDesign ? `Dizayn: o‘zingiz yuklagan fayl (${form.certDesign.name || 'fayl'}).` : `Shablon: ${CERTS.find((t) => t.id === form.template)?.name}.`}</p>
             )}
           </section>
 
@@ -615,7 +599,7 @@ export default function Wizard() {
               <li><b>{form.name}</b> · {form.topic} · {FORMAT_OF[form.placeType]}</li>
               <li>{uzDate(form.start)} {form.startTime} — {uzDate(form.end)} {form.endTime}</li>
               <li>{form.place}</li>
-              <li>{form.tickets.length} chipta · {form.speakers.length} ma’ruzachi · {CERTS.find((t) => t.id === form.template)?.name}</li>
+              <li>{form.tickets.length} chipta · {form.speakers.length} ma’ruzachi · {form.certDesign ? 'O‘z dizayni' : CERTS.find((t) => t.id === form.template)?.name}</li>
               {(form.cmeHours || form.cmePoints) && <li>CME: {[form.cmeHours && `${form.cmeHours} soat`, form.cmePoints && `${form.cmePoints} ball`].filter(Boolean).join(' · ')}</li>}
               <li>Dastur: {(form.program || []).filter((r) => r.title).length} qator{form.practice?.on ? ' · amaliy qism bor' : ''}{form.liveSurgery?.on ? ' · jonli jarrohlik' : ''}</li>
             </ul>
@@ -641,7 +625,7 @@ export default function Wizard() {
               <p className="text-[13px] font-bold">Oldindan ko‘rish</p>
               <button type="button" onClick={() => go(0)} className="text-[12px] font-semibold" style={{ color: TEAL }}>Tahrirlash</button>
             </div>
-            {form.cover ? <img src={form.cover} alt="" className="h-[92px] w-full rounded-lg object-cover" /> : <div className="grid h-[92px] place-items-center rounded-lg bg-[#f4fbfa] text-[12px] text-[#8aa0a4]">Muqova yo‘q</div>}
+            <PreviewExtras form={form} orgName={orgName} />
             <p className="mt-1.5 text-[13px] font-bold leading-snug">{form.name || 'Seminar nomi kiritilmagan'}</p>
             <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0" style={{ color: TEAL }} /> {uzDate(form.start)}, {form.startTime} – {form.endTime}</p>
             <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0" style={{ color: TEAL }} /> {form.place || 'Manzil kiritilmagan'}</p>
@@ -687,13 +671,6 @@ export default function Wizard() {
                 <p className="truncate text-[12px] font-semibold">{orgName || 'Tashkilot nomi kiritilmagan'}</p>
               </div>
             </div>
-            <div className="mt-1.5 flex items-center gap-2">
-              <Star className="size-3.5 fill-[#f5b400] text-[#f5b400]" />
-              <div className="leading-tight">
-                <p className="text-[10.5px] text-[#8aa0a4]">Reyting</p>
-                <p className="text-[12px] font-medium">Yangi seminar</p>
-              </div>
-            </div>
             <p className="mt-2 flex gap-1 text-[10.5px] leading-snug text-[#8aa0a4]">
               <Info className="mt-0.5 size-3.5 shrink-0" />
               Seminar e’lon qilingandan so‘ng, uni tahrirlash mumkin bo‘ladi.
@@ -711,6 +688,45 @@ export default function Wizard() {
       <TicketModal open={modal === 'ticket'} onClose={() => setModal(null)} onSave={(t) => { set({ tickets: [...form.tickets, t] }); setModal(null); notify('Chipta turi qo‘shildi') }} />
       <SpeakerModal open={modal === 'speaker'} onClose={() => setModal(null)} photo="" onSave={(s) => { set({ speakers: [...form.speakers, s] }); setModal(null); notify('Ma’ruzachi qo‘shildi') }} />
       <PromoModal open={modal === 'promo'} onClose={() => setModal(null)} onSave={(p) => { set({ promos: [...form.promos, p] }); setModal(null); notify('Promo-kod qo‘shildi') }} />
+    </div>
+  )
+}
+
+// O‘ng tomondagi “Oldindan ko‘rish”: sahifada chiqadigan barcha bloklar
+function PreviewExtras({ form, orgName }) {
+  const bg = useCertBackground(form.certDesign)
+  const faq = (form.faq || []).filter((r) => r.q && r.a)
+  const notes = String(form.venueNotes || '').split('\n').map((x) => x.trim()).filter(Boolean)
+  return (
+    <div data-shot="preview">
+      {form.cover
+        ? <img src={form.cover} alt="Poster" className="aspect-video w-full rounded-lg object-cover" />
+        : <div className="grid aspect-video place-items-center rounded-lg border border-dashed border-[#cfe0dc] bg-[#f4fbfa] text-center text-[12px] text-[#8aa0a4]">Poster yuklanmagan<br /><span className="text-[10.5px]">16:9 · 1920×1080</span></div>}
+      {(form.gallery || []).length > 0 && (
+        <div className="mt-1 grid grid-cols-4 gap-1">
+          {form.gallery.slice(0, 4).map((src) => <img key={src} src={src} alt="" className="h-9 w-full rounded object-cover" />)}
+        </div>
+      )}
+      <ul className="mt-1.5 space-y-0.5 text-[10.5px] text-[#5e787e]">
+        {(form.speakers || []).length > 0 && (
+          <li className="flex items-center gap-1">
+            <span className="flex -space-x-1.5">{form.speakers.slice(0, 4).map((s) => (s.avatar || s.photo) ? <img key={s.id} src={s.avatar || s.photo} alt="" className="size-5 rounded-full border border-white object-cover" /> : <span key={s.id} className="grid size-5 place-items-center rounded-full border border-white bg-[#e7f6f3] text-[9px] font-bold" style={{ color: TEAL }}>{(s.name || '?').slice(0, 1)}</span>)}</span>
+            {form.speakers.length} ma’ruzachi
+          </li>
+        )}
+        {cmeText(form) && <li>CME: {cmeText(form)}</li>}
+        {form.practice?.on && <li>Amaliy mashg‘ulot bor</li>}
+        {form.placeImg && <li className="flex items-center gap-1"><img src={form.placeImg} alt="" className="h-5 w-8 rounded object-cover" /> Manzil rasmi</li>}
+        {notes.length > 0 && <li>Manzil izohlari: {notes.length} ta</li>}
+        {faq.length > 0 && <li>Savol-javob: {faq.length} ta</li>}
+        {(form.contactPhone || form.contactTelegram) && <li>Aloqa: {[form.contactPhone, form.contactTelegram].filter(Boolean).join(' · ')}</li>}
+      </ul>
+      {form.certDesign && bg && (
+        <div className="mt-1.5 flex items-center gap-2">
+          <CertFrame width={44} design={bg} name="Aliyeva" course={form.name || 'Seminar'} date="" org={orgName} />
+          <span className="text-[10.5px] text-[#5e787e]">Sertifikat: o‘z dizayni</span>
+        </div>
+      )}
     </div>
   )
 }

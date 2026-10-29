@@ -156,7 +156,9 @@ export function buildSeminarPage(s) {
       ? (s.program || []).map((p) => Array.isArray(p) ? p : [p?.time || '', p?.title || p?.text || '', p?.sub || '']).filter((p) => p[1])
       : scheduleFor(s),
     gear: ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
-    venue: { name: s.place, address: `${s.city}`, image: pic('hotel'), map: `https://maps.google.com/?q=${encodeURIComponent((s.place || '') + ' ' + (s.city || ''))}` },
+    venue: s.organizer
+      ? { name: s.place, address: [s.address, s.city].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', '), image: s.placeImg || '', notes: s.venueNotes || [], online: !!s.online, map: `https://maps.google.com/?q=${encodeURIComponent([s.address || s.place, s.city].filter(Boolean).join(' '))}` }
+      : { name: s.place, address: `${s.city}`, image: pic('hotel'), notes: [], map: `https://maps.google.com/?q=${encodeURIComponent((s.place || '') + ' ' + (s.city || ''))}` },
     seatsBanner: s.left,
     plans: s.organizer && Array.isArray(s.tickets) && s.tickets.length
       ? s.tickets.filter((t) => t.price).map((t) => ({
@@ -172,7 +174,12 @@ export function buildSeminarPage(s) {
         }))
       : plansFor(s),
     review: null,
-    similar: seminars.filter((x) => x.id !== s.id).slice(0, 2).map((x) => ({
+    speakersAll: s.organizer ? (s.speakers || []) : [],
+    faqList: s.organizer ? (s.faq || []) : null,
+    galleryList: s.organizer ? (s.gallery || []) : null,
+    contact: s.organizer ? { phone: s.contactPhone || '', telegram: s.contactTelegram || '' } : null,
+    // Tashkilotchi seminarlari uchun o‘xshash seminarlar sahifada haqiqiy katalogdan olinadi
+    similar: s.organizer ? [] : seminars.filter((x) => x.id !== s.id).slice(0, 2).map((x) => ({
       id: x.id, title: x.title, date: `${x.day}-${x.mon === 'OKT' ? 'oktabr' : 'noyabr'} 2026`, city: x.city, price: x.price, image: x.image,
     })),
   }
@@ -241,7 +248,7 @@ export function seminarView(record) {
     timeLabel: `${page.time}${card.days > 1 ? ` (${card.days} kun)` : ''}`,
     program,
     includes: page.organizer ? (page.includesList?.length ? page.includesList : [...new Set(page.plans.flatMap((p) => p.perks || []))]) : null,
-    speaker: { ...page.speaker, bio: page.speaker.lines.join('. ') + '.' },
+    speaker: { ...page.speaker, ...(page.organizer ? { avatar: page.speakersAll?.[0]?.avatar || '' } : {}), bio: page.organizer ? (page.speakersAll?.[0]?.bio || (page.speaker.lines.length ? page.speaker.lines.join('. ') + '.' : '')) : page.speaker.lines.join('. ') + '.' },
   }
 }
 

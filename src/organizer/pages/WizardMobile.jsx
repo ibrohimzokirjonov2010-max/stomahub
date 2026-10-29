@@ -4,11 +4,12 @@ import {
   Calendar, ChevronDown, ChevronRight, Clock, Copy, FileText, LayoutGrid, MapPin, Monitor, Percent, Tag, Ticket, Upload, User, Users, Wallet, X,
 } from 'lucide-react'
 import { ToothIcon } from '../../components/icons'
-import { EMPTY_DETAILS, FORMAT_OF, TEAL_MOBILE, TOPICS, placeTypeOf, readImage, uzDate, validateStep } from './wizardBits'
+import { EMPTY_DETAILS, FORMAT_OF, TEAL_MOBILE, TOPICS, placeTypeOf, pickExtras, uploadImage, uzDate, validateStep } from './wizardBits'
 import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
 import WizardDetails from './WizardDetails'
 import { SpeakerExtraFields, speakerPayload } from './WizardModals'
 import MapPicker from '../../components/MapPicker'
+import { CertUpload, ContactField, FaqField, GalleryField, PlaceImgField, PosterField, VenueNotesField } from './WizardExtras'
 
 const GREEN = TEAL_MOBILE
 
@@ -138,6 +139,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         program: src.program || [], learn: src.learn || '', audience: src.audience || '', includes: src.includes || '',
         cmeHours: src.cmeHours ?? '', cmePoints: src.cmePoints ?? '', practice: src.practice || EMPTY_DETAILS.practice,
         refundPolicy: src.refundPolicy || '', liveSurgery: src.liveSurgery || EMPTY_DETAILS.liveSurgery,
+        ...pickExtras(src), placeImg: src.placeImg || '',
       } : {}),
       placeType: src?.placeType || placeTypeOf(src?.format || s.formatDetail),
       name: src?.name ?? s.title,
@@ -173,7 +175,8 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     place: form.place, address: form.place, lat: form.lat ?? null, lng: form.lng ?? null,
     program: (form.program || []).filter((r) => r.time || r.title), learn: form.learn, audience: form.audience, includes: form.includes,
     cmeHours: form.cmeHours, cmePoints: form.cmePoints, practice: form.practice, refundPolicy: form.refundPolicy, liveSurgery: form.liveSurgery,
-    tickets, speakers, template: base?.template || 'teal', promos,
+    ...pickExtras(form), placeImg: form.placeImg || '', orgName: hub.settings?.orgName || base?.orgName || '',
+    tickets, speakers, template: form.certDesign ? 'custom' : (base?.template && base.template !== 'custom' ? base.template : 'teal'), promos,
   })
   const STEP_IDS = ['info', 'details', 'tickets', 'speakers', 'cert', 'marketing', 'promo', 'review']
   const next = (to) => {
@@ -292,6 +295,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           </div>
           <Field label={form.placeType === 'online' ? 'Webinar platformasi yoki havolasi' : 'Zal manzili'} icon={form.placeType === 'online' ? Monitor : MapPin} value={form.place} onChange={(v) => set({ place: v })} />
           {form.placeType !== 'online' && <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) })} />}
+          {form.placeType !== 'online' && <PlaceImgField form={form} set={set} notify={notify} />}
           <Field label="Minimal ishtirokchi soni" icon={Users} value={form.min} onChange={(v) => set({ min: v.replace(/\D/g, '') })} />
           <label className="block">
             <Lab>Olib kelish kerak narsalar</Lab>
@@ -299,28 +303,8 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
               <textarea value={form.bring} onChange={(e) => set({ bring: e.target.value })} rows={3} className="w-full resize-none bg-transparent text-[13.5px] leading-snug outline-none" />
             </Shell>
           </label>
-          <div>
-            <Lab>Seminar rasmi</Lab>
-            <div className="flex gap-3">
-              <div className="relative h-[96px] w-[118px] shrink-0 overflow-hidden rounded-2xl bg-[#f3fafa]">
-                {form.cover && <img src={form.cover} alt="" className="size-full object-cover" />}
-                {form.cover && (
-                  <button type="button" aria-label="Rasmni olib tashlash" onClick={() => set({ cover: '' })} className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-white text-[#1c2433] shadow">
-                    <X className="size-3.5" />
-                  </button>
-                )}
-              </div>
-              <label className="grid h-[96px] flex-1 cursor-pointer place-items-center rounded-2xl border border-dashed border-[#b7e0db] bg-[#f3fafa] px-2 text-center">
-                <span>
-                  <Upload className="mx-auto size-5" style={{ color: GREEN }} />
-                  <span className="mt-1 block text-[13.5px] font-semibold" style={{ color: GREEN }}>Rasm yuklash</span>
-                  <span className="mt-0.5 block text-[11px] text-[#8b97a0]">JPEG yoki PNG</span>
-                  <span className="block text-[11px] text-[#8b97a0]">Tavsiya: 1080 x 1350</span>
-                </span>
-                <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => readImage(e.target.files?.[0], (src) => set({ cover: src }), () => notify('Faqat JPG yoki PNG'))} />
-              </label>
-            </div>
-          </div>
+          <PosterField form={form} set={set} notify={notify} compact />
+          <GalleryField form={form} set={set} notify={notify} />
           <Next onClick={() => next(1)}>Keyingi</Next>
         </div>
       )}
@@ -330,6 +314,9 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           <h2 className="text-[18px] font-bold">Dastur va tafsilotlar</h2>
           <p className="mb-3 mt-0.5 text-[13px] text-[#8b97a0]">Bo‘sh qoldirilgan bo‘limlar seminar sahifasida ko‘rinmaydi.</p>
           <WizardDetails form={form} set={set} compact />
+          {form.placeType !== 'online' && <div className="mt-4"><VenueNotesField form={form} set={set} /></div>}
+          <div className="mt-4"><FaqField form={form} set={set} /></div>
+          <div className="mt-4"><ContactField form={form} set={set} compact /></div>
           <Next onClick={() => next(2)}>Keyingi</Next>
           <button type="button" onClick={() => setStep(0)} className="mt-2 h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
         </div>
@@ -358,7 +345,13 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         />
       )}
       {step === 4 && (
-        <StepList title="Sertifikat" sub="Sertifikat shablonini tanlang." action="" onNext={() => next(5)} onBack={() => setStep(3)} rows={[{ name: 'Klassik (Teal)', meta: [form.cmeHours && `${form.cmeHours} soat`, form.cmePoints && `${form.cmePoints} CME ball`].filter(Boolean).join(' · ') || 'Tayyor shablon' }]} />
+        <div className="mt-4">
+          <h2 className="text-[18px] font-bold">Sertifikat</h2>
+          <p className="mt-0.5 text-[13px] text-[#8b97a0]">Tayyor shablon (Klassik, teal) ishlatiladi yoki o‘z dizayningizni yuklang.</p>
+          <CertUpload form={form} set={set} notify={notify} orgName={hub.settings?.orgName || ''} dateText={uzDate(form.date, 'words')} />
+          <Next onClick={() => next(5)}>Keyingi</Next>
+          <button type="button" onClick={() => setStep(3)} className="mt-2 h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
+        </div>
       )}
       {step === 5 && (
         <StepList title="Marketing" sub="Seminarga ko‘proq ishtirokchi jalb qiling." action="" onNext={() => next(6)} onBack={() => setStep(4)} rows={[{ name: 'Havolani ulashish', meta: 'Seminar e’lon qilingach Telegram orqali ulashing' }]} />
@@ -423,7 +416,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
                 <span className="block text-[11px] text-[#8b97a0]">JPEG yoki PNG</span>
                 <span className="block text-[11px] text-[#8b97a0]">Tavsiya: 500 x 500</span>
               </span>
-              <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => readImage(e.target.files?.[0], (src) => setSpeaker({ ...speaker, avatar: src }))} />
+              <input type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f && /^image\/(png|jpeg)$/.test(f.type)) uploadImage(f, 'speakers').then((src) => setSpeaker((x) => ({ ...x, avatar: src })), (err) => notify(err?.message || 'Yuklab bo‘lmadi')) }} />
             </label>
           </div>
         </div>
