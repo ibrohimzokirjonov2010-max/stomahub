@@ -45,7 +45,7 @@ export function StatCards({ stats }) {
     { icon: ShoppingCart, label: 'Bugungi buyurtmalar', value: stats.today, link: '/sotuvchi/buyurtmalar', linkText: 'Barchasini ko‘rish', center: true },
     { icon: FileText, label: 'Yangi buyurtmalar', value: stats.fresh, link: '/sotuvchi/buyurtmalar?holat=yangi', linkText: 'Barchasini ko‘rish', center: true },
     { icon: Wallet, label: 'Hamyon balansi', value: som(stats.balance), sub: 'Mavjud mablag‘', link: '/sotuvchi/hamyon', linkText: 'Hamyonni ochish' },
-    { icon: Clock, label: 'Kutilayotgan to‘lov', value: som(stats.pending), sub: 'Komissiya: 12% (naqd savdo)', link: '/sotuvchi/hamyon', linkText: 'Batafsil' },
+    { icon: Clock, label: 'Kutilayotgan to‘lov', value: som(stats.pending), sub: 'Komissiya 12% — faqat yetkazilganda', link: '/sotuvchi/hamyon', linkText: 'Batafsil' },
   ]
   return (
     <div className="grid grid-cols-4 gap-4">

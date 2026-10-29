@@ -106,7 +106,7 @@ export default function OrderDrawer({ orderId, onClose }) {
             </div>
             <div className="mt-3 overflow-hidden rounded-xl border border-[#E6EEF0]">
               <Row label="Mahsulotlar summasi" value={som(sub)} />
-              <Row label="StomaHub komissiyasi (12%)" value={som(commission)} />
+              <Row label="StomaHub komissiyasi (12%)" value={order.status === 'yetkazildi' ? som(commission) : 'Kutilmoqda'} />
               <div className="flex items-center justify-between bg-[#F0FDFA] px-3.5 py-3 text-[#115E59]"><span className="text-[14px] font-semibold">Sizga tushadi</span><span className="text-[20px] font-extrabold">{som(payout)}</span></div>
             </div>
             <div className="mt-3 flex items-center gap-3 md:hidden">
