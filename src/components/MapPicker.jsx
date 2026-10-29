@@ -29,7 +29,8 @@ export function normalizeGeo(a) {
   const TASH = ['Yunusobod', 'Chilonzor', 'Mirzo Ulug‘bek', 'Yakkasaroy', 'Mirobod', 'Shayxontohur', 'Sergeli', 'Uchtepa', 'Yashnobod', 'Olmazor', 'Bektemir']
   const city = pick(CITY_ALIAS, [notMahalla(a.city), a.state, notMahalla(a.town), a.region]) || iso || (TASH.includes(district) ? 'Toshkent' : '') || translit(notMahalla(a.city) || notMahalla(a.town) || a.state || '').replace(/\s*(shahri|viloyati)$/i, '')
   const road = translit(a.road || a.pedestrian || a.footway || '')
-  const street = [road, a.house_number ? `${translit(a.house_number)}-uy` : ''].filter(Boolean).join(', ')
+  const place = translit(a.amenity || a.building || a.shop || a.office || a.neighbourhood || a.quarter || a.residential || a.hamlet || a.village || a.suburb || '')
+  const street = [road || place, a.house_number ? `${translit(a.house_number)}-uy` : ''].filter(Boolean).join(', ')
   return { city, district, street }
 }
 
@@ -42,7 +43,10 @@ export async function reverseGeocode(lat, lng) {
   if (!res.ok) throw new Error('geocode')
   const j = await res.json()
   const n = normalizeGeo(j.address || {})
-  return { ...n, display: j.display_name || '' }
+  const display = j.display_name || ''
+  // Fallback so "Aniq manzil" is never left empty when OSM has no road name here.
+  const short = display.split(',').map((x) => x.trim()).filter((x) => x && !/^\d{5,6}$/.test(x)).slice(0, 3).join(', ')
+  return { ...n, street: n.street || translit(short) || `${(+lat).toFixed(5)}, ${(+lng).toFixed(5)}`, display }
 }
 
 // Orders store coordinates as a trailing token in the address text until orders.lat/lng columns exist.
@@ -80,13 +84,16 @@ export function MapPreview({ lat, lng, className = '' }) {
 }
 
 // Interactive picker: draggable pin, tap to move, "Joylashuvim" geolocation, reverse-geocode on change.
-export default function MapPicker({ lat, lng, onChange, height = 200 }) {
+export default function MapPicker({ lat, lng, onChange, onBusy, height = 200 }) {
   const box = useRef(null)
   const map = useRef(null)
   const pin = useRef(null)
   const cb = useRef(onChange)
   cb.current = onChange
-  const [busy, setBusy] = useState('')
+  const [busy, setBusyRaw] = useState('')
+  const busyCb = useRef(onBusy)
+  busyCb.current = onBusy
+  const setBusy = (v) => { setBusyRaw(v); busyCb.current?.(/aniqlanmoqda/.test(v)) }
 
   const emit = async (p) => {
     const pos = { lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6) }
@@ -97,6 +104,7 @@ export default function MapPicker({ lat, lng, onChange, height = 200 }) {
 
   useEffect(() => {
     let dead = false
+    let ro = null
     import('leaflet').then(({ default: L }) => {
       if (dead || !box.current || map.current) return
       const start = lat != null ? [lat, lng] : TASHKENT
@@ -107,9 +115,11 @@ export default function MapPicker({ lat, lng, onChange, height = 200 }) {
       mk.on('dragend', () => emit(mk.getLatLng()))
       m.on('click', (e) => { mk.setLatLng(e.latlng); emit(e.latlng) })
       map.current = m; pin.current = mk
+      // Sheets animate/resize (iOS dvh, keyboard): keep Leaflet's size in sync or taps land in the wrong place.
       setTimeout(() => m.invalidateSize(), 250)
-    })
-    return () => { dead = true; map.current?.remove(); map.current = null }
+      if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(() => m.invalidateSize()); ro.observe(box.current) }
+    }).catch(() => setBusy('Xaritani yuklab bo‘lmadi, internetni tekshiring'))
+    return () => { dead = true; ro?.disconnect(); map.current?.remove(); map.current = null }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const locate = () => {
@@ -125,7 +135,7 @@ export default function MapPicker({ lat, lng, onChange, height = 200 }) {
   return (
     <div className="mt-3">
       <div className="relative overflow-hidden rounded-xl border border-line" style={{ height }}>
-        <div ref={box} className="size-full" style={{ touchAction: 'none' }} />
+        <div ref={box} className="size-full" style={{ touchAction: 'none', overscrollBehavior: 'contain', WebkitUserSelect: 'none' }} />
         <button type="button" onClick={locate} className="absolute bottom-2 right-2 z-[500] flex h-9 items-center gap-1.5 rounded-full bg-white px-3 text-[12.5px] font-semibold text-[#0b6d73] shadow-card">
           <LocateFixed className="size-4" /> Joylashuvim
         </button>

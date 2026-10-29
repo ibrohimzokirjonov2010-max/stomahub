@@ -12,7 +12,7 @@ import { createCharge, isDemoPayments } from '../../payments/paymentService'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
-import MapPicker, { MapPreview, withGeo } from '../MapPicker'
+import MapPicker, { MapPreview, withGeo, reverseGeocode } from '../MapPicker'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
 import { PROMOS } from './MobileCart'
@@ -154,6 +154,20 @@ export default function MobileCheckout() {
 
   const patch = (k, v) => setForm((f) => ({ ...f, [k]: v, ...(k === 'address' || k === 'district' || k === 'city' ? { saved: '' } : {}) }))
 
+  // Sticky "Davom etish" bar: reserve its real height + bottom offset (incl. safe-area-inset-bottom) so nothing hides under it.
+  const barRef = useRef(null)
+  const [barH, setBarH] = useState(0)
+  useEffect(() => {
+    const el = barRef.current
+    if (!el) return undefined
+    const measure = () => { const r = el.getBoundingClientRect(); setBarH(Math.max(0, Math.round(window.innerHeight - r.top))) }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    ro?.observe(el)
+    window.addEventListener('resize', measure)
+    const t = setTimeout(measure, 300)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); clearTimeout(t) }
+  }, [step, placed, cartReady, items.length])
   if (!cartReady) {
     return (
       <div className={`${page} grid min-h-screen place-items-center text-[14px] font-semibold text-[#0b8a84]`}>
@@ -229,7 +243,9 @@ export default function MobileCheckout() {
   const subtitle = ['Mahsulotlaringizni rasmiylashtirish', 'To‘lov usulini tanlang', 'Ma’lumotlarni tekshirib, tasdiqlang'][step - 1]
 
   return (
-    <div className={`${page} ${step === 3 ? 'pb-[170px]' : 'pb-[158px]'}`}>
+    <div className={page} style={{ paddingBottom: `calc(${barH || (step === 3 ? 170 : 158)}px + 16px)` }}>
+      {/* iOS standalone: opaque strip under the status bar so the title never scrolls beneath the clock. */}
+      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[71] bg-[#eef8f7]" style={{ height: 'env(safe-area-inset-top, 0px)' }} />
       <div className="px-3.5 pt-3">
         <HubTopBar onBell={() => setToast('Yangi bildirishnomalar yo‘q')} />
         <h1 className="mt-3 text-[25px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">Buyurtma berish</h1>
@@ -493,7 +509,7 @@ export default function MobileCheckout() {
         )}
       </div>
 
-      <div className={`fixed inset-x-0 bottom-[62px] z-30 px-3.5 pb-2 ${step === 3 ? 'rounded-t-2xl border-t border-line bg-white pt-3 shadow-[0_-6px_18px_rgb(13_42_74/0.07)]' : 'bg-gradient-to-t from-[#f6faf9] via-[#f6faf9] to-[#f6faf9]/0 pt-4'}`}>
+      <div ref={barRef} className={`fixed inset-x-0 bottom-[62px] z-30 px-3.5 pb-2 ${step === 3 ? 'rounded-t-2xl border-t border-line bg-white pt-3 shadow-[0_-6px_18px_rgb(13_42_74/0.07)]' : 'bg-gradient-to-t from-[#f6faf9] via-[#f6faf9] to-[#f6faf9]/0 pt-4'}`}>
         {step === 1 && (
           <>
             <button type="button" onClick={next1} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.99]">Davom etish <ArrowRight className="size-[18px]" /></button>
@@ -534,7 +550,7 @@ export default function MobileCheckout() {
             setForm((f) => {
               const city = Object.keys(CITIES).find((c) => p.geo?.city && (p.geo.city.includes(c) || c.includes(p.geo.city.split(' ')[0]))) || f.city
               const d = (CITIES[city] || []).find((x) => p.geo?.district && p.geo.district.toLowerCase().startsWith(x.toLowerCase().slice(0, 5)))
-              return { ...f, city, district: d || f.district, address: p.geo?.street || f.address, lat: p.lat, lng: p.lng, saved: '' }
+              return { ...f, city, district: d || f.district, address: p.geo?.street || f.address || `${p.lat}, ${p.lng}`, lat: p.lat, lng: p.lng, saved: '' }
             })
             setSheet(null); setToast('Manzil xaritadan tanlandi')
           }}
@@ -836,9 +852,19 @@ function InfoRow({ icon: Icon, k, v }) {
 
 function GeoSheet({ lat, lng, onClose, onPick }) {
   const [p, setP] = useState(lat != null ? { lat, lng, geo: null } : null)
+  const [busy, setBusy] = useState(false)
+  const [saving, setSaving] = useState(false)
+  // If the user confirms before reverse-geocoding finished, resolve the address first.
+  const choose = async () => {
+    if (!p) return
+    let geo = p.geo
+    if (!geo?.street) { setSaving(true); try { geo = await reverseGeocode(p.lat, p.lng) } catch { geo = null } setSaving(false) }
+    onPick({ ...p, geo })
+  }
   return (
-    <BottomSheet title="Xaritadan tanlash" onClose={onClose} footer={<button type="button" disabled={!p} onClick={() => onPick(p)} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-50">Shu manzilni tanlash</button>}>
-      <MapPicker lat={p?.lat ?? lat} lng={p?.lng ?? lng} height={320} onChange={(v) => setP((old) => ({ ...v, geo: v.geo || old?.geo || null }))} />
+    <BottomSheet title="Xaritadan tanlash" onClose={onClose} footer={<button type="button" disabled={!p || saving} onClick={choose} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-50">{saving || busy ? 'Manzil aniqlanmoqda...' : 'Shu manzilni tanlash'}</button>}>
+      <p className="mt-1 text-[12px] text-ink-2">Xaritaga bosing yoki pinni suring — manzil avtomatik to‘ldiriladi.</p>
+      <MapPicker lat={p?.lat ?? lat} lng={p?.lng ?? lng} height="min(52dvh, 420px)" onBusy={setBusy} onChange={(v) => setP((old) => ({ ...v, geo: v.geo || (old && old.lat === v.lat && old.lng === v.lng ? old.geo : null) }))} />
       {p?.geo?.display && <p className="mt-1 text-[12px] text-ink-2">{p.geo.display}</p>}
     </BottomSheet>
   )
