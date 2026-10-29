@@ -65,6 +65,8 @@ export async function refreshSession() {
 export async function signOut() {
   if (!supabase) return
   await supabase.auth.signOut()
+  try { localStorage.removeItem('stomahub-profile') } catch { /* ignore */ }
+  try { sessionStorage.clear() } catch { /* ignore */ }
   commit({ status: 'anon', user: null, profile: null, error: '' })
 }
 

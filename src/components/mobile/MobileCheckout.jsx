@@ -93,7 +93,7 @@ export default function MobileCheckout() {
       address: picked?.address || '',
       saved: picked?.id || '',
     }))
-  }, [profile.accountLive])
+  }, [profile.accountLive, profile.ownerUid, profile.name, profile.phone])
   const [form, setForm] = useState(() => {
     const me = profile.accountLive ? { name: profile.name, phone: profile.phone } : { name: '', phone: '' }
     const s = profile.accountLive ? (SAVED.find((a) => a.id === profile.defaultAddr) || SAVED[0]) : null

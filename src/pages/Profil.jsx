@@ -300,12 +300,12 @@ function Board({ initial }) {
       <section className={`${card} flex flex-col gap-4 p-5 lg:flex-row lg:items-center`}>
         <div className="flex min-w-0 flex-1 items-center gap-4">
           <button type="button" onClick={() => fileRef.current?.click()} className="relative shrink-0" aria-label="Rasm yuklash" disabled={busy}>
-            <img src={avatar || '/images/avatar.jpg'} alt="" className="size-[88px] rounded-full object-cover ring-4 ring-white shadow-[0_4px_14px_rgb(15_30_50/0.12)]" />
+            {avatar ? <img src={avatar} alt="" className="size-[88px] rounded-full object-cover ring-4 ring-white shadow-[0_4px_14px_rgb(15_30_50/0.12)]" /> : <span className="grid size-[88px] place-items-center rounded-full bg-[#e8eef5] text-3xl font-bold text-[#8aa0b8] ring-4 ring-white">{(name || '?').trim().charAt(0).toUpperCase()}</span>}
             <span className="absolute bottom-0.5 right-0.5 grid size-8 place-items-center rounded-full bg-[#0F766E] text-white shadow"><Camera className="size-3.5" /></span>
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-[22px] font-extrabold text-[#12263a]">{name || 'Ism kiritilmagan'}</h1>
+              <h1 className="truncate text-[22px] font-extrabold text-[#12263a]">{name || 'Ismingizni kiriting'}</h1>
               {profile.verified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#e8f1fc] px-2.5 py-0.5 text-[11.5px] font-semibold text-[#1f6fd1]">
                   <BadgeCheck className="size-3.5 fill-[#1f6fd1] text-white" /> Tasdiqlangan shifokor
