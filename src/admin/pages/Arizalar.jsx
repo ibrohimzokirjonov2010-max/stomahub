@@ -16,10 +16,14 @@ const dt = (s) => (s ? new Date(s).toLocaleString('uz-UZ', { timeZone: 'Asia/Tas
 const Pill = ({ s }) => <span className={`inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold ${ST[s]?.[1] || ''}`}>{ST[s]?.[0] || s}</span>
 
 /** Seller and organizer (tashkilotchi) applications; type tab is in the URL (?tur=tashkilotchi). */
-export default function Arizalar({ kind: fixed }) {
+export default function Arizalar({ kind: fixed, embedded = false }) {
   const [params, setParams] = useSearchParams()
   const kind = fixed || (params.get('tur') === 'tashkilotchi' ? 'organizer' : 'seller')
-  const setKind = (k) => setParams(k === 'organizer' ? { tur: 'tashkilotchi' } : {}, { replace: true })
+  const setKind = (k) => {
+    const next = new URLSearchParams(params)
+    if (k === 'organizer') next.set('tur', 'tashkilotchi'); else next.delete('tur')
+    setParams(next, { replace: true })
+  }
   const [status, setStatus] = useState('pending')
   const [state, setState] = useState({ loading: true, rows: [], error: '' })
   const [open, setOpen] = useState(null)
@@ -32,7 +36,7 @@ export default function Arizalar({ kind: fixed }) {
 
   return (
     <div data-testid="admin-arizalar">
-      <PageHeader title="Arizalar" subtitle="Hujjatlarni tekshiring, tasdiqlang yoki sababini yozib rad eting" />
+      {!embedded && <PageHeader title="Arizalar" subtitle="Hujjatlarni tekshiring, tasdiqlang yoki sababini yozib rad eting" />}
       {!fixed && (
         <div data-testid="kind-tabs" className="mb-3 inline-flex rounded-xl border border-[#E6EEF0] bg-white p-1">
           {[['seller', 'Sotuvchilar'], ['organizer', 'Tashkilotchilar']].map(([k, l]) => (

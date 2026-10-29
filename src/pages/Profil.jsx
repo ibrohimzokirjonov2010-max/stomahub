@@ -14,8 +14,8 @@ import {
   ADDRESS_KINDS, COURSES, addr, allOrders, courseDone, flushProfile, profileStore, useProfile,
 } from '../profileStore'
 import { demoBadgeProps, isDemoPayments, linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
-import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../sessionStore'
 import { supabase } from '../supabaseClient'
+import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../sessionStore'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Ortoped stomatolog', 'Stomatolog', 'Terapevt', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba', 'Klinika egasi']
@@ -537,6 +537,7 @@ function PersonalCard({ draft, editing, setEditing, setForm, onSave, busy }) {
         <label className="block text-[12.5px] font-semibold text-[#12263a]">Litsenziya raqami
           <input disabled={!editing} className={field} value={draft.license} onChange={set('license')} placeholder="012345" />
         </label>
+        <DoctorVerify license={draft.license} />
         <label className="block text-[12.5px] font-semibold text-[#12263a] sm:col-span-2">Men haqimda
           <textarea disabled={!editing} rows={3} className={`${field} h-auto py-2`} value={draft.about} onChange={set('about')} placeholder="Qisqa bio…" />
         </label>
@@ -1000,6 +1001,48 @@ function SecurityBlock() {
         </div>
       </div>
     </section>
+  )
+}
+
+const LIC = {
+  none: ['Tasdiqlanmagan', '#5C6E80'], pending: ['Tekshiruvda', '#B45309'],
+  approved: ['Tasdiqlangan shifokor', '#0F766E'], rejected: ['Rad etilgan', '#b42318'],
+}
+/** Doctor licence verification: submit for admin review; approved doctors can buy restricted (rx) items. */
+function DoctorVerify({ license }) {
+  const session = useSession()
+  const uid = session.user?.id
+  const [st, setSt] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  useEffect(() => {
+    if (!uid || !supabase) return
+    supabase.from('profiles').select('license_status,doctor_verified,license_reject_reason').eq('id', uid).maybeSingle()
+      .then(({ data, error }) => setSt(error ? { unavailable: true } : (data || {})))
+  }, [uid])
+  if (!uid || !st) return null
+  if (st.unavailable) return null // migration 0031 not applied yet
+  const status = st.doctor_verified ? 'approved' : (st.license_status || 'none')
+  async function submit() {
+    setMsg('')
+    if (!license?.trim()) { setMsg('Avval litsenziya raqamini kiriting va saqlang.'); return }
+    setBusy(true)
+    const { error } = await supabase.rpc('submit_doctor_license', { p_license: license.trim(), p_doc: null })
+    setBusy(false)
+    if (error) setMsg(error.message); else { setSt({ ...st, license_status: 'pending' }); setMsg('Ariza yuborildi — admin tekshiradi.') }
+  }
+  return (
+    <div data-testid="doctor-verify" className="rounded-xl border border-[#E6EEF0] bg-[#F8FBFC] p-3 text-[12.5px] sm:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-semibold text-[#12263a]">Shifokor sifatida tasdiqlash: <span style={{ color: LIC[status]?.[1] }}>{LIC[status]?.[0]}</span></span>
+        {(status === 'none' || status === 'rejected') && (
+          <button type="button" disabled={busy} onClick={submit} className="h-9 rounded-xl bg-[#0F766E] px-4 font-semibold text-white disabled:opacity-60">Tekshiruvga yuborish</button>
+        )}
+      </div>
+      <p className="mt-1 text-[#5C6E80]">Faqat retsept bilan sotiladigan dori va materiallarni tasdiqlangan shifokorlar buyurtma qila oladi.</p>
+      {status === 'rejected' && st.license_reject_reason && <p className="mt-1 text-[#b42318]">Sabab: {st.license_reject_reason}</p>}
+      {msg && <p role="status" className="mt-1">{msg}</p>}
+    </div>
   )
 }
 

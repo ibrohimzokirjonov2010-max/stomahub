@@ -53,7 +53,7 @@ export default function Elonlar() {
 
   return (
     <div>
-      <PageHeader title="E’lonlar" subtitle="Sotuvchilarning reklama e’lonlari va kampaniyalari" />
+      <PageHeader title="Reklama kampaniyalari" subtitle="Sotuvchilarning pullik reklama kampaniyalari" />
       <MigrateBanner show={needsMigration} />
       {msg && <p role="status" className="mt-3 rounded-xl bg-[#eef8f6] px-3 py-2 text-[13px]">{msg}</p>}
       <FilterTabs tabs={tabs} value={tab} onChange={(v) => { setTab(v); setPage(1) }} />

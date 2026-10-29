@@ -7,10 +7,12 @@ import {
   Avatar, Btn, DataTable, Empty, FilterTabs, MigrateBanner, MobileCards,
   PageHeader, Pagination, RowActions, SearchRow, StatusDot, TableCard,
 } from '../components/ui'
+import ConfirmReason from '../components/ConfirmReason'
 
 const STATUS = {
   approved: { label: 'Tasdiqlangan', tone: 'teal' },
   pending: { label: 'Kutilmoqda', tone: 'gray' },
+  registered: { label: 'Ro‘yxatdan o‘tgan (ariza yo‘q)', tone: 'gray' },
   rejected: { label: 'Rad etilgan', tone: 'gray' },
   blocked: { label: 'Bloklangan', tone: 'red' },
   none: { label: '—', tone: 'gray' },
@@ -25,6 +27,7 @@ export default function Tashkilotchilar() {
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
+  const [blockRow, setBlockRow] = useState(null)
 
   const { loading, error, needsMigration, rows, total, counts, reload } = useAdminList(
     () => listOrganizers({ tab, q, page, pageSize }),
@@ -34,7 +37,9 @@ export default function Tashkilotchilar() {
     { id: 'all', label: 'Barchasi', count: counts.all },
     { id: 'approved', label: 'Tasdiqlangan', count: counts.approved },
     { id: 'pending', label: 'Kutilmoqda', count: counts.pending },
+    { id: 'registered', label: 'Ro‘yxatdan o‘tgan', count: counts.registered },
     { id: 'rejected', label: 'Rad etilgan', count: counts.rejected },
+    { id: 'blocked', label: 'Bloklangan', count: counts.blocked },
   ], [counts])
 
   async function open(id) {
@@ -57,9 +62,12 @@ export default function Tashkilotchilar() {
 
   return (
     <div>
-      <PageHeader title="Seminar tashkilotchilari" subtitle="Platformadagi barcha seminar tashkilotchilari"
-        actions={<Btn tone="primary"><Plus className="size-4" /> Yangi tashkilotchi</Btn>} />
+      <PageHeader title="Seminar tashkilotchilari" subtitle="Platformadagi barcha seminar tashkilotchilari" />
       <MigrateBanner show={needsMigration} />
+      <ConfirmReason open={!!blockRow} title="Tashkilotchini bloklash" danger confirmLabel="Bloklash" reasonLabel="Bloklash sababi"
+        text={blockRow ? `${blockRow.name} bloklanadi: seminarlari ommaga ko‘rinmaydi va ro‘yxatdan o‘tish yopiladi.` : ''}
+        onClose={() => setBlockRow(null)}
+        onConfirm={async (r) => { await reviewOrganizer(blockRow.id, 'block', r); setMsg('Bloklandi.'); setDetail(null); reload() }} />
       {msg && <p role="status" className="mt-3 rounded-xl bg-[#eef8f6] px-3 py-2 text-[13px]">{msg}</p>}
       <FilterTabs tabs={tabs} value={tab} onChange={(v) => { setTab(v); setPage(1) }} />
       <SearchRow value={q} onChange={(v) => { setQ(v); setPage(1) }} placeholder="Ism, shahar yoki telefon bo‘yicha..." onFilter={() => {}} />
@@ -121,7 +129,7 @@ export default function Tashkilotchilar() {
                 <Btn tone="danger" disabled={busy === detail.id} onClick={() => act(detail.id, 'reject')}><XCircle className="size-4" /> Rad etish</Btn>
               </>
             )}
-            <Btn tone="ghost" disabled={busy === detail.id} onClick={() => act(detail.id, 'block')}><Ban className="size-4" /> Bloklash</Btn>
+            <Btn tone="ghost" disabled={busy === detail.id} onClick={() => setBlockRow(detail)}><Ban className="size-4" /> Bloklash</Btn>
             <Btn onClick={() => setDetail(null)}>Yopish</Btn>
           </div>
         )}

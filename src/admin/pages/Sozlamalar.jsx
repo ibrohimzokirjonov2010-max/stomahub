@@ -49,8 +49,8 @@ export default function Sozlamalar() {
         notify_sellers: form.notify_sellers,
         notify_organizers: form.notify_organizers,
         notify_complaints: form.notify_complaints,
-        twofa_required: form.twofa_required,
-        ip_restrict: form.ip_restrict,
+        twofa_required: false, // not enforced yet — never claim it is
+        ip_restrict: false,
       })
       setForm(normalize(saved))
       setMsg('Saqlandi.')
@@ -137,8 +137,20 @@ export default function Sozlamalar() {
       {tab === 'xavfsizlik' && (
         <section className={`${card} mt-4 max-w-xl space-y-3 p-4`}>
           <h3 className="text-[15px] font-bold">Xavfsizlik</h3>
-          <Toggle label="2FA majburiy" checked={form.twofa_required} onChange={(v) => patch('twofa_required', v)} />
-          <Toggle label="IP cheklovi" checked={form.ip_restrict} onChange={(v) => patch('ip_restrict', v)} />
+          {/* Honest state: neither option is enforced anywhere yet, so they are not offered as working switches. */}
+          <div data-testid="twofa-honest" className="rounded-xl border border-dashed border-[#E6EEF0] p-3 text-[13px]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-[#10283F]">2FA majburiy</span>
+              <span className="rounded-full bg-[#F1F5F4] px-2 py-0.5 text-[11.5px] font-semibold text-[#5C6E80]">Hali ishlamaydi</span>
+            </div>
+            <p className="mt-1 text-[12.5px] text-[#5C6E80]">Ikki bosqichli tasdiqlash hozircha joriy qilinmagan — bu sozlama kirishga ta’sir qilmaydi, shuning uchun o‘chirib qo‘yilgan.</p>
+          </div>
+          <div className="rounded-xl border border-dashed border-[#E6EEF0] p-3 text-[13px]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-[#10283F]">IP cheklovi</span>
+              <span className="rounded-full bg-[#F1F5F4] px-2 py-0.5 text-[11.5px] font-semibold text-[#5C6E80]">Hali ishlamaydi</span>
+            </div>
+          </div>
           <p className="text-[12.5px] text-[#8A9AA8]">Parol o‘zgartirish va sessiyalar auth provider orqali boshqariladi.</p>
         </section>
       )}

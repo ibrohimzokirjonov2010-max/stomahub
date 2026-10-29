@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import FlashToast from './components/FlashToast'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useCatalogVersion } from './recordSync'
@@ -108,6 +109,8 @@ import MobileSeminarReg from './components/mobile/MobileSeminarReg'
 import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
 import { adminRoutes } from './admin/routes'
+// dev-only screenshot harness (fixtures / injected real payloads); never in the production bundle
+const ShotHarness = import.meta.env.DEV ? lazy(() => import('./admin/pages/ShotHarness')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -150,6 +153,7 @@ export default function App() {
           <Route path="/tashkilotchi-bolish" element={<OrganizerRegister />} />
           {sellerRoutes}
           {adminRoutes}
+          {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />
             <Route path="seminarlar" element={<OrgVerifyGate section="Mening seminarlarim"><Seminars /></OrgVerifyGate>} />
