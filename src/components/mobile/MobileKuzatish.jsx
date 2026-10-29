@@ -17,7 +17,9 @@ const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
 const card = 'rounded-2xl border border-[#e5eef0] bg-white shadow-[0_1px_6px_rgb(11_31_58/0.04)]'
 const OPERATOR_TEL = '+998712000000'
-const COURIER = { name: '', sub: 'StomaHub kuryeri', photo: '', tel: '', rating: 0, votes: 0 }
+// NB: every contact must carry an `icon` (rendered as <contact.icon/> when there is no photo).
+// COURIER used to have no icon, so the page crashed as soon as an order became 'shipping'/'delivered'.
+const COURIER = { name: 'Kuryer', sub: 'StomaHub kuryeri', icon: Truck, tel: OPERATOR_TEL }
 const OPERATOR = { name: 'StomaHub operatori', sub: 'Har kuni 09:00–21:00', icon: Headset, tel: OPERATOR_TEL }
 const SHOP = { name: 'StomaHub do‘koni', sub: 'Chilonzor, Bunyodkor shoh ko‘chasi 12', icon: Store, tel: OPERATOR_TEL }
 const NOTES = [
@@ -79,6 +81,20 @@ export default function MobileKuzatish() {
     return () => clearInterval(tmr)
   }, [id])
 
+  // Status changes (e.g. seller pressed "Yetkazildi") are announced with a toast instead of a hard re-render surprise
+  const prevStatus = useRef(order?.status)
+  useEffect(() => {
+    const prev = prevStatus.current
+    prevStatus.current = order?.status
+    if (!prev || !order?.status || prev === order.status) return
+    if (order.status === 'delivered') setToast(order.mode === 'pickup' ? 'Buyurtma olib ketildi deb belgilandi' : 'Buyurtmangiz yetkazildi. Xaridingiz uchun rahmat!')
+    else if (order.status === 'shipping') setToast('Buyurtmangiz yo‘lga chiqdi')
+    else if (order.status === 'cancelled') setToast('Buyurtma bekor qilindi')
+  }, [order?.status, order?.mode])
+  useEffect(() => {
+    if (profile.ordersStatus === 'error' && order) setToast('Buyurtma holatini yangilab bo‘lmadi. Internetni tekshiring.')
+  }, [profile.ordersStatus]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const header = (
     <header className="flex items-center gap-1 px-3 pt-3">
@@ -118,11 +134,13 @@ export default function MobileKuzatish() {
   const bad = order.status === 'cancelled'
   const list = steps(order)
   const minutes = Math.max(2, Math.round((ETA_MIN * (1 - p)) / (1 - START_P)))
-  const date = order.at.slice(0, order.at.lastIndexOf(' '))
-  const time = order.at.split(' ').pop()
+  const at = String(order.at || '')
+  const date = at.includes(' ') ? at.slice(0, at.lastIndexOf(' ')) : at
+  const time = at.split(' ').pop()
   const own = profile.orders.some((o) => o.id === order.id)
   const canCancel = own && order.dbStatus === 'yangi'
   const contact = pickup ? SHOP : order.status === 'shipping' || order.status === 'delivered' ? COURIER : OPERATOR
+  const ContactIcon = contact.icon || Headset
   const extra = order.items.length - 5
 
   const cancel = async () => {
@@ -218,11 +236,11 @@ export default function MobileKuzatish() {
         <section className={`${card} mt-2.5 flex items-center gap-2.5 p-3`}>
           {contact.photo
             ? <img src={contact.photo} alt={contact.name} className="size-[52px] shrink-0 rounded-full object-cover object-[38%_12%]" />
-            : <span className={`grid size-[52px] shrink-0 place-items-center rounded-full bg-[#e3f4f1] ${teal}`}><contact.icon className="size-6" strokeWidth={1.7} /></span>}
+            : <span className={`grid size-[52px] shrink-0 place-items-center rounded-full bg-[#e3f4f1] ${teal}`}><ContactIcon className="size-6" strokeWidth={1.7} /></span>}
           <div className="min-w-0 flex-1">
             <p className={`text-[14.5px] font-bold leading-tight ${navy}`}>{contact.name}</p>
             <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-tight text-[#7a8a9c]">{contact.sub}</p>
-            {contact.rating && (
+            {contact.rating > 0 && (
               <p className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11.5px]">
                 <Star className="size-3.5 shrink-0 fill-[#f5b301] text-[#f5b301]" />
                 <span className={`font-semibold ${navy}`}>{contact.rating}</span>
@@ -306,14 +324,18 @@ function MapCard({ order, p, minutes, live }) {
   useLayoutEffect(() => {
     const path = pathRef.current
     if (!path) return
-    const pos = path.getPointAtLength(path.getTotalLength() * p)
-    setPt({ x: pos.x, y: pos.y })
+    try {
+      // iOS Safari can throw here for p = 1 / unrendered paths; never let the map kill the page
+      const len = path.getTotalLength()
+      const pos = path.getPointAtLength(Math.max(0, Math.min(len, len * p - 0.01)))
+      if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)) setPt({ x: pos.x, y: pos.y })
+    } catch { /* keep previous point */ }
   }, [p])
 
   const chip = pickup
     ? [Store, status === 'delivered' ? 'Olib ketildi' : status === 'shipping' ? 'Olib ketishga tayyor' : 'Tayyorlanmoqda', 'Olib ketish joyi', 'Chilonzor filiali']
     : status === 'shipping' ? [Truck, 'Kuryer yo‘lda', 'Taxminiy vaqt', `${minutes} daqiqa`]
-      : status === 'delivered' ? [House, 'Yetkazildi', 'Yetkazilgan vaqt', timeline(order)[3].time.split(', ').pop()]
+      : status === 'delivered' ? [House, 'Yetkazildi', 'Yetkazilgan vaqt', (timeline(order)[3]?.time || '').split(', ').pop() || '—']
         : status === 'cancelled' ? [CircleX, 'Bekor qilindi', 'Yetkazish', 'To‘xtatildi']
           : [Store, 'Tayyorlanmoqda', 'Kuryerga topshirish', '~1 soat']
   const [ChipIcon, chipTitle, chipSub, chipValue] = chip
