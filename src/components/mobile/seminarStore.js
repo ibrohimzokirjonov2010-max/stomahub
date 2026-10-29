@@ -74,6 +74,8 @@ export async function register(id, info) {
       ...info,
       price: res.paid,
       synced: true,
+      // Pullik chipta mijoz tomonida hech qachon "to‘landi" bo‘lmaydi — tashkilotchi tasdiqlaguncha kutilmoqda.
+      pending: res.pending != null ? !!res.pending : Number(res.paid) > 0,
       order: res.payment?.id || info.order,
       personId: res.person?.id,
       code,

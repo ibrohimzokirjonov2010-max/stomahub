@@ -116,16 +116,20 @@ export default function SellerLayout() {
   )
 }
 
+const DISMISS_KEY = 'stomahub:dismissed-notes'
+const dismissedNotes = () => { try { return JSON.parse(localStorage.getItem(DISMISS_KEY) || '[]') } catch { return [] } }
+const rememberDismissed = (id) => { try { localStorage.setItem(DISMISS_KEY, JSON.stringify([...new Set([...dismissedNotes(), String(id)])].slice(-50))) } catch { /* private mode */ } }
+
 /** Shows unread "do‘kon tasdiqlandi" in-app notification (customer_notifications, link /sotuvchi). */
 function ApprovalNotice({ uid }) {
   const [note, setNote] = useState(null)
   useEffect(() => {
     if (!supabase || !uid) return
     supabase.from('customer_notifications').select('id,title,body').eq('user_id', uid).eq('link', '/sotuvchi').is('read_at', null)
-      .order('created_at', { ascending: false }).limit(1).then(({ data }) => setNote(data?.[0] || null))
+      .order('created_at', { ascending: false }).limit(1).then(({ data }) => { const n = data?.[0]; setNote(n && !dismissedNotes().includes(String(n.id)) ? n : null) })
   }, [uid])
   if (!note) return null
-  const close = () => { setNote(null); supabase.from('customer_notifications').update({ read_at: new Date().toISOString() }).eq('id', note.id).then(() => {}) }
+  const close = () => { rememberDismissed(note.id); setNote(null); supabase.from('customer_notifications').update({ read_at: new Date().toISOString() }).eq('id', note.id).then(() => {}) }
   return (
     <div data-testid="approval-notice" role="status" className="mb-4 flex items-start gap-3 rounded-2xl bg-[#0F766E] p-4 text-white shadow-[0_10px_30px_rgb(15_118_110/0.25)]">
       <ShieldCheck className="mt-0.5 size-6 shrink-0" />

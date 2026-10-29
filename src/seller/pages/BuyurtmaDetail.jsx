@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, RefreshCw, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink } from 'lucide-react'
-import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync, commissionText } from '../api'
+import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync, commissionText, payoutOf } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Menu, Err } from '../components/ui'
 import Empty from '../components/shell/Empty'
@@ -11,6 +11,7 @@ import ProductThumb from '../components/bosh-sahifa/ProductThumb'
 import { OrderBadge } from './Buyurtmalar'
 import { O_LABEL, O_NEXT, O_FLOW, DELIVERY, showPhone, phoneOf } from '../components/buyurtmalar/constants'
 
+const PAY_METHOD = { cash: 'Naqd', card: 'Karta', click: 'Click', payme: 'Payme', uzcard: 'Uzcard', humo: 'Humo' }
 const REASONS = ['Mahsulot omborda qolmagan', 'Xaridor bekor qilishni so‘radi', 'Xaridor bilan bog‘lanib bo‘lmadi', 'Manzil noto‘g‘ri', 'Boshqa sabab']
 const mapUrl = (a, o) => { const g = o?.lat != null ? { lat: o.lat, lng: o.lng } : parseGeo(a); return g.lat != null ? osmUrl(g.lat, g.lng) : `https://yandex.uz/maps/?text=${encodeURIComponent(g.text)}` }
 const addrText = (a) => parseGeo(a).text
@@ -106,7 +107,7 @@ export default function BuyurtmaDetail() {
             <div className="grid grid-cols-4 divide-x divide-[#EEF3F4] border-b border-[#EEF3F4] pb-4 text-[12.5px] text-[#5C6E80]">
               <div className="pr-3">Buyurtma raqami<div className="mt-1 flex items-center gap-2 text-[17px] font-bold text-[#10283F]">{o.code}<button type="button" aria-label="Nusxalash" onClick={copy}><Copy className="size-4 text-[#5C6E80]" /></button></div></div>
               <div className="px-4">Sana<div className="mt-1 text-[17px] font-bold text-[#10283F]">{dmy(o.created_at)}</div>{hm(o.created_at)}</div>
-              <div className="px-4">To‘lov usuli<div className="mt-1 flex items-center gap-2"><Wallet className="size-5 text-[#0F766E]" /><div><b className="text-[15px] text-[#10283F]">{(o.payment_method || 'cash').toUpperCase()}</b><br />{o.payment_status === 'paid' || o.payment_status === 'released' ? 'To‘langan' : o.payment_method === 'cash' ? 'Yetkazilganda' : (o.payment_status || 'kutilmoqda')}</div></div></div>
+              <div className="px-4">To‘lov usuli<div className="mt-1 flex items-center gap-2"><Wallet className="size-5 text-[#0F766E]" /><div><b className="text-[15px] text-[#10283F]">{PAY_METHOD[o.payment_method || 'cash'] || String(o.payment_method).toUpperCase()}</b><br />{o.payment_status === 'paid' || o.payment_status === 'released' ? 'To‘langan' : o.payment_method === 'cash' ? 'Yetkazilganda' : (o.payment_status || 'kutilmoqda')}</div></div></div>
               <div className="pl-4">Holat<div className="mt-2"><OrderBadge status={o.status} /></div></div>
             </div>
             <div className="pt-5">{cancelled ? <div className="rounded-lg bg-[#F3F5F6] p-3 text-[13px] text-[#3D4E5F]"><b>Bekor qilingan.</b> Sabab: {o.cancel_reason || '—'}</div> : stepper(false)}</div>
@@ -149,7 +150,7 @@ export default function BuyurtmaDetail() {
             <div className="mt-3 space-y-1.5"><Row l="Mahsulotlar jami" v={som(o.subtotal)} />{Number(o.discount_amount) > 0 && <Row l="Chegirma" v={`−${som(o.discount_amount)}`} />}<Row l="Yetkazib berish" v={som(o.delivery_fee || 0)} /></div>
             <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Jami summa</span><span>{som(total)}</span></div>
             <Row l="StomaHub komissiyasi (12%)" v={commissionText(o, som)} />
-            <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Sizga tushadi</span><span>{som(o.payout)}</span></div>
+            <div className="-mx-1 my-3 flex justify-between rounded-lg bg-[#F0FDFA] px-3 py-2.5 font-bold"><span>Sizga tushadi</span><span>{som(payoutOf(o))}</span></div>
             <div className="flex gap-2 rounded-lg bg-[#F0FDFA] p-3 text-[12px] text-[#3D4E5F]"><Info className="size-5 shrink-0 text-[#0F766E]" /><div><b className="text-[#10283F]">To‘lov naqd pulda amalga oshiriladi.</b><br />Xaridordan to‘lov yetkazilganda qabul qilinadi.</div></div>
           </div>
         </div>

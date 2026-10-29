@@ -78,9 +78,10 @@ const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() ==
 export const netOf = (o) => Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0))
 // 12% komissiya faqat yetkazilgan (Yetkazildi) buyurtmalardan olinadi; qolganlari — Kutilmoqda.
 export const isDelivered = (o) => o?.status === 'yetkazildi'
-export const commissionText = (o, fmt) => (isDelivered(o) ? fmt(commissionOf(o)) : 'Kutilmoqda')
-export const commissionOf = (o) => Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
-export const payoutOf = (o) => Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
+export const isCancelled = (o) => o?.status === 'bekor_qilindi'
+export const commissionText = (o, fmt) => (isCancelled(o) ? fmt(0) : isDelivered(o) ? fmt(commissionOf(o)) : 'Kutilmoqda')
+export const commissionOf = (o) => isCancelled(o) ? 0 : Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
+export const payoutOf = (o) => isCancelled(o) ? 0 : Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
 
 export function computeStats({ orders, products, payouts, customers, adTopups = [] }, now = new Date()) {
   const live = orders.filter((o) => o.status !== 'bekor_qilindi')

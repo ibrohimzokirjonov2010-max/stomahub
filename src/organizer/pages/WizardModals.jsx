@@ -103,7 +103,7 @@ export function TicketModal({ open, onClose, onSave }) {
   }, [open])
   if (!open) return null
   const save = () => {
-    if (!name.trim() || !Number(price) || !Number(seats)) { setErr('Nom, narx va joylar sonini kiriting'); return }
+    if (!name.trim() || String(price).trim() === '' || !(Number(price) >= 0) || !Number(seats)) { setErr('Nom, narx (bepul uchun 0) va joylar sonini kiriting'); return }
     if (early || earlyUntil) {
       if (!Number(early) || !earlyUntil) { setErr('Early bird uchun narx va muddatni birga kiriting'); return }
       if (Number(early) >= Number(price)) { setErr('Early bird narxi asosiy narxdan arzon bo‘lishi kerak'); return }
@@ -123,7 +123,7 @@ export function TicketModal({ open, onClose, onSave }) {
           <label className="block">
             <Lab req>Narx</Lab>
             <span className="flex h-10 items-center rounded-xl border border-[#e3eeec] bg-white pr-3 focus-within:border-[var(--color-org-teal)]">
-              <input className="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none" value={price ? Number(price).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') : ''} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))} placeholder="0" />
+              <input className="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none" value={price !== '' ? Number(price).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') : ''} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))} placeholder="0" />
               <span className="text-[12.5px] text-[#6e868c]">so‘m</span>
             </span>
           </label>
