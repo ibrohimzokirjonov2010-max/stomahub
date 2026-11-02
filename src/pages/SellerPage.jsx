@@ -1,7 +1,8 @@
 import { isTestShop } from '../testData'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { BadgeCheck, CalendarDays, ChevronLeft, MapPin, Package, Search, Star, Store } from 'lucide-react'
+import { BadgeCheck, CalendarDays, ChevronLeft, Clock, MapPin, Package, Phone, Search, Star, Store } from 'lucide-react'
+import { MapPreview, parseGeo } from '../components/MapPicker'
 import { supabase } from '../supabaseClient'
 import { isUuid, useMarket } from '../buyerApi'
 import { som } from '../marketData'
@@ -10,6 +11,10 @@ const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avg
 const since = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-yil ${MONTHS[d.getMonth()]}dan` }
 const SORTS = [['new', 'Eng yangi'], ['cheap', 'Arzonroq'], ['rich', 'Qimmatroq']]
 
+// Whitelist: only these keys are ever rendered, even if the RPC returned more (never legal/requisites).
+const PUBLIC_KEYS = ['id', 'shop_name', 'description', 'shop_type', 'categories', 'city', 'avatar_url', 'cover_url', 'work_days', 'work_hours', 'phone', 'address', 'telegram', 'instagram', 'website', 'since', 'rating', 'reviews_count', 'reviews']
+const pickPublic = (d) => (d ? Object.fromEntries(PUBLIC_KEYS.filter((k) => k in d).map((k) => [k, d[k]])) : d)
+
 // Sotuvchining ochiq profili. 0036 RPC bo‘lmasa ham mahsulotlar ro‘yxati orqali ishlaydi.
 function useSellerInfo(id) {
   const [state, setState] = useState({ status: 'loading', info: null })
@@ -17,7 +22,7 @@ function useSellerInfo(id) {
     let off = false
     if (!supabase || !isUuid(id)) { setState({ status: 'ready', info: null }); return undefined }
     supabase.rpc('seller_public_profile', { p_id: id }).then(({ data, error }) => {
-      if (!off) setState({ status: 'ready', info: error || isTestShop(data) ? null : data, test: !error && isTestShop(data) })
+      if (!off) setState({ status: 'ready', info: error || isTestShop(data) ? null : pickPublic(data), test: !error && isTestShop(data) })
     })
     return () => { off = true }
   }, [id])
@@ -72,7 +77,9 @@ export default function SellerPage() {
         </div>
       ) : (
         <>
-          <section className="rounded-2xl border border-line bg-white p-4 lg:p-6">
+          <section className="overflow-hidden rounded-2xl border border-line bg-white">
+            {info?.cover_url && <img src={info.cover_url} alt="" className="h-28 w-full object-cover lg:h-44" />}
+            <div className="p-4 lg:p-6">
             <div className="flex items-start gap-3.5 lg:gap-5">
               <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[#e3f4f1] text-[22px] font-extrabold text-[#0b6d73] lg:size-20">
                 {info?.avatar_url ? <img src={info.avatar_url} alt="" className="size-full object-cover" /> : name.slice(0, 2).toUpperCase()}
@@ -88,7 +95,16 @@ export default function SellerPage() {
                   <span className="flex items-center gap-1"><Package className="size-3.5" />{products.length} ta mahsulot</span>
                 </div>
                 {info?.description && <p className="mt-3 max-w-[720px] text-[13.5px] leading-relaxed text-ink-2">{info.description}</p>}
+                {(info?.work_hours || info?.phone) && <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-2">
+                  {info?.work_hours && <span className="flex items-center gap-1"><Clock className="size-3.5" />{[info.work_days, info.work_hours].filter(Boolean).join(', ')}</span>}
+                  {info?.phone && <a href={`tel:${info.phone}`} className="flex items-center gap-1 font-semibold text-[#0b6d73]"><Phone className="size-3.5" />{info.phone}</a>}
+                </div>}
               </div>
+            </div>
+            {info?.address && parseGeo(info.address).text && <div className="mt-3 border-t border-line pt-3">
+              <p className="flex items-center gap-1 text-[13px] text-ink-2"><MapPin className="size-4" />{parseGeo(info.address).text}</p>
+              {parseGeo(info.address).lat != null && <div className="mt-2"><MapPreview lat={parseGeo(info.address).lat} lng={parseGeo(info.address).lng} /></div>}
+            </div>}
             </div>
           </section>
 

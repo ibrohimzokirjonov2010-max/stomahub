@@ -17,7 +17,7 @@ function validateLegal(v) {
   return ''
 }
 
-export default function Rekvizitlar({ settings, uid, card = '', compact = false }) {
+export default function Rekvizitlar({ settings, uid, card = '', compact = false, saveRef = null }) {
   const [v, setV] = useState(EMPTY)
   const [busy, setBusy] = useState(false)
   const [fromApp, setFromApp] = useState(false)
@@ -43,23 +43,27 @@ export default function Rekvizitlar({ settings, uid, card = '', compact = false 
   }, [settings, uid])
 
   const set = (k, f = (x) => x) => (e) => setV((x) => ({ ...x, [k]: f(e?.target ? e.target.value : e) }))
-  const save = async () => {
+  // saveRef: parent page owns the single Saqlash button; returns { ok, error } quietly.
+  const save = async (quiet = false) => {
     const err = validateLegal(v)
-    if (err) return toast(err)
+    if (err) { if (!quiet) toast(err); return { ok: false, error: err } }
     setBusy(true)
     const r = await upsertSettings({ legal: v })
     setBusy(false)
-    if (!r.ok) return toast(/legal/.test(r.error || '') ? 'Rekvizitlar uchun 0029 migratsiyasi qo‘llanmagan' : r.error)
+    const msg = /legal/.test(r.error || '') ? 'Rekvizitlar uchun 0029 migratsiyasi qo‘llanmagan' : r.error
+    if (!r.ok) { if (!quiet) toast(msg); return { ok: false, error: msg } }
     setFromApp(false)
-    toast('Rekvizitlar saqlandi')
+    if (!quiet) toast('Rekvizitlar saqlandi')
+    return { ok: true }
   }
+  if (saveRef) saveRef.current = () => save(true)
   const onFile = async (e) => {
     const f = e.target.files?.[0]; e.target.value = ''
     if (!f) return
     const r = await uploadMedia(f, 'license')
     if (!r.ok) return toast(r.error || 'Yuklanmadi')
     setV((x) => ({ ...x, license_url: r.url, license_name: f.name }))
-    toast('Litsenziya fayli yuklandi — Saqlashni bosing')
+    toast('Fayl yuklandi — Saqlashni bosing')
   }
 
   const grid = compact ? 'grid gap-3' : 'grid gap-3 md:grid-cols-2'
@@ -68,9 +72,9 @@ export default function Rekvizitlar({ settings, uid, card = '', compact = false 
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <h2 className="text-[17px] font-bold">Rekvizitlar va litsenziya</h2>
-          <p className="text-[12.5px] text-[#5C6E80]">Hisob-faktura, shartnoma va 1C eksport uchun ishlatiladi.</p>
+          <p className="text-[12.5px] text-[#5C6E80]">Sotuvchiga to‘lov o‘tkazish uchun. Xaridorlarga ko‘rinmaydi.</p>
         </div>
-        {!compact && <Btn size="sm" icon={Save} disabled={busy} onClick={save}>Saqlash</Btn>}
+        {!compact && !saveRef && <Btn size="sm" icon={Save} disabled={busy} onClick={() => save()}>Saqlash</Btn>}
       </div>
       {fromApp && <p className="mb-3 rounded-lg bg-[#F0FDFA] px-3 py-2 text-[12.5px] text-[#0F766E]">Ma’lumotlar sotuvchi arizangizdan olindi. Tekshirib, saqlang.</p>}
       {noCol && <p className="mb-3 rounded-lg bg-[#FFF7ED] px-3 py-2 text-[12.5px] text-[#9A3412]">Rekvizitlarni saqlash uchun 0029 migratsiyasi kerak.</p>}
@@ -82,14 +86,14 @@ export default function Rekvizitlar({ settings, uid, card = '', compact = false 
         <Field label="Bank nomi"><Input value={v.bank} onChange={set('bank')} placeholder="Kapitalbank, Toshkent filiali" /></Field>
         <Field label="MFO"><Input inputMode="numeric" value={v.mfo} onChange={set('mfo', (x) => digits(x, 5))} placeholder="5 ta raqam" /></Field>
         <Field label="Hisob raqam"><Input inputMode="numeric" value={v.account} onChange={set('account', (x) => digits(x, 20))} placeholder="20 ta raqam" /></Field>
-        <Field label="Farmatsevtik litsenziya raqami"><Input value={v.license_no} onChange={set('license_no')} placeholder="Masalan: FL-0123" /></Field>
+        <Field label="Litsenziya yoki sertifikat (ixtiyoriy)"><Input value={v.license_no} onChange={set('license_no')} placeholder="Masalan: FL-0123" /></Field>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Btn size="sm" variant="outline" icon={Upload} onClick={() => fileRef.current?.click()}>Litsenziya faylini yuklash</Btn>
         {v.license_url && <a href={v.license_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[13px] font-medium text-[#0F766E] hover:underline"><FileText className="size-4" /> {v.license_name || 'Litsenziya'}</a>}
         <input ref={fileRef} type="file" accept=".pdf,image/*" className="hidden" onChange={onFile} />
       </div>
-      {compact && <Btn className="mt-4 w-full" icon={Save} disabled={busy} onClick={save}>Saqlash</Btn>}
+      {compact && !saveRef && <Btn className="mt-4 w-full" icon={Save} disabled={busy} onClick={() => save()}>Saqlash</Btn>}
     </section>
   )
 }
