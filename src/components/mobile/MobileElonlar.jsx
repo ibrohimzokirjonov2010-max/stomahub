@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Search, X, Plus, Filter, LayoutGrid, Armchair, Building2, BriefcaseBusiness, Wrench, Heart, MapPin, CalendarDays, Check, ImagePlus } from 'lucide-react'
 import { ADS, DEALS, AD_CATS, AD_CITIES, SELLERS, dealName, adPrice } from '../../elonlarData'
 import { bindBlob, touchBlob } from '../../recordSync'
@@ -61,7 +61,8 @@ export default function MobileElonlar() {
   const [deal, setDeal] = useState('')
   const [cat, setCat] = useState('all')
   const [f, setF] = useState(EMPTY)
-  const [sheet, setSheet] = useState(null)
+  const location = useLocation()
+  const [sheet, setSheet] = useState(location.state?.post ? 'post' : null)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const ads = useMemo(() => [...added, ...ADS], [added])
