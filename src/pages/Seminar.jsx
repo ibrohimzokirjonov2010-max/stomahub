@@ -245,7 +245,7 @@ export default function Seminar() {
             </span>
           </button>
           {v.gallery.slice(1, 5).map((src, i) => (
-            <button key={src} type="button" onClick={() => setShot(i + 1)} className="relative overflow-hidden rounded-2xl" aria-label={`Rasm ${i + 2}`}>
+            <button key={`${i}-${src}`} type="button" onClick={() => setShot(i + 1)} className="relative overflow-hidden rounded-2xl" aria-label={`Rasm ${i + 2}`}>
               <img src={src} alt="" className="h-full w-full object-cover" />
               {i === 3 && v.more > 0 && <span className="absolute inset-0 grid place-items-center bg-[#0b1f3a]/50 text-[20px] font-bold text-white">+{v.more}</span>}
             </button>
@@ -514,7 +514,7 @@ function Lightbox({ images, index, onIndex, onClose, trailer = false }) {
         {trailer && index === 0 && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[12px]"><Play className="size-3.5" /> Seminar videosi treyleri — kadr</p>}
         <div className="mt-2 flex items-center justify-center gap-2">
           {images.map((src, i) => (
-            <button key={src} type="button" onClick={() => onIndex(i)} aria-label={`Rasm ${i + 1}`} className={`h-12 w-16 overflow-hidden rounded-lg ${i === index ? 'ring-2 ring-sea' : 'opacity-70'}`}>
+            <button key={`${i}-${src}`} type="button" onClick={() => onIndex(i)} aria-label={`Rasm ${i + 1}`} className={`h-12 w-16 overflow-hidden rounded-lg ${i === index ? 'ring-2 ring-sea' : 'opacity-70'}`}>
               <img src={src} alt="" className="h-full w-full object-cover" />
             </button>
           ))}
