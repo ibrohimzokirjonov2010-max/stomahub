@@ -11,12 +11,12 @@ export const ME = {
 
 export const TOPICS = [
   { id: 'all', label: 'Barchasi' },
-  { id: 'endo', label: 'Endodontiya', count: '1.2K' },
-  { id: 'impl', label: 'Implantologiya', count: '980' },
-  { id: 'orto', label: 'Ortodontiya', count: '760' },
-  { id: 'estet', label: 'Estetika', count: '640' },
-  { id: 'surg', label: 'Jarrohlik', count: '520' },
-  { id: 'paro', label: 'Parodontologiya', count: '480' },
+  { id: 'endo', label: 'Endodontiya' },
+  { id: 'impl', label: 'Implantologiya' },
+  { id: 'orto', label: 'Ortodontiya' },
+  { id: 'estet', label: 'Estetika' },
+  { id: 'surg', label: 'Jarrohlik' },
+  { id: 'paro', label: 'Parodontologiya' },
   { id: 'case', label: 'Klinik holatlar' },
 ]
 

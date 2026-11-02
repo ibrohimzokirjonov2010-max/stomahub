@@ -61,6 +61,8 @@ function viewerOf(profile) {
 function Board({ query }) {
   const me = viewerOf(useProfile())
   const [topic, setTopic] = useState('all')
+  // Faqat haqiqiy postlar soni (bo‘lmasa son ko‘rsatilmaydi)
+  const topicCount = useMemo(() => (posts || []).reduce((m, p) => { if (p?.topic) m[p.topic] = (m[p.topic] || 0) + 1; return m }, {}), [posts])
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('yangi')
   const [posts, setPosts] = useState([])
@@ -166,7 +168,7 @@ function Board({ query }) {
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         {TOPICS.map((t) => (
           <button key={t.id} type="button" onClick={() => setTopic(t.id)} className={`h-8 shrink-0 rounded-full px-3 text-[12px] font-semibold ${topic === t.id ? 'bg-sea text-white' : 'bg-white text-ink-2 shadow-card'}`}>
-            {t.label}{t.count ? ` ${t.count}` : ''}
+            {t.label}{topicCount[t.id] ? ` ${topicCount[t.id]}` : ''}
           </button>
         ))}
       </div>
