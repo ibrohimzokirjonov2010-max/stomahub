@@ -242,6 +242,11 @@ export function seminarView(record) {
     program,
     includes: page.organizer ? (page.includesList?.length ? page.includesList : [...new Set(page.plans.flatMap((p) => p.perks || []))]) : null,
     speaker: { ...page.speaker, bio: page.speaker.lines.join('. ') + '.' },
+    // seminarCard(record) xom yozuvni yoyadi — matnli maydonlarni sahifadagi qiymat bilan qaytaramiz,
+    // aks holda practice/liveSurgery obyekt bo‘lib React’da xato beradi.
+    practice: page.practice,
+    liveSurgery: page.liveSurgery,
+    cmeLine: page.cmeLine,
   }
 }
 
