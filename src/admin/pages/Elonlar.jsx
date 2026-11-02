@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Eye, Megaphone, Pause, XCircle } from 'lucide-react'
 import { campaignDetail, listCampaigns, reviewCampaign, useAdminList } from '../api'
@@ -39,7 +40,7 @@ export default function Elonlar() {
 
   async function open(id) {
     try { setDetail(await campaignDetail(id)); setReason(''); setMsg('') }
-    catch (e) { setMsg(e.message) }
+    catch (e) { setMsg(friendlyError(e)) }
   }
   async function act(id, action) {
     if (action === 'reject' && reason.trim().length < 3) { setMsg('Rad etish sababini yozing.'); return }
@@ -47,7 +48,7 @@ export default function Elonlar() {
     try {
       await reviewCampaign(id, action, reason)
       setMsg('Saqlandi.'); setDetail(null); reload()
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
 

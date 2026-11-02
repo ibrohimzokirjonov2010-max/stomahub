@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 
@@ -13,7 +14,7 @@ export default function ConfirmReason({
   const go = async () => {
     if (needReason && reason.trim().length < 3) { setErr('Sababini yozing (kamida 3 belgi).'); return }
     setBusy(true); setErr('')
-    try { await onConfirm(reason.trim()); onClose() } catch (e) { setErr(e?.message || String(e)) } finally { setBusy(false) }
+    try { await onConfirm(reason.trim()); onClose() } catch (e) { setErr(friendlyError(e)) } finally { setBusy(false) }
   }
   return (
     <Modal open={open} onClose={onClose} title={title} width="max-w-[480px]"

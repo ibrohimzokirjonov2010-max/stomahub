@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
 import { Save, Settings } from 'lucide-react'
 import { getSettings, setSettings } from '../api'
@@ -23,9 +24,10 @@ export default function Sozlamalar() {
     getSettings()
       .then((d) => { setForm(normalize(d)); setNeeds(false) })
       .catch((e) => {
-        const m = e?.message || String(e)
+        const rawm = e?.message || String(e)
+        const m = friendlyError(e)
         setError(m)
-        setNeeds(/admin_settings|Could not find|PGRST/i.test(m))
+        setNeeds(/admin_settings|Could not find|PGRST/i.test(rawm))
         setForm(normalize({}))
       })
   }, [])
@@ -54,7 +56,7 @@ export default function Sozlamalar() {
       })
       setForm(normalize(saved))
       setMsg('Saqlandi.')
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy(false) }
   }
 

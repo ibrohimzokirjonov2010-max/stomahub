@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useState } from 'react'
 import { Coins, Eye, Banknote, Undo2 } from 'lucide-react'
 import { fetchEscrow, orderDetail, releaseEscrow, refundEscrow, useAdminList } from '../api'
@@ -38,7 +39,7 @@ export default function Escrow() {
       setDetail(await orderDetail(id))
       reload?.()
     } catch (e) {
-      setErr(e.message || 'Chiqarib bo‘lmadi')
+      setErr(friendlyError(e, 'Chiqarib bo‘lmadi'))
     } finally {
       setBusy('')
     }
@@ -52,7 +53,7 @@ export default function Escrow() {
       setDetail(await orderDetail(id))
       reload?.()
     } catch (e) {
-      setErr(e.message || 'Qaytarib bo‘lmadi')
+      setErr(friendlyError(e, 'Qaytarib bo‘lmadi'))
     } finally {
       setBusy('')
     }

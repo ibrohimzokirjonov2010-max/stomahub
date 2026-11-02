@@ -1,3 +1,4 @@
+import { friendlyError } from '../lib/friendlyError'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { monthBounds } from './format'
@@ -102,8 +103,9 @@ export function useAdminDashboard(month) {
       const raw = await fetchDashboard(from, to)
       setState({ loading: false, error: '', data: normalizeDashboard(raw), needsMigration: false })
     } catch (e) {
-      const msg = e?.message || String(e)
-      const needsMigration = /admin_dashboard|Could not find the function|schema cache|404|PGRST/i.test(msg)
+      const rawmsg = e?.message || String(e)
+      const msg = friendlyError(e)
+      const needsMigration = /admin_dashboard|Could not find the function|schema cache|404|PGRST/i.test(rawmsg)
       setState({
         loading: false,
         error: needsMigration
@@ -186,7 +188,7 @@ export function useAdminList(fetcher, deps) {
       })
     } catch (e) {
       if (my !== seq.current) return
-      const msg = e?.message || String(e)
+      const msg = friendlyError(e)
       // only a really missing function means "migration needed"; other errors are shown as-is
       const needsMigration = isMissingFn(e)
       setState({

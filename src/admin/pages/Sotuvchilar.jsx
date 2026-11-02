@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { Ban, CheckCircle2, Eye, Plus, Store } from 'lucide-react'
 import { listSellers, reviewSeller, useAdminList } from '../api'
@@ -50,7 +51,7 @@ export default function Sotuvchilar() {
       setMsg(action === 'approve' ? 'Tasdiqlandi.' : action === 'reject' ? 'Rad etildi.' : 'Bloklandi.')
       setSellerId(null)
       reload()
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
 
