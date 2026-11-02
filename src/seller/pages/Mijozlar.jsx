@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Filter, Eye, SlidersHorizontal, ChevronRight, Phone, MapPin, ShoppingCart, CalendarDays, Users, Pencil, Ban, Trash2, Download } from 'lucide-react'
+import { Plus, Filter, Eye, SlidersHorizontal, ChevronRight, Phone, MapPin, ShoppingCart, CalendarDays, Users, Pencil, Ban, Trash2, Download, EyeOff } from 'lucide-react'
 import { useSellerData, deleteRow, updateRow, csvDownload } from '../api'
 import { num, dmy } from '../format'
 import { useMobile } from '../../useMobile'
@@ -9,9 +9,12 @@ import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
 import Confirm from '../components/shell/Confirm'
 import CustomerForm from '../components/mijozlar/CustomerForm'
-import { KIND, REGIONS, statsOf, tagsOf, initials } from '../components/mijozlar/constants'
+import { KIND, REGIONS, statsOf, tagsOf, initials, isMarket } from '../components/mijozlar/constants'
 
 export const masked = (p) => (p ? p.replace(/^(\+998)\s?(\d{2}).*$/, '$1 $2 *** ** **') : '—')
+export const SourceBadge = ({ c }) => (isMarket(c)
+  ? <span title="Sizdan marketplace orqali xarid qilgan — avtomatik qo‘shildi" className="inline-flex shrink-0 items-center rounded-md bg-[#E0F2FE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0369A1]">Marketplace</span>
+  : <span className="inline-flex shrink-0 items-center rounded-md bg-[#EEF2F3] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#5C6E80]">Qo‘lda</span>)
 export const TagBadge = ({ t }) => <Badge tone={t === 'Yangi' || t === 'Kechiktiradi' ? 'off' : 'on'} className="min-w-[70px]">{t}</Badge>
 
 export default function Mijozlar() {
@@ -32,13 +35,18 @@ export default function Mijozlar() {
 
   const rows = useMemo(() => data.customers.map((c) => { const st = statsOf(c, data.orders); return { ...c, st, tagList: tagsOf(c, st) } }), [data.customers, data.orders])
   const cities = [...new Set([...rows.map((c) => c.city).filter(Boolean), ...Object.values(REGIONS).flat()])]
-  const cnt = (f) => rows.filter(f).length
+  const visible = rows.filter((c) => !c.hidden)
+  const hiddenN = rows.length - visible.length
+  const cnt = (f) => visible.filter(f).length
   const tabs = mobile
-    ? [['all', 'Barchasi', rows.length], ['faol', 'Faol', cnt((c) => !c.blocked && c.st.count > 0)], ['yangi', 'Yangi', cnt((c) => c.st.auto === 'Yangi')]]
-    : [['all', 'Barchasi', rows.length], ['klinika', 'Klinikalar', cnt((c) => c.kind === 'klinika')], ['shifokor', 'Shifokorlar', cnt((c) => c.kind === 'shifokor')], ['laboratoriya', 'Laboratoriyalar', cnt((c) => c.kind === 'laboratoriya')]]
+    ? [['all', 'Barchasi', visible.length], ['faol', 'Faol', cnt((c) => !c.blocked && c.st.count > 0)], ['yangi', 'Yangi', cnt((c) => c.st.auto === 'Yangi')]]
+    : [['all', 'Barchasi', visible.length], ['marketplace', 'Marketplace', cnt(isMarket)], ['klinika', 'Klinikalar', cnt((c) => c.kind === 'klinika')], ['shifokor', 'Shifokorlar', cnt((c) => c.kind === 'shifokor')], ['laboratoriya', 'Laboratoriyalar', cnt((c) => c.kind === 'laboratoriya')]]
+  if (hiddenN) tabs.push(['yashirin', 'Yashirilgan', hiddenN])
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
     return rows.filter((c) => {
+      if ((tab === 'yashirin') !== !!c.hidden) return false
+      if (tab === 'marketplace' && !isMarket(c)) return false
       if (tab === 'faol' && (c.blocked || !c.st.count)) return false
       if (tab === 'yangi' && c.st.auto !== 'Yangi') return false
       if (['klinika', 'shifokor', 'laboratoriya'].includes(tab) && c.kind !== tab) return false
@@ -55,9 +63,10 @@ export default function Mijozlar() {
   const open = (c) => navigate(`/sotuvchi/mijozlar/${c.id}`)
   const items = (c) => [['Ko‘rish', () => open(c), Eye], ['Tahrirlash', () => setForm(c), Pencil],
     [c.blocked ? 'Blokdan chiqarish' : 'Bloklash', async () => { const r = await updateRow('seller_customers', c.id, { blocked: !c.blocked }); toast(r.ok ? (c.blocked ? 'Blokdan chiqarildi' : 'Mijoz bloklandi') : r.error) }, Ban],
-    ['O‘chirish', () => setDel(c), Trash2]]
+    isMarket(c) ? [c.hidden ? 'Ro‘yxatda ko‘rsatish' : 'Ro‘yxatdan yashirish', () => (c.hidden ? toggleHide(c) : setDel(c)), EyeOff] : ['O‘chirish', () => setDel(c), Trash2]]
+  const toggleHide = async (c) => { const r = await updateRow('seller_customers', c.id, { hidden: !c.hidden }); toast(r.ok ? (c.hidden ? 'Mijoz ro‘yxatga qaytarildi' : 'Mijoz yashirildi') : r.error) }
   const exportCsv = () => csvDownload('mijozlar.csv', [['Nomi', 'Turi', 'Telefon', 'Shahar', 'Buyurtmalar', 'Jami xarid', 'Oxirgi buyurtma', 'Teglar'], ...list.map((c) => [c.name, KIND[c.kind]?.[1], c.phone, c.city, c.st.count, c.st.sum, c.st.last ? dmy(c.st.last) : '', c.tagList.join(', ')])])
-  const empty = <Empty icon={Users} title={rows.length ? 'Mos mijoz topilmadi' : 'Hali mijoz yo‘q'} text={rows.length ? 'Qidiruv yoki filtrni o‘zgartirib ko‘ring.' : 'Mijozlarni qo‘shing — buyurtma yaratishda ularni tez tanlaysiz.'} action={!rows.length && <Btn icon={Plus} className="mt-4" onClick={() => setForm({})}>Mijoz qo‘shish</Btn>} />
+  const empty = <Empty icon={Users} title={rows.length ? 'Mos mijoz topilmadi' : 'Hali mijoz yo‘q'} text={rows.length ? 'Qidiruv yoki filtrni o‘zgartirib ko‘ring.' : 'Sizdan xarid qilganlar shu yerga avtomatik tushadi. Mijozni qo‘lda ham qo‘shishingiz mumkin.'} action={!rows.length && <Btn icon={Plus} className="mt-4" onClick={() => setForm({})}>Mijoz qo‘shish</Btn>} />
   const KI = ({ c, className = '' }) => { const I = KIND[c.kind]?.[3]; return <span className={`grid shrink-0 place-items-center rounded-lg bg-[#F0FDFA] text-[#0F766E] ${className}`}>{I && <I className="size-5" />}</span> }
 
   return (
@@ -80,7 +89,7 @@ export default function Mijozlar() {
               <tr key={c.id} onClick={() => open(c)} className={`cursor-pointer border-t border-[#EEF3F4] hover:bg-[#F7FCFB] ${c.blocked ? 'opacity-60' : ''}`}>
                 <Td><Checkbox checked={sel.has(c.id)} onChange={(v) => setSel((s) => { const n = new Set(s); v ? n.add(c.id) : n.delete(c.id); return n })} /></Td>
                 <Td className="text-[#5C6E80]">{pg.offset + i + 1}</Td>
-                <Td><div className="flex items-center gap-2.5"><KI c={c} className="size-8" /><div className="min-w-0"><div className="truncate font-medium">{c.name}</div><div className="truncate text-[12px] text-[#5C6E80]">{c.blocked ? 'Bloklangan' : KIND[c.kind]?.[2]}</div></div></div></Td>
+                <Td><div className="flex items-center gap-2.5"><KI c={c} className="size-8" /><div className="min-w-0"><div className="flex items-center gap-1.5"><span className="truncate font-medium">{c.name}</span><SourceBadge c={c} /></div><div className="truncate text-[12px] text-[#5C6E80]">{c.blocked ? 'Bloklangan' : KIND[c.kind]?.[2]}</div></div></div></Td>
                 <Td><Badge tone="on" className="min-w-[80px]">{KIND[c.kind]?.[1]}</Badge></Td>
                 <Td>{c.city || '—'}</Td>
                 <Td className="text-center">{c.st.count}</Td>
@@ -106,7 +115,7 @@ export default function Mijozlar() {
             <button key={c.id} type="button" onClick={() => open(c)} className={`${card} flex w-full items-center gap-3 p-3 text-left ${c.blocked ? 'opacity-60' : ''}`}>
               <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#E3F4F2] text-[16px] font-semibold text-[#0F766E]">{initials(c.contact_person || c.name)}</span>
               <div className="min-w-0 flex-1 text-[12px] text-[#5C6E80]">
-                <div className="truncate text-[14.5px] font-bold text-[#10283F]">{c.contact_person || c.name}</div>
+                <div className="flex items-center gap-1.5"><span className="truncate text-[14.5px] font-bold text-[#10283F]">{c.contact_person || c.name}</span><SourceBadge c={c} /></div>
                 {c.contact_person && <div className="truncate">{c.name}</div>}
                 <div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{masked(c.phone)}</div>
                 <div className="flex items-center gap-1.5 truncate"><MapPin className="size-3.5 text-[#0F766E]" />{c.city ? `${c.city} shahri` : '—'}</div>
@@ -127,7 +136,9 @@ export default function Mijozlar() {
         </Modal>
       </div>
       <CustomerForm open={!!form} edit={form?.id ? form : null} onClose={() => setForm(null)} />
-      <Confirm open={!!del} title="Mijozni o‘chirish" text={`${del?.name || ''} o‘chiriladi. Buyurtmalari saqlanib qoladi.`} okText="O‘chirish" onClose={() => setDel(null)} onOk={async () => { const r = await deleteRow('seller_customers', del.id); toast(r.ok ? 'Mijoz o‘chirildi' : r.error); setDel(null) }} />
+      {isMarket(del)
+        ? <Confirm open={!!del} title="Mijozni yashirish" text={`${del?.name || ''} sizdan marketplace orqali xarid qilgan, shuning uchun o‘chirilmaydi — faqat ro‘yxatdan yashiriladi. Keyingi buyurtmasida yana ko‘rinadi. Buyurtmalari va izohlaringiz saqlanadi.`} okText="Yashirish" onClose={() => setDel(null)} onOk={async () => { await toggleHide(del); setDel(null) }} />
+        : <Confirm open={!!del} title="Mijozni o‘chirish" text={`${del?.name || ''} o‘chiriladi. Buyurtmalari saqlanib qoladi.`} okText="O‘chirish" onClose={() => setDel(null)} onOk={async () => { const r = await deleteRow('seller_customers', del.id); toast(r.ok ? 'Mijoz o‘chirildi' : r.error); setDel(null) }} />}
     </div>
   )
 }
