@@ -60,7 +60,7 @@ export function KpiRow({ data }) {
           </span>
           <div className="min-w-0">
             <div className="text-[13px] font-medium text-[#5C6E80]">{label}</div>
-            <div className="mt-0.5 truncate text-[20px] font-extrabold tracking-tight text-[#10283F]">{value}</div>
+            <div className="mt-0.5 break-words text-[clamp(16px,1.7vw,20px)] font-extrabold leading-tight tracking-tight [overflow-wrap:anywhere] text-[#10283F]">{value}</div>
             <div className="mt-0.5 text-[12px] text-[#8A9AA8]">{sub}</div>
           </div>
         </div>

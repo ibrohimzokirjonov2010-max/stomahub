@@ -30,7 +30,7 @@ export const payLabel = (m) => PAY_LABEL[String(m || 'cash').toLowerCase()] || S
 
 export const ORDER_STATUS = {
   yangi: { label: 'Yangi', tone: 'teal' },
-  tasdiqlandi: { label: 'Tasdiqlandi', tone: 'blue' },
+  tasdiqlandi: { label: 'Tasdiqlangan', tone: 'blue' },
   tayyorlanmoqda: { label: 'Tayyorlanmoqda', tone: 'orange' },
   yetkazilmoqda: { label: 'Yuborilgan', tone: 'blue' },
   yetkazildi: { label: 'Yetkazilgan', tone: 'teal' },

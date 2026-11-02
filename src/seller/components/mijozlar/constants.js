@@ -16,7 +16,7 @@ export function statsOf(c, orders) {
   const list = ordersOf(c, orders)
   const valid = list.filter((o) => o.status !== 'bekor_qilindi')
   const sum = valid.reduce((s, o) => s + Math.max(0, Number(o.subtotal) - Number(o.discount_amount || 0)), 0)
-  return { list, count: valid.length, sum, last: list[0]?.created_at || null, auto: valid.length >= 3 ? 'Doimiy' : 'Yangi' }
+  return { list, count: valid.length, sum, last: list[0]?.created_at || null, auto: valid.length >= 3 ? 'Doimiy' : (valid.some((o) => o.status === 'yetkazildi') ? 'Faol' : 'Yangi') }
 }
 export const tagsOf = (c, st) => [...new Set([st.auto, ...(c.tags || [])])]
 // marketplace mijozi: buyurtma orqali avtomatik qo'shilgan, ism/telefon buyurtmadan olinadi

@@ -59,7 +59,7 @@ function Banner({ error }) {
   return (
     <div role="status" className="mt-4 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-[13.5px] leading-relaxed text-[#92400E]">
       <strong className="font-bold">Migratsiya kerak.</strong>{' '}
-      {error || 'supabase/migrations/0011_admin_dashboard.sql ni Supabase SQL editorida qo‘llang, so‘ng sahifani yangilang.'}
+      {error || 'Ma’lumotlarni yuklab bo‘lmadi. Sahifani yangilang.'}
     </div>
   )
 }

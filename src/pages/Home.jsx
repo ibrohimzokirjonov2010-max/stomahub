@@ -5,9 +5,12 @@ import { useSession } from '../sessionStore'
 import Landing from './Landing'
 
 // Kirishdan keyin qayerga tushsa, bosh sahifa ham o‘sha joy (Auth.jsx dagi destination bilan bir xil).
-function appHome(role) {
+function appHome(profile) {
+  const role = profile?.role
+  if (role === 'admin') return '/admin'
   if (role === 'organizer') return '/tashkilotchi'
-  if (role === 'seller') return '/sotuvchi'
+  if (role === 'seller' || profile?.seller_status === 'approved') return '/sotuvchi'
+  if (profile?.org_status === 'approved') return '/tashkilotchi'
   return '/klinika'
 }
 
@@ -17,7 +20,7 @@ export default function Home() {
   if (session.status !== 'authed') return <Landing />
   return (
     <Responsive mobile={<MobileHome />}>
-      <Navigate to={appHome(session.profile?.role)} replace />
+      <Navigate to={appHome(session.profile)} replace />
     </Responsive>
   )
 }

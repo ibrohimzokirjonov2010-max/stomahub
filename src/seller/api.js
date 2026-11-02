@@ -7,7 +7,7 @@ export { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutO
 
 export const STATUS = {
   yangi: { label: 'Yangi', next: 'tasdiqlandi', action: 'Tasdiqlash' },
-  tasdiqlandi: { label: 'Tasdiqlandi', next: 'tayyorlanmoqda', action: 'Tayyorlashni boshlash' },
+  tasdiqlandi: { label: 'Tasdiqlangan', next: 'tayyorlanmoqda', action: 'Tayyorlashni boshlash' },
   tayyorlanmoqda: { label: 'Tayyorlanmoqda', next: 'yetkazilmoqda', action: 'Yetkazishga topshirish' },
   yetkazilmoqda: { label: 'Yetkazilmoqda', next: 'yetkazildi', action: 'Yetkazildi deb belgilash' },
   yetkazildi: { label: 'Yetkazildi', next: null },

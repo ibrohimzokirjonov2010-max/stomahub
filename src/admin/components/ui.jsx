@@ -137,8 +137,8 @@ export function TableCard({ children, className = '' }) {
 
 export function DataTable({ head, children }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[720px] text-left text-[13px]">
+    <div className="max-w-full overflow-x-auto overscroll-x-contain">
+      <table className="w-full min-w-[720px] text-left text-[13px] [&_td:last-child]:whitespace-nowrap">
         <thead className="bg-[#F8FBFC] text-[11.5px] uppercase tracking-wide text-[#5C6E80]">
           <tr>{head.map((h) => <th key={h} className="whitespace-nowrap px-3 py-2.5 font-semibold">{h}</th>)}</tr>
         </thead>

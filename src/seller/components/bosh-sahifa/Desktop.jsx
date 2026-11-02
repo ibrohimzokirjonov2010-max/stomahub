@@ -48,7 +48,7 @@ export function StatCards({ stats }) {
     { icon: Clock, label: 'Kutilayotgan', value: som(stats.openSum), sub: `Jami · ${stats.openCount} ta ochiq buyurtma`, link: '/sotuvchi/hamyon', linkText: 'Batafsil' },
   ]
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
       {items.map((it) => (
         <div key={it.label} className={`${card} flex min-h-[142px] gap-4 p-5`}>
           <span className="grid size-[52px] shrink-0 place-items-center rounded-xl bg-[#E3F4F2] text-[#0F766E]"><it.icon className="size-7" strokeWidth={1.8} /></span>

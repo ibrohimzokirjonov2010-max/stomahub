@@ -1,3 +1,4 @@
+import { getUsta, viewOf } from './ustalarData'
 const img = (n) => `/images/${n}.jpg`
 const U = (n) => img(`ustalar/${n}`)
 
@@ -56,5 +57,35 @@ const make = ({ services, works, reviewsFrom = 0, ...m }) => ({
 
 export const USTALAR = []
 
-export const getUstaM = (id) => USTALAR.find((m) => m.id === id) || null
+const priceNum = (v) => {
+  if (typeof v === 'number') return v
+  const n = Number(String(v || '').replace(/[^\d]/g, ''))
+  return n > 0 ? n : String(v || '')
+}
+
+// /ustalar ro‘yxati (ustalarData.masters, katalogdan to‘ldiriladi) bilan bir xil id va ma’lumot
+export function fromMaster(x) {
+  if (!x) return null
+  const v = viewOf(x)
+  const h = v.hours
+  return {
+    ...x,
+    online: x.status === 'online',
+    face: FACES[x.photo] || '50% 20%',
+    clinic: x.role,
+    verified: x.verified ?? true,
+    about: x.about || `${x.role}. ${x.years} yillik tajriba, ${x.jobs}+ bajarilgan ish.`,
+    warranty: x.warrantyShort || '6 oy',
+    speed: 'Tez',
+    hours: typeof h === 'string' ? h : `${h.days}, ${h.time}`,
+    area: v.area,
+    brands: v.brands || [],
+    tags: x.tags || [],
+    works: v.works,
+    reviewsList: [],
+    services: (x.services || []).map((sv, i) => ({ id: `s${i}`, name: sv.name, note: sv.meta || '', image: v.works[i % v.works.length], tag: sv.name, price: priceNum(sv.price) })),
+  }
+}
+
+export const getUstaM = (id) => USTALAR.find((m) => m.id === id) || fromMaster(getUsta(id))
 export const USTA_SPECS = [...new Set(USTALAR.flatMap((m) => m.services.map((s) => s.tag)))]

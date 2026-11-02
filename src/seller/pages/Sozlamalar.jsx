@@ -45,11 +45,20 @@ export default function Sozlamalar() {
   const featuredLive = (shop.featured || []).filter((id) => myProducts.some((p) => p.id === id))
   const visReviews = (d.reviews || []).filter((r) => !r.hidden)
   // Same shape as seller_public_profile (0044) returns — fed to the real public page component.
+  // "StomaHub’da ... dan beri" — ommaviy sahifa bilan bir manba (seller_public_profile RPC → profiles.created_at)
+  const [pubSince, setPubSince] = useState('')
+  useEffect(() => {
+    const id = session.user?.id
+    if (!id || !supabase) return undefined
+    let off = false
+    supabase.rpc('seller_public_profile', { p_id: id }).then(({ data }) => { if (!off && data?.since) setPubSince(data.since) }, () => {})
+    return () => { off = true }
+  }, [session.user?.id])
   const previewInfo = {
     id: session.user?.id, shop_name: shop.name || 'Sotuvchi', description: shop.description, avatar_url: shop.logo_url, cover_url: shop.cover_url,
     work_days: shop.pub ? shop.work_days : '', work_hours: shop.pub ? shop.work_hours : '',
     phone: shop.pub && shop.show_phone ? shop.phone : '', address: shop.pub && shop.show_address ? withGeo(shop.address, shop) : '',
-    since: d.settings?.created_at || new Date().toISOString(), featured_ids: featuredLive,
+    since: pubSince || session.profile?.created_at || d.settings?.created_at || new Date().toISOString(), featured_ids: featuredLive,
     reviews_count: visReviews.length, rating: visReviews.length ? visReviews.reduce((a, r) => a + Number(r.rating || 0), 0) / visReviews.length : null,
     reviews: visReviews.slice(0, 20).map((r) => ({ rating: r.rating, body: r.body, reply: r.reply, created_at: r.created_at, author: String(r.author_name || 'Xaridor').split(' ')[0] })),
   }
@@ -58,7 +67,9 @@ export default function Sozlamalar() {
     if (d.loading || loaded.current) return
     loaded.current = true
     const s = d.settings || {}
-    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '', owner_name: s.owner_name || '', telegram: s.telegram || '', instagram: s.instagram || '', website: s.website || '', description: s.description || '', ext: 'telegram' in s, pub: 'show_phone' in s, show_phone: !!s.show_phone, show_address: s.show_address !== false, cover_url: s.cover_url || '', featured: Array.isArray(s.featured_product_ids) ? s.featured_product_ids : [], hasFeatured: 'featured_product_ids' in s }))
+    // Sozlama qatori hali yo‘q bo‘lsa ham ustunlar mavjud (0044 qo‘llangan) — yangi sotuvchida ham ko‘rsatamiz
+    const fresh = !d.settings
+    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '', owner_name: s.owner_name || '', telegram: s.telegram || '', instagram: s.instagram || '', website: s.website || '', description: s.description || '', ext: fresh || 'telegram' in s, pub: fresh || 'show_phone' in s, show_phone: !!s.show_phone, show_address: s.show_address !== false, cover_url: s.cover_url || '', featured: Array.isArray(s.featured_product_ids) ? s.featured_product_ids : [], hasFeatured: fresh || 'featured_product_ids' in s }))
     setNotify({ ...DEFAULT_NOTIFY, ...(s.notify || {}) })
     const uid = session.user?.id
     if (uid && supabase) supabase.from('profiles').select('shop_name').eq('id', uid).maybeSingle().then(({ data }) => setShop((x) => ({ ...x, name: data?.shop_name || '' })))
@@ -121,7 +132,7 @@ export default function Sozlamalar() {
       {shop.pub ? <>
         <div className="flex items-center justify-between gap-3"><span className="text-[13.5px]">Telefon raqamni ko‘rsatish</span><Toggle checked={shop.show_phone} onChange={(x) => setShop({ ...shop, show_phone: x })} /></div>
         <div className="flex items-center justify-between gap-3"><span className="text-[13.5px]">Manzil va xaritani ko‘rsatish</span><Toggle checked={shop.show_address} onChange={(x) => setShop({ ...shop, show_address: x })} /></div>
-      </> : <p className="rounded-lg bg-[#FFF7ED] px-3 py-2 text-[12.5px] text-[#9A3412]">Telefon/manzilni ko‘rsatish va muqova uchun 0044 migratsiyasi kerak.</p>}
+      </> : null}
       {shop.hasFeatured && <FeaturedPicker value={shop.featured} products={myProducts} onChange={(ids) => setShop((x) => ({ ...x, featured: ids }))} />}
       <ul className="divide-y divide-[#EEF3F4] rounded-xl border border-[#E2ECEE] px-3">
         {pubRow('Do‘kon nomi, logotip, tavsif', true)}{pubRow('Ish kunlari va vaqti', !!shop.pub)}{pubRow('Telefon', shop.pub && shop.show_phone)}{pubRow('Manzil va xarita', shop.pub && shop.show_address)}{pubRow('Reyting, sharhlar, mahsulotlar', true)}{pubRow('STIR, bank, MFO, hisob, rahbar', false, 'Hech qachon')}

@@ -45,7 +45,7 @@ export default function SellerPage() {
         </div>
       ) : (
         <>
-          <SellerProfileView info={info} products={products} loading={loading} />
+          <SellerProfileView info={info} products={products} loading={loading} infoLoading={!info && infoStatus === 'loading'} />
         </>
       )}
     </div>

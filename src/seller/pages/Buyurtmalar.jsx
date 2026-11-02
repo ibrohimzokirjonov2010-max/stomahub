@@ -29,14 +29,14 @@ export default function Buyurtmalar() {
   const [to, setTo] = useState('')
   const [status, setStatus] = useState('')
   const [buyer, setBuyer] = useState('')
-  const [tab, setTab] = useState(mobile ? 'all' : 'yangi')
+  const [tab, setTab] = useState('all')
   const [sel, setSel] = useState(new Set())
   const [adding, setAdding] = useState(false)
   const [filters, setFilters] = useState(false)
   const product = sp.get('product')
   useEffect(() => { setQ(sp.get('q') || '') }, [sp])
   useEffect(() => { if (sp.get('new')) { setAdding(true); sp.delete('new'); setSp(sp, { replace: true }) } }, [sp, setSp])
-  useEffect(() => { setTab(mobile ? 'all' : (q || product ? 'all' : 'yangi')) }, [mobile]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setTab('all') }, [mobile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const orders = data.orders
   const c = (f) => orders.filter(f).length

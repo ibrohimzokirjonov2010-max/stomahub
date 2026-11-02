@@ -11,6 +11,10 @@ function commit(next) {
   listeners.forEach((listener) => listener())
 }
 
+export function isPlaceholderName(n) {
+  return /^(test|e2e|demo|sinov)\b/i.test(String(n || '').trim())
+}
+
 export function getSession() {
   return state
 }
@@ -52,7 +56,12 @@ export async function refreshSession() {
   if (error && /full_name/i.test(error.message || '')) {
     ;({ data, error } = await supabase.from('profiles').select('id,role,seller_status,org_status,shop_name,name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle())
   }
-  const profile = data ? { ...data, full_name: data.full_name || data.name || '' } : null
+  // Profildagi nom test/placeholder bo‘lsa (masalan 'Test Stomatolog'), Google/akkaunt metadatasidagi haqiqiy ismni ko‘rsatamiz (DB o‘zgartirilmaydi)
+  const meta = session.user.user_metadata || {}
+  const metaName = String(meta.full_name || meta.name || '').trim()
+  const stored = String(data?.full_name || data?.name || '').trim()
+  const shown = (!stored || isPlaceholderName(stored)) && metaName ? metaName : stored
+  const profile = data ? { ...data, full_name: shown, name: (!data.name || isPlaceholderName(data.name)) && metaName ? metaName : data.name } : null
   commit({
     status: 'authed',
     user: session.user,

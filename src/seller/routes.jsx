@@ -29,7 +29,6 @@ export const sellerRoutes = (
     <Route path="buyurtmalar/:id" element={<VerifyGate section="Buyurtmalar"><BuyurtmaDetail /></VerifyGate>} />
     <Route path="mahsulotlar/:id" element={<VerifyGate section="Mahsulot qo‘shish"><MahsulotDetail /></VerifyGate>} />
     <Route path="buyurtmalar" element={<VerifyGate section="Buyurtmalar"><Buyurtmalar /></VerifyGate>} />
-    <Route path="buyurtmalar/:id" element={<VerifyGate section="Buyurtmalar"><BuyurtmaDetail /></VerifyGate>} />
     <Route path="mijozlar" element={<VerifyGate section="Mijozlar"><Mijozlar /></VerifyGate>} />
     <Route path="mijozlar/:id" element={<VerifyGate section="Mijozlar"><MijozDetail /></VerifyGate>} />
     <Route path="chegirmalar/:id" element={<VerifyGate section="Chegirmalar"><ChegirmaDetail /></VerifyGate>} />

@@ -1,6 +1,6 @@
 import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   House, ChevronRight, UserRound, MapPin, Truck, Store, Check, Lock, ShieldCheck,
   CreditCard, Banknote, CalendarDays, Pencil, ArrowRight, ArrowLeft, X,
@@ -11,6 +11,7 @@ import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
+import { currentUid } from '../recordSync'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../payments/paymentService'
 import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG } from '../components/PhoneInput'
@@ -58,6 +59,7 @@ export function clearPlaced() {
 
 export default function Checkout() {
   const loc = useLocation()
+  const navigate = useNavigate()
   const origin = ORIGIN[loc.state?.from] || ORIGIN.market
   const cart = useCart()
   // "Hozir xarid qilish" → only that product; the cart is left untouched.
@@ -141,10 +143,12 @@ export default function Checkout() {
       return
     }
     setDiscount(0)
-    setPromoMsg('Bunday promokod topilmadi')
+    setPromoMsg('Promokodlar hozircha mavjud emas')
   }
 
   const next = () => {
+    // Mehmon: savat saqlanadi, avval kirish kerak (forma behuda to‘ldirilmasin)
+    if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`); return }
     if (step === 1) {
       const phone = form.phone.replace(/\D/g, '')
       const needAddress = shipMode === 'courier' && !form.address.trim()
@@ -171,6 +175,8 @@ export default function Checkout() {
       setError('Oferta shartlari bilan tanishib chiqishingiz kerak.')
       return
     }
+    // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
+    if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`); return }
     if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return
     setError('')

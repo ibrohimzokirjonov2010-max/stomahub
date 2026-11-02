@@ -30,7 +30,8 @@ const Card = ({ p }) => (
 
 // The buyer-facing shop body. Used by /dokon/:id AND the Sozlamalar live preview, so preview == real page.
 // Responsive via container queries (@container on the wrapper), so it also renders correctly inside a narrow preview frame.
-export default function SellerProfileView({ info, products, loading = false }) {
+export default function SellerProfileView({ info, products, loading = false, infoLoading = false }) {
+  const sk = (w) => <span aria-hidden="true" className={`inline-block h-[1em] ${w} animate-pulse rounded bg-[#e8eef2] align-middle`} />
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('')
   const [sort, setSort] = useState('new')
@@ -57,13 +58,13 @@ export default function SellerProfileView({ info, products, loading = false }) {
               </span>
               <div className="min-w-0 flex-1">
                 <h1 className="flex items-center gap-1.5 text-[20px] font-bold leading-tight text-ink @4xl:text-[24px]">
-                  <span className="truncate">{name}</span> <BadgeCheck className="size-5 shrink-0 fill-[#1a73e8] text-white" aria-label="Tasdiqlangan sotuvchi" />
+                  <span className="truncate">{infoLoading && !products.length ? sk('w-40') : name}</span> <BadgeCheck className="size-5 shrink-0 fill-[#1a73e8] text-white" aria-label="Tasdiqlangan sotuvchi" />
                 </h1>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-ink-2">
                   {info?.reviews_count > 0 && <span className="flex items-center gap-1"><Stars value={rating} /> <b className="text-ink">{rating.toFixed(1)}</b> ({info.reviews_count} ta baho)</span>}
                   {info?.city && <span className="flex items-center gap-1"><MapPin className="size-3.5" />{info.city}</span>}
                   {info?.since && <span className="flex items-center gap-1"><CalendarDays className="size-3.5" />StomaHub’da {since(info.since)}</span>}
-                  <span className="flex items-center gap-1"><Package className="size-3.5" />{products.length} ta mahsulot</span>
+                  <span className="flex items-center gap-1"><Package className="size-3.5" />{loading ? sk('w-16') : `${products.length} ta mahsulot`}</span>
                 </div>
                 {info?.description && <p className="mt-3 max-w-[720px] text-[13.5px] leading-relaxed text-ink-2">{info.description}</p>}
                 {(info?.work_hours || info?.phone) && <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-2">
@@ -103,7 +104,7 @@ export default function SellerProfileView({ info, products, loading = false }) {
                 ))}
               </div>
             )}
-            {loading && <p className="py-10 text-center text-[13px] text-muted">Yuklanmoqda…</p>}
+            {loading && <div className="grid grid-cols-2 gap-3 py-2 sm:grid-cols-3 lg:grid-cols-4" aria-label="Yuklanmoqda">{Array.from({ length: 8 }, (_, i) => <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-[#eef3f6]" />)}</div>}
             {!loading && !list.length && <p className="py-10 text-center text-[13px] text-muted">{products.length ? 'Hech narsa topilmadi' : 'Hozircha sotuvda mahsulot yo‘q'}</p>}
             <div className="mt-3 grid grid-cols-2 gap-2.5 @xl:grid-cols-3 @4xl:grid-cols-4 @4xl:gap-4">
               {list.map((p) => <Card key={p.id} p={p} />)}

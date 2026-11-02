@@ -18,8 +18,11 @@ export function isTestSeminar(s) {
 
 /** Tugash sanasi (Toshkent vaqti) o‘tgan bo‘lsa — true. */
 export function isPast(s, today = tashkentToday()) {
-  const end = s?.end || s?.start
-  if (!end || !/^\d{4}-\d{2}-\d{2}$/.test(end)) return false
+  const iso = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)
+  let end = iso(s?.end) ? s.end : s?.start
+  // Seminar 30 kundan uzun bo‘lmaydi: tugash sanasi boshlanishdan 30+ kun keyin bo‘lsa (masalan 12-fev → 12-dek), xato kiritilgan deb boshlanish sanasini olamiz
+  if (iso(s?.start) && iso(s?.end) && (Date.parse(s.end) - Date.parse(s.start)) > 30 * 864e5) end = s.start
+  if (!iso(end)) return false
   return end < today
 }
 

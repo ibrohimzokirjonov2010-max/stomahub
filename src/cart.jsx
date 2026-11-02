@@ -1,12 +1,30 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { initialCart } from './marketData'
 import { isUuid } from './buyerApi'
+import { mergeCarts } from './cartMerge'
 import { isRestricted } from './restricted.jsx'
 import { useProfile } from './profileStore'
 import { tierPrice } from './config/productCatalog'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
 
 const CartContext = createContext(null)
+
+export const GUEST_CART_KEY = 'stomahub:guest-cart'
+export function loadGuestCart() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(GUEST_CART_KEY) || '[]')
+    return Array.isArray(raw) ? raw.filter((it) => it && isUuid(it.productId || it.id) && Number(it.qty) > 0) : []
+  } catch { return [] }
+}
+function saveGuestCart(items) {
+  try {
+    if (items.length) localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items))
+    else localStorage.removeItem(GUEST_CART_KEY)
+  } catch { /* ignore */ }
+}
+function clearGuestCart() { try { localStorage.removeItem(GUEST_CART_KEY) } catch { /* ignore */ } }
+// Bir xil mahsulot (id + variant) ikki marta tushmaydi: kattaroq miqdor qoladi
+export { mergeCarts }
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([])
@@ -17,21 +35,32 @@ export function CartProvider({ children }) {
 
   useEffect(() => onAccount(async (id) => {
     if (!id) {
-      setItems(initialCart)
-      setCartReady(false)
+      // Mehmon savati brauzerda saqlanadi (sahifa yangilansa ham yo‘qolmaydi)
+      setItems(loadGuestCart())
+      setCartReady(true)
       return
     }
+    setCartReady(false)
     const payload = await loadBlob('cart')
     // Eski demo (uuid bo‘lmagan) mahsulotlarni tashlab yuboramiz — ularni buyurtma qilib bo‘lmaydi
-    if (Array.isArray(payload?.items)) setItems(payload.items.filter((it) => isUuid(it.productId || it.id)))
-    else if (isDemoUser()) setItems(initialCart)
-    else setItems([])
+    let list
+    if (Array.isArray(payload?.items)) list = payload.items.filter((it) => isUuid(it.productId || it.id))
+    else if (isDemoUser()) list = initialCart
+    else list = []
+    // Kirishdan oldin mehmon sifatida qo‘shilganlarni hisob savatiga qo‘shamiz (takrorlarsiz)
+    const guest = loadGuestCart()
+    if (guest.length) {
+      list = mergeCarts(list, guest)
+      clearGuestCart()
+    }
+    setItems(list)
     setCartReady(true)
   }), [])
 
   useEffect(() => {
-    if (!cartReady || !currentUid()) return
-    saveBlob('cart', { items })
+    if (!cartReady) return
+    if (currentUid()) saveBlob('cart', { items })
+    else saveGuestCart(items)
   }, [items, cartReady])
 
   // min order qty + wholesale tiers (0029): a line keeps basePrice/tiers/minQty, price follows qty

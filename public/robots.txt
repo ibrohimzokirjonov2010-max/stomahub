@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /sotuvchi
+Disallow: /tashkilotchi
+Disallow: /klinika
+Disallow: /profil
+Disallow: /savatcha
+Disallow: /buyurtma
+Disallow: /api/
+
+Sitemap: https://stomahub-three.vercel.app/sitemap.xml

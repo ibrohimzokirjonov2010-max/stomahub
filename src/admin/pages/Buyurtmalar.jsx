@@ -53,8 +53,8 @@ export default function Buyurtmalar() {
       {loading && <p className="mt-6 text-[#5C6E80]">Yuklanmoqda…</p>}
       {error && !needsMigration && <p role="alert" className="mt-6 text-[#b42318]">{error}</p>}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_280px]">
-        <div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0">
           <MobileCards rows={rows} render={(r) => (
             <button type="button" className="flex w-full gap-3 text-left" onClick={() => open(r.id)}>
               {r.first_item?.image_url

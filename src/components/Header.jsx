@@ -137,8 +137,13 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
             <img src={avatarUrl || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
           )}
           <span className="hidden text-left leading-tight xl:block">
+            {session.status === 'loading' && !profile.accountLive ? <>
+              <span aria-hidden="true" className="block h-[11px] w-16 animate-pulse rounded bg-[#e8eef2]" />
+              <span aria-hidden="true" className="mt-1 block h-[9px] w-10 animate-pulse rounded bg-[#eef3f6]" />
+            </> : <>
             <span className="block text-[10.5px] font-semibold text-ink">{who}</span>
             <span className="block text-[9.5px] text-muted">{role}</span>
+            </>}
           </span>
           <ChevronDown className="hidden size-4 text-ink-2 xl:block" />
         </button>

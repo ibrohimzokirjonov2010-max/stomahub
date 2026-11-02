@@ -48,7 +48,8 @@ function seminarFromRow(row, tickets) {
     city: row.city,
     format: row.format,
     days: row.days,
-    sold: row.sold || 0,
+    // seminars_public (0045) sold bermaydi, faqat seats_left
+    sold: row.sold ?? (row.seats_left != null ? Math.max(0, (row.seats || 0) - row.seats_left) : 0),
     seats: row.seats || 0,
     revenue: Number(row.revenue) || 0,
     status: row.status,
@@ -297,7 +298,7 @@ export async function pullHub() {
   }
   const uid = await userId()
   // Profil va ommaviy katalog parallel yuklanadi (avval ketma-ket 6 ta so‘rov edi)
-  const publicSeminars = () => supabase.from('seminars').select('*').eq('published', true).neq('status', 'qoralama').order('sort_at', { ascending: true })
+  const publicSeminars = () => supabase.from('seminars_public').select('*').eq('published', true).neq('status', 'qoralama').order('sort_at', { ascending: true })
   const [profile, catalogRows] = await Promise.all([
     uid ? must(supabase.from('profiles').select('role,name,email').eq('id', uid).maybeSingle()) : null,
     must(publicSeminars()),
@@ -305,11 +306,26 @@ export async function pullHub() {
   // Kabinet (tashkilotchi yoki admin) faqat O‘Z ma’lumotlarini ko‘radi
   const organizer = profile?.role === 'organizer' || profile?.role === 'admin'
 
+  // Kabinet so‘rovlari faqat uid ga bog‘liq — katalog/chiptalar bilan PARALLEL boshlanadi (avval 4 ketma-ket bosqich edi)
+  const cabinetP = organizer ? Promise.all([
+    must(supabase.from('registrations').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
+    must(supabase.from('payments').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
+    must(supabase.from('certificates').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
+    must(supabase.from('wallet_transactions').select('*').eq('organizer_id', uid).order('created_at', { ascending: false })),
+    must(supabase.from('requisites').select('*').eq('organizer_id', uid)),
+    must(supabase.from('activity_log').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(24)),
+    must(supabase.from('seminar_reviews').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
+    must(supabase.from('organizer_speakers').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
+    must(supabase.from('organizer_settings').select('*').eq('organizer_id', uid).maybeSingle()),
+    must(supabase.from('support_messages').select('*').eq('organizer_id', uid).order('created_at', { ascending: true })),
+    supabase.from('seller_applications').select('*').eq('user_id', uid).eq('kind', 'organizer').order('created_at', { ascending: false }).limit(1).then((r) => r.data?.[0] || null, () => null),
+  ]) : null
+  if (cabinetP) cabinetP.catch(() => {})
   const [seminarRows, promoRows, myRegistrations] = await Promise.all([
     organizer ? must(supabase.from('seminars').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })) : catalogRows,
     organizer
       ? must(supabase.from('promo_codes').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }))
-      : must(supabase.from('promo_codes').select('*').eq('status', 'faol').order('sort_at', { ascending: true })),
+      : [], // 0045: kodlar ommaviy emas — tekshirish check_promo RPC orqali
     uid ? must(supabase.from('registrations').select('*').eq('customer_id', uid)) : [],
   ])
   const ids = [...new Set([...(seminarRows || []), ...(catalogRows || [])].map((row) => row.id))]
@@ -325,19 +341,7 @@ export async function pullHub() {
 
   if (!organizer) return reconcileHub(next)
 
-  const [registrations, payments, certs, wallet, requisites, activity, reviews, speakers, settings, messages, application] = await Promise.all([
-    must(supabase.from('registrations').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
-    must(supabase.from('payments').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
-    must(supabase.from('certificates').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(2000)),
-    must(supabase.from('wallet_transactions').select('*').eq('organizer_id', uid).order('created_at', { ascending: false })),
-    must(supabase.from('requisites').select('*').eq('organizer_id', uid)),
-    must(supabase.from('activity_log').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(24)),
-    must(supabase.from('seminar_reviews').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
-    must(supabase.from('organizer_speakers').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
-    must(supabase.from('organizer_settings').select('*').eq('organizer_id', uid).maybeSingle()),
-    must(supabase.from('support_messages').select('*').eq('organizer_id', uid).order('created_at', { ascending: true })),
-    supabase.from('seller_applications').select('*').eq('user_id', uid).eq('kind', 'organizer').order('created_at', { ascending: false }).limit(1).then((r) => r.data?.[0] || null, () => null),
-  ])
+  const [registrations, payments, certs, wallet, requisites, activity, reviews, speakers, settings, messages, application] = await cabinetP
   next.cabinet = true
   next.application = application
   const prefix = `${uid}:`
@@ -396,7 +400,10 @@ export function subscribeHub(onChange) {
     if (channel) supabase.removeChannel(channel)
     const topic = `stomahub-${uid || 'anon'}-${Math.random().toString(36).slice(2, 7)}`
     const next = supabase.channel(topic)
-    const tables = ['seminars', 'tickets', 'promo_codes', 'registrations', 'payments', 'checkins', 'certificates', 'wallet_transactions']
+    // 0045: mehmon seminars/promo_codes jadvalini o‘qiy olmaydi — faqat tickets o‘zgarishini tinglaydi
+    const tables = uid
+      ? ['seminars', 'tickets', 'promo_codes', 'registrations', 'payments', 'checkins', 'certificates', 'wallet_transactions']
+      : ['tickets']
     tables.forEach((table) => {
       const spec = { event: '*', schema: 'public', table }
       if (uid && !['seminars', 'tickets', 'promo_codes'].includes(table)) spec.filter = `organizer_id=eq.${uid}`
@@ -672,3 +679,11 @@ export async function pushMessage(text) {
 }
 
 export { friendlySupabaseError }
+
+// 0045: promokodni server tekshiradi (kodlar ro‘yxati ommaga berilmaydi)
+export async function checkPromoRemote(code, seminarId, amount) {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('check_promo', { p_seminar_id: seminarId, p_code: String(code || ''), p_amount: Number(amount) || 0 })
+  if (error) return { ok: false, error: 'Promokodni tekshirib bo‘lmadi. Qayta urinib ko‘ring' }
+  return data || { ok: false, error: 'Promokod topilmadi yoki muddati o‘tgan' }
+}

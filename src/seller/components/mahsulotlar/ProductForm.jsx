@@ -114,7 +114,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     if (!res?.ok && missingColumn(res?.error)) {
       const legacy = { ...row }; NEW_COLS.forEach((k) => delete legacy[k])
       res = await go(() => save(legacy))
-      if (res?.ok) toast('Saqlandi. Diqqat: yangi maydonlar uchun 0029 migratsiyasi hali qo‘llanmagan')
+      if (res?.ok) toast('Saqlandi')
     }
     if (res?.ok) {
       logActivity(product ? 'Mahsulot tahrirlandi' : 'Mahsulot qo‘shildi', row.name)

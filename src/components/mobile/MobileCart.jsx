@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  ArrowRight, Bell, ChevronLeft, CircleCheck, FileText, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Store, Trash2, Truck, X,
+  ArrowRight, Bell, ChevronLeft, FileText, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Store, Trash2, Truck,
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
@@ -14,34 +14,19 @@ export const ORIGIN = {
   forma: { label: 'Forma', to: '/forma' },
   jihoz: { label: 'Jihozlar', to: '/jihozlar' },
 }
-const SHIP = {
-  city: { label: 'Toshkent bo‘ylab', days: '1–2 kun', fee: 0 },
-  region: { label: 'Boshqa viloyatlar', days: '2–4 kun', fee: 30000 },
-}
-export const PROMOS = {
-  SH10: { text: '10% chegirma', calc: (sum) => Math.round(sum * 0.1 / 1000) * 1000 },
-  STOMA500: { text: '500 000 so‘m chegirma (5 mln dan)', min: 5000000, calc: () => 500000 },
-}
-
 export default function MobileCart() {
   const { items, setItems, setQty, remove } = useCart()
   const navigate = useNavigate()
   const loc = useLocation()
   const origin = ORIGIN[loc.state?.from] || ORIGIN.market
   const [liked, setLiked] = useState({})
-  const [ship, setShip] = useState('city')
-  const [code, setCode] = useState('')
-  const [promo, setPromo] = useState(null)
-  const [promoErr, setPromoErr] = useState('')
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState({ text: '' })
   const closeToast = useCallback(() => setToast({ text: '' }), [])
 
   const goods = items.reduce((s, it) => s + it.price * it.qty, 0)
-  const promoValid = promo && goods >= (PROMOS[promo].min || 0)
-  const discount = promoValid ? Math.min(goods, PROMOS[promo].calc(goods)) : 0
-  const fee = SHIP[ship].fee
-  const total = goods - discount + fee
+  // Yetkazish narxi va promokod rasmiylashtirishda (desktop bilan bir xil qoida)
+  const total = goods
 
   const undoable = (text, snapshot) => setToast({
     text,
@@ -58,17 +43,6 @@ export default function MobileCart() {
     setItems([])
     setSheet(null)
     undoable('Savat tozalandi', snapshot)
-  }
-
-  const applyPromo = () => {
-    const key = code.trim().toUpperCase()
-    if (!key) return setPromoErr('Promo-kodni kiriting')
-    const p = PROMOS[key]
-    if (!p) return setPromoErr('Bunday promo-kod topilmadi')
-    if (p.min && goods < p.min) return setPromoErr(`Bu promo-kod ${som(p.min)} dan ortiq buyurtmaga amal qiladi`)
-    setPromo(key)
-    setPromoErr('')
-    setToast({ text: `Promo-kod qo‘llandi: ${p.text}` })
   }
 
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate(origin.to))
@@ -151,49 +125,15 @@ export default function MobileCart() {
             ))}
           </ul>
 
-          <section className="mt-3 rounded-2xl border border-[#cfeae5] bg-[#ebf7f4] p-3">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg border-[1.5px] border-dashed border-[#0b8a7a] text-[13px] font-black text-[#0b8a7a]">%</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-bold text-[#0d2a4a]">Promo-kod</p>
-                <p className="text-[11px] text-ink-2">Chegirma olish uchun promo-kod kiriting</p>
-              </div>
-              {!promo && <button type="button" onClick={applyPromo} className="h-9 shrink-0 rounded-xl border border-[#0b8a7a] bg-white px-3.5 text-[12.5px] font-semibold text-[#0b6d73] active:scale-95">Qo‘llash</button>}
-            </div>
-            {promo ? (
-              <div className="mt-2.5 flex h-11 items-center gap-2 rounded-xl bg-white px-3">
-                <CircleCheck className="size-[18px] shrink-0 text-[#0b8a7a]" />
-                <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#0d2a4a]"><b>{promo}</b> · {promoValid ? PROMOS[promo].text : `${som(PROMOS[promo].min)} dan kam — amal qilmaydi`}</span>
-                <button type="button" onClick={() => { setPromo(null); setCode('') }} aria-label="Promo-kodni olib tashlash" className="grid size-7 place-items-center rounded-full text-ink-2"><X className="size-4" /></button>
-              </div>
-            ) : (
-              <>
-                <input value={code} onChange={(e) => { setCode(e.target.value); setPromoErr('') }} onKeyDown={(e) => e.key === 'Enter' && applyPromo()} placeholder="Promo-kod kiriting..." className={`mt-2.5 h-11 w-full rounded-xl border bg-white px-3 text-[13px] uppercase text-ink outline-none placeholder:normal-case placeholder:text-[#a3b3b9] focus:border-sea ${promoErr ? 'border-sale' : 'border-[#dbe8e6]'}`} />
-                {promoErr && <p className="mt-1 text-[11px] text-sale">{promoErr}</p>}
-              </>
-            )}
-          </section>
-
           <section className="mt-3 rounded-2xl bg-white p-3.5 shadow-[0_1px_6px_rgb(11_31_58/0.06)]">
-            <h2 className="flex items-center gap-2 text-[14px] font-bold text-[#0d2a4a]"><Truck className="size-[18px] text-[#0b6d73]" /> Yetkazib berish</h2>
-            <div className="mt-2" role="radiogroup" aria-label="Yetkazib berish">
-              {Object.entries(SHIP).map(([k, s]) => (
-                <button key={k} type="button" role="radio" aria-checked={ship === k} onClick={() => setShip(k)} className="flex w-full items-center gap-2.5 py-2 text-left">
-                  <span className={`grid size-5 shrink-0 place-items-center rounded-full border-[1.5px] ${ship === k ? 'border-[#2563eb]' : 'border-[#b8c4ca]'}`}>{ship === k && <span className="size-2.5 rounded-full bg-[#2563eb]" />}</span>
-                  <span className="text-[13px] text-[#0d2a4a]">{s.label}</span>
-                  <span className="rounded-md bg-[#e5f6ec] px-1.5 py-0.5 text-[11px] font-medium text-[#16a34a]">{s.days}</span>
-                  <span className={`ml-auto text-[13px] font-semibold ${s.fee ? 'text-[#0d2a4a]' : 'text-[#0b8a7a]'}`}>{s.fee ? som(s.fee) : 'Bepul'}</span>
-                </button>
-              ))}
-            </div>
+            <p className="flex items-center gap-2 text-[13px] text-[#0d2a4a]"><Truck className="size-[18px] shrink-0 text-[#0b6d73]" /> Yetkazib berish: sotuvchi bilan kelishiladi</p>
           </section>
 
           <section className="mt-3 rounded-2xl bg-white p-3.5 shadow-[0_1px_6px_rgb(11_31_58/0.06)]">
             <h2 className="flex items-center gap-2 text-[14px] font-bold text-[#0d2a4a]"><FileText className="size-[18px] text-[#0b6d73]" /> Buyurtma xulosasi</h2>
             <div className="mt-2.5 space-y-1.5 text-[12.5px]">
               <Row k={`Mahsulotlar (${items.length} ta)`} v={som(goods)} />
-              <Row k="Chegirma" v={discount ? `− ${som(discount)}` : som(0)} tone="text-[#0b8a7a]" />
-              <Row k="Yetkazib berish" v={fee ? som(fee) : 'Bepul'} tone={fee ? '' : 'text-[#0b8a7a]'} />
+              <Row k="Yetkazib berish" v="Kelishiladi" />
             </div>
             <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2.5">
               <span className="text-[15px] font-bold text-[#0d2a4a]">Jami</span>
@@ -209,7 +149,7 @@ export default function MobileCart() {
             <p className="text-[12px] text-ink-2">Jami:</p>
             <p className="whitespace-nowrap text-[17px] font-extrabold leading-tight text-[#0b6d73]">{som(total)}</p>
           </div>
-          <button type="button" onClick={() => navigate('/buyurtma/rasmiylashtirish', { state: { from: loc.state?.from, promo: promoValid ? promo : '', ship } })} className="flex h-12 w-[56%] items-center justify-center gap-2 rounded-xl bg-[#0b8a7a] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_122/0.3)] active:scale-[0.98]">
+          <button type="button" onClick={() => navigate('/buyurtma/rasmiylashtirish', { state: { from: loc.state?.from } })} className="flex h-12 w-[56%] items-center justify-center gap-2 rounded-xl bg-[#0b8a7a] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_122/0.3)] active:scale-[0.98]">
             Rasmiylashtirish <ArrowRight className="size-[18px]" />
           </button>
         </div>
