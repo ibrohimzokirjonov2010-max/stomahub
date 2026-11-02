@@ -1,3 +1,4 @@
+import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -64,6 +65,8 @@ export default function Checkout() {
   // "Hozir xarid qilish" → only that product; the cart is left untouched.
   const [buyNow] = useState(() => readBuyNow(loc.state))
   const items = buyNow ? [buyNow] : cart.items
+  const doctorOk = useDoctorVerified()
+  const rxBlocked = !doctorOk && items.some(isRestricted)
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
   const profile = useProfile()
   const [step, setStep] = useState(1)
@@ -167,6 +170,7 @@ export default function Checkout() {
       setError('Oferta shartlari bilan tanishib chiqishingiz kerak.')
       return
     }
+    if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return
     setError('')
     setBusy(true)
@@ -235,6 +239,7 @@ export default function Checkout() {
               {step === 3 && 'Buyurtmangizni tekshirib, tasdiqlang'}
             </p>
             <Stepper step={step} />
+            {rxBlocked && <RestrictedNotice className="mt-3" />}
             {error && <p className="mt-3 rounded-xl bg-[#fff1f2] px-3 py-2 text-[12.5px] text-[#e11d48]">{error}</p>}
 
             <div className="buy-layout mt-4">

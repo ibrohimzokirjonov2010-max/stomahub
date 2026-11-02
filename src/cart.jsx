@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { initialCart } from './marketData'
 import { isUuid } from './buyerApi'
+import { isRestricted } from './restricted.jsx'
+import { useProfile } from './profileStore'
 import { tierPrice } from './config/productCatalog'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
 
@@ -10,6 +12,8 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState([])
   const [reviewing, setReviewing] = useState(false)
   const [cartReady, setCartReady] = useState(false)
+  const [rxPrompt, setRxPrompt] = useState(false)
+  const doctorOk = !!useProfile()?.verified
 
   useEffect(() => onAccount(async (id) => {
     if (!id) {
@@ -38,7 +42,13 @@ export function CartProvider({ children }) {
   const setQty = (id, qty) =>
     setItems((list) => list.map((it) => (it.id === id ? priced(it, qty) : it)))
 
-  const add = (product, qty = 1) =>
+  // Server qoidasi (0038) bilan bir xil: cheklangan mahsulot faqat tasdiqlangan shifokor savatiga tushadi
+  const add = (product, qty = 1) => {
+    if (isRestricted(product) && !doctorOk) { setRxPrompt(true); return false }
+    addLine(product, qty)
+    return true
+  }
+  const addLine = (product, qty) =>
     setItems((list) => {
       const id = product.id
       const found = list.find((it) => it.id === id)
@@ -60,6 +70,7 @@ export function CartProvider({ children }) {
         ...(tiers.length ? { tiers, basePrice: product.price } : {}),
         ...(product.uom && product.uom !== 'dona' ? { uom: product.uom } : {}),
         ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
+        ...(isRestricted(product) ? { rx: true } : {}),
       }, qty)]
     })
 
@@ -70,7 +81,7 @@ export function CartProvider({ children }) {
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
 
   return (
-    <CartContext.Provider value={{ items, setItems, add, setQty, remove, clear, count, total, cartReady, reviewing, openReview: () => setReviewing(true), closeReview: () => setReviewing(false) }}>
+    <CartContext.Provider value={{ items, setItems, add, setQty, remove, clear, count, total, cartReady, reviewing, rxPrompt, closeRxPrompt: () => setRxPrompt(false), openReview: () => setReviewing(true), closeReview: () => setReviewing(false) }}>
       {children}
     </CartContext.Provider>
   )

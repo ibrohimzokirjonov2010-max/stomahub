@@ -1,3 +1,4 @@
+import { isRestricted } from './restricted.jsx'
 const MOBILE_QUERY = '(max-width: 767.98px)' // keep in sync with useMobile.js
 // Shared checkout helpers (desktop Checkout.jsx + MobileCheckout.jsx).
 
@@ -91,6 +92,7 @@ export function buyNowItem(product, qty = 1) {
     image: product.image || product.image_url || product.thumbs?.[0] || '',
     qty: Math.max(1, qty | 0),
     ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
+    ...(isRestricted(product) ? { rx: true } : {}),
   }
 }
 /** "Hozir xarid qilish": go to checkout with ONLY this product; cart is not touched. */
