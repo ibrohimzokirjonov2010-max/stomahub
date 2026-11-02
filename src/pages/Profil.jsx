@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { MenuIcons as M } from '../components/tealIcons'
 import ShopLayout from '../components/market/ShopLayout'
+import { canReview, RatedBadge, ReviewDialog, useMyReviews } from '../components/OrderReview'
 import { fetchNotifications, markNotificationsRead, useRemote } from '../buyerApi'
 import { marketProducts, som } from '../marketData'
 import {
@@ -675,6 +676,9 @@ function CoursesBlock({ courses, full }) {
 }
 
 function OrdersBlock({ orders, status, error, full }) {
+  const reviews = useMyReviews()
+  const [rate, setRate] = useState(null)
+  const [thanks, setThanks] = useState('')
   return (
     <section className={card}>
       <SectionHead title={full ? 'Buyurtmalarim' : 'Oxirgi buyurtmalar'} action={full ? null : 'Barchasi'} onAction={() => {}} />
@@ -700,10 +704,19 @@ function OrdersBlock({ orders, status, error, full }) {
                 <p className="text-[13px] font-bold text-[#12263a]">{som(o.total || o.goods || 0)}</p>
                 <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone}`}>{o.statusLabel || o.status}</span>
               </div>
+              {canReview(o) && (() => {
+                const next = (o.items || []).find((it) => !reviews.ratingOf(o, it))
+                const first = o.items?.[0]
+                return next
+                  ? <button type="button" onClick={() => setRate({ order: o, item: next })} className="shrink-0 rounded-lg border border-[#f5c56b] bg-[#fff8eb] px-3 py-1.5 text-[12px] font-semibold text-[#92400e]">★ Baholash</button>
+                  : first ? <span className="shrink-0"><RatedBadge rating={reviews.ratingOf(o, first)} /></span> : null
+              })()}
             </li>
           )
         })}
       </ul>
+      {thanks && <p role="status" className="mt-2 rounded-xl bg-[#e5f6ec] px-3 py-2 text-[12.5px] font-medium text-[#15803d]">{thanks}</p>}
+      {rate && <ReviewDialog order={rate.order} item={rate.item} onClose={() => setRate(null)} onDone={(r) => { reviews.mark(rate.order, rate.item, r); setRate(null); setThanks('Rahmat! Bahoingiz yuborildi') }} />}
     </section>
   )
 }
@@ -712,6 +725,9 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
   const list = profile.addresses || []
   const blank = () => ({ id: `a${Date.now().toString(36)}`, kind: 'home', name: profile.name || '', phone: profile.phone || '', city: profile.city || 'Toshkent', district: 'Markaz', street: '', extra: '' })
   const save = async () => {
+    if (String(form.name || '').trim().length < 3) return onErr('Qabul qiluvchi ismini kiriting')
+    if (String(form.phone || '').replace(/\D/g, '').length < 9) return onErr('Telefon raqamini to‘liq kiriting')
+    if (String(form.street || '').trim().length < 5) return onErr('Ko‘cha va uy raqamini kiriting')
     try {
       const row = addr(form.id, form.kind, form.name, form.phone, form.district, form.street, form.extra, form.city, form.lat ?? null, form.lng ?? null)
       const exists = list.some((x) => x.id === row.id)

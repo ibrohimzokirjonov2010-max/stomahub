@@ -85,6 +85,7 @@ if (looksLikeDemoName(state.name)) {
 }
 
 function write(next, opts = {}) {
+  if (!opts.remote && 'addresses' in next) localAddrEditAt = Date.now()
   state = { ...state, ...next }
   const cache = { ...state }
   delete cache.syncError
@@ -110,6 +111,8 @@ export function flushProfile() {
 async function pushProfile() {
   const uid = currentUid()
   if (!supabase || !uid) return
+  // Profil DBdan yuklanmagan bo‘lsa, bo‘sh lokal maydonlar bilan haqiqiy profilni ustidan yozmaymiz.
+  if (hydratedUid !== uid && !isDemoUser()) { await syncChildren(uid); return }
   let avatar = state.avatar || ''
   if (avatar.startsWith('data:')) {
     avatar = await uploadAvatar(avatar)
@@ -192,8 +195,20 @@ function localPhone(value) {
 }
 
 async function syncChildren(uid) {
-  // Never wipe DB from empty local state before hydrate finished for this uid.
-  if (hydratedUid !== uid) return
+  // Hydrate hali tugamagan/xato bo‘lsa: DBni bo‘sh lokal holat bilan o‘chirib yubormaslik uchun
+  // faqat qo‘shish (upsert) qilamiz, o‘chirish yo‘q. Avval bu yerda jim `return` bo‘lardi —
+  // natijada "Manzil qo‘shildi" deyilardi-yu, hech narsa saqlanmasdi.
+  if (hydratedUid !== uid) {
+    const addresses = state.addresses || []
+    if (addresses.length) {
+      const { error } = await supabase.from('customer_addresses').upsert(addresses.map((row, index) => ({
+        id: `${uid}:${row.id}`, user_id: uid, payload: row, sort_at: index,
+      })))
+      if (error) throw error
+    }
+    retryHydrate(uid)
+    return
+  }
 
   const addresses = state.addresses || []
   const addrIds = new Set(addresses.map((row) => `${uid}:${row.id}`))
@@ -339,7 +354,15 @@ async function uploadClinicPhoto(dataUrl) {
   return `${data.publicUrl}?v=${Date.now()}`
 }
 
-async function hydrateProfile(nextUid) {
+let hydrateRetryAt = 0
+function retryHydrate(uid) {
+  if (Date.now() - hydrateRetryAt < 5000) return
+  hydrateRetryAt = Date.now()
+  hydrateProfile(uid, { keepLocal: true }).catch(() => {})
+}
+
+async function hydrateProfile(nextUid, opts = {}) {
+  const startedAt = Date.now()
   if (!supabase || !nextUid) {
     hydratedUid = null
     applyingRemote = true
@@ -350,7 +373,7 @@ async function hydrateProfile(nextUid) {
     return
   }
   // Account switch (or first hydrate in this tab): never show another user's cached data.
-  if (!isDemoUser() && (state.ownerUid !== nextUid || hydratedUid !== nextUid)) {
+  if (!opts.keepLocal && !isDemoUser() && (state.ownerUid !== nextUid || hydratedUid !== nextUid)) {
     applyingRemote = true
     try { localStorage.removeItem(KEY) } catch { /* ignore */ }
     state = { ...EMPTY_ACCOUNT, ownerUid: nextUid }
@@ -429,7 +452,7 @@ async function hydrateProfile(nextUid) {
     plus: !!profile?.plus,
     bonus: profile?.bonus || 0,
     notif: { ...DEFAULT.notif, ...(profile?.notif || {}) },
-    addresses: (addresses.data || []).map((row) => row.payload),
+    addresses: mergeAddresses((addresses.data || []).map((row) => row.payload), startedAt),
     cards: (cards.data || []).map((card) => ({
       id: String(card.id).split(':').pop(),
       brand: card.brand,
@@ -469,6 +492,16 @@ async function hydrateProfile(nextUid) {
     courseDone,
   }, { remote: true })
   hydratedUid = nextUid
+  if (localAddrEditAt >= startedAt) schedulePush()
+}
+
+// Hydrate davomida foydalanuvchi qo‘shgan manzil DBdan kelgan eski ro‘yxat bilan yo‘qolmasin.
+let localAddrEditAt = 0
+function mergeAddresses(remote, startedAt) {
+  if (localAddrEditAt < startedAt) return remote
+  const local = state.addresses || []
+  const ids = new Set(remote.map((a) => a.id))
+  return [...remote.map((a) => local.find((x) => x.id === a.id) || a), ...local.filter((a) => !ids.has(a.id))]
 }
 
 async function refreshOrders() {

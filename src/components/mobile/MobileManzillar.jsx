@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Bell, Check, MapPin, Pencil, Phone, Plus, Search, ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '../../cart'
-import { ADDRESS_KINDS, addr, profileStore, useProfile } from '../../profileStore'
+import { ADDRESS_KINDS, addr, flushProfile, profileStore, useProfile } from '../../profileStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import MapPicker, { MapPreview } from '../MapPicker'
@@ -65,6 +65,7 @@ export default function MobileManzillar() {
     const addresses = exists ? list.map((x) => (x.id === a.id ? a : x)) : [...list, a]
     profileStore.update({ addresses, defaultAddr: main || !profile.defaultAddr ? a.id : profile.defaultAddr })
     setEdit(null)
+    flushProfile().catch((e) => setToast({ text: `Manzil saqlanmadi: ${e?.message || 'internet aloqasini tekshiring'}` }))
   }
 
   const remove = (a) => {

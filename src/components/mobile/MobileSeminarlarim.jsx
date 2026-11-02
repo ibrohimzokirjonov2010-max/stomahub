@@ -17,31 +17,57 @@ const navy = 'text-[#0d2a4a]'
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 const METHOD_LABEL = { click: 'Click', payme: 'Payme', uzum: 'Uzum Bank', card: 'Bank kartasi', split: 'Bo‘lib to‘lash' }
 
-const atOf = (s) => new Date(`${s.date}T${s.to}:00`)
+// iOS Safari "YYYY-MM-D" kabi satrlarni o‘qiy olmaydi — sanani raqamlardan quramiz.
+const ymd = (s) => {
+  const [y, m, d] = String(s?.date || '').split('-').map(Number)
+  return [y || new Date().getFullYear(), m >= 1 && m <= 12 ? m : 1, d || 1]
+}
+const hm = (v, def) => {
+  const [h, mi] = String(v || def).split(':').map(Number)
+  return [Number.isFinite(h) ? h : 0, Number.isFinite(mi) ? mi : 0]
+}
+const atOf = (s) => {
+  const [y, m, d] = ymd(s)
+  const [h, mi] = hm(s?.to, '18:00')
+  const t = new Date(y, m - 1, d + Math.max(0, (Number(s?.days) || 1) - 1), h, mi).getTime()
+  return Number.isFinite(t) ? t : 0
+}
 export const dateLabel = (s) => {
-  const [y, m, d] = s.date.split('-').map(Number)
-  const days = s.days > 1 ? `${d}–${d + s.days - 1}` : d
-  return `${days}-${MONTHS[m - 1]} ${y}, ${s.from} – ${s.to}`
+  const [y, m, d] = ymd(s)
+  const n = Number(s?.days) || 1
+  const days = n > 1 ? `${d}–${d + n - 1}` : d
+  return `${days}-${MONTHS[m - 1]} ${y}, ${s?.from || '10:00'} – ${s?.to || '18:00'}`
 }
 
 function fromStore(id, reg) {
-  const rec = publicRecord(id)
-  const s = rec ? seminarView(rec) : null
-  if (!s) return null
-  const [from, to] = s.time.split(/\s*[-–]\s*/)
-  const online = reg.format === 'online'
-  return {
-    key: id, link: `/seminarlar/${id}`, cat: s.catName, title: s.title, speaker: s.speaker.name, role: s.speaker.role,
-    date: `${s.monthKey}-${s.day}`, days: s.days, from, to, online,
-    place: online ? 'Onlayn' : `${s.city}, ${s.venue.name}`,
-    address: online ? 'Zoom havolasi email orqali yuboriladi' : s.venue.address,
-    image: s.image, pos: 'object-center', order: reg.order, plan: reg.plan, price: reg.price, method: reg.method, months: reg.months, cme: s.cme,
+  try {
+    const rec = publicRecord(id)
+    const s = rec ? seminarView(rec) : null
+    if (!s) return null
+    const [from = '10:00', to = '18:00'] = String(s.time || '').split(/\s*[-–]\s*/).map((x) => x.slice(0, 5))
+    const online = reg?.format === 'online' || s.format === 'Online'
+    const venue = s.venue || {}
+    const day = String(s.day || '1').padStart(2, '0')
+    return {
+      key: id, link: `/seminarlar/${id}`, cat: s.catName || 'Seminar', title: s.title || 'Seminar',
+      speaker: s.speaker?.name || 'Ma’ruzachi', role: s.speaker?.role || '',
+      date: `${s.monthKey || ''}-${day}`, days: Number(s.days) || 1, from, to, online,
+      place: online ? 'Onlayn' : [s.city, venue.name].filter(Boolean).join(', ') || 'Manzil keyinroq',
+      address: online ? 'Zoom havolasi email orqali yuboriladi' : venue.address || '',
+      image: s.image || '', pos: 'object-center', order: String(reg?.order || ''), plan: reg?.plan || 'Standart',
+      price: Number(reg?.price) || 0, method: reg?.method || 'click', months: Number(reg?.months) || 0, cme: Number(s.cme) || 0,
+      ended: /yakunlangan|tugallangan/i.test(String(rec.status || '')),
+    }
+  } catch (e) {
+    console.error('Seminar kartasi tuzilmadi', id, e)
+    return null
   }
 }
 
 export function useMySeminars() {
   const store = useSeminarStore()
   const hub = useHub()
+  const registered = store?.registered && typeof store.registered === 'object' ? store.registered : {}
   const server = {}
   ;(hub.myRegistrations || []).forEach((row) => {
     const id = row.seminar_id
@@ -49,21 +75,21 @@ export function useMySeminars() {
     server[id] = {
       order: row.code || row.id,
       plan: row.ticket || 'Standart',
-      price: store.registered[id]?.price,
-      method: store.registered[id]?.method || 'click',
+      price: registered[id]?.price,
+      method: registered[id]?.method || 'click',
       format: /onlayn/i.test(row.ticket || '') ? 'online' : 'offline',
     }
   })
-  const merged = { ...server, ...store.registered }
+  const merged = { ...server, ...registered }
   const profile = useProfile()
-  const own = Object.entries(merged).filter(([, r]) => r?.order).map(([id, r]) => fromStore(id, r)).filter(Boolean)
+  const own = Object.entries(merged).filter(([, r]) => r && typeof r === 'object' && r.order).map(([id, r]) => fromStore(id, r)).filter(Boolean)
   const seen = new Set(own.map((s) => s.key))
   const samples = []
   const all = [...own, ...samples.filter((s) => !seen.has(s.key))]
   const now = Date.now()
   return {
-    upcoming: all.filter((s) => atOf(s) >= now).sort((a, b) => atOf(a) - atOf(b)),
-    past: all.filter((s) => atOf(s) < now).sort((a, b) => atOf(b) - atOf(a)),
+    upcoming: all.filter((s) => !s.ended && atOf(s) >= now).sort((a, b) => atOf(a) - atOf(b)),
+    past: all.filter((s) => s.ended || atOf(s) < now).sort((a, b) => atOf(b) - atOf(a)),
   }
 }
 
@@ -73,8 +99,8 @@ function downloadIcs(s) {
   const ics = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//StomaHub//Seminar//UZ', 'BEGIN:VEVENT',
     `UID:${s.key}-${s.order}@stomahub.uz`,
-    `DTSTART:${d}T${s.from.replace(':', '')}00`,
-    `DTEND:${end}T${s.to.replace(':', '')}00`,
+    `DTSTART:${d}T${String(s.from || '10:00').replace(':', '')}00`,
+    `DTEND:${end}T${String(s.to || '18:00').replace(':', '')}00`,
     `SUMMARY:${s.title}`,
     `LOCATION:${s.online ? 'Onlayn (Zoom)' : `${s.place}, ${s.address}`}`,
     `DESCRIPTION:Ma'ruzachi: ${s.speaker}. Chipta: #${s.order}`,
@@ -142,7 +168,7 @@ async function downloadCertificate(s, name) {
   g.fillText(s.speaker, 150, 800)
   g.fillStyle = '#5b7280'
   g.font = font(400, 22)
-  g.fillText(`Ma’ruzachi, ${s.role.toLowerCase()}`, 150, 834)
+  g.fillText(`Ma’ruzachi, ${String(s.role || 'stomatolog').toLowerCase()}`, 150, 834)
   g.strokeStyle = '#0d2a4a'
   g.lineWidth = 1.5
   g.beginPath()
@@ -153,7 +179,7 @@ async function downloadCertificate(s, name) {
   g.textAlign = 'right'
   g.fillStyle = '#0d2a4a'
   g.font = font(700, 26)
-  g.fillText(`№ CERT-${s.order.replace('SEM-', '')}`, W - 150, 800)
+  g.fillText(`№ CERT-${String(s.order || '').replace('SEM-', '')}`, W - 150, 800)
   g.fillStyle = '#5b7280'
   g.font = font(400, 22)
   g.fillText('stomahub.uz/sertifikat', W - 150, 834)
@@ -221,7 +247,7 @@ export default function MobileSeminarlarim() {
   }
   const cert = async (s) => {
     try {
-      await downloadCertificate(s, profile.name)
+      await downloadCertificate(s, profile?.name)
       setToast('Sertifikat yuklab olindi')
     } catch {
       setToast('Sertifikatni yuklab bo‘lmadi')
@@ -275,7 +301,7 @@ export default function MobileSeminarlarim() {
         )}
       </div>
 
-      {ticket && <TicketSheet s={ticket} profile={profile} past={atOf(ticket) < Date.now()} onClose={() => setTicket(null)} onToast={setToast} />}
+      {ticket && <TicketSheet s={ticket} profile={profile} past={ticket.ended || atOf(ticket) < Date.now()} onClose={() => setTicket(null)} onToast={setToast} />}
       <MobileToast text={toast} onClose={closeToast} />
       <MobileTabBar />
     </div>
@@ -313,7 +339,7 @@ function SemCard({ s, past, inCal, onTicket, onCal, onCert }) {
           <div className="flex justify-end">
             <span className={`flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[10.5px] font-medium ${partial ? 'bg-[#fff4e0] text-[#c77700]' : `bg-[#e3f4f1] ${teal}`}`}>
               <CircleCheck className={`size-3.5 ${partial ? '' : 'fill-[#0b6d73] text-white'}`} strokeWidth={2.4} />
-              {past ? 'Tugallangan' : partial ? 'Qisman to‘langan' : 'To‘langan'}
+              {past ? 'Yakunlangan' : partial ? 'Qisman to‘langan' : 'To‘langan'}
             </span>
           </div>
           {s.link
@@ -344,13 +370,13 @@ function SemCard({ s, past, inCal, onTicket, onCal, onCert }) {
 }
 
 function TicketSheet({ s, profile, past, onClose, onToast }) {
-  const seed = `${s.order}-${s.key}-${profile.phone}`
+  const seed = `${s.order}-${s.key}-${profile?.phone}`
   const download = async () => {
     try {
       await downloadTicket({
         s: { id: s.key, image: s.image, catName: s.cat, title: s.title, speaker: { name: s.speaker } },
         m: { whenFull: dateLabel(s) },
-        reg: { order: s.order, phone: profile.phone, name: profile.name, plan: s.plan, price: s.price },
+        reg: { order: s.order, phone: profile?.phone, name: profile?.name, plan: s.plan, price: s.price },
         place: s.online ? 'Onlayn (Zoom)' : s.place,
         methodLabel: s.months ? `${METHOD_LABEL.split} (${s.months} oy)` : METHOD_LABEL[s.method] || 'Click',
       })
@@ -388,7 +414,7 @@ function TicketSheet({ s, profile, past, onClose, onToast }) {
       </div>
       <dl className="mt-3 divide-y divide-[#eef2f4] rounded-xl bg-[#f6faf9] px-3 text-[12.5px]">
         {[
-          [UserRound, 'Ishtirokchi', profile.name],
+          [UserRound, 'Ishtirokchi', profile?.name],
           [CalendarDays, 'Sana va vaqt', dateLabel(s)],
           [s.online ? Video : MapPin, 'Joy', s.online ? 'Onlayn (Zoom)' : `${s.place}`],
           [Ticket, 'Chipta turi', s.plan],

@@ -31,7 +31,7 @@ export default function Mahsulotlar() {
       setMsg(approve ? `“${row.name}” tasdiqlandi.` : `“${row.name}” rad etildi.`)
       load()
     } catch (e) {
-      setMsg(e.message)
+      setMsg(`${approve ? 'Tasdiqlab' : 'Rad etib'} bo‘lmadi: “${row.name}”. ${e.message || 'Noma’lum xato'}. Qayta urinib ko‘ring yoki sahifani yangilang.`)
     } finally {
       setBusy('')
     }

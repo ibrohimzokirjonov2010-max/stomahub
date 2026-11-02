@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Search, X, Plus, Filter, LayoutGrid, Armchair, Building2, BriefcaseBusiness, Wrench, Heart, MapPin, CalendarDays, Check, ImagePlus } from 'lucide-react'
 import { ADS, DEALS, AD_CATS, AD_CITIES, SELLERS, dealName, adPrice } from '../../elonlarData'
 import { bindBlob, touchBlob } from '../../recordSync'
@@ -49,7 +49,11 @@ export const adsStore = {
 }
 export const allAds = () => [...store.added, ...ADS]
 export const findAd = (id) => allAds().find((a) => a.id === id) || null
-export const sellerOf = (a) => SELLERS[a.seller] || a.sellerInfo
+// Katalogdagi e’lonlarda sotuvchi ma’lumoti bo‘lmasligi mumkin — sahifa yiqilmasligi uchun xavfsiz qiymat.
+export const sellerOf = (a) => {
+  const s = SELLERS[a?.seller] || a?.sellerInfo || {}
+  return { ...s, name: s.name || 'Sotuvchi', type: s.type || 'Xususiy shaxs', phone: s.phone || '', rating: s.rating ?? null, since: s.since || '' }
+}
 
 export default function MobileElonlar() {
   const { added, saved } = useAds()
@@ -57,7 +61,8 @@ export default function MobileElonlar() {
   const [deal, setDeal] = useState('')
   const [cat, setCat] = useState('all')
   const [f, setF] = useState(EMPTY)
-  const [sheet, setSheet] = useState(null)
+  const location = useLocation()
+  const [sheet, setSheet] = useState(location.state?.post ? 'post' : null)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const ads = useMemo(() => [...added, ...ADS], [added])

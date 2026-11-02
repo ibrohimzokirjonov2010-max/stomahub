@@ -379,22 +379,63 @@ function Empty({ icon: Icon, text, sub }) {
   )
 }
 
+const AD_DEAL = { sale: ['Sotiladi', 'bg-[#e5f6ec] text-[#15803d]'], rent: ['Ijaraga', 'bg-[#e3f4f6] text-[#0b6d73]'], job: ['Ish', 'bg-[#eef2ff] text-[#4338ca]'] }
+
 function AdsSheet({ ads, onClose }) {
+  const [tab, setTab] = useState('all')
+  const counts = { all: ads.length, sale: 0, rent: 0, job: 0 }
+  ads.forEach((a) => { if (counts[a.deal] != null) counts[a.deal] += 1 })
+  const list = tab === 'all' ? ads : ads.filter((a) => a.deal === tab)
+  const tabs = [['all', 'Barchasi'], ['sale', 'Sotuv'], ['rent', 'Ijara'], ['job', 'Ish']].filter(([k]) => k === 'all' || counts[k])
   return (
-    <BottomSheet title="E’lonlarim" onClose={onClose} footer={<Link to="/elonlar" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white"><Plus className="size-[18px]" /> Yangi e’lon joylash</Link>}>
-      {!ads.length && <Empty icon={Megaphone} text="Hozircha e’lon yo‘q" sub="Joylagan ish va xizmat e’lonlaringiz shu yerda ko‘rinadi" />}
-      <div className="mt-3 flex flex-col gap-2">
-        {ads.map((a) => (
-          <Link key={a.id} to={`/elonlar/${a.id}`} className="flex items-center gap-3 rounded-2xl border border-line p-2">
-            <img src={a.images?.[0]} alt="" className="size-16 shrink-0 rounded-xl bg-page object-cover" />
-            <span className="min-w-0 flex-1">
-              <span className={`block truncate text-[13px] font-semibold ${navy}`}>{a.title}</span>
-              <span className="block truncate text-[11px] text-muted">{a.city}</span>
-              <span className="mt-1 block text-[12.5px] font-bold text-sea">{adPrice(a)}</span>
-            </span>
-            <ChevronRight className="size-[18px] shrink-0 text-muted" />
-          </Link>
-        ))}
+    <BottomSheet title="E’lonlarim" onClose={onClose} footer={<Link to="/elonlar" state={{ post: true }} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white"><Plus className="size-[18px]" /> Yangi e’lon joylash</Link>}>
+      {!ads.length && (
+        <div className="mt-3 rounded-2xl border border-dashed border-[#cfe3e1] bg-[#f6fbfa] px-4 py-8 text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#e3f5f3] text-sea"><Megaphone className="size-7" strokeWidth={1.6} /></span>
+          <p className={`mt-3 text-[14px] font-semibold ${navy}`}>Hozircha e’lon yo‘q</p>
+          <p className="mx-auto mt-1 max-w-[260px] text-[12.5px] leading-snug text-muted">Uskuna sotish, ijaraga berish yoki xodim izlash uchun e’lon joylang — u shu yerda ko‘rinadi.</p>
+        </div>
+      )}
+      {ads.length > 0 && (
+        <>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[['Jami', counts.all], ['Sotuv / ijara', counts.sale + counts.rent], ['Ish', counts.job]].map(([l, v]) => (
+              <div key={l} className="rounded-xl bg-[#f3f8f8] px-3 py-2.5">
+                <p className={`text-[18px] font-extrabold leading-none ${navy}`}>{v}</p>
+                <p className="mt-1 text-[11px] text-muted">{l}</p>
+              </div>
+            ))}
+          </div>
+          {tabs.length > 2 && (
+            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+              {tabs.map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)} className={`h-8 shrink-0 rounded-full px-3 text-[12.5px] font-semibold ${tab === k ? 'bg-sea text-white' : 'border border-line text-ink-2'}`}>{l} · {counts[k]}</button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      <div className="mt-3 flex flex-col gap-2.5">
+        {list.map((a) => {
+          const [dl, dc] = AD_DEAL[a.deal] || AD_DEAL.sale
+          return (
+            <Link key={a.id} to={`/elonlar/${a.id}`} className="flex gap-3 rounded-2xl border border-[#e3ecee] bg-white p-2.5 shadow-[0_1px_2px_rgb(16_24_40/0.04)] active:bg-[#f6faf9]">
+              <span className="relative size-[76px] shrink-0 overflow-hidden rounded-xl bg-[#eef4f4]">
+                {a.images?.[0] ? <img src={a.images[0]} alt="" loading="lazy" className="size-full object-cover" /> : <Megaphone className="m-auto mt-6 size-7 text-sea/50" />}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex items-center gap-1.5">
+                  <span className={`rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold ${dc}`}>{dl}</span>
+                </span>
+                <span className={`mt-1 line-clamp-2 text-[13.5px] font-semibold leading-snug ${navy}`}>{a.title}</span>
+                <span className="mt-auto flex items-end justify-between gap-2 pt-1">
+                  <span className="text-[13px] font-bold text-sea">{adPrice(a)}</span>
+                  <span className="truncate text-[11px] text-muted">{[a.city, a.date].filter(Boolean).join(' · ')}</span>
+                </span>
+              </span>
+            </Link>
+          )
+        })}
       </div>
     </BottomSheet>
   )

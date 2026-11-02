@@ -212,66 +212,45 @@ export default function Klinika() {
     flash('Sozlamalar saqlandi')
   }
 
+  const lowStock = stock.filter((r) => r.status === 'kam' || r.status === 'tugash')
+
   return (
     <ShopLayout active="klinika" search="plain" placeholder="Bemor qidirish (ism, telefon)...">
       <div className="space-y-3 pb-8 pt-3" onClick={() => menu && setMenu(null)}>
-        <section className="klk-head">
+        <section className="flex flex-col gap-3 rounded-2xl border border-[#e3eeec] bg-white p-4 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-sea-50 text-sea"><M.klinika className="size-11" /></span>
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#0F766E]/10 text-[#0F766E]"><M.klinika className="size-9" /></span>
             <div className="min-w-0">
-              <h1 className="flex items-center gap-1.5 text-[22px] font-extrabold tracking-tight text-ink">{settings.name || 'Mening klinikam'} <BadgeCheck className="size-5 fill-sea text-white" /></h1>
-              <p className="mt-1 flex flex-wrap items-center gap-3 text-[11.5px] text-muted">
+              <h1 className="flex items-center gap-1.5 truncate text-[20px] font-bold tracking-tight text-ink">{settings.name || 'Mening klinikam'}</h1>
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted">
                 <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" /> {settings.city || 'Shahar tanlanmagan'}</span>
-                <button type="button" onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-1 font-medium text-sea underline-offset-2 hover:underline"><Settings className="size-3.5" /> Sozlamalar</button>
+                <button type="button" onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-1 font-medium text-[#0F766E] hover:underline"><Settings className="size-3.5" /> Sozlamalar</button>
               </p>
             </div>
           </div>
-          <div className="relative flex min-h-[78px] min-w-0 items-center overflow-hidden rounded-2xl bg-gradient-to-r from-[#d9f1f2] to-[#eef9f9]">
-            <img src="/images/jihozlar/fengdan-room.jpg" alt="" className="absolute inset-y-0 left-0 h-full w-[38%] object-cover" style={{ maskImage: 'linear-gradient(90deg, #000 60%, transparent)' }} />
-            <div className="relative ml-[36%] min-w-0 py-2 pr-3">
-              <b className="block text-[13px] text-ink">Klinikangizni to‘liq nazorat qiling</b>
-              <p className="text-[11px] text-ink-2">Bemorlar, moliya, ombor va xodimlar bir joyda</p>
-              <button type="button" onClick={() => setSettingsOpen(true)} className="mt-1.5 inline-flex h-7 items-center gap-1 rounded-lg bg-sea px-3 text-[11px] font-semibold text-white">Klinika sozlamalari <ArrowRight className="size-3.5" /></button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setAdding(true)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-sea bg-white px-4 text-[12.5px] font-semibold text-sea"><Plus className="size-4" /> Bemor qo‘shish</button>
-            <button type="button" onClick={() => setBooking({})} className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[#0b5f63] px-4 text-[12.5px] font-semibold text-white"><CalendarPlus className="size-4" /> Qabulga yozish</button>
+          <div className="grid grid-cols-2 gap-2 md:flex">
+            <button type="button" onClick={() => setAdding(true)} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[#cfe3e0] bg-white px-4 text-[12.5px] font-semibold text-[#0F766E] hover:bg-[#f0f7f6]"><Plus className="size-4" /> Bemor qo‘shish</button>
+            <button type="button" onClick={() => setBooking({})} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0F766E] px-4 text-[12.5px] font-semibold text-white hover:bg-[#0c625b]"><CalendarPlus className="size-4" /> Qabulga yozish</button>
           </div>
         </section>
 
         <section className="klk-stats">
-          <Stat icon={CalendarDays} title="Bugungi qabullar">
-            <div className="flex items-end justify-between gap-3">
-              <div><b className="text-[24px] leading-none">{todayCount}</b><p className="mt-1 text-[11px] text-muted">{chairs.length ? `Jami ${totalSlots} ta slotdan` : "Kreslo sozlanmagan"}</p></div>
-              <div className="flex-1 pb-1">
-                <div className="h-1.5 overflow-hidden rounded-full bg-[#e7eef5]"><span className="block h-full rounded-full bg-sea" style={{ width: `${load}%` }} /></div>
-                <p className="mt-1 text-right text-[10.5px] text-muted">{load}%</p>
-              </div>
-            </div>
-          </Stat>
-          <Stat icon={UserRound} title="Bemorlar">
-            <div className="flex items-end justify-between gap-3">
-              <div><b className="text-[24px] leading-none">{patients.length}</b><p className="mt-1 text-[11px] text-muted">{patients.length ? `shu hisobdagi bemorlar${newCount ? ` · +${newCount} yangi` : ''}` : 'Hali bemor yo‘q'}</p></div>
-            </div>
-          </Stat>
-          <Stat icon={CircleDollarSign} title="Tushum" tone="#fff1df" ink="#c2410c">
-            <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0"><b className="whitespace-nowrap text-[19px] leading-none">{som(clinicIncome)}</b><p className="mt-1 truncate text-[10.5px] text-muted">{clinicIncome ? 'jami to‘lovlar' : 'Hali tushum yo‘q'}</p></div>
-            </div>
-          </Stat>
-          <Stat icon={Armchair} title="Kreslo bandligi">
-            <div className="flex items-end justify-between gap-3">
-              <div><b className="text-[24px] leading-none">{load}%</b><p className="mt-1 text-[11px] text-muted">{chairs.length ? `${chairs.length} ta kreslodan` : "Kreslo sozlanmagan"}</p></div>
-              <Ring value={load} />
-            </div>
-          </Stat>
+          <Stat icon={CalendarDays} title="Bugungi qabullar" value={todayCount} hint={chairs.length ? `${totalSlots} ta slotdan · ${load}%` : 'Kreslo sozlanmagan'} />
+          <Stat icon={UserRound} title="Bemorlar" value={patients.length} hint={patients.length ? (newCount ? `+${newCount} yangi` : 'shu hisobda') : 'Hali bemor yo‘q'} />
+          <Stat icon={CircleDollarSign} title="Tushum" value={som(clinicIncome)} hint={clinicIncome ? 'jami to‘lovlar' : 'Hali tushum yo‘q'} />
+          <Stat icon={Armchair} title="Kreslo bandligi" value={`${load}%`} hint={chairs.length ? `${chairs.length} ta kreslo` : 'Kreslo sozlanmagan'} />
         </section>
 
+        <nav aria-label="Klinika bo‘limlari" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 no-scrollbar">
+          {[['Bemorlar', '/bemorlar'], ['Uchrashuvlar', '/uchrashuvlar'], ['Davolash rejalari', '/davolash-rejalari'], ['To‘lovlar', '/tolovlar'], ['Ombor', '/ombor'], ['Xizmatlar', '/xizmatlar'], ['Hisobotlar', '/hisobotlar']].map(([t, to]) => (
+            <Link key={to} to={to} className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-[#e3eeec] bg-white px-3.5 text-[12.5px] font-medium text-ink-2 hover:border-[#0F766E] hover:text-[#0F766E]">{t} <ChevronRight className="size-3.5 text-muted" /></Link>
+          ))}
+        </nav>
+
         <div className="klk-mid">
-          <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
+          <section className="min-w-0 rounded-2xl border border-[#e3eeec] bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[14px] font-bold">{date === TODAY ? 'Bugungi qabul jadvali' : 'Qabul jadvali'}</h2>
+              <h2 className="text-[15px] font-bold">{date === TODAY ? 'Bugungi qabul jadvali' : 'Qabul jadvali'}</h2>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex h-8 items-center rounded-lg border border-line">
                   <button type="button" aria-label="Oldingi" onClick={() => setDate(shiftIso(date, view === 'week' ? -7 : view === 'month' ? -30 : -1))} className="grid h-full w-7 place-items-center text-muted"><ChevronLeft className="size-4" /></button>
@@ -345,27 +324,17 @@ export default function Klinika() {
             {view !== 'day' && <Overview visits={visits} date={date} mode={view} onPick={(iso) => { setDate(iso); setView('day') }} />}
           </section>
 
-          <div className="min-w-0 space-y-3">
-            <MiniCalendar visits={visits} date={date} onPick={(iso) => { setDate(iso); setView('day') }} />
-            <Revenue total={clinicIncome} />
-          </div>
         </div>
 
-        <div className="klk-bottom">
+        <div className={lowStock.length ? 'klk-bottom' : ''}>
           <PatientsCard patients={patients} setPatients={setPatients} menu={menu} setMenu={setMenu} onBook={(p) => setBooking({ name: p.name, phone: p.phone, female: p.female })} flash={flash} />
-          <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
-            <CardHead title="Xodimlar" onMore={() => setStaffOpen(true)} />
-            <ul className="mt-1 divide-y divide-line">
-              <li className="px-2 py-6 text-center text-[12.5px] text-muted">Xodimlar ro‘yxati bo‘sh. Bu bo‘lim faqat sizning klinikangiz uchun.</li>
-            </ul>
-          </section>
-          <section className="min-w-0 rounded-2xl bg-white p-3 shadow-card">
+          {lowStock.length > 0 && <section className="min-w-0 rounded-2xl border border-[#e3eeec] bg-white p-4">
             <CardHead title="Ombor ogohlantirishlari" onMore={() => navigate('/ombor')} />
             <ul className="mt-1 space-y-2">
-              {stock.filter((r) => r.status === 'kam' || r.status === 'tugash').length === 0 && (
+              {lowStock.length === 0 && (
                 <li className="px-2 py-6 text-center text-[12.5px] text-muted">Ogohlantirish yo‘q. Ombor bo‘sh yoki zaxira yetarli.</li>
               )}
-              {stock.filter((r) => r.status === 'kam' || r.status === 'tugash').slice(0, 4).map((r) => (
+              {lowStock.slice(0, 4).map((r) => (
                 <li key={r.id} className="flex items-center gap-2 rounded-xl border border-line p-1.5">
                   <img src={r.image} alt="" className="size-11 shrink-0 rounded-lg bg-[#f5f8fb] object-contain" />
                   <span className="min-w-0 flex-1">
@@ -380,7 +349,7 @@ export default function Klinika() {
                 </li>
               ))}
             </ul>
-          </section>
+          </section>}
         </div>
       </div>
 
@@ -410,14 +379,12 @@ export default function Klinika() {
   )
 }
 
-function Stat({ icon: Icon, title, tone = '#e3f4f5', ink = '#0b8a95', children }) {
+function Stat({ icon: Icon, title, value, hint }) {
   return (
-    <div className="flex min-w-0 items-start gap-3 rounded-2xl bg-white p-3 shadow-card">
-      <span className="grid size-11 shrink-0 place-items-center rounded-full" style={{ background: tone, color: ink }}><Icon className="size-5" /></span>
-      <div className="min-w-0 flex-1">
-        <p className="mb-1.5 text-[12px] text-ink-2">{title}</p>
-        {children}
-      </div>
+    <div className="min-w-0 rounded-2xl border border-[#e3eeec] bg-white p-3.5">
+      <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink-2"><Icon className="size-4 text-[#0F766E]" /> {title}</p>
+      <b className="mt-1.5 block truncate text-[22px] font-bold leading-tight text-ink">{value}</b>
+      <p className="mt-0.5 truncate text-[11.5px] text-muted">{hint}</p>
     </div>
   )
 }

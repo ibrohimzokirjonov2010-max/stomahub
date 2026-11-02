@@ -9,6 +9,7 @@ import { Login, Register } from './pages/Auth'
 import { Privacy, Terms } from './pages/Legal'
 import Marketplace from './pages/Marketplace'
 import Product from './pages/Product'
+import SellerPage from './pages/SellerPage'
 import Savatcha from './pages/Savatcha'
 import Surplus from './pages/Surplus'
 import SurplusItem from './pages/SurplusItem'
@@ -147,6 +148,7 @@ export default function App() {
               </Responsive>
             }
           />
+          <Route path="/dokon/:id" element={<Responsive mobile={<SellerPage />}><ShopLayout active="market" placeholder="Material, brend yoki kategoriya bo‘yicha qidiring..."><SellerPage /></ShopLayout></Responsive>} />
           <Route path="/ortiqcha" element={<SurplusCatalog />} />
           <Route path="/seminarlar" element={<SeminarsCatalog />} />
           <Route path="/sotuvchi-bolish" element={<SellerRegister />} />
