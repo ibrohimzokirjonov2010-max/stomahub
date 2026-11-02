@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { MapPreview } from '../MapPicker'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowRight, Check, CircleCheck, CircleX, Clock, MapPin, Package, RotateCcw, Truck } from 'lucide-react'
+import { ArrowRight, Check, CircleCheck, CircleX, Clock, MapPin, Package, RotateCcw, Star, Truck } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { allOrders, profileStore, useProfile } from '../../profileStore'
+import { canReview, RatedBadge, ReviewDialog, useMyReviews } from '../OrderReview'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -56,6 +57,7 @@ export default function MobileBuyurtmalar() {
   const profile = useProfile()
   const { add } = useCart()
   const orders = allOrders(profile)
+  const reviews = useMyReviews()
   const [tab, setTab] = useState(location.state?.tab || 'active')
   const [detail, setDetail] = useState(null)
   const [toast, setToast] = useState('')
@@ -116,7 +118,7 @@ export default function MobileBuyurtmalar() {
           </div>
         ) : (
           <div className="mt-3 flex flex-col gap-3">
-            {list.map((o) => <OrderCard key={o.id} order={o} onTrack={() => track(o)} onRepeat={() => repeat(o)} onDetail={() => setDetail(o.id)} />)}
+            {list.map((o) => <OrderCard key={o.id} order={o} reviews={reviews} onTrack={() => track(o)} onRepeat={() => repeat(o)} onDetail={() => setDetail(o.id)} />)}
           </div>
         )}
       </div>
@@ -129,6 +131,8 @@ export default function MobileBuyurtmalar() {
           onTrack={() => track(open)}
           onRepeat={() => repeat(open)}
           onClose={() => setDetail(null)}
+          reviews={reviews}
+          onReviewed={() => setToast('Rahmat! Bahoingiz yuborildi')}
         />
       )}
       <MobileToast text={toast} onClose={closeToast} />
@@ -195,7 +199,7 @@ function Thumbs({ items }) {
   )
 }
 
-function OrderCard({ order, onTrack, onRepeat, onDetail }) {
+function OrderCard({ order, reviews, onTrack, onRepeat, onDetail }) {
   const active = order.status === 'processing' || order.status === 'shipping'
   return (
     <article className="rounded-2xl border border-[#e5eef0] bg-white p-3 shadow-[0_1px_6px_rgb(11_31_58/0.04)]">
@@ -215,6 +219,13 @@ function OrderCard({ order, onTrack, onRepeat, onDetail }) {
 
       <Thumbs items={order.items} />
 
+      {canReview(order) && reviews && order.items.some((it) => !reviews.ratingOf(order, it)) && (
+        <button type="button" onClick={onDetail} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#fff8eb] px-3 py-2.5 text-left text-[12.5px] font-semibold text-[#92400e]">
+          <span>Buyurtmani baholang va izoh qoldiring</span>
+          <span className="flex">{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="size-4 text-[#f59e0b]" />)}</span>
+        </button>
+      )}
+
       <div className="mt-3 flex flex-wrap items-end justify-between gap-x-1 gap-y-2.5">
         <div>
           <p className="text-[12px] text-[#7a8a9c]">Jami summa</p>
@@ -233,7 +244,11 @@ function OrderCard({ order, onTrack, onRepeat, onDetail }) {
   )
 }
 
-export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onClose }) {
+export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onClose, reviews: outer, onReviewed }) {
+  const own = useMyReviews()
+  const reviews = outer || own
+  const [rateItem, setRateItem] = useState(null)
+  const reviewable = canReview(order)
   const active = order.status === 'processing' || order.status === 'shipping'
   const qty = order.items.reduce((s, it) => s + it.qty, 0)
   return (
@@ -266,6 +281,13 @@ export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onC
               </span>
               <span className={`shrink-0 whitespace-nowrap text-[12.5px] font-semibold ${navy}`}>{som(it.price * it.qty)}</span>
             </Link>
+            {reviewable && (
+              <div className="-mt-1 flex justify-end pb-2">
+                {reviews.ratingOf(order, it)
+                  ? <RatedBadge rating={reviews.ratingOf(order, it)} />
+                  : <button type="button" onClick={() => setRateItem(it)} className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#f5c56b] bg-[#fff8eb] px-2.5 text-[12px] font-semibold text-[#92400e]"><Star className="size-3.5 fill-[#f59e0b] text-[#f59e0b]" /> Baholash</button>}
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -280,6 +302,7 @@ export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onC
           <p className={`flex justify-between pt-1 text-[14px] font-bold ${navy}`}><span>Jami</span><span>{som(order.total)}</span></p>
         </div>
       </div>
+      {rateItem && <ReviewDialog order={order} item={rateItem} onClose={() => setRateItem(null)} onDone={(r) => { reviews.mark(order, rateItem, r); setRateItem(null); onReviewed?.() }} />}
     </BottomSheet>
   )
 }

@@ -136,8 +136,8 @@ const fmt = (iso) => {
 }
 
 export async function fetchMyOrders(uid) {
-  const full = 'id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
-  const basic = 'id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
+  const full = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
+  const basic = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
   let { data, error } = await supabase.from('seller_orders').select(full).eq('buyer_id', uid).order('created_at', { ascending: false })
   if (error && /payment_status|tracking_url|payment_ref/.test(error.message || '')) {
     ;({ data, error } = await supabase.from('seller_orders').select(basic).eq('buyer_id', uid).order('created_at', { ascending: false }))
@@ -149,7 +149,7 @@ export async function fetchMyOrders(uid) {
     const fee = Number(o.delivery_fee) || 0
     const discount = Number(o.discount_amount) || 0
     return {
-      id: o.code, dbId: o.id, live: true, at: fmt(o.created_at), createdAt: o.created_at, items, goods, fee, discount,
+      id: o.code, dbId: o.id, sellerId: o.seller_id || null, live: true, at: fmt(o.created_at), createdAt: o.created_at, items, goods, fee, discount,
       total: Math.max(0, goods + fee - discount), method: o.payment_method || 'cash', months: 0,
       mode: o.delivery_method === 'olib_ketish' ? 'pickup' : 'courier',
       status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
@@ -158,6 +158,42 @@ export async function fetchMyOrders(uid) {
       trackingUrl: o.tracking_url || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
     }
   })
+}
+
+// ---- reviews (seller_reviews, 0003 + 0035) -----------------------------------------------
+// Insert: 0003 dagi seller_reviews_buyer_insert (faqat o‘z, 'yetkazildi' buyurtmasi uchun).
+// O‘qish: 0035 migratsiyasidan keyin ishlaydi; unga qadar localStorage'dagi belgi ishlatiladi.
+const REV_KEY = (uid) => `stomahub:reviewed:${uid}`
+const revKey = (orderDbId, productId) => `${orderDbId}:${productId || ''}`
+function localReviewed(uid) {
+  try { return JSON.parse(localStorage.getItem(REV_KEY(uid)) || '{}') } catch { return {} }
+}
+export async function fetchMyReviews(uid) {
+  const out = { ...localReviewed(uid) }
+  if (!supabase || !uid) return out
+  const { data, error } = await supabase.from('seller_reviews').select('order_id,product_id,rating').eq('author_id', uid)
+  if (!error) (data || []).forEach((r) => { out[revKey(r.order_id, r.product_id)] = r.rating })
+  return out
+}
+export { revKey }
+export async function submitReview({ uid, authorName, order, item, rating, body }) {
+  if (!supabase || !uid) throw new Error('Baho qoldirish uchun hisobga kiring')
+  if (!order?.dbId || !order?.sellerId) throw new Error('Buyurtma topilmadi')
+  if (order.dbStatus !== 'yetkazildi') throw new Error('Faqat yetkazilgan buyurtmani baholash mumkin')
+  const r = Math.round(Number(rating))
+  if (!(r >= 1 && r <= 5)) throw new Error('Yulduzcha bilan baho tanlang')
+  const productId = isUuid(item?.id) ? item.id : null
+  const { error } = await supabase.from('seller_reviews').insert({
+    seller_id: order.sellerId, order_id: order.dbId, product_id: productId, author_id: uid,
+    author_name: String(authorName || '').trim().slice(0, 80), rating: r, body: String(body || '').trim().slice(0, 1000),
+  })
+  if (error) {
+    if (error.code === '23505') throw new Error('Bu mahsulotga allaqachon baho bergansiz')
+    throw new Error(friendlySupabaseError(error))
+  }
+  const map = localReviewed(uid); map[revKey(order.dbId, productId)] = r
+  try { localStorage.setItem(REV_KEY(uid), JSON.stringify(map)) } catch { /* private mode */ }
+  return r
 }
 
 export async function cancelMyOrder(dbId, reason = '') {
