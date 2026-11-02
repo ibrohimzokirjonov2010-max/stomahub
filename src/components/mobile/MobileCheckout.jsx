@@ -9,7 +9,7 @@ import {
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { createOrder } from '../../buyerApi'
-import { createCharge, isDemoPayments } from '../../payments/paymentService'
+import { onlineMethods, payUrlFor, usePaymentConfig } from '../../payments/paymentService'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -17,7 +17,7 @@ import MapPicker, { MapPreview, withGeo, reverseGeocode } from '../MapPicker'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
 import { PROMOS } from './MobileCart'
-import { DEFAULT_PAYMENT, SHOW_DEMO_PAYMENTS, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
+import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
 import { profileStore, useProfile } from '../../profileStore'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
@@ -41,14 +41,14 @@ const PINS = [
 ]
 const SHOP = 'StomaHub do‘koni — Yakkasaroy, Shota Rustaveli ko‘chasi, 15'
 export const ALL_METHODS = {
-  uzcard: ['UZCARD', 'Bank kartasi (demo)'],
-  humo: ['HUMO', 'Bank kartasi (demo)'],
-  click: ['Click', 'Click ilovasi (demo)'],
-  payme: ['Payme', 'Payme ilovasi (demo)'],
+  click: ['Click', 'Ilova yoki karta · escrow'],
+  payme: ['Payme', 'Ilova yoki karta · escrow'],
   cash: ['Naqd', 'Olganda naqd to‘lash'],
 }
-// Demo card/Click/Payme are hidden until real payments are live (VITE_SHOW_DEMO_PAYMENTS=1 shows them).
-export const METHODS = SHOW_DEMO_PAYMENTS ? ALL_METHODS : { cash: ALL_METHODS.cash }
+// Eski buyurtmalar yorlig‘i uchun (uzcard/humo endi tanlanmaydi)
+export const METHODS = { ...ALL_METHODS, uzcard: ['UZCARD', 'Bank kartasi'], humo: ['HUMO', 'Bank kartasi'] }
+// Onlayn usullar faqat serverda Click/Payme sozlangan bo‘lsa
+const availMethods = (cfg) => ['cash', ...onlineMethods(cfg)]
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
 const ORDER_KEY = 'stomahub-last-order'
 
@@ -109,6 +109,9 @@ export default function MobileCheckout() {
   const [showItems, setShowItems] = useState(false)
   const [tried, setTried] = useState(false)
   const [method, setMethod] = useState(DEFAULT_PAYMENT)
+  const payCfg = usePaymentConfig()
+  const avail = availMethods(payCfg)
+  useEffect(() => { if (payCfg && !avail.includes(method)) setMethod('cash') }, [payCfg, method])
   const [delivery, setDelivery] = useState(defaultDelivery)
   const [invoice, setInvoice] = useState(false)
   const [inv, setInv] = useState({ stir: '', company: '' })
@@ -208,22 +211,20 @@ export default function MobileCheckout() {
     setPlacing(true)
     setPlaceErr('')
     try {
-      let paymentRef = ''
-      if (method !== 'cash') {
-        const charge = await createCharge({ method: { type: method }, amount: goods, meta: { source: 'mobile-checkout' } })
-        paymentRef = charge.ref
-      }
+      const paymentRef = ''
+      const online = method !== 'cash' && avail.includes(method)
       const res = await createOrder({
         items, name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
         address: withGeo(form.address, mode === 'pickup' ? null : form), note: orderNote(form.note, { date: delivery.date, slot: delivery.slot, pickup: mode === 'pickup', invoice, inv }), pickup: mode === 'pickup',
-        paymentMethod: method, paymentRef,
+        paymentMethod: online ? method : 'cash', paymentRef,
       })
       const at = new Date()
       const order = {
         id: (res.orders || []).map((o) => o.code).join(', '),
         at: `${at.getDate()} ${MON[at.getMonth()]}, ${at.getFullYear()} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`,
         items: items.map((it) => ({ ...it })),
-        goods, fee: 0, discount: 0, total: goods, method, months: 0, monthly: 0, paymentRef, demo: isDemoPayments(),
+        goods, fee: 0, discount: 0, total: goods, method, months: 0, monthly: 0, paymentRef,
+        payLinks: online ? (res.orders || []).map((o) => ({ code: o.code, amount: Number(o.amount) || 0, url: payUrlFor(method, o, payCfg) })) : [],
         mode, eta: `${fmtDeliveryDate(delivery.date)}, ${delivery.slot}`, days: ship.days, invoice: invoice ? { ...inv } : null, name: form.name.trim(), phone,
         address: mode === 'pickup' ? SHOP : `${form.city}, ${form.address}`,
       }
@@ -233,6 +234,7 @@ export default function MobileCheckout() {
       profileStore.refreshOrders?.()
       setPlaced(order)
       navigate('.', { replace: true, state: { done: true } })
+      if (online && order.payLinks.length === 1 && order.payLinks[0].url) window.location.assign(order.payLinks[0].url)
     } catch (e) {
       setPlaceErr(e.message || 'Buyurtma yuborilmadi')
     } finally {
@@ -381,7 +383,7 @@ export default function MobileCheckout() {
             <section className={`${card} mt-3 p-3`}>
               <Head icon={CreditCard} title="To‘lov usuli" text="Sizga qulay to‘lov usulini tanlang" />
               <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="To‘lov usuli">
-                {Object.keys(METHODS).map((k) => (
+                {avail.map((k) => (
                   <button key={k} type="button" role="radio" aria-checked={method === k} onClick={() => { setMethod(k); setPayTried(false) }} className={`relative flex items-center gap-2 rounded-xl border p-2.5 text-left ${method === k ? 'border-[#0b8a7a] bg-[#eef8f6] shadow-[inset_0_0_0_1px_#0b8a7a]' : 'border-[#e2e9ec] bg-white'}`}>
                     <Logo id={k} />
                     <span className="min-w-0 flex-1 pr-4">
@@ -422,7 +424,8 @@ export default function MobileCheckout() {
                   <p className="mt-2 text-[11.5px] text-ink-2">Oyiga <b className="text-[#c26a06]">{som(monthly)}</b> · {months} oy, birinchi to‘lov yetkazilganda</p>
                 </div>
               )}
-              {method === 'cash' && <p className="mt-2.5 rounded-xl bg-[#eef8f6] px-3 py-2 text-[11.5px] text-ink-2">Mahsulotni olganingizda naqd to‘laysiz.{SHOW_DEMO_PAYMENTS ? '' : ' Onlayn to‘lov tez orada qo‘shiladi.'}</p>}
+              {method === 'cash' && <p className="mt-2.5 rounded-xl bg-[#eef8f6] px-3 py-2 text-[11.5px] text-ink-2">Mahsulotni olganingizda naqd to‘laysiz.</p>}
+              {(method === 'click' || method === 'payme') && <p className="mt-2.5 rounded-xl bg-[#eef8f6] px-3 py-2 text-[11.5px] text-ink-2">Pul StomaHub escrowida saqlanadi va siz “Qabul qildim” bosgach (yoki yetkazilgandan 3 kun o‘tib) sotuvchiga o‘tadi. Muammo bo‘lsa — “Muammo bor”.</p>}
             </section>
 
             <section className={`${card} mt-3 p-3`}>
@@ -464,7 +467,7 @@ export default function MobileCheckout() {
             <section className={`${card} mt-3 p-3`}>
               <Head icon={FileText} title="Buyurtma xulosasi" text="Buyurtmangiz tafsilotlari" />
               <Summary items={items} goods={goods} ship={ship} mode={mode} city={form.city} discount={discount} total={total} />
-              {SHOW_DEMO_PAYMENTS && (
+              {avail.length > 1 && (
                 <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-[#f3f7f8] p-2.5">
                   <ShieldCheck className="size-6 shrink-0 fill-[#0b8a7a] text-white" />
                   <p className="text-[11px] text-ink-2"><b className="block text-[12.5px] text-[#0d2a4a]">Xavfsiz to‘lov</b>Barcha to‘lovlar himoyalangan va shifrlangan</p>
@@ -790,8 +793,15 @@ function Done({ order }) {
             <span className="grid size-[72px] place-items-center rounded-full bg-[#0b6d73] text-white shadow-[0_8px_20px_rgb(11_109_115/0.35)]"><Check className="size-10" strokeWidth={2.6} /></span>
           </span>
         </div>
-        <h1 className="mt-2 text-center text-[24px] font-extrabold text-[#0d2a4a]">{cash ? 'Buyurtma qabul qilindi!' : 'To‘lov tasdiqlandi!'}</h1>
-        <p className="text-center text-[13px] text-ink-2">{cash ? (order.mode === 'pickup' ? 'To‘lov mahsulotni olganingizda amalga oshiriladi.' : 'To‘lov yetkazilganda amalga oshiriladi.') : 'Buyurtmangiz qabul qilindi va tayyorlanmoqda.'}</p>
+        <h1 className="mt-2 text-center text-[24px] font-extrabold text-[#0d2a4a]">{cash ? 'Buyurtma qabul qilindi!' : 'Buyurtma yaratildi — to‘lovni yakunlang'}</h1>
+        <p className="text-center text-[13px] text-ink-2">{cash ? (order.mode === 'pickup' ? 'To‘lov mahsulotni olganingizda amalga oshiriladi.' : 'To‘lov yetkazilganda amalga oshiriladi.') : 'To‘lovdan so‘ng pul escrowda saqlanadi va siz tasdiqlagach sotuvchiga o‘tadi.'}</p>
+        {!!order.payLinks?.length && (
+          <div className="mt-3 space-y-2">
+            {order.payLinks.map((l) => l.url && (
+              <a key={l.code} href={l.url} className="flex h-11 items-center justify-between rounded-xl bg-[#0b6d73] px-4 text-[13px] font-semibold text-white"><span>#{l.code} · {som(l.amount)}</span><span>To‘lash</span></a>
+            ))}
+          </div>
+        )}
 
         <section className={`${card} mt-4 p-3.5`}>
           <div className="flex items-center gap-2.5">

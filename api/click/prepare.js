@@ -1,100 +1,51 @@
 import { readJson, requirePost, send } from '../_lib/http.js'
+import { amountsEqual, verifyClickSign } from '../_lib/paymentsCore.js'
 import {
-  clickConfigured, clickSign, loadOrderByMerchantId, orderPayableAmount,
+  activeTx, clickConfigured, insertTx, loadOrderByCode, orderPayable, orderPayableAmount, updateTx,
 } from '../_lib/payments.js'
-import { adminClient } from '../_lib/supabaseAdmin.js'
 
 /**
- * Click SHOP API — Prepare
- * https://docs.click.uz/en/click-api/
+ * Click SHOP API — Prepare (action=0). Click form-urlencoded POST yuboradi.
+ * Javob: { click_trans_id, merchant_trans_id, merchant_prepare_id (int), error, error_note }
+ * https://docs.click.uz/click-api-request/
  */
 export default async function handler(req, res) {
   if (!requirePost(req, res)) return
+  let body = {}
+  const reply = (error, error_note, extra = {}) => send(res, 200, {
+    click_trans_id: Number(body.click_trans_id) || 0,
+    merchant_trans_id: String(body.merchant_trans_id ?? ''),
+    error, error_note, ...extra,
+  })
   try {
-    if (!clickConfigured()) {
-      send(res, 200, { error: -1, error_note: 'Click sozlanmagan (demo mode)' })
-      return
-    }
-    const body = await readJson(req)
-    const clickTransId = String(body.click_trans_id ?? '')
-    const serviceId = String(body.service_id ?? '')
-    const merchantTransId = String(body.merchant_trans_id ?? '')
-    const amount = Number(body.amount)
-    const action = Number(body.action)
-    const signTime = String(body.sign_time ?? '')
-    const signString = String(body.sign_string ?? '')
+    if (!clickConfigured()) return send(res, 200, { error: -8, error_note: 'Click sozlanmagan' })
+    body = await readJson(req)
+    if (!body.click_trans_id || !body.merchant_trans_id || body.amount == null || body.sign_time == null) return reply(-8, 'Error in request from click')
+    if (!verifyClickSign(body, process.env.CLICK_SECRET_KEY)) return reply(-1, 'SIGN CHECK FAILED!')
+    if (String(body.action) !== '0') return reply(-3, 'Action not found')
+    if (String(body.service_id) !== String(process.env.CLICK_SERVICE_ID)) return reply(-8, 'Error in request from click')
 
-    const expected = clickSign([
-      clickTransId,
-      serviceId,
-      process.env.CLICK_SECRET_KEY,
-      merchantTransId,
-      amount,
-      action,
-      signTime,
-    ])
-    if (signString.toLowerCase() !== expected.toLowerCase()) {
-      send(res, 200, { error: -1, error_note: 'SIGN CHECK FAILED' })
-      return
-    }
-    if (String(serviceId) !== String(process.env.CLICK_SERVICE_ID)) {
-      send(res, 200, { error: -5, error_note: 'Service not found' })
-      return
-    }
-
-    const order = await loadOrderByMerchantId(merchantTransId)
-    if (!order) {
-      send(res, 200, { error: -5, error_note: 'Order not found' })
-      return
-    }
-    if (order.status === 'bekor_qilindi' || order.payment_status === 'refunded') {
-      send(res, 200, { error: -9, error_note: 'Order cancelled' })
-      return
-    }
-    if (order.payment_status === 'paid' || order.payment_status === 'released') {
-      send(res, 200, {
-        click_trans_id: Number(clickTransId),
-        merchant_trans_id: merchantTransId,
-        merchant_prepare_id: order.id,
-        error: 0,
-        error_note: 'Success',
-      })
-      return
-    }
+    const order = await loadOrderByCode(body.merchant_trans_id)
+    if (!order) return reply(-5, 'User does not exist')
+    if (['held', 'paid', 'released'].includes(order.payment_status)) return reply(-4, 'Already paid')
+    if (!orderPayable(order)) return reply(-9, 'Transaction cancelled')
     const due = orderPayableAmount(order)
-    if (Math.abs(due - amount) > 1) {
-      send(res, 200, { error: -2, error_note: 'Incorrect parameter amount' })
-      return
+    if (!amountsEqual(body.amount, due)) return reply(-2, 'Incorrect parameter amount')
+
+    const meta = { action: 'prepare', sign_time: String(body.sign_time), click_paydoc_id: String(body.click_paydoc_id ?? '') }
+    let tx = await activeTx('click', order.code)
+    if (tx && tx.state === 'paid') return reply(-4, 'Already paid')
+    if (tx) {
+      tx = await updateTx(tx.id, { provider_trans_id: String(body.click_trans_id), amount: due, state: 'pending', meta: { ...(tx.meta || {}), ...meta } })
+    } else {
+      tx = await insertTx({
+        provider: 'click', provider_trans_id: String(body.click_trans_id), merchant_trans_id: order.code,
+        order_id: order.id, buyer_id: order.buyer_id, seller_id: order.seller_id, amount: due, state: 'pending', meta,
+      })
     }
-
-    const sb = adminClient()
-    await sb.from('payment_transactions').upsert(
-      {
-        provider: 'click',
-        provider_trans_id: clickTransId,
-        provider_prepare_id: order.id,
-        merchant_trans_id: merchantTransId,
-        order_id: order.id,
-        buyer_id: order.buyer_id,
-        seller_id: order.seller_id,
-        amount: due,
-        commission: order.commission,
-        payout: order.payout,
-        state: 'pending',
-        meta: { action: 'prepare', sign_time: signTime },
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'provider,merchant_trans_id' },
-    ).select()
-
-    send(res, 200, {
-      click_trans_id: Number(clickTransId),
-      merchant_trans_id: merchantTransId,
-      merchant_prepare_id: order.id,
-      error: 0,
-      error_note: 'Success',
-    })
+    return reply(0, 'Success', { merchant_prepare_id: Number(tx.seq) })
   } catch (e) {
-    send(res, 200, { error: -9, error_note: e.message || 'Internal error' })
+    console.error('click prepare', e?.message)
+    return reply(-7, 'Failed to update user')
   }
 }

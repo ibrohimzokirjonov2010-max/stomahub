@@ -10,6 +10,7 @@ import {
 import { MenuIcons as M } from '../components/tealIcons'
 import ShopLayout from '../components/market/ShopLayout'
 import { canReview, RatedBadge, ReviewDialog, useMyReviews } from '../components/OrderReview'
+import EscrowActions, { PayStatusPill } from '../components/EscrowActions'
 import { fetchNotifications, markNotificationsRead, useRemote } from '../buyerApi'
 import { marketProducts, som } from '../marketData'
 import {
@@ -694,7 +695,7 @@ function OrdersBlock({ orders, status, error, full }) {
           const thumb = o.items?.[0]?.image || '/images/market/p1.jpg'
           const tone = pill[o.status] || pill.processing
           return (
-            <li key={o.dbId || o.id} className="flex items-center gap-3 py-3">
+            <li key={o.dbId || o.id} className="flex flex-wrap items-center gap-3 py-3">
               <img src={thumb} alt="" className="size-11 rounded-lg object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13.5px] font-bold text-[#12263a]"># {o.id}</p>
@@ -703,6 +704,7 @@ function OrdersBlock({ orders, status, error, full }) {
               <div className="text-right">
                 <p className="text-[13px] font-bold text-[#12263a]">{som(o.total || o.goods || 0)}</p>
                 <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone}`}>{o.statusLabel || o.status}</span>
+                <div className="mt-1"><PayStatusPill order={o} /></div>
               </div>
               {canReview(o) && (() => {
                 const next = (o.items || []).find((it) => !reviews.ratingOf(o, it))
@@ -711,6 +713,7 @@ function OrdersBlock({ orders, status, error, full }) {
                   ? <button type="button" onClick={() => setRate({ order: o, item: next })} className="shrink-0 rounded-lg border border-[#f5c56b] bg-[#fff8eb] px-3 py-1.5 text-[12px] font-semibold text-[#92400e]">★ Baholash</button>
                   : first ? <span className="shrink-0"><RatedBadge rating={reviews.ratingOf(o, first)} /></span> : null
               })()}
+              <EscrowActions order={o} compact />
             </li>
           )
         })}

@@ -20,6 +20,7 @@ import Tashkilotchilar from './Tashkilotchilar'
 import Elonlar from './Elonlar'
 import Buyurtmalar from './Buyurtmalar'
 import Escrow from './Escrow'
+import SotuvchigaTolov from './SotuvchigaTolov'
 import Tasdiqlashlar from './Tasdiqlashlar'
 import Moliya from './Moliya'
 import Shikoyatlar from './Shikoyatlar'
@@ -43,6 +44,7 @@ const SEC_META = {
   '12': { to: '/admin/sozlamalar', label: 'Sozlamalar', Page: Sozlamalar },
   '13': { to: '/admin/moderatsiya', label: 'Kontent moderatsiyasi', Page: Moderatsiya },
   '14': { to: '/admin/mahsulotlar', label: 'Mahsulotlarni tasdiqlash', Page: Mahsulotlar },
+  '15': { to: '/admin/sotuvchiga-tolov', label: 'Sotuvchiga to‘lov', Page: SotuvchigaTolov },
 }
 
 const FIXTURE = {
