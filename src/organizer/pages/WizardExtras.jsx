@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FileText, Image as ImageIcon, Plus, RefreshCw, Trash2, Upload } from 'lucide-react'
 import { TEAL, box, uploadImage } from './wizardBits'
-import { CertFrame } from './certArt'
+import { CERT_FIELDS, CertDesignCanvas, DEFAULT_LAYOUT, INK, layoutOf } from './certLayout'
 
 // Tashkilotchi ustasidagi qo‘shimcha maydonlar: poster, galereya, manzil izohlari,
 // FAQ, aloqa va o‘z sertifikat dizayni. Desktop va mobil ustalar bir xil komponentdan foydalanadi.
@@ -199,14 +199,19 @@ export function CertUpload({ form, set, notify, orgName = '', dateText = '' }) {
   const [busy, run] = useUpload(notify)
   const design = form.certDesign || null
   const bg = useCertBackground(design)
+  const [sel, setSel] = useState('name')
   const pick = (e) => run(
     e.target.files?.[0], 'certificates',
-    (url, file) => set({ certDesign: { url, kind: file.type === 'application/pdf' ? 'pdf' : 'image', name: file.name }, template: 'custom' }),
+    (url, file) => set({ certDesign: { url, kind: file.type === 'application/pdf' ? 'pdf' : 'image', name: file.name, layout: design?.layout || DEFAULT_LAYOUT }, template: 'custom' }),
     /^(image\/(png|jpeg|webp)|application\/pdf)$/,
     'Faqat JPG, PNG, WEBP yoki PDF',
   )
+  const layout = layoutOf(design)
+  const patch = (k, v) => set({ certDesign: { ...design, layout: { ...layout, [k]: { ...layout[k], ...v } } } })
+  const values = { name: 'Aliyeva Mohira', course: form.name || 'Seminar nomi', date: dateText || '—', cme: cmeText(form) || 'CME ball' }
+  const cur = layout[sel] || layout.name
   return (
-    <div className="mt-3 grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]" data-shot="cert">
+    <div className="mt-3 space-y-3" data-shot="cert">
       <div>
         {design ? (
           <div className="rounded-xl border border-[#e6f1ef] p-3">
@@ -225,20 +230,51 @@ export function CertUpload({ form, set, notify, orgName = '', dateText = '' }) {
             <span>
               <Upload className="mx-auto size-5" style={{ color: TEAL }} />
               <span className="mt-1 block text-[13px] font-semibold text-[#143044]">{busy ? 'Yuklanmoqda…' : 'Dizayn faylini yuklash'}</span>
-              <span className="mt-0.5 block text-[11px] text-[#8aa0a4]">JPG, PNG, WEBP yoki PDF · tik (portret) A4 · 10 MB gacha</span>
+              <span className="mt-0.5 block text-[11px] text-[#8aa0a4]">JPG, PNG, WEBP yoki PDF · A4 (tik yoki yotiq) · 10 MB gacha</span>
             </span>
             <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" className="hidden" onChange={pick} />
           </label>
         )}
-        <p className="mt-2 text-[11.5px] leading-snug text-[#7e9398]">Ishtirokchi ismi, seminar nomi, sana va CME soatlari dizayn ustiga avtomatik joylanadi. Markaziy qismni bo‘sh qoldiring.</p>
       </div>
-      <div>
-        <p className="mb-1.5 text-[12px] font-semibold text-[#1c4a5a]">Namunaviy ko‘rinish</p>
-        {design
-          ? (bg ? <CertFrame width={240} design={bg} name="Aliyeva Mohira" course={form.name || 'Seminar nomi'} date={dateText || '—'} cme={cmeText(form)} org={orgName} />
-            : <div className="grid h-[321px] w-[240px] place-items-center rounded-lg bg-[#f4fbfa] text-[12px] text-[#8aa0a4]">Ko‘rinish tayyorlanmoqda…</div>)
-          : <div className="grid h-[321px] w-[240px] place-items-center rounded-lg border border-dashed border-[#e3eeec] text-center text-[12px] text-[#8aa0a4]">Dizayn yuklangach,<br />shu yerda ko‘rinadi</div>}
-      </div>
+      {design ? (
+        <div className="grid gap-3 md:grid-cols-[210px_minmax(0,1fr)]">
+          <div className="space-y-1.5">
+            <p className="text-[12px] font-semibold text-[#1c4a5a]">Dizayn ustidagi maydonlar</p>
+            {CERT_FIELDS.map(([k, label]) => (
+              <div key={k} className={`flex items-center justify-between gap-2 rounded-lg border px-2 py-1.5 ${sel === k ? 'border-[var(--color-org-teal)] bg-[#f4fbfa]' : 'border-[#e7f0ee]'}`}>
+                <button type="button" onClick={() => setSel(k)} className="min-w-0 flex-1 truncate text-left text-[12.5px] font-medium text-[#143044]">{label}</button>
+                <button type="button" role="switch" aria-checked={layout[k].on} aria-label={label} onClick={() => { patch(k, { on: !layout[k].on }); setSel(k) }} className={`relative h-5 w-9 shrink-0 rounded-full transition ${layout[k].on ? '' : 'bg-[#d5e0e2]'}`} style={layout[k].on ? { background: TEAL } : undefined}>
+                  <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${layout[k].on ? 'left-[18px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+            ))}
+            {cur.on && (
+              <div className="rounded-lg bg-[#f7fbfb] p-2">
+                <p className="text-[11.5px] font-semibold text-[#3e5a62]">{CERT_FIELDS.find(([k]) => k === sel)?.[1]}: o‘lcham</p>
+                <input type="range" aria-label="Shrift o‘lchami" min={sel === 'qr' ? 5 : 1} max={sel === 'qr' ? 20 : 9} step={0.1} value={cur.size} onChange={(e) => patch(sel, { size: Number(e.target.value) })} className="mt-1 w-full accent-[var(--color-org-teal)]" />
+                {sel !== 'qr' && (
+                  <div className="mt-1 flex gap-1.5">
+                    {[['dark', 'To‘q'], ['white', 'Oq']].map(([c, t]) => (
+                      <button key={c} type="button" onClick={() => patch(sel, { color: c })} className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11.5px] font-semibold ${cur.color === c ? 'border-[var(--color-org-teal)]' : 'border-[#e3eeec]'}`}>
+                        <span className="size-3 rounded-full border border-[#c5d5d2]" style={{ background: INK[c] }} /> {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="mb-1.5 text-[12px] font-semibold text-[#1c4a5a]">Namunaviy ko‘rinish</p>
+            {bg
+              ? <div className="mx-auto" style={{ maxWidth: (design.ratio || 0.707) > 1 ? 560 : 340 }}><CertDesignCanvas src={bg} ratio={design.ratio} layout={layout} values={values} editable onMove={(k, xy) => { setSel(k); patch(k, xy) }} onRatio={(r) => { if (Math.abs((design.ratio || 0) - r) > 0.001) set({ certDesign: { ...design, layout, ratio: Math.round(r * 1000) / 1000 } }) }} /></div>
+              : <div className="grid h-[240px] place-items-center rounded-lg bg-[#f4fbfa] text-[12px] text-[#8aa0a4]">Ko‘rinish tayyorlanmoqda…</div>}
+            <p className="mt-2 text-[11.5px] leading-snug text-[#7e9398]">Dizayningizda bo‘sh joy qoldiring. Ishtirokchi ismini sichqoncha yoki barmoq bilan kerakli joyga suring.</p>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[11.5px] leading-snug text-[#7e9398]">Dizayn yuklangach, ishtirokchi ismi va boshqa maydonlarni uning ustida kerakli joyga surib qo‘yishingiz mumkin.</p>
+      )}
     </div>
   )
 }

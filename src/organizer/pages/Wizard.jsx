@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -9,12 +9,13 @@ import { num, som } from '../data'
 import { useOrg } from '../Shell'
 import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
 import { useMobile } from '../../useMobile'
-import { CATS, EMPTY_DETAILS, FORMAT_OF, STEPS, TEAL, TOPICS, box, placeTypeOf, uploadImage, uzDate, validateStep } from './wizardBits'
+import { CATS, EMPTY_DETAILS, FORMAT_OF, STEPS, TEAL, TOPICS, box, placeTypeOf, stepError, uploadImage, uzDate } from './wizardBits'
 import WizardDetails from './WizardDetails'
 import { PromoModal, SpeakerModal, TicketModal } from './WizardModals'
 import WizardMobile from './WizardMobile'
+import DatePick from './DatePick'
+import { CertDesignCanvas, layoutOf } from './certLayout'
 import { CertUpload, ContactField, FaqField, GalleryField, PosterField, VenueNotesField, cmeText, useCertBackground } from './WizardExtras'
-import { CertFrame } from './certArt'
 
 const TICKET_ICON = { ticket: Ticket, crown: Crown, cap: GraduationCap, star: Star, award: Award }
 
@@ -47,14 +48,8 @@ function Switch({ on, onChange, label }) {
   )
 }
 
-function DateBox({ value, onChange }) {
-  return (
-    <label className="relative flex h-10 min-w-[148px] flex-1 items-center gap-1.5 rounded-xl border border-[#e3eeec] bg-white px-2.5">
-      <Calendar className="size-4 shrink-0" style={{ color: TEAL }} />
-      <span className="whitespace-nowrap text-[12.5px] text-[#143044]">{uzDate(value)}</span>
-      <input type="date" value={value} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" />
-    </label>
-  )
+function DateBox({ value, onChange, min, invalid, label }) {
+  return <DatePick value={value} onChange={onChange} min={min} invalid={invalid} label={label} color={TEAL} />
 }
 
 function TimeBox({ value, onChange }) {
@@ -122,12 +117,13 @@ export default function Wizard() {
   const editing = params.get('tahrir')
   const [formError, setFormError] = useState('')
   const [active, setActive] = useState(0)
+  const [done, setDone] = useState(() => new Set())
+  const [err, setErr] = useState(null)
   const [modal, setModal] = useState(null)
   const [sheet, setSheet] = useState(null)
   const [tabCert, setTabCert] = useState('ready')
   const [tabMkt, setTabMkt] = useState('promo')
   const [tag, setTag] = useState('')
-  const lock = useRef(false)
   const hub = useHub()
   const orgName = hub.settings?.orgName || ''
   const [copyOpen, setCopyOpen] = useState(false)
@@ -189,8 +185,8 @@ export default function Wizard() {
   const persist = (publish) => {
     if (publish) {
       for (const st of STEPS) {
-        const err = validateStep(st.id, form)
-        if (err) { setFormError(err); notify(err); go(STEPS.indexOf(st), true); return }
+        const e = stepError(st.id, form)
+        if (e) { fail(STEPS.indexOf(st), e); return }
       }
     }
     const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: (form.program || []).filter((r) => r.time || r.title) }, { publish, id: editing || undefined })
@@ -212,46 +208,40 @@ export default function Wizard() {
     notify('Ma’lumotlar nusxalandi — sana va joyni kiriting')
     window.setTimeout(() => go(1, true), 60)
   }
-  // Oldinga o‘tishda oraliqdagi barcha bosqichlar tekshiriladi
-  const go = (index, force = false) => {
-    if (!force && index > active) {
-      for (let k = active; k < Math.min(index, STEPS.length); k += 1) {
-        const err = validateStep(STEPS[k].id, form)
-        if (err) {
-          setFormError(err)
-          notify(err)
-          lock.current = true
-          setActive(k)
-          document.getElementById(STEPS[k].id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          window.setTimeout(() => { lock.current = false }, 700)
-          return
-        }
-      }
-      setFormError('')
-    }
-    const i = Math.max(0, Math.min(STEPS.length - 1, index))
-    lock.current = true
-    setActive(i)
-    document.getElementById(STEPS[i].id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    window.setTimeout(() => { lock.current = false }, 700)
-  }
-
-  useEffect(() => {
-    const root = document.querySelector('main')
-    if (!root || mobile) return undefined
-    const obs = new IntersectionObserver((entries) => {
-      if (lock.current) return
-      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-      if (!hit) return
-      const i = STEPS.findIndex((s) => s.id === hit.target.id)
-      if (i >= 0) setActive(i)
-    }, { root, rootMargin: '-10% 0px -60% 0px', threshold: [0.15, 0.4, 0.7] })
-    STEPS.forEach((s) => {
-      const el = document.getElementById(s.id)
-      if (el) obs.observe(el)
+  // Sahifani yuqoriga (yoki xato maydoniga) silliq aylantirish — #root zoom bilan ham ishlaydi
+  const scrollTo = (sel) => {
+    window.requestAnimationFrame(() => {
+      const el = sel && document.querySelector(sel)
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.querySelector('input,textarea,select')?.focus?.({ preventScroll: true }); return }
+      const main = document.querySelector('main')
+      main?.scrollTo?.({ top: 0, behavior: 'smooth' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     })
-    return () => obs.disconnect()
-  }, [mobile])
+  }
+  const fail = (k, e) => {
+    setErr(e)
+    setFormError(e.msg)
+    notify(e.msg)
+    setActive(k)
+    setDone((d) => { const n = new Set(d); n.delete(STEPS[k].id); return n })
+    window.setTimeout(() => scrollTo(`[data-field="${e.field}"]`), 30)
+  }
+  // Bosqichma-bosqich: oldinga o‘tishda oraliqdagi barcha bosqichlar tekshiriladi
+  const go = (index, force = false) => {
+    const i = Math.max(0, Math.min(STEPS.length - 1, index))
+    if (!force && i > active) {
+      for (let k = active; k < i; k += 1) {
+        const e = stepError(STEPS[k].id, form)
+        if (e) { fail(k, e); return }
+      }
+      setDone((d) => { const n = new Set(d); for (let k = active; k < i; k += 1) n.add(STEPS[k].id); return n })
+    }
+    setErr(null)
+    setFormError('')
+    setActive(i)
+    scrollTo(null)
+  }
+  const errOf = (field) => (err?.field === field ? err.msg : '')
 
   useEffect(() => {
     const m = params.get('modal')
@@ -264,6 +254,13 @@ export default function Wizard() {
       window.setTimeout(() => go(i), 60)
     }
   }, [params])
+
+  // Maydon to‘g‘rilansa — xato yo‘qoladi
+  useEffect(() => {
+    if (!err) return
+    const e = stepError(STEPS[active].id, form)
+    if (!e || e.field !== err.field) { setErr(null); setFormError('') }
+  }, [form])
 
   if (mobile) return <WizardMobile sheet={sheet} setSheet={setSheet} notify={notify} />
   const previous = hub.seminars.filter((x) => x.id !== editing)
@@ -311,10 +308,11 @@ export default function Wizard() {
             <span className="absolute bottom-3 left-[11px] top-3 w-px bg-[#e4eeec]" aria-hidden />
             {STEPS.map((s, i) => {
               const on = i === active
+              const ok = !on && done.has(s.id)
               return (
                 <li key={s.id}>
-                  <button type="button" onClick={() => go(i)} className={`relative flex w-full items-center gap-2 rounded-xl px-0 py-1.5 text-left text-[12.5px] ${on ? 'font-semibold' : 'text-[#6d8388]'}`} style={on ? { color: TEAL } : undefined}>
-                    <span className={`relative z-[1] grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${on ? 'text-white' : 'border border-[#d5e0e2] bg-white text-[#8aa0a4]'}`} style={on ? { background: TEAL } : undefined}>{i + 1}</span>
+                  <button type="button" onClick={() => go(i)} aria-current={on ? 'step' : undefined} className={`relative flex w-full items-center gap-2 rounded-xl px-0 py-1.5 text-left text-[12.5px] ${on ? 'font-semibold' : ok ? 'font-medium text-[#1c4a5a]' : 'text-[#6d8388]'}`} style={on ? { color: TEAL } : undefined}>
+                    <span className={`relative z-[1] grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${on || ok ? 'text-white' : 'border border-[#d5e0e2] bg-white text-[#8aa0a4]'}`} style={on ? { background: TEAL } : ok ? { background: '#16a34a' } : undefined}>{ok ? <Check className="size-3.5" /> : i + 1}</span>
                     <span className="leading-tight">{s.title}</span>
                   </button>
                 </li>
@@ -324,7 +322,20 @@ export default function Wizard() {
         </nav>
 
         <div className="mt-3 min-w-0 space-y-3 xl:col-start-2 xl:row-start-2 xl:mt-0">
-          <section id="info" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <ol className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 xl:hidden" aria-label="Bosqichlar">
+            {STEPS.map((s, i) => {
+              const on = i === active
+              const ok = !on && done.has(s.id)
+              return (
+                <li key={s.id} className="shrink-0">
+                  <button type="button" onClick={() => go(i)} aria-current={on ? 'step' : undefined} className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[12px] ${on ? 'border-transparent font-semibold text-white' : ok ? 'border-[#cfe9e3] bg-white font-medium text-[#1c4a5a]' : 'border-[#e4eeec] bg-white text-[#6d8388]'}`} style={on ? { background: TEAL } : undefined}>
+                    {ok ? <Check className="size-3.5 text-[#16a34a]" /> : <span className="text-[11px] font-bold">{i + 1}</span>} {s.title}
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+          <section id="info" hidden={STEPS[active].id !== 'info'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-3.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('info')} title="Asosiy ma’lumotlar" sub="Seminar nomi, tavsifi, poster va galereya" extra={(
               <button type="button" onClick={() => persist(false)} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Save className="size-3.5" /> Qoralama saqlash
@@ -332,23 +343,25 @@ export default function Wizard() {
             )} />
             <div className="mt-3">
               <div className="space-y-3">
-                <label className="block">
+                <label className="block" data-field="name">
                   <Lab req>Seminar nomi</Lab>
-                  <input className={box} value={form.name} onChange={(e) => set({ name: e.target.value })} />
+                  <input className={`${box} ${errOf('name') ? '!border-[#e11d48]' : ''}`} aria-invalid={!!errOf('name')} value={form.name} onChange={(e) => set({ name: e.target.value })} />
+                  {errOf('name') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('name')}</p>}
                 </label>
-                <label className="block">
+                <label className="block" data-field="about">
                   <Lab req>Qisqa tavsif</Lab>
                   <span className="relative block">
-                    <textarea maxLength={500} value={form.about} onChange={(e) => set({ about: e.target.value })} className="h-[72px] w-full resize-none rounded-xl border border-[#e3eeec] px-3 py-2 pb-5 text-[13px] leading-snug outline-none focus:border-[var(--color-org-teal)]" />
+                    <textarea maxLength={500} value={form.about} onChange={(e) => set({ about: e.target.value })} aria-invalid={!!errOf('about')} className={`h-[72px] w-full resize-none rounded-xl border ${errOf('about') ? 'border-[#e11d48]' : 'border-[#e3eeec]'} px-3 py-2 pb-5 text-[13px] leading-snug outline-none focus:border-[var(--color-org-teal)]`} />
                     <span className="pointer-events-none absolute bottom-1.5 right-2.5 text-[11px] text-[#9aafb4]">{form.about.length}/500</span>
                   </span>
+                  {errOf('about') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('about')}</p>}
                 </label>
               </div>
             </div>
-            <div className="mt-3"><PosterField form={form} set={set} notify={notify} /></div>
+            <div className={`mt-3 ${errOf('cover') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`} data-field="cover"><PosterField form={form} set={set} notify={notify} />{errOf('cover') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('cover')}</p>}</div>
             <div className="mt-3"><GalleryField form={form} set={set} notify={notify} /></div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <label className="block"><Lab req>Mavzu / Yo‘nalish</Lab><SelectBox value={form.topic} onChange={(v) => set({ topic: v })} options={TOPICS} /></label>
+              <label className="block" data-field="topic"><Lab req>Mavzu / Yo‘nalish</Lab><SelectBox value={form.topic} onChange={(v) => set({ topic: v })} options={TOPICS} />{errOf('topic') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('topic')}</p>}</label>
               <label className="block"><Lab>Bosh toifa</Lab><SelectBox value={form.category} onChange={(v) => set({ category: v })} options={CATS} /></label>
             </div>
             <div className="mt-3">
@@ -370,16 +383,18 @@ export default function Wizard() {
             </div>
           </section>
 
-          <section id="when" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="when" hidden={STEPS[active].id !== 'when'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('when')} title="Sana va joy" sub="Seminar o‘tkazilish sanasi, vaqti va manzilini belgilang" />
             <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-2">
-              <div className="min-w-0 flex-1 basis-[220px]">
+              <div className="min-w-0 flex-1 basis-[220px]" data-field="start">
                 <Lab req>Boshlanish sanasi va vaqti</Lab>
-                <div className="flex gap-1.5"><DateBox value={form.start} onChange={(v) => set({ start: v })} /><TimeBox value={form.startTime} onChange={(v) => set({ startTime: v })} /></div>
+                <div className={`flex gap-1.5 ${errOf('start') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Boshlanish sanasi" invalid={!!errOf('start')} value={form.start} onChange={(v) => set({ start: v, ...(!form.end || form.end < v || !form.multi ? { end: v } : {}) })} /><TimeBox value={form.startTime} onChange={(v) => set({ startTime: v })} /></div>
+                {errOf('start') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('start')}</p>}
               </div>
-              <div className="min-w-0 flex-1 basis-[220px]">
+              <div className="min-w-0 flex-1 basis-[220px]" data-field="end">
                 <Lab req>Tugash sanasi va vaqti</Lab>
-                <div className="flex gap-1.5"><DateBox value={form.end} onChange={(v) => set({ end: v })} /><TimeBox value={form.endTime} onChange={(v) => set({ endTime: v })} /></div>
+                <div className={`flex gap-1.5 ${errOf('end') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Tugash sanasi" invalid={!!errOf('end')} min={form.start} value={form.end} onChange={(v) => set({ end: v })} /><TimeBox value={form.endTime} onChange={(v) => set({ endTime: v })} /></div>
+                {errOf('end') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('end')}</p>}
               </div>
               <button type="button" onClick={() => set({ multi: !form.multi })} className="mb-2 inline-flex items-center gap-2 whitespace-nowrap text-[12.5px] text-[#3e5a62]">
                 <span className={`grid size-4 place-items-center rounded border ${form.multi ? 'border-[var(--color-org-teal)] bg-[var(--color-org-teal)] text-white' : 'border-[#c5d5d2] bg-white'}`}>{form.multi && <Check className="size-3" />}</span>
@@ -402,30 +417,33 @@ export default function Wizard() {
               })}
             </div>
             {form.placeType === 'online' && (
-              <label className="mt-3 block">
+              <label className="mt-3 block" data-field="place">
                 <Lab req>Webinar platformasi yoki havolasi</Lab>
-                <input className={box} placeholder="Masalan: Zoom" value={form.place} onChange={(e) => set({ place: e.target.value })} />
+                <input className={`${box} ${errOf('place') ? '!border-[#e11d48]' : ''}`} placeholder="Masalan: Zoom" value={form.place} onChange={(e) => set({ place: e.target.value })} />
+                {errOf('place') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('place')}</p>}
               </label>
             )}
             {form.placeType !== 'online' && (
               <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_200px]">
                 <div className="space-y-3">
-                  <label className="block">
-                    <Lab req>Manzil</Lab>
+                  <label className="block" data-field="place">
+                    <Lab req>Joy nomi</Lab>
                     <span className="flex gap-2">
-                      <span className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 focus-within:border-[var(--color-org-teal)]">
+                      <span className={`flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border ${errOf('place') ? 'border-[#e11d48]' : 'border-[#e3eeec]'} bg-white px-3 focus-within:border-[var(--color-org-teal)]`}>
                         <MapPin className="size-4 shrink-0" style={{ color: TEAL }} />
-                        <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.place} onChange={(e) => set({ place: e.target.value })} />
+                        <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" placeholder="Masalan: Hilton Tashkent City, konferens-zal" value={form.place} onChange={(e) => set({ place: e.target.value })} />
                       </span>
                       <a className="inline-flex shrink-0 items-center gap-1 self-center text-[12.5px] font-semibold" style={{ color: TEAL }} href={`https://maps.google.com/?q=${encodeURIComponent(form.place || 'Tashkent')}`} target="_blank" rel="noreferrer">Xaritada ko‘rish</a>
                     </span>
+                    {errOf('place') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('place')}</p>}
                   </label>
                   <label className="block">
-                    <Lab>To‘liq manzil</Lab>
+                    <Lab>Ko‘cha manzili</Lab>
                     <span className="flex h-10 items-center gap-2 rounded-xl border border-[#e3eeec] bg-white px-3 focus-within:border-[var(--color-org-teal)]">
                       <MapPin className="size-4 shrink-0 text-[#8aa4a8]" />
-                      <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" value={form.address} onChange={(e) => set({ address: e.target.value })} />
+                      <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" placeholder="Masalan: Islom Karimov ko‘chasi, 2" value={form.address} onChange={(e) => set({ address: e.target.value })} />
                     </span>
+                    <span className="mt-1 block text-[11.5px] text-[#8aa0a4]">Xaritadan nuqta tanlasangiz, o‘zi to‘ladi</span>
                   </label>
                   <VenueNotesField form={form} set={set} />
                     <MapPicker lat={form.lat} lng={form.lng} height={220} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { address: geo.street, ...(geo.city ? { city: geo.city } : {}) } : {}) })} />
@@ -441,20 +459,21 @@ export default function Wizard() {
             )}
           </section>
 
-          <section id="details" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="details" hidden={STEPS[active].id !== 'details'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('details')} title="Dastur va tafsilotlar" sub="Dastur, CME, amaliy qism va shartlar — bo‘sh qoldirilgan bo‘limlar sahifada ko‘rinmaydi" />
-            <div className="mt-3"><WizardDetails form={form} set={set} /></div>
+            <div className="mt-3" data-field="details">{errOf('details') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('details')}</p>}<WizardDetails form={form} set={set} /></div>
             <div className="mt-4 border-t border-[#f0f5f4] pt-3"><FaqField form={form} set={set} /></div>
             <div className="mt-4 border-t border-[#f0f5f4] pt-3"><ContactField form={form} set={set} /></div>
           </section>
 
-          <section id="tickets" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="tickets" hidden={STEPS[active].id !== 'tickets'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('tickets')} title="Chipta turlari" sub="Seminar uchun turli chipta turlarini qo‘shing" extra={(
               <button type="button" onClick={() => setModal('ticket')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Plus className="size-4" /> Chipta turi qo‘shish
               </button>
             )} />
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="mt-3 grid gap-3 md:grid-cols-3" data-field="tickets">
+              {errOf('tickets') && <p role="alert" className="text-[12px] font-medium text-[#e11d48] md:col-span-3">{errOf('tickets')}</p>}
               {form.tickets.length === 0 && <p className="text-[13px] text-[#7e9398] md:col-span-3">Hali chipta turi yo‘q. O‘zingiz qo‘shing.</p>}
               {form.tickets.map((t) => {
                 const tone = TONE[t.tone] || TONE.teal
@@ -502,7 +521,7 @@ export default function Wizard() {
             </div>
           </section>
 
-          <section id="speakers" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="speakers" hidden={STEPS[active].id !== 'speakers'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('speakers')} title="Ma’ruzachilar" sub="Seminarda ishtirok etadigan ma’ruzachilarni qo‘shing" extra={(
               <button type="button" onClick={() => setModal('speaker')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Plus className="size-4" /> Ma’ruzachi qo‘shish
@@ -526,7 +545,7 @@ export default function Wizard() {
             </div>
           </section>
 
-          <section id="cert" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="cert" hidden={STEPS[active].id !== 'cert'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('cert')} title="Sertifikat va dizayn" sub="Sertifikat shablonini tanlang yoki o‘z dizayningizni yuklang" />
             <div className="mt-3 flex flex-wrap gap-1">
               {[
@@ -555,7 +574,7 @@ export default function Wizard() {
             )}
           </section>
 
-          <section id="marketing" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="marketing" hidden={STEPS[active].id !== 'marketing'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('marketing')} title="Marketing va promo-kodlar" sub="Seminarga ko‘proq ishtirokchi jalb qiling" extra={(
               <button type="button" onClick={() => setModal('promo')} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
                 <Plus className="size-4" /> Promo-kod
@@ -593,7 +612,7 @@ export default function Wizard() {
             )}
           </section>
 
-          <section id="review" className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+          <section id="review" hidden={STEPS[active].id !== 'review'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <Head n={num0('review')} title="Ko‘rib chiqish" sub="E’lon qilishdan oldin ma’lumotlarni tekshiring" />
             <ul className="mt-3 space-y-1 text-[13px] text-[#3e5a62]">
               <li><b>{form.name}</b> · {form.topic} · {FORMAT_OF[form.placeType]}</li>
@@ -605,15 +624,16 @@ export default function Wizard() {
             </ul>
           </section>
 
-          {formError && <p className="text-[12.5px] font-semibold text-[#e11d48]">{formError}</p>}
+          {formError && <p role="alert" className="text-[12.5px] font-semibold text-[#e11d48]">{formError}</p>}
+          <p className="text-[12px] text-[#7e9398]">{active + 1}-bosqich / {STEPS.length} · {STEPS[active].title}</p>
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-            <button type="button" onClick={() => go(active - 1)} disabled={active === 0} className="h-10 rounded-xl border border-[#e4eeec] bg-white px-4 text-[13px] font-semibold text-[#1c4a5a] disabled:opacity-40">Oldingi</button>
+            <button type="button" onClick={() => go(active - 1)} disabled={active === 0} className="h-10 rounded-xl border border-[#e4eeec] bg-white px-4 text-[13px] font-semibold text-[#1c4a5a] disabled:opacity-40"><span className="inline-flex items-center gap-1"><ChevronLeft className="size-4" /> Oldingi bosqich</span></button>
             <div className="flex gap-2">
               <button type="button" onClick={() => persist(false)} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3.5 text-[13px] font-semibold" style={{ color: TEAL }}>
                 <Save className="size-4" /> Qoralama saqlash
               </button>
               <button type="button" onClick={() => (active === STEPS.length - 1 ? persist(true) : go(active + 1))} className="inline-flex h-10 items-center gap-1 rounded-xl px-4 text-[13px] font-semibold text-white" style={{ background: TEAL }}>
-                {active === STEPS.length - 1 ? 'E’lon qilish' : 'Keyingi'} <ChevronRight className="size-4" />
+                {active === STEPS.length - 1 ? 'E’lon qilish' : active === STEPS.length - 2 ? 'Ko‘rib chiqish' : 'Keyingi bosqich'} <ChevronRight className="size-4" />
               </button>
             </div>
           </div>
@@ -628,7 +648,7 @@ export default function Wizard() {
             <PreviewExtras form={form} orgName={orgName} />
             <p className="mt-1.5 text-[13px] font-bold leading-snug">{form.name || 'Seminar nomi kiritilmagan'}</p>
             <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0" style={{ color: TEAL }} /> {uzDate(form.start)}, {form.startTime} – {form.endTime}</p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0" style={{ color: TEAL }} /> {form.place || 'Manzil kiritilmagan'}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0" style={{ color: TEAL }} /> {form.place || 'Joy kiritilmagan'}</p>
             <div className="mt-1.5 flex flex-wrap gap-1">
               {previewTags.map((t) => <span key={t} className="rounded-full bg-[#e7f6f3] px-1.5 py-0.5 text-[10.5px] font-semibold" style={{ color: TEAL }}>{t}</span>)}
             </div>
@@ -677,8 +697,13 @@ export default function Wizard() {
             </p>
           </div>
           <button type="button" onClick={() => (active === STEPS.length - 1 ? persist(true) : go(active + 1))} className="mt-2 flex h-10 w-full items-center justify-center gap-1 rounded-xl text-[13.5px] font-semibold text-white" style={{ background: TEAL }}>
-            {active === STEPS.length - 1 ? 'E’lon qilish' : 'Keyingi bosqich'} <ChevronRight className="size-4" />
+            {active === STEPS.length - 1 ? 'E’lon qilish' : active === STEPS.length - 2 ? 'Ko‘rib chiqish' : 'Keyingi bosqich'} <ChevronRight className="size-4" />
           </button>
+          {active > 0 && (
+            <button type="button" onClick={() => go(active - 1)} className="mt-1.5 flex h-10 w-full items-center justify-center gap-1 rounded-xl border border-[#e4eeec] bg-white text-[13px] font-semibold text-[#1c4a5a]">
+              <ChevronLeft className="size-4" /> Oldingi bosqich
+            </button>
+          )}
           <button type="button" onClick={() => persist(false)} className="mt-1.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white text-[13px] font-semibold" style={{ color: TEAL }}>
             <Save className="size-4" /> Qoralama saqlash
           </button>
@@ -723,7 +748,7 @@ function PreviewExtras({ form, orgName }) {
       </ul>
       {form.certDesign && bg && (
         <div className="mt-1.5 flex items-center gap-2">
-          <CertFrame width={44} design={bg} name="Aliyeva" course={form.name || 'Seminar'} date="" org={orgName} />
+          <div className="w-[56px] shrink-0"><CertDesignCanvas src={bg} ratio={form.certDesign.ratio} layout={layoutOf(form.certDesign)} values={{ name: 'Aliyeva', course: form.name || 'Seminar', date: '', cme: '' }} /></div>
           <span className="text-[10.5px] text-[#5e787e]">Sertifikat: o‘z dizayni</span>
         </div>
       )}

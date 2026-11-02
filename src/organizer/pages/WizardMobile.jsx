@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import DatePick from './DatePick'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Calendar, ChevronDown, ChevronRight, Clock, Copy, FileText, LayoutGrid, MapPin, Monitor, Percent, Tag, Ticket, Upload, User, Users, Wallet, X,
@@ -54,11 +55,14 @@ function Field({ label, icon, value, onChange, chevron, type = 'text', suffix })
   )
 }
 
-function Next({ children, onClick }) {
+function Next({ children, onClick, err }) {
   return (
+    <>
+    {err && <p role="alert" className="mt-3 rounded-xl bg-[#fff1f3] px-3 py-2 text-[13px] font-medium text-[#e11d48]">{err}</p>}
     <button type="button" onClick={onClick} className="mt-3 flex h-12 w-full items-center justify-center gap-1 rounded-2xl text-[16px] font-semibold text-white" style={{ background: GREEN }}>
       {children} <ChevronRight className="size-5" />
     </button>
+    </>
   )
 }
 
@@ -96,7 +100,9 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const editing = params.get('tahrir')
-  const [step, setStep] = useState(0)
+  const [step, setStepRaw] = useState(0)
+  const [stepErr, setStepErr] = useState('')
+  const setStep = (v) => { setStepErr(''); setStepRaw(v) }
   const [tickets, setTickets] = useState([])
   const [speakers, setSpeakers] = useState([])
   const [promos, setPromos] = useState([])
@@ -184,7 +190,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     const checks = STEP_IDS[step] === 'info' ? ['info', 'when'] : [STEP_IDS[step]]
     for (const c of checks) {
       const err = validateStep(c, f)
-      if (err) { notify(err); return }
+      if (err) { notify(err); setStepErr(err); return }
     }
     setStep(to)
     window.scrollTo(0, 0)
@@ -195,7 +201,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     if (!asDraft) {
       for (const c of ['info', 'when', 'details', 'tickets']) {
         const err = validateStep(c, f)
-        if (err) { notify(err); setStep(c === 'details' ? 1 : c === 'tickets' ? 2 : 0); return }
+        if (err) { notify(err); setStep(c === 'details' ? 1 : c === 'tickets' ? 2 : 0); setStepErr(err); window.scrollTo(0, 0); return }
       }
     }
     const res = saveSeminar(f, { publish: !asDraft, id: editing || undefined })
@@ -257,13 +263,10 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
             </Shell>
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <label className="block">
+            <div className="block">
               <Lab>Sana</Lab>
-              <Shell icon={Calendar} chevron>
-                <span className="whitespace-nowrap text-[13px]">{uzDate(form.date, 'words')}</span>
-                <input type="date" value={form.date} onChange={(e) => set({ date: e.target.value })} className="absolute inset-0 opacity-0" />
-              </Shell>
-            </label>
+              <DatePick label="Sana" value={form.date} onChange={(v) => set({ date: v })} color={GREEN} />
+            </div>
             <label className="block">
               <Lab>Boshlanish vaqti</Lab>
               <Shell icon={Clock} chevron>
@@ -293,7 +296,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
               ))}
             </div>
           </div>
-          <Field label={form.placeType === 'online' ? 'Webinar platformasi yoki havolasi' : 'Zal manzili'} icon={form.placeType === 'online' ? Monitor : MapPin} value={form.place} onChange={(v) => set({ place: v })} />
+          <Field label={form.placeType === 'online' ? 'Webinar platformasi yoki havolasi' : 'Joy nomi'} icon={form.placeType === 'online' ? Monitor : MapPin} value={form.place} onChange={(v) => set({ place: v })} />
           {form.placeType !== 'online' && <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) })} />}
           {form.placeType !== 'online' && <PlaceImgField form={form} set={set} notify={notify} />}
           <Field label="Minimal ishtirokchi soni" icon={Users} value={form.min} onChange={(v) => set({ min: v.replace(/\D/g, '') })} />
@@ -305,7 +308,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           </label>
           <PosterField form={form} set={set} notify={notify} compact />
           <GalleryField form={form} set={set} notify={notify} />
-          <Next onClick={() => next(1)}>Keyingi</Next>
+          <Next err={stepErr} onClick={() => next(1)}>Keyingi</Next>
         </div>
       )}
 
@@ -317,7 +320,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           {form.placeType !== 'online' && <div className="mt-4"><VenueNotesField form={form} set={set} /></div>}
           <div className="mt-4"><FaqField form={form} set={set} /></div>
           <div className="mt-4"><ContactField form={form} set={set} compact /></div>
-          <Next onClick={() => next(2)}>Keyingi</Next>
+          <Next err={stepErr} onClick={() => next(2)}>Keyingi</Next>
           <button type="button" onClick={() => setStep(0)} className="mt-2 h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
         </div>
       )}
@@ -349,12 +352,12 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           <h2 className="text-[18px] font-bold">Sertifikat</h2>
           <p className="mt-0.5 text-[13px] text-[#8b97a0]">Tayyor shablon (Klassik, teal) ishlatiladi yoki o‘z dizayningizni yuklang.</p>
           <CertUpload form={form} set={set} notify={notify} orgName={hub.settings?.orgName || ''} dateText={uzDate(form.date, 'words')} />
-          <Next onClick={() => next(5)}>Keyingi</Next>
+          <Next err={stepErr} onClick={() => next(5)}>Keyingi</Next>
           <button type="button" onClick={() => setStep(3)} className="mt-2 h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
         </div>
       )}
       {step === 5 && (
-        <StepList title="Marketing" sub="Seminarga ko‘proq ishtirokchi jalb qiling." action="" onNext={() => next(6)} onBack={() => setStep(4)} rows={[{ name: 'Havolani ulashish', meta: 'Seminar e’lon qilingach Telegram orqali ulashing' }]} />
+        <StepList err={stepErr} title="Marketing" sub="Seminarga ko‘proq ishtirokchi jalb qiling." action="" onNext={() => next(6)} onBack={() => setStep(4)} rows={[{ name: 'Havolani ulashish', meta: 'Seminar e’lon qilingach Telegram orqali ulashing' }]} />
       )}
       {step === 6 && (
         <StepList
@@ -373,7 +376,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           <p className="mt-1 text-[13px] text-[#607078]">{uzDate(form.date, 'words')} · {form.start} – {form.end}</p>
           <p className="text-[13px] text-[#607078]">{FORMAT_OF[form.placeType]} · {form.place}</p>
           <p className="text-[13px] text-[#607078]">{tickets.length} chipta · {speakers.length} ma’ruzachi · dastur: {(form.program || []).filter((r) => r.title).length} qator</p>
-          <Next onClick={() => publish(false)}>E’lon qilish</Next>
+          <Next err={stepErr} onClick={() => publish(false)}>E’lon qilish</Next>
           <button type="button" onClick={() => publish(true)} className="mt-2 h-11 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Qoralama saqlash</button>
           <button type="button" onClick={() => setStep(6)} className="h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
         </div>
@@ -453,7 +456,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   )
 }
 
-function StepList({ title, sub, action, onAdd, onNext, onBack, rows }) {
+function StepList({ title, sub, action, onAdd, onNext, onBack, rows, err }) {
   return (
     <div className="mt-4">
       <h2 className="text-[18px] font-bold">{title}</h2>
@@ -469,7 +472,7 @@ function StepList({ title, sub, action, onAdd, onNext, onBack, rows }) {
       {action && (
         <button type="button" onClick={onAdd} className="mt-3 h-11 w-full rounded-2xl border border-dashed text-[14px] font-semibold" style={{ borderColor: GREEN, color: GREEN }}>+ {action}</button>
       )}
-      <Next onClick={onNext}>Keyingi</Next>
+      <Next err={err} onClick={onNext}>Keyingi</Next>
       <button type="button" onClick={onBack} className="mt-2 h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>
     </div>
   )
