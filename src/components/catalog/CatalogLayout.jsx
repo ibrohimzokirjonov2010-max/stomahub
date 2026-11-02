@@ -1,3 +1,4 @@
+import { BannerView } from '../ads/BannerView'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../../cart'
@@ -271,17 +272,10 @@ export function AdBanner({ ads, items, desktop }) {
   useEffect(() => { if (cur) trackAd('view', cur.ad.campaign_id, cur.item.id) }, [cur])
   if (!cur) return null
   const { ad, item } = cur
-  const img = ad.image_url || item.image
   return (
-    <div data-testid="ad-banner" className={`relative mt-3 overflow-hidden rounded-2xl bg-[#0F766E] ${desktop ? 'h-[150px]' : 'h-[118px]'}`}>
-      <Link to={`/product/${item.id}`} onClick={() => trackAd('click', ad.campaign_id, item.id)} className="flex size-full items-stretch">
-        <div className="relative z-[1] flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 text-white">
-          <span className="w-fit rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold tracking-wide">Reklama · {ad.shop_name}</span>
-          <p className={`line-clamp-2 font-extrabold leading-tight ${desktop ? 'text-[20px]' : 'text-[15px]'}`}>{ad.title}</p>
-          {ad.description && <p className="line-clamp-1 text-[12px] text-white/85">{ad.description}</p>}
-          <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-[12px] font-bold text-[#0F766E]">Ko‘rish <ArrowRight className="size-3.5" /></span>
-        </div>
-        {img && <img src={img} alt="" className={`h-full shrink-0 object-cover ${ad.image_url ? 'absolute inset-0 w-full opacity-30' : desktop ? 'w-[260px]' : 'w-[40%]'}`} />}
+    <div data-testid="ad-banner" className="relative mt-3">
+      <Link to={`/product/${item.id}`} onClick={() => trackAd('click', ad.campaign_id, item.id)} className="block">
+        <BannerView image={ad.image_url || item.image} headline={ad.headline || ad.title} text={ad.body_text || ad.description} cta={ad.cta_text} shop={ad.shop_name} mobile={!desktop} />
       </Link>
       {slides.length > 1 && <div className="absolute bottom-2 right-3 z-[2] flex gap-1">{slides.map((s, k) => <button key={s.ad.campaign_id} type="button" aria-label={`${k + 1}-reklama`} onClick={() => setI(k)} className={`h-1.5 rounded-full ${k === i % slides.length ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />)}</div>}
     </div>

@@ -39,6 +39,9 @@ select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, 
 select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on) values ('Test', 'qidiruv', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 5000, 100000, public.ads_today(), public.ads_today()+7)$q$, 'Kunlik byudjet');
 select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on) values ('Test', 'qidiruv', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 20000, 100000, public.ads_today(), public.ads_today()-1)$q$, 'Tugash sanasi');
 select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on) values ('Test', 'qidiruv', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 20000, 100000, public.ads_today()-3, public.ads_today()+1)$q$, 'bugundan oldin');
+select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on) values ('Banner', 'banner', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 20000, 100000, public.ads_today(), public.ads_today()+7)$q$, 'rasm majburiy');
+select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on, image_url) values ('Banner', 'banner', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 20000, 100000, public.ads_today(), public.ads_today()+7, 'https://x.supabase.co/b.jpg')$q$, 'sarlavha kiriting');
+select pg_temp.expect_fail($q$insert into public.seller_campaigns (title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on, image_url, headline, cta_text) values ('Banner', 'banner', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 20000, 100000, public.ads_today(), public.ads_today()+7, 'https://x.supabase.co/b.jpg', 'Implant', 'Bu tugma yozuvi juda ham uzun matn')$q$, 'Tugma yozuvi');
 insert into public.seller_campaigns (id, title, kind, product_ids, daily_budget, total_budget, starts_on, ends_on, status, approved_at)
  values ('00000000-0000-0000-0000-0000000000c1', 'Kompozit aksiya', 'qidiruv', array['00000000-0000-0000-0000-0000000000f1']::uuid[], 20000, 100000, public.ads_today(), public.ads_today()+7, 'faol', now());
 select status, approved_at is null as not_approved from public.seller_campaigns where id = '00000000-0000-0000-0000-0000000000c1';
@@ -106,7 +109,7 @@ update public.seller_campaigns set status = 'toxtatilgan' where id = '00000000-0
 update public.seller_campaigns set status = 'faol' where id = '00000000-0000-0000-0000-0000000000c1';
 update public.seller_campaigns set daily_budget = 30000 where id = '00000000-0000-0000-0000-0000000000c1';
 select status from public.seller_campaigns where id = '00000000-0000-0000-0000-0000000000c1';
-update public.seller_campaigns set title = 'Kompozit aksiya 2' where id = '00000000-0000-0000-0000-0000000000c1';
+update public.seller_campaigns set headline = 'Yangi sarlavha' where id = '00000000-0000-0000-0000-0000000000c1';
 select status, approved_at is null as reset from public.seller_campaigns where id = '00000000-0000-0000-0000-0000000000c1';
 select pg_temp.expect_fail($q$delete from public.seller_campaigns where id='00000000-0000-0000-0000-0000000000c1'$q$, 'o‘chirib');
 reset role;

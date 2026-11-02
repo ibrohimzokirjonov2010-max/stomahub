@@ -40,7 +40,11 @@ grant execute on function public.ads_cfg(text) to anon, authenticated;
 alter table public.seller_campaigns
   add column if not exists approved_at timestamptz,
   add column if not exists pause_reason text not null default '',
-  add column if not exists updated_at timestamptz not null default now();
+  add column if not exists updated_at timestamptz not null default now(),
+  -- Banner matnlari (faqat kind='banner' uchun majburiy sarlavha)
+  add column if not exists headline text not null default '',
+  add column if not exists body_text text not null default '',
+  add column if not exists cta_text text not null default 'Ko‘rish';
 
 alter table public.seller_campaigns drop constraint if exists seller_campaigns_status_check;
 alter table public.seller_campaigns add constraint seller_campaigns_status_check
@@ -87,6 +91,13 @@ begin
   if c.ends_on < c.starts_on then raise exception 'Tugash sanasi boshlanish sanasidan oldin bo‘lishi mumkin emas'; end if;
   if c.ends_on - c.starts_on + 1 > public.ads_cfg('max_days') then raise exception 'Kampaniya muddati ko‘pi bilan 90 kun'; end if;
   if c.image_url <> '' and c.image_url !~ '^https://' then raise exception 'Rasm havolasi noto‘g‘ri'; end if;
+  if length(coalesce(c.headline, '')) > 50 then raise exception 'Sarlavha ko‘pi bilan 50 belgi'; end if;
+  if length(coalesce(c.body_text, '')) > 100 then raise exception 'Qisqa matn ko‘pi bilan 100 belgi'; end if;
+  if length(coalesce(c.cta_text, '')) > 20 then raise exception 'Tugma yozuvi ko‘pi bilan 20 belgi'; end if;
+  if c.kind = 'banner' then
+    if coalesce(c.image_url, '') = '' then raise exception 'Banner uchun rasm majburiy (1200×400)'; end if;
+    if length(trim(coalesce(c.headline, ''))) < 2 then raise exception 'Banner uchun sarlavha kiriting'; end if;
+  end if;
 end $$;
 
 create or replace function public.seller_campaign_guard()
@@ -120,7 +131,9 @@ begin
 
   v_content := new.title is distinct from old.title or new.description is distinct from old.description
             or new.image_url is distinct from old.image_url or new.kind is distinct from old.kind
-            or new.product_ids is distinct from old.product_ids or new.region is distinct from old.region;
+            or new.product_ids is distinct from old.product_ids or new.region is distinct from old.region
+            or new.headline is distinct from old.headline or new.body_text is distinct from old.body_text
+            or new.cta_text is distinct from old.cta_text;
 
   if new.starts_on is distinct from old.starts_on and new.starts_on < v_today then
     raise exception 'Boshlanish sanasi bugundan oldin bo‘lishi mumkin emas';
@@ -373,7 +386,7 @@ begin
      and (v_q = '' or lower(c.title) like '%'||v_q||'%' or lower(coalesce(s.shop_name, s.name, '')) like '%'||v_q||'%');
   select coalesce(jsonb_agg(row_to_json(x)::jsonb), '[]'::jsonb) into v_rows from (
     select c.id, c.title, c.status, c.kind, c.daily_budget, c.total_budget, c.days, c.starts_on, c.ends_on, c.region,
-           c.created_at, c.image_url, c.reject_reason, c.pause_reason, c.approved_at, cardinality(c.product_ids) as products,
+           c.created_at, c.image_url, c.headline, c.body_text, c.cta_text, c.reject_reason, c.pause_reason, c.approved_at, cardinality(c.product_ids) as products,
            s.id as seller_id, coalesce(nullif(s.shop_name, ''), s.name) as shop_name,
            s.city, public.admin_mask_phone(s.phone) as phone,
            coalesce((select sum(spent) from public.seller_ad_stats st where st.campaign_id = c.id), 0) as spent
@@ -393,7 +406,8 @@ begin
   select jsonb_build_object(
     'id', c.id, 'title', c.title, 'status', c.status, 'kind', c.kind, 'daily_budget', c.daily_budget,
     'total_budget', c.total_budget, 'days', c.days, 'starts_on', c.starts_on, 'ends_on', c.ends_on, 'region', c.region,
-    'description', c.description, 'image_url', c.image_url, 'reject_reason', c.reject_reason,
+    'description', c.description, 'image_url', c.image_url,
+    'headline', c.headline, 'body_text', c.body_text, 'cta_text', c.cta_text, 'reject_reason', c.reject_reason,
     'pause_reason', c.pause_reason, 'approved_at', c.approved_at, 'reviewed_at', c.reviewed_at,
     'created_at', c.created_at, 'product_id', c.product_id,
     'balance', public.seller_ad_balance(c.seller_id),
@@ -416,8 +430,10 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- 6. Xaridor joylashuvlari: mos kampaniyalar
 -- ---------------------------------------------------------------------------
+drop function if exists public.ads_placements(text, text, int);
 create or replace function public.ads_placements(p_kind text, p_region text default null, p_limit int default 12)
 returns table (campaign_id uuid, kind text, title text, description text, image_url text,
+               headline text, body_text text, cta_text text,
                seller_id uuid, shop_name text, product_ids uuid[])
 language sql stable security definer set search_path = public as $$
   with today as (select public.ads_today() d),
@@ -428,7 +444,7 @@ language sql stable security definer set search_path = public as $$
        and c.starts_on <= today.d and (c.ends_on is null or c.ends_on >= today.d)
        and (c.region = 'Barcha hududlar' or p_region is null or c.region = p_region)
   )
-  select c.id, c.kind, c.title, c.description, c.image_url, c.seller_id,
+  select c.id, c.kind, c.title, c.description, c.image_url, c.headline, c.body_text, c.cta_text, c.seller_id,
          coalesce(nullif(pr.shop_name, ''), pr.name, 'Sotuvchi'),
          array(select p.id from public.seller_products p
                 where p.id = any (c.product_ids) and p.seller_id = c.seller_id

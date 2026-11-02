@@ -57,7 +57,7 @@ export const SHOT_CAMPAIGNS = {
   ],
 }
 export const SHOT_CAMPAIGN_DETAIL = {
-  ...SHOT_CAMPAIGNS.rows[0], description: 'Kompozit plombalash materiallariga noyabr chegirmasi.', starts_on: '2026-11-03', ends_on: '2026-12-02', region: 'Barcha hududlar',
+  ...SHOT_CAMPAIGNS.rows[0], kind: 'banner', image_url: '/images/market/g-main.jpg', headline: 'Kompozitlar — 15% chegirma', body_text: 'Noyabr oyi davomida barcha kompozit materiallarga maxsus narx', cta_text: 'Chegirmani ko‘rish', description: 'Kompozit plombalash materiallariga noyabr chegirmasi.', starts_on: '2026-11-03', ends_on: '2026-12-02', region: 'Barcha hududlar',
   balance: 250000, stats: { impressions: 0, clicks: 0, spent: 0 }, seller: { shop_name: 'MedStom', phone: mask },
   products: [
     { id: 'p1', name: 'Filtek Z250 kompozit 4g', price: 185000, status: 'active', category: 'Materiallar', image_url: img('Z') },

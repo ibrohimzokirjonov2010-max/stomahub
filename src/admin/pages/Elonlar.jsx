@@ -1,3 +1,4 @@
+import { BannerView } from '../../components/ads/BannerView'
 import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Eye, Megaphone, Pause, XCircle } from 'lucide-react'
@@ -135,7 +136,14 @@ export default function Elonlar() {
       >
         {detail && (
           <div className="space-y-4">
-            {detail.image_url && <img src={detail.image_url} alt="" className="h-40 w-full rounded-xl object-cover" />}
+            {detail.kind === 'banner' ? <div className="space-y-2">
+              <div className="text-[12px] font-semibold text-[#5C6E80]">Xaridorga ko‘rinishi (banner)</div>
+              <BannerView image={detail.image_url} headline={detail.headline || detail.title} text={detail.body_text} cta={detail.cta_text} shop={detail.seller?.shop_name} />
+              <div className="grid gap-1 rounded-xl border border-[#E6EEF0] p-3 text-[13px]">
+                {[['Sarlavha', detail.headline], ['Qisqa matn', detail.body_text], ['Tugma yozuvi', detail.cta_text]].map(([l, x]) => <div key={l} className="flex justify-between gap-3"><span className="text-[#5C6E80]">{l}</span><b className="text-right">{x || '—'}</b></div>)}
+                {!detail.image_url && <div className="text-[12px] font-semibold text-[#B42318]">Rasm yo‘q — banner uchun majburiy</div>}
+              </div>
+            </div> : detail.image_url && <img src={detail.image_url} alt="" className="h-40 w-full rounded-xl object-cover" />}
             <h3 className="text-[18px] font-extrabold">{detail.title}</h3>
             <StatusDot tone={STATUS[detail.status]?.tone || 'gray'}>{STATUS[detail.status]?.label}</StatusDot>
             <p className="text-[13px] text-[#3D4E5F]">{detail.description || 'Tavsif yo‘q'}</p>

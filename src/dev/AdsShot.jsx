@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { __shotSellerState } from '../seller/api'
 import Reklama from '../seller/pages/Reklama'
+import CampaignForm from '../seller/components/reklama/CampaignForm'
 
 const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10) }
 const P = (id, name, price, img) => ({ id, name, price, stock: 40, unit: 'dona', status: 'active', image_url: `/images/market/${img}.jpg` })
@@ -9,7 +10,7 @@ const products = [P('p1', 'Kompozit Filtek Z250 (4 g)', 285000, 'p1'), P('p2', '
 const C = (id, title, kind, status, extra = {}) => ({ id, title, kind, status, product_ids: ['p1'], product_id: 'p1', daily_budget: 20000, total_budget: 300000, starts_on: d(-6), ends_on: d(24), region: 'Barcha hududlar', created_at: d(-7) + 'T10:00:00', approved_at: status === 'moderatsiyada' || status === 'rad_etilgan' ? null : d(-6) + 'T12:00:00', ...extra })
 const campaigns = [
   C('c1', 'Kompozitlar — kuzgi aksiya', 'qidiruv', 'faol', { product_ids: ['p1', 'p4'] }),
-  C('c2', 'Osstem implantlari banneri', 'banner', 'faol', { product_ids: ['p2'], product_id: 'p2', daily_budget: 50000, total_budget: 1000000 }),
+  C('c2', 'Osstem implantlari banneri', 'banner', 'faol', { product_ids: ['p2'], product_id: 'p2', image_url: '/images/market/g-main.jpg', headline: 'Osstem implantlari — 15% chegirma', body_text: 'Noyabr oyi davomida TS III tizimiga maxsus narx', cta_text: 'Chegirmani ko‘rish', daily_budget: 50000, total_budget: 1000000 }),
   C('c3', 'Endodontiya tavsiyasi', 'kategoriya', 'moderatsiyada', { product_ids: ['p3'], product_id: 'p3', starts_on: d(1) }),
   C('c4', 'Apeks lokator chegirma', 'qidiruv', 'toxtatilgan', { product_ids: ['p5'], product_id: 'p5', pause_reason: 'Balans tugadi' }),
   C('c5', 'Arzon qo‘lqoplar!!!', 'banner', 'rad_etilgan', { product_ids: ['p4'], product_id: 'p4', reject_reason: 'Banner matnida tasdiqlanmagan da’vo bor (“eng arzon”). Matnni o‘zgartirib qayta yuboring.' }),
@@ -25,5 +26,7 @@ const adRequests = [
 export default function AdsShot() {
   const [ready, setReady] = useState(false)
   useEffect(() => { __shotSellerState?.({ products, campaigns, adStats, adRequests, adTopups: [], orders: [], reviews: [], payouts: [], customers: [], discounts: [], staff: [], branches: [], activity: [] }); setReady(true) }, [])
+  const form = new URLSearchParams(window.location.search).get('form')
+  if (ready && form) return <CampaignForm open edit={campaigns.find((c) => c.id === form)} onClose={() => {}} />
   return ready ? <div className="min-h-[100dvh] bg-[#F5F8FA] p-3 md:p-6"><Reklama /></div> : null
 }
