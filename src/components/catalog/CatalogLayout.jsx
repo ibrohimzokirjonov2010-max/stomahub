@@ -8,6 +8,7 @@ import { MobileTopBar, MobileToast } from '../mobile/parts'
 import MobileTabBar from '../mobile/MobileTabBar'
 import ShopLayout from '../market/ShopLayout'
 import { som } from '../../marketData'
+import { ImageSearchButton, ImageSearchDialog, ImageSearchBanner, rankByTerms, termsFrom } from './ImageSearch'
 
 /* ---------- building blocks ---------- */
 
@@ -27,7 +28,7 @@ export function CatalogHeader({ title, subtitle, desktop, action, onAction }) {
   )
 }
 
-export function CatalogSearch({ value, onChange, placeholder, onFilter, active, inputRef, desktop }) {
+export function CatalogSearch({ value, onChange, placeholder, onFilter, active, inputRef, desktop, onImage }) {
   const h = desktop ? 'h-12' : 'h-11'
   return (
     <div className="mt-3 flex gap-2">
@@ -36,6 +37,7 @@ export function CatalogSearch({ value, onChange, placeholder, onFilter, active, 
         <input ref={inputRef} type="search" data-testid="catalog-search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-muted" />
         {value && <button type="button" onClick={() => onChange('')} aria-label="Tozalash" className="text-muted"><X className="size-4" /></button>}
       </label>
+      {onImage && <ImageSearchButton onClick={onImage} desktop={desktop} />}
       <button type="button" onClick={onFilter} aria-label="Filtrlar" data-testid="catalog-filter-btn" className={`relative grid ${desktop ? 'size-12' : 'size-11'} shrink-0 place-items-center rounded-2xl border border-line/70 bg-white text-ink`}>
         <SlidersHorizontal className="size-[19px]" />
         {active > 0 && <span className="absolute -right-1 -top-1 grid size-[18px] place-items-center rounded-full bg-sea text-[10px] font-bold text-white ring-2 ring-[#f6f9fb]">{active}</span>}
@@ -270,7 +272,9 @@ export function CatalogPage({ section }) {
   const [allSheet, setAllSheet] = useState(false)
   const [posting, setPosting] = useState(false)
   const [limit, setLimit] = useState(24)
-  useEffect(() => setLimit(24), [cat, q, values, sort])
+  const [imgOpen, setImgOpen] = useState(false)
+  const [vis, setVis] = useState(null) // image-search result { name, brand, category, terms, thumb }
+  useEffect(() => setLimit(24), [cat, q, values, sort, vis])
   const searchRef = useRef(null)
   const gridRef = useRef(null)
 
@@ -287,16 +291,23 @@ export function CatalogPage({ section }) {
       (cat === 'all' || [].concat(section.catOf(it) || []).includes(cat)) &&
       (!s || norm(section.text(it)).includes(s)) &&
       filters.every((f) => !values[f.key] || f.match(it, values[f.key])))
+    // Image search: rank by detected keywords (same text() as the normal search); keep relevance order unless user picked a sort.
+    if (vis) {
+      const ranked = rankByTerms(out, section.text, vis.terms, vis.brand)
+      return fn && sort !== section.sorts[0]?.[0] ? [...ranked].sort(fn) : ranked
+    }
     return fn ? [...out].sort(fn) : out
-  }, [section, cat, q, values, sort, filters])
+  }, [section, cat, q, values, sort, filters, vis])
   const active = Object.values(values).filter(Boolean).length
   const slides = useMemo(() => section.slides(section.items, () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })), [section])
 
   const body = (
     <>
       <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => setPosting(true)} />
-      <CatalogSearch value={q} onChange={setQ} placeholder={section.placeholder} onFilter={() => setAllSheet(true)} active={active} inputRef={searchRef} desktop={desktop} />
-      <HeroSlider slides={slides} desktop={desktop} />
+      <CatalogSearch value={q} onChange={setQ} placeholder={section.placeholder} onFilter={() => setAllSheet(true)} active={active} inputRef={searchRef} desktop={desktop} onImage={section.imageSearch ? () => setImgOpen(true) : undefined} />
+      {vis ? (
+        <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
+      ) : <HeroSlider slides={slides} desktop={desktop} />}
       {cats.length > 0 && <CategoryChips cats={cats} value={cat} onChange={setCat} desktop={desktop} />}
       <div ref={gridRef} className="scroll-mt-2">
         <FilterBar filters={filters} values={values} onChange={setValues} sorts={section.sorts} sort={sort} onSort={setSort} desktop={desktop} />
@@ -329,6 +340,16 @@ export function CatalogPage({ section }) {
               </button>
             )}
           </div>
+) : vis ? (
+          <div data-testid="image-search-empty" className="grid place-items-center rounded-2xl bg-white px-6 py-10 text-center">
+            <p className="text-[15px] font-semibold text-ink">O‘xshash mahsulot topilmadi</p>
+            {vis.name && <p className="mt-1 text-[12.5px] text-ink-2">Aniqlangan mahsulot: <b className="font-semibold text-[#0d2a4a]">{vis.name}</b></p>}
+            <p className="mt-1 text-[12px] text-muted">So‘zlarni tahrirlang yoki boshqa rasm bilan urinib ko‘ring</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={() => setImgOpen(true)} className="h-9 rounded-xl bg-[#0F766E] px-4 text-[12.5px] font-semibold text-white">Boshqa rasm</button>
+              {vis.name && <button type="button" onClick={() => { setQ(''); setCat('all'); setValues({}); setVis(null); setQ(vis.name) }} className="h-9 rounded-xl bg-sea-50 px-4 text-[12.5px] font-semibold text-sea">Nom bo‘yicha qidirish</button>}
+            </div>
+          </div>
         ) : (
           <div data-testid="catalog-empty" className="grid place-items-center rounded-2xl bg-white px-6 py-10 text-center">
             <p className="text-[14px] font-semibold text-ink">{section.items.length ? 'Hech narsa topilmadi' : section.emptyText || 'Hozircha e’lonlar yo‘q'}</p>
@@ -345,6 +366,7 @@ export function CatalogPage({ section }) {
         <AllFilters filters={filters} values={values} desktop={desktop} count={(v) => section.items.filter((it) => (cat === 'all' || [].concat(section.catOf(it) || []).includes(cat)) && filters.every((f) => !v[f.key] || f.match(it, v[f.key]))).length} onClose={() => setAllSheet(false)} onApply={(v) => { setValues(v); setAllSheet(false) }} />
       )}
       {posting && section.action.render({ close: () => setPosting(false), done: (msg) => { setPosting(false); setQ(''); setCat('all'); setValues({}); setToast(msg || 'E’loningiz joylandi'); window.scrollTo({ top: 0, behavior: 'smooth' }) } })}
+      {imgOpen && <ImageSearchDialog desktop={desktop} onClose={() => setImgOpen(false)} onResult={(r) => { setImgOpen(false); setQ(''); setCat('all'); setValues({}); setVis({ name: r.found ? r.name : '', brand: r.brand, category: r.category, terms: r.found ? termsFrom(r) : [], thumb: r.thumb }); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
       <MobileToast text={toast} onClose={() => setToast('')} bottom={desktop ? 24 : 76} />
     </>
   )
