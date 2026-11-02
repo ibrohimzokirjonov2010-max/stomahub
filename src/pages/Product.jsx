@@ -11,6 +11,7 @@ import { useCart } from '../cart'
 import { QtyStepper } from '../components/market/CartPanel'
 import { SaleBadge, LikeButton, Rating, AddButton } from '../components/market/ProductCard'
 import { ToothIcon } from '../components/icons'
+import Lightbox from '../components/Lightbox'
 
 export default function Product() {
   const { id } = useParams()
@@ -67,6 +68,7 @@ function ProductBody({ p }) {
   const id = p.id
   const similarProducts = similarTo(p)
   const [img, setImg] = useState(0)
+  const [zoom, setZoom] = useState(false)
   const minQty = Math.max(1, p.minQty || 1)
   const [qty, setQty] = useState(minQty)
   const [tab, setTab] = useState(0)
@@ -103,22 +105,29 @@ function ProductBody({ p }) {
         {/* Galereya */}
         <div>
           <div className="relative aspect-[380/244] overflow-hidden rounded-xl bg-[#eef3f8]">
-            <img src={p.images[img]} alt={p.name} className="size-full object-cover" />
+            <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
+              <img src={p.images[img]} alt={p.name} className="size-full object-cover" />
+            </button>
+            {n > 1 && <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{img + 1} / {n}</span>}
             {n > 1 && <GalleryArrow side="left" onClick={() => setImg((img - 1 + n) % n)} />}
             {n > 1 && <GalleryArrow side="right" onClick={() => setImg((img + 1) % n)} />}
           </div>
-          <div className={`mt-2.5 grid grid-cols-5 gap-2 ${p.thumbs.length > 1 ? '' : 'hidden'}`}>
-            {p.thumbs.map((t, i) => (
+          <div className={`no-scrollbar mt-2.5 flex gap-2 overflow-x-auto ${n > 1 ? '' : 'hidden'}`}>
+            {p.images.map((t, i) => (
               <button
-                key={t}
+                key={`${i}-${t}`}
+                type="button"
+                aria-label={`Rasm ${i + 1}`}
                 onClick={() => setImg(i)}
-                className={`aspect-[70/55] overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
+                className={`aspect-[70/55] w-[calc((100%-2rem)/5)] shrink-0 overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
               >
                 <img src={t} alt="" className="size-full object-cover" />
               </button>
             ))}
           </div>
         </div>
+
+        {zoom && <Lightbox images={p.images} index={img} onIndex={setImg} onClose={() => setZoom(false)} alt={p.name} />}
 
         {/* Ma'lumot */}
         <div className="min-w-0">
