@@ -24,8 +24,8 @@ const whyIcons = [Award, Handshake, BadgeCheck, Users]
 
 const formats = ['Offline', 'Online', 'Offline + jonli efir']
 const sorts = {
-  near: { label: 'Sana bo‘yicha (eng yaqin)', fn: (a, b) => a.monthKey.localeCompare(b.monthKey) || Number(a.day) - Number(b.day) },
-  far: { label: 'Sana bo‘yicha (uzoq)', fn: (a, b) => b.monthKey.localeCompare(a.monthKey) || Number(b.day) - Number(a.day) },
+  near: { label: 'Sana bo‘yicha (eng yaqin)', fn: (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : a.monthKey.localeCompare(b.monthKey) || Number(a.day) - Number(b.day)) },
+  far: { label: 'Sana bo‘yicha (uzoq)', fn: (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : b.monthKey.localeCompare(a.monthKey) || Number(b.day) - Number(a.day)) },
   cheap: { label: 'Arzonroq', fn: (a, b) => a.price - b.price },
   expensive: { label: 'Qimmatroq', fn: (a, b) => b.price - a.price },
 }

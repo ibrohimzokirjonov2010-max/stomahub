@@ -42,6 +42,7 @@ export default function MobileSeminarReg() {
   const seminar = rec ? seminarView(rec) : null
   if (!seminar) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar topilmadi</div>
   if (seminar.cancelled) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar bekor qilingan</div>
+  if (rec.regClosed || rec.past) return <div className="px-4 py-16 text-center"><p className="text-[15px] font-bold">Seminar yakunlangan</p><p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p></div>
   return <RegView key={id} id={id} seminar={seminar} />
 }
 
