@@ -134,11 +134,12 @@ export function useSeminarsSection() {
         { key: 'format', label: 'Format', options: [['online', 'Onlayn'], ['offline', 'Oflayn']], match: (s, f) => (f === 'online' ? s.online : !s.online) },
         { key: 'month', label: 'Oy', options: uniq(items.map((s) => s.monthKey)).sort().map((m) => [m, `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`]), match: (s, m) => s.monthKey === m },
       ],
-      sorts: [['default', 'Sana bo‘yicha', (a, b) => String(a.dateKey).localeCompare(String(b.dateKey), undefined, { numeric: true })], ...PRICE_SORTS().slice(1)],
+      // Yaqinlashayotganlar sana bo‘yicha oldinda, yakunlanganlar oxirida (eng yangisi birinchi)
+      sorts: [['default', 'Sana bo‘yicha', (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : (a.past ? -1 : 1) * String(a.startIso || a.dateKey).localeCompare(String(b.startIso || b.dateKey), undefined, { numeric: true }))], ...PRICE_SORTS().slice(1)],
       text: (s) => `${s.title} ${s.speaker?.name || s.speaker || ''} ${s.city} ${s.placeLabel}`,
       // seminarCard().off is derived from an invented plan oldPrice — not shown.
-      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.online ? { text: 'Onlayn', tone: 'info' } : null }),
-      slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: `${list.length} ta yaqinlashayotgan seminar`, items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
+      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
+      slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: (() => { const n = list.filter((s) => !s.past && !s.cancelled).length; return n ? `${n} ta yaqinlashayotgan seminar` : 'Yaqinlashayotgan seminarlar tez orada' })(), items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
     }
   }, [hub])
 }

@@ -43,10 +43,10 @@ export default function SeminarReg() {
       </div>
     )
   }
-  if (seminar.cancelled) {
+  if (seminar.cancelled || rec.regClosed || rec.past) {
     return (
       <div className="py-16 text-center">
-        <p className="text-[18px] font-bold text-ink">Seminar bekor qilingan</p>
+        <p className="text-[18px] font-bold text-ink">{seminar.cancelled ? 'Seminar bekor qilingan' : 'Seminar yakunlangan'}</p>
         <p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p>
         <Link to={`/seminarlar/${id}`} className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminar sahifasi</Link>
       </div>
