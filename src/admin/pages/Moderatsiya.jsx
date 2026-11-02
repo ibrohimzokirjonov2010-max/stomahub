@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { EyeOff, Eye, Trash2 } from 'lucide-react'
 import { listContent, moderateContent, useAdminList } from '../api'
@@ -25,7 +26,7 @@ export default function Moderatsiya() {
   )
   const tabs = useMemo(() => MOD_KINDS.map(([id, label]) => ({ id, label })), [])
   const unhide = async (r) => {
-    try { await moderateContent(kind, r.id, 'unhide'); setMsg('Qayta ko‘rsatildi.'); reload() } catch (e) { setMsg(e.message) }
+    try { await moderateContent(kind, r.id, 'unhide'); setMsg('Qayta ko‘rsatildi.'); reload() } catch (e) { setMsg(friendlyError(e)) }
   }
   const actions = (r) => (
     <RowActions>

@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BadgeCheck, CheckCircle2, Eye, GraduationCap, Megaphone, Package, Store, XCircle } from 'lucide-react'
@@ -50,7 +51,7 @@ function Queue() {
     if (!approve) { setRej(row); return }  // reject needs a written reason
     setBusy(row.id)
     setMsg('')
-    try { await doReview(row, true); setMsg('Tasdiqlandi.'); reload() } catch (e) { setMsg(e.message) } finally { setBusy('') }
+    try { await doReview(row, true); setMsg('Tasdiqlandi.'); reload() } catch (e) { setMsg(friendlyError(e)) } finally { setBusy('') }
   }
   const view = (r) => nav(r.kind === 'product' ? '/admin/mahsulotlar' : r.kind === 'ad' ? '/admin/elonlar'
     : r.kind === 'organizer' ? '/admin/tashkilotchilar' : '/admin/sotuvchilar')
@@ -182,10 +183,10 @@ function DoctorQueue() {
   const load = useCallback(() => {
     setSt((x) => ({ ...x, loading: true }))
     licenseQueue(tab).then((r) => setSt({ loading: false, rows: r?.rows || [], counts: r?.counts || {}, error: '' }))
-      .catch((e) => setSt({ loading: false, rows: [], counts: {}, error: e.message }))
+      .catch((e) => setSt({ loading: false, rows: [], counts: {}, error: friendlyError(e) }))
   }, [tab])
   useEffect(() => { load() }, [load])
-  const approve = async (r) => { try { await reviewLicense(r.id, true); setMsg(`${r.name} — tasdiqlangan shifokor.`); load() } catch (e) { setMsg(e.message) } }
+  const approve = async (r) => { try { await reviewLicense(r.id, true); setMsg(`${r.name} — tasdiqlangan shifokor.`); load() } catch (e) { setMsg(friendlyError(e)) } }
   return (
     <div data-testid="doctor-queue">
       <FilterTabs tabs={[

@@ -1,3 +1,4 @@
+import { friendlyError } from '../../../lib/friendlyError'
 import { useEffect, useState } from 'react'
 import { Ban, Check, FileText, Mail, MapPin, Phone, Search, Store, User, X } from 'lucide-react'
 import Modal from '../Modal'
@@ -18,7 +19,7 @@ export default function SellerApplicationModal({ id, onClose, onDone }) {
     setReason('')
     fetchSellerApplication(id)
       .then((data) => { if (live) setState({ loading: false, error: '', data }) })
-      .catch((e) => { if (live) setState({ loading: false, error: e.message, data: null }) })
+      .catch((e) => { if (live) setState({ loading: false, error: friendlyError(e), data: null }) })
     return () => { live = false }
   }, [id])
 
@@ -33,7 +34,7 @@ export default function SellerApplicationModal({ id, onClose, onDone }) {
       onDone?.()
       onClose()
     } catch (e) {
-      setState((s) => ({ ...s, error: e.message }))
+      setState((s) => ({ ...s, error: friendlyError(e) }))
     } finally {
       setBusy('')
     }

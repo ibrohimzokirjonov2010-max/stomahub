@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminQueue, adminReview } from '../api'
@@ -17,7 +18,7 @@ export default function Mahsulotlar() {
     setState((s) => ({ ...s, loading: true, error: '' }))
     adminQueue()
       .then((rows) => setState({ loading: false, error: '', rows: rows || [] }))
-      .catch((e) => setState({ loading: false, error: e.message, rows: [] }))
+      .catch((e) => setState({ loading: false, error: friendlyError(e), rows: [] }))
   }
   useEffect(() => { load() }, [])
 
@@ -31,7 +32,7 @@ export default function Mahsulotlar() {
       setMsg(approve ? `“${row.name}” tasdiqlandi.` : `“${row.name}” rad etildi.`)
       load()
     } catch (e) {
-      setMsg(`${approve ? 'Tasdiqlab' : 'Rad etib'} bo‘lmadi: “${row.name}”. ${e.message || 'Noma’lum xato'}. Qayta urinib ko‘ring yoki sahifani yangilang.`)
+      setMsg(`${approve ? 'Tasdiqlab' : 'Rad etib'} bo‘lmadi: “${row.name}”. ${friendlyError(e, 'Noma’lum xato')}. Qayta urinib ko‘ring yoki sahifani yangilang.`)
     } finally {
       setBusy('')
     }

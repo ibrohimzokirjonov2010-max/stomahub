@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
 import { CalendarDays, ChevronDown } from 'lucide-react'
 import { BarChart } from '../components/Chart'
@@ -18,9 +19,10 @@ export default function Hisobotlar() {
     fetchReports(from, to)
       .then((d) => { setData(d); setError(''); setNeeds(false) })
       .catch((e) => {
-        const msg = e?.message || String(e)
+        const rawmsg = e?.message || String(e)
+        const msg = friendlyError(e)
         setError(msg)
-        setNeeds(/admin_reports|Could not find|PGRST/i.test(msg))
+        setNeeds(/admin_reports|Could not find|PGRST/i.test(rawmsg))
         setData(null)
       })
       .finally(() => setLoading(false))

@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { Ban, CheckCircle2, Eye, GraduationCap, Plus, XCircle } from 'lucide-react'
 import { listOrganizers, organizerDetail, reviewOrganizer, useAdminList } from '../api'
@@ -44,7 +45,7 @@ export default function Tashkilotchilar() {
 
   async function open(id) {
     try { setDetail(await organizerDetail(id)); setReason(''); setMsg('') }
-    catch (e) { setMsg(e.message) }
+    catch (e) { setMsg(friendlyError(e)) }
   }
   async function act(id, action) {
     if ((action === 'reject' || action === 'block') && reason.trim().length < 3) {
@@ -56,7 +57,7 @@ export default function Tashkilotchilar() {
       setMsg('Saqlandi.')
       setDetail(null)
       reload()
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
 

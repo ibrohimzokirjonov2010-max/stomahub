@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { Ban, CheckCircle2, GraduationCap, MoreVertical, Plus, Stethoscope, User } from 'lucide-react'
 import { listUsers, userBlock, userDetail, useAdminList } from '../api'
@@ -36,7 +37,7 @@ export default function Foydalanuvchilar() {
       setDetail(await userDetail(id))
       setReason('')
       setMsg('')
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
   }
 
   async function block(id, doBlock, fromDetail) {
@@ -50,7 +51,7 @@ export default function Foydalanuvchilar() {
       setMsg(doBlock ? 'Foydalanuvchi bloklandi.' : 'Blokdan chiqarildi.')
       if (fromDetail) setDetail(await userDetail(id))
       reload()
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
 

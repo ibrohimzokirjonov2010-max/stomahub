@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { CircleHelp, Eye } from 'lucide-react'
 import { listComplaints, updateComplaint, useAdminList } from '../api'
@@ -40,7 +41,7 @@ export default function Shikoyatlar() {
     try {
       await updateComplaint(id, status, resolution)
       setMsg('Yangilandi.'); setPick(null); reload()
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
 
