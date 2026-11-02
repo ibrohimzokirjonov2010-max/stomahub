@@ -712,6 +712,9 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
   const list = profile.addresses || []
   const blank = () => ({ id: `a${Date.now().toString(36)}`, kind: 'home', name: profile.name || '', phone: profile.phone || '', city: profile.city || 'Toshkent', district: 'Markaz', street: '', extra: '' })
   const save = async () => {
+    if (String(form.name || '').trim().length < 3) return onErr('Qabul qiluvchi ismini kiriting')
+    if (String(form.phone || '').replace(/\D/g, '').length < 9) return onErr('Telefon raqamini to‘liq kiriting')
+    if (String(form.street || '').trim().length < 5) return onErr('Ko‘cha va uy raqamini kiriting')
     try {
       const row = addr(form.id, form.kind, form.name, form.phone, form.district, form.street, form.extra, form.city, form.lat ?? null, form.lng ?? null)
       const exists = list.some((x) => x.id === row.id)
