@@ -11,8 +11,8 @@ import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
-import { createCharge, demoBadgeProps, isDemoPayments } from '../payments/paymentService'
-import { DEFAULT_PAYMENT, SHOW_DEMO_PAYMENTS, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
+import { onlineMethods, payUrlFor, usePaymentConfig } from '../payments/paymentService'
+import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG } from '../components/PhoneInput'
 
 
@@ -27,14 +27,12 @@ const CITIES = {
 }
 
 const ALL_METHODS = [
-  { id: 'uzcard', title: 'UZCARD', text: 'Bank kartasi orqali (demo)', hint: 'Demo' },
-  { id: 'humo', title: 'HUMO', text: 'Bank kartasi orqali (demo)', hint: 'Demo' },
-  { id: 'click', title: 'Click', text: 'Click ilovasi orqali (demo)', hint: 'Demo' },
-  { id: 'payme', title: 'Payme', text: 'Payme ilovasi orqali (demo)', hint: 'Demo' },
+  { id: 'click', title: 'Click', text: 'Click ilovasi yoki karta orqali', hint: 'Escrow' },
+  { id: 'payme', title: 'Payme', text: 'Payme ilovasi yoki karta orqali', hint: 'Escrow' },
   { id: 'cash', title: 'Naqd to‘lov', text: 'Mahsulotni olganda naqd to‘lanadi', hint: 'Olganda' },
 ]
-// Demo card/Click/Payme are hidden until real payments are live (VITE_SHOW_DEMO_PAYMENTS=1 shows them).
-const METHODS = SHOW_DEMO_PAYMENTS ? ALL_METHODS : ALL_METHODS.filter((m) => m.id === 'cash')
+// Onlayn usullar faqat serverda Click/Payme kalitlari sozlangan bo‘lsa ko‘rinadi.
+const methodsFor = (cfg) => { const on = onlineMethods(cfg); return ALL_METHODS.filter((m) => m.id === 'cash' || on.includes(m.id)) }
 
 const ORIGIN = {
   market: { label: 'Marketplace', to: '/marketplace', active: 'market' },
@@ -128,7 +126,10 @@ export default function Checkout() {
   const ship = 0 // yetkazish narxi sotuvchi bilan kelishiladi
   const goods = total
   const grand = Math.max(0, goods + ship - discount)
-  const pay = METHODS.find((m) => m.id === method) || METHODS[0]
+  const payCfg = usePaymentConfig()
+  const METHODS = methodsFor(payCfg)
+  const pay = METHODS.find((m) => m.id === method) || METHODS.find((m) => m.id === 'cash')
+  useEffect(() => { if (payCfg && !METHODS.some((m) => m.id === method)) setMethod('cash') }, [payCfg, method])
 
   const patch = (key, value) => setForm((f) => ({ ...f, [key]: value, saved: key === 'saved' ? value : '' }))
 
@@ -175,11 +176,8 @@ export default function Checkout() {
     setError('')
     setBusy(true)
     try {
-      let paymentRef = ''
-      if (method !== 'cash') {
-        const charge = await createCharge({ method: { type: method }, amount: goods, meta: { source: 'checkout' } })
-        paymentRef = charge.ref
-      }
+      const paymentRef = ''
+      const online = pay.id !== 'cash'
       const res = await createOrder({
         items,
         name: form.name.trim(),
@@ -188,17 +186,20 @@ export default function Checkout() {
         address: withGeo(form.address, shipMode === 'courier' ? form : null),
         note: orderNote(form.note, { date: delivery.date, slot: delivery.slot, pickup: shipMode !== 'courier', invoice, inv }),
         pickup: shipMode !== 'courier',
-        paymentMethod: method,
+        paymentMethod: pay.id,
         paymentRef,
       })
       const codes = (res.orders || []).map((o) => o.code).join(', ')
-      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice, inv: { ...inv }, delivery: { ...delivery }, paymentRef, demo: isDemoPayments() }
+      const snap = { id: codes || orderId, items: items.map((it) => ({ ...it })), goods, ship, discount: 0, grand: goods, method: pay, form: { ...form }, shipMode, invoice, inv: { ...inv }, delivery: { ...delivery }, paymentRef,
+        payLinks: online ? (res.orders || []).map((o) => ({ code: o.code, amount: Number(o.amount) || 0, url: payUrlFor(pay.id, o, payCfg) })) : [] }
       if (buyNow) endBuyNow()
       else cart.clear()
       profileStore.refreshOrders?.()
       setPayOpen(false)
       setPlaced(snap)
       if (invoice) downloadInvoice(snap)
+      // bitta sotuvchi — darhol to‘lov sahifasiga; bir nechta — har birini “To‘lash” orqali
+      if (online && snap.payLinks.length === 1 && snap.payLinks[0].url) window.location.assign(snap.payLinks[0].url)
     } catch (e) {
       setError(e.message || 'Buyurtma yuborilmadi. Qayta urinib ko‘ring.')
     } finally {
@@ -269,6 +270,7 @@ export default function Checkout() {
                     )}
                     {step === 2 && (
                       <StepPay
+                        methods={METHODS}
                         method={method}
                         setMethod={setMethod}
                         code={code}
@@ -460,7 +462,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
   )
 }
 
-function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods, ship, discount, grand, invoice, setInvoice, inv, setInv, onBack, onNext }) {
+function StepPay({ methods: METHODS, method, setMethod, code, setCode, promoMsg, applyPromo, goods, ship, discount, grand, invoice, setInvoice, inv, setInv, onBack, onNext }) {
   return (
     <div className="space-y-4">
       <section className="rounded-2xl bg-white p-4 shadow-card">
@@ -483,9 +485,11 @@ function StepPay({ method, setMethod, code, setCode, promoMsg, applyPromo, goods
             </button>
           ))}
         </div>
-        {SHOW_DEMO_PAYMENTS ? null : (
-          <p className="mt-3 rounded-xl bg-[#eefbf6] px-3 py-2.5 text-[12.5px] text-[#157a45]">Hozircha to‘lov faqat naqd — mahsulotni olganingizda. Onlayn to‘lov tez orada qo‘shiladi.</p>
-        )}
+        {method !== 'cash' ? (
+          <p className="mt-3 flex gap-2 rounded-xl bg-[#eefbf6] px-3 py-2.5 text-[12.5px] text-[#157a45]"><ShieldCheck className="mt-0.5 size-4 shrink-0" /> Pul StomaHub escrowida saqlanadi. Mahsulotni olib “Qabul qildim” tugmasini bosganingizdan so‘ng (yoki yetkazilgandan 3 kun o‘tib) sotuvchiga o‘tkaziladi. Muammo bo‘lsa — “Muammo bor”.</p>
+        ) : METHODS.length === 1 ? (
+          <p className="mt-3 rounded-xl bg-[#eefbf6] px-3 py-2.5 text-[12.5px] text-[#157a45]">Hozircha to‘lov faqat naqd — mahsulotni olganingizda.</p>
+        ) : null}
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow-card">
@@ -646,7 +650,7 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
             Davom etish <ArrowRight className="size-4" />
           </button>
         )}
-        {SHOW_DEMO_PAYMENTS && <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-muted"><Lock className="size-3" /> Xavfsiz to‘lov va ma’lumotlaringiz himoyalangan</p>}
+        {false && <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-muted"><Lock className="size-3" /> Xavfsiz to‘lov va ma’lumotlaringiz himoyalangan</p>}
       </div>
       {step < 3 ? (
         <div className="flex gap-2 rounded-2xl bg-[#eefbf6] p-3 text-[12px] text-[#157a45]">
@@ -670,7 +674,7 @@ function Done({ placed, origin }) {
         <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#e5f7ea] text-[#17803d]"><Check className="size-6" /></span>
         <div>
           <h1 className="text-[22px] font-extrabold">Buyurtmangiz qabul qilindi</h1>
-          <p className="mt-1 text-[13px] text-muted">{placed.method.id === 'cash' ? 'To‘lov mahsulotni olganda naqd.' : 'To‘lov tasdiqlandi.'} Buyurtma raqami <b className="text-ink">#{placed.id}</b></p>
+          <p className="mt-1 text-[13px] text-muted">{placed.method.id === 'cash' ? 'To‘lov mahsulotni olganda naqd.' : 'To‘lov kutilmoqda — to‘lovdan so‘ng pul escrowda saqlanadi.'} Buyurtma raqami <b className="text-ink">#{placed.id}</b></p>
         </div>
       </div>
       <div className="mt-4 space-y-1 text-[13px]">
@@ -680,6 +684,16 @@ function Done({ placed, origin }) {
         {placed.delivery && <Row k={placed.shipMode === 'courier' ? 'Yetkazish' : 'Olib ketish'} v={`${fmtDeliveryDate(placed.delivery.date)}, ${placed.delivery.slot}`} />}
         <Row k="Jami" v={som(placed.grand)} />
       </div>
+      {!!placed.payLinks?.length && (
+        <div className="mt-4 space-y-2 rounded-xl bg-[#f6fafb] p-3">
+          {placed.payLinks.map((l) => (
+            <div key={l.code} className="flex items-center justify-between gap-2 text-[13px]">
+              <span>#{l.code} · <b>{som(l.amount)}</b></span>
+              {l.url ? <a href={l.url} className="inline-flex h-9 items-center rounded-lg bg-sea px-4 text-[12.5px] font-semibold text-white">To‘lash</a> : <span className="text-muted">Buyurtmalarim orqali to‘lang</span>}
+            </div>
+          ))}
+        </div>
+      )}
       <p className="mt-3 text-[12.5px] text-muted">Sotuvchi buyurtmani tasdiqlagach, yetkazish vaqti va narxini siz bilan kelishadi. Holatini “Buyurtmalarim”da kuzating.</p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link to={origin.to} className="inline-flex h-10 items-center rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">{origin.label}ga qaytish</Link>
