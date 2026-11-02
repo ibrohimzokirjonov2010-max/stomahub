@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
 import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -65,6 +66,8 @@ function ProductTabBody({ t, p }) {
 }
 
 function ProductBody({ p }) {
+  const verified = useDoctorVerified()
+  const rxBlocked = isRestricted(p) && !verified
   const id = p.id
   const similarProducts = similarTo(p)
   const [img, setImg] = useState(0)
@@ -197,6 +200,7 @@ function ProductBody({ p }) {
             <span className="text-[10px] text-muted">{p.stock} dona mavjud</span>
           </div>
 
+          {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : <>
           <button
             disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(qty, p.stock))}
             className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600"
@@ -206,6 +210,7 @@ function ProductBody({ p }) {
           <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, Math.min(qty, p.stock), 'market')} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
             Hozir xarid qilish
           </button>
+          </>}
 
           <Link to={p.sellerId ? `/dokon/${p.sellerId}` : '/marketplace'} className="mt-3 flex gap-3 rounded-lg border-t border-line pt-3 hover:bg-[#f6faf9]">
             <div className="grid size-[48px] shrink-0 place-items-center rounded-full bg-white shadow-card ring-1 ring-line">

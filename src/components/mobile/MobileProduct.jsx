@@ -1,3 +1,4 @@
+import { isRestricted, RestrictedNotice, useDoctorVerified } from '../../restricted.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VARIANT_TYPE_LABEL } from '../../config/productCatalog'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -34,6 +35,8 @@ function ProductGate({ id }) {
 
 function ProductView({ id }) {
   const p = productById(id)
+  const verified = useDoctorVerified()
+  const rxBlocked = isRestricted(p) && !verified
   const seller = { name: p.seller || 'Sotuvchi', logo: (p.seller || 'S').slice(0, 2).toUpperCase(), about: 'StomaHub sotuvchisi', city: '' }
   const navigate = useNavigate()
   const { add, items, setQty: setCartQty, remove } = useCart()
@@ -264,9 +267,9 @@ function ProductView({ id }) {
                 </p>
               )}
             </div>
-            <button type="button" onClick={addToCart} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
+            {rxBlocked ? <RestrictedNotice className="flex-1 !p-2" /> : <button type="button" onClick={addToCart} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
               <ShoppingCart className="size-[19px]" /> Savatga qo‘shish
-            </button>
+            </button>}
           </>
         )}
       </div>

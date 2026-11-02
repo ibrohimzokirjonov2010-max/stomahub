@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { initialCart } from './marketData'
 import { isUuid } from './buyerApi'
+import { isRestricted } from './restricted.jsx'
 import { tierPrice } from './config/productCatalog'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
 
@@ -60,6 +61,7 @@ export function CartProvider({ children }) {
         ...(tiers.length ? { tiers, basePrice: product.price } : {}),
         ...(product.uom && product.uom !== 'dona' ? { uom: product.uom } : {}),
         ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
+        ...(isRestricted(product) ? { rx: true } : {}),
       }, qty)]
     })
 

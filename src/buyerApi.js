@@ -23,6 +23,7 @@ export const toMarketProduct = (row) => ({
   name: row.name,
   type: [row.category, row.unit].filter(Boolean).join(' · ') || row.category || '',
   brand: row.brand || '',
+  rx: !!row.rx_only,
   cat: CAT_KEY[normCategory(row.category)] || 'asb',
   category: normCategory(row.category),
   price: Number(row.price) || 0,
