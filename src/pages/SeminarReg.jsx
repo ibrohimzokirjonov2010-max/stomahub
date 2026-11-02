@@ -12,7 +12,6 @@ import { tashkentWhen } from '../time'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Gigiyenist', 'Boshqa']
-const CLINICS = ['DentAKI Clinic', 'EMU Universiteti', 'Nexus Clinic', 'Hyatt Regency', 'Boshqa']
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', "Farg‘ona", 'Nukus']
 
 export default function SeminarReg() {
@@ -43,10 +42,10 @@ export default function SeminarReg() {
       </div>
     )
   }
-  if (seminar.cancelled) {
+  if (seminar.cancelled || rec.regClosed || rec.past) {
     return (
       <div className="py-16 text-center">
-        <p className="text-[18px] font-bold text-ink">Seminar bekor qilingan</p>
+        <p className="text-[18px] font-bold text-ink">{seminar.cancelled ? 'Seminar bekor qilingan' : 'Seminar yakunlangan'}</p>
         <p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p>
         <Link to={`/seminarlar/${id}`} className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminar sahifasi</Link>
       </div>
@@ -161,10 +160,7 @@ export default function SeminarReg() {
                     </select>
                   </Field>
                   <Field label="Klinika" required>
-                    <select value={form.clinic} onChange={set('clinic')} className="h-11 w-full rounded-xl border border-line bg-white px-3 text-[13px]">
-                      <option value="">Klinika nomi</option>
-                      {CLINICS.map((s) => <option key={s}>{s}</option>)}
-                    </select>
+                    <input value={form.clinic} onChange={set('clinic')} maxLength={120} autoComplete="organization" placeholder="Klinika yoki ish joyi nomi" className="h-11 w-full rounded-xl border border-line bg-white px-3 text-[16px] sm:text-[13px]" />
                   </Field>
                 </div>
                 <Field label="Shahar" required>
@@ -317,26 +313,7 @@ export default function SeminarReg() {
 }
 
 function profile(d) {
-  if (d.id === 'implant-toj') {
-    return {
-      kicker: 'Implantologiya',
-      title: 'Implantologiya: nazariya va klinik amaliyot',
-      longTitle: 'Zamonaviy implantologiya: nazariya va klinik amaliyot',
-      price: 1500000,
-      doctor: 'Dr. Sardor Karimov',
-      role: 'Implantolog',
-      when: '24-noyabr 2026, 10:00 – 16:00',
-      place: 'Toshkent, Hyatt Regency',
-      address: 'Toshkent shahri, Navoi ko‘chasi, 1A',
-      format: 'Offlayn',
-      banner: d.hero,
-      avatar: d.speaker.avatar,
-      order: 'SEM-2041',
-      includes: ['Seminarda ishtirok', 'Xorijiy ma’ruzachining materiallari', 'Elektron sertifikat'],
-      includesMore: ['Seminarda ishtirok', 'Xorijiy ma’ruzachining materiallari', 'Elektron sertifikat', 'Kofe-breyk va tushlik'],
-      tags: ['Implantologiya', 'Nazariya', 'Klinik amaliyot', 'Amaliyot'],
-    }
-  }
+  // Avval bu yerda Hyatt Regency joyi qattiq yozilgan edi — endi faqat haqiqiy seminar ma’lumoti ishlatiladi.
   return {
     kicker: d.catName,
     title: d.title,

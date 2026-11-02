@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useCatalogVersion, isOwned } from '../../recordSync'
 import { som } from '../../marketData'
-import { cats as formaCats, colorOf, genders } from '../../formaData'
+import { cats as formaCats, colorOf, genders, sizesOf } from '../../formaData'
 import { cats as bookCats, langOptions, formatOptions } from '../../booksData'
 import { directions, levels, formats } from '../../educationData'
 import { cats as ustaCats } from '../../ustalarData'
@@ -67,7 +67,7 @@ export function useFormaSection() {
       key: 'forma', shopActive: 'forma', title: 'Tibbiy forma', subtitle: 'Qulay, sifatli va zamonaviy tibbiy kiyimlar', placeholder: 'Forma, xalat yoki brend qidiring...',
       items, cats: chipsFrom(formaCats, { scrub: Shirt, coat: Stethoscope, cap: HardHat, shoe: Footprints, apron: Layers, accessory: Glasses }), catOf: (p) => p.cat,
       filters: [
-        { key: 'size', label: 'O‘lcham', options: opts(items.flatMap((p) => p.sizes || [])), match: (p, s) => (p.sizes || []).includes(s) },
+        { key: 'size', label: 'O‘lcham', options: opts(items.flatMap((p) => sizesOf(p) || [])), match: (p, s) => sizesOf(p).includes(s) },
         { key: 'color', label: 'Rang', options: uniq(items.flatMap((p) => p.colors || [])).map((c) => [c, colorOf(c).name]), match: (p, c) => (p.colors || []).includes(c) },
         { key: 'gender', label: 'Jins', options: genders, match: (p, g) => p.gender === g || (g !== 'uni' && p.gender === 'uni') },
         { key: 'brand', label: 'Brend', options: opts(items.map((p) => p.brand)), match: (p, b) => p.brand === b },
@@ -83,10 +83,10 @@ export function useFormaSection() {
           extra: (
             <div className="mt-1 flex items-center gap-1.5">
               <span className="flex gap-1">{(p.colors || []).slice(0, 4).map((c) => <span key={c} className="size-2.5 rounded-full ring-1 ring-line" style={{ background: colorOf(c).hex }} />)}</span>
-              <span className="truncate text-[10px] text-muted">{(p.sizes || []).join(' ')}</span>
+              <span className="truncate text-[10px] text-muted">{sizesOf(p).join(' ')}</span>
             </div>
           ),
-          cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${p.sizes?.[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
+          cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${sizesOf(p)[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
         }
       },
       slides: (list, scroll) => slidesFor({ title: 'Ish kiyimingiz —', accent: 'sizning uslubingiz', text: 'Shifokor va assistentlar uchun forma, xalat va poyabzal', items: list, image: (p) => p.image, href: (p) => `/forma/${p.id}`, scroll }),
@@ -94,7 +94,7 @@ export function useFormaSection() {
   }, [v])
 }
 
-const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
+const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiyena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
 export function useMarketSection() {
   const { products, status } = useMarket()
   return useMemo(() => {
@@ -134,11 +134,12 @@ export function useSeminarsSection() {
         { key: 'format', label: 'Format', options: [['online', 'Onlayn'], ['offline', 'Oflayn']], match: (s, f) => (f === 'online' ? s.online : !s.online) },
         { key: 'month', label: 'Oy', options: uniq(items.map((s) => s.monthKey)).sort().map((m) => [m, `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`]), match: (s, m) => s.monthKey === m },
       ],
-      sorts: [['default', 'Sana bo‘yicha', (a, b) => String(a.dateKey).localeCompare(String(b.dateKey), undefined, { numeric: true })], ...PRICE_SORTS().slice(1)],
+      // Yaqinlashayotganlar sana bo‘yicha oldinda, yakunlanganlar oxirida (eng yangisi birinchi)
+      sorts: [['default', 'Sana bo‘yicha', (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : (a.past ? -1 : 1) * String(a.startIso || a.dateKey).localeCompare(String(b.startIso || b.dateKey), undefined, { numeric: true }))], ...PRICE_SORTS().slice(1)],
       text: (s) => `${s.title} ${s.speaker?.name || s.speaker || ''} ${s.city} ${s.placeLabel}`,
       // seminarCard().off is derived from an invented plan oldPrice — not shown.
-      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.online ? { text: 'Onlayn', tone: 'info' } : null }),
-      slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: `${list.length} ta yaqinlashayotgan seminar`, items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
+      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
+      slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: (() => { const n = list.filter((s) => !s.past && !s.cancelled).length; return n ? `${n} ta yaqinlashayotgan seminar` : 'Yaqinlashayotgan seminarlar tez orada' })(), items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
     }
   }, [hub])
 }

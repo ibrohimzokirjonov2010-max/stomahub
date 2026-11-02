@@ -62,9 +62,12 @@ export default function Brendlar() {
     return [...known, ...extra].sort((a, b) => b.count - a.count)
   }, [market.products])
 
+  const active = brandsLive.filter((b) => b.count > 0)
+  const soon = brandsLive.filter((b) => !b.count && (!q.trim() || b.name.toLowerCase().includes(q.trim().toLowerCase())))
   const list = useMemo(() => {
     const text = q.trim().toLowerCase()
     return brandsLive.filter((b) => {
+      if (!b.count) return false
       if (country !== 'all' && b.country !== country) return false
       if (letter !== 'all' && b.name[0].toUpperCase() !== letter) return false
       if (text && !b.name.toLowerCase().includes(text)) return false
@@ -80,13 +83,13 @@ export default function Brendlar() {
             <h1 className="text-[22px] font-extrabold text-ink">Brendlar</h1>
             <p className="mt-0.5 text-[12px] text-muted">Dunyoning yetakchi stomatologiya brendlari</p>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-[#e6eef3] bg-white px-3 py-2 shadow-card">
+          {active.length > 0 && <div className="flex items-center gap-2 rounded-xl border border-[#e6eef3] bg-white px-3 py-2 shadow-card">
             <Tooth className="size-5 text-sea" />
             <span>
-              <span className="block text-[12px] font-bold text-ink">{brands.length} brend</span>
-              <span className="block text-[11px] text-muted">Rasmiy yetkazib beruvchilar</span>
+              <span className="block text-[12px] font-bold text-ink">{active.length} brend</span>
+              <span className="block text-[11px] text-muted">Marketplace’da mahsuloti bor</span>
             </span>
-          </div>
+          </div>}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -110,7 +113,9 @@ export default function Brendlar() {
           ))}
         </div>
 
-        {list.length === 0 ? (
+        {list.length === 0 && !q && letter === 'all' && country === 'all' ? (
+          <div className="mt-3 rounded-xl bg-white p-8 text-center text-[13px] text-muted shadow-card">Hozircha brend mahsulotlari yo‘q.</div>
+        ) : list.length === 0 ? (
           <div className="mt-3 rounded-xl bg-white p-8 text-center text-[13px] text-muted shadow-card">Bu filtrda brend topilmadi.</div>
         ) : (
           <div className="brand-grid mt-3">
@@ -129,6 +134,15 @@ export default function Brendlar() {
               )
             })}
           </div>
+        )}
+        {soon.length > 0 && (
+          <section className="mt-6">
+            <h2 className="text-[14px] font-bold text-ink">Tez orada</h2>
+            <p className="mt-0.5 text-[11px] text-muted">Bu brendlar mahsulotlari hali Marketplace’da yo‘q</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {soon.map((b) => <span key={b.name} className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-2 shadow-card">{b.name}</span>)}
+            </div>
+          </section>
         )}
       </div>
     </ShopLayout>

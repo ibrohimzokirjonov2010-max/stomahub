@@ -15,7 +15,7 @@ import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_M
 
 const TABS = [['info', 'Ma’lumot', UserRound], ['services', 'Xizmatlar', ToothIcon], ['works', 'Ishlar', ImageIcon], ['reviews', 'Sharhlar', MessageSquareText]]
 const TIMES = ['09:00', '10:30', '12:00', '14:00', '15:30', '17:00']
-const DAYS = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan']
+const DAYS = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh']
 
 export default function MobileMutaxassis() {
   const { id } = useParams()

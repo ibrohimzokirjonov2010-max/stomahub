@@ -1,3 +1,4 @@
+import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -64,6 +65,8 @@ export default function Checkout() {
   // "Hozir xarid qilish" → only that product; the cart is left untouched.
   const [buyNow] = useState(() => readBuyNow(loc.state))
   const items = buyNow ? [buyNow] : cart.items
+  const doctorOk = useDoctorVerified()
+  const rxBlocked = !doctorOk && items.some(isRestricted)
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
   const profile = useProfile()
   const [step, setStep] = useState(1)
@@ -167,6 +170,7 @@ export default function Checkout() {
       setError('Oferta shartlari bilan tanishib chiqishingiz kerak.')
       return
     }
+    if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return
     setError('')
     setBusy(true)
@@ -235,6 +239,7 @@ export default function Checkout() {
               {step === 3 && 'Buyurtmangizni tekshirib, tasdiqlang'}
             </p>
             <Stepper step={step} />
+            {rxBlocked && <RestrictedNotice className="mt-3" />}
             {error && <p className="mt-3 rounded-xl bg-[#fff1f2] px-3 py-2 text-[12.5px] text-[#e11d48]">{error}</p>}
 
             <div className="buy-layout mt-4">
@@ -440,7 +445,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         <p className="mt-0.5 text-[12px] text-muted">Sizga qulay yetkazish usulini tanlang</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="Narxi sotuvchi bilan kelishiladi" price="Kelishiladi" />
-          <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘ziroq olib ketish" meta="Bepul" />
+          <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘zingiz olib ketasiz" meta="Bepul" />
         </div>
       </section>
 
@@ -560,7 +565,7 @@ function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree,
               <span className="grid size-9 place-items-center rounded-xl bg-sea-50 text-sea">{shipMode === 'courier' ? <Truck className="size-4" /> : <Store className="size-4" />}</span>
               <span>
                 <b className="block text-[13px]">{shipMode === 'courier' ? 'Kuryer orqali' : 'Olib ketish'}</b>
-                <span className="text-[12px] text-muted">{shipMode === 'courier' ? 'Manzilingizga yetkazib berish' : 'Do‘kondan o‘ziroq olib ketish'}</span>
+                <span className="text-[12px] text-muted">{shipMode === 'courier' ? 'Manzilingizga yetkazib berish' : 'Do‘kondan o‘zingiz olib ketasiz'}</span>
               </span>
             </div>
             <p className="mt-2 text-[13px] font-semibold">{fmtDeliveryDate(delivery.date)}</p>

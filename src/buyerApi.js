@@ -1,3 +1,4 @@
+import { isTestProductRow } from './testData'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
@@ -11,7 +12,7 @@ const emit = () => marketListeners.forEach((l) => l())
 const CAT_KEY = {
   'Restavratsion materiallar': 'komp', Implantlar: 'impl', 'Yordamchi materiallar': 'bond', 'Sarflanadigan materiallar': 'gig',
   'Endodontik asboblar': 'endo', Instrumentlar: 'asb', Uskunalar: 'usk', 'Himoya vositalari': 'gig', 'O‘lchov materiallari': 'komp',
-  Ortodontiya: 'orto', 'Gigiena vositalari': 'gig', Boshqa: 'asb',
+  Ortodontiya: 'orto', 'Gigiyena vositalari': 'gig', 'Gigiena vositalari': 'gig', Boshqa: 'asb',
   Implantologiya: 'impl', Sterilizatsiya: 'usk', 'Qolip materiallari': 'komp', 'Qolip (ottisk) materiallari': 'komp', 'Izolyatsiya materiallari': 'komp',
   'Estetik stomatologiya': 'komp', Laboratoriya: 'lab',
 }
@@ -23,6 +24,7 @@ export const toMarketProduct = (row) => ({
   name: row.name,
   type: [row.category, row.unit].filter(Boolean).join(' · ') || row.category || '',
   brand: row.brand || '',
+  rx: !!row.rx_only,
   cat: CAT_KEY[normCategory(row.category)] || 'asb',
   category: normCategory(row.category),
   price: Number(row.price) || 0,
@@ -73,7 +75,7 @@ export async function loadMarketProducts() {
   if (err) {
     marketState = { status: 'error', error: friendlySupabaseError(err) }
   } else {
-    marketProducts.splice(0, marketProducts.length, ...(rows || []).map(toMarketProduct))
+    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct))
     marketState = { status: 'ready', error: '' }
   }
   emit()

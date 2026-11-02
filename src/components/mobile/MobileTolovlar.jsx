@@ -18,7 +18,7 @@ export const toIso = (dmy) => dmy.split('.').reverse().join('-')
 const MON = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
 const MON_LOW = MON.map((m) => m.toLowerCase())
 const MON_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
-const DAYS = ['Dsh', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak']
+const DAYS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
 export const TODAY = todayIso()
 
 export const useTolovlar = useClinicPayments

@@ -1,3 +1,4 @@
+import { isRestricted, RestrictedNotice, useDoctorVerified } from '../../restricted.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -76,6 +77,8 @@ export default function MobileCheckout() {
   // "Hozir xarid qilish" → only that product; the cart stays untouched.
   const [buyNow] = useState(() => readBuyNow(loc.state))
   const items = buyNow ? [buyNow] : cart.items
+  const doctorOk = useDoctorVerified()
+  const rxBlocked = !doctorOk && items.some(isRestricted)
   const cartReady = buyNow ? true : cart.cartReady
   const [placed, setPlaced] = useState(() => (loc.state?.done ? readOrder() : null))
   const [step, setStep] = useState(1)
@@ -200,6 +203,7 @@ export default function MobileCheckout() {
   }
 
   const place = async () => {
+    if (rxBlocked) { setPlaceErr('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (placing) return
     setPlacing(true)
     setPlaceErr('')
@@ -534,6 +538,7 @@ export default function MobileCheckout() {
                 <button type="button" onClick={(e) => { e.preventDefault(); setSheet('oferta') }} className="font-medium text-[#0b6d73] underline underline-offset-2">Ommaviy oferta</button> bilan tanishdim va roziman
               </span>
             </label>
+            {rxBlocked && <RestrictedNotice className="mb-2" />}
             {placeErr && <p role="alert" className="mb-2 rounded-lg bg-[#fff4f4] px-3 py-2 text-[12.5px] text-[#b42318]">{placeErr}</p>}
             <button type="button" disabled={placing} onClick={confirm} className="disabled:opacity-60 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.99]">
               Buyurtmani tasdiqlash <ArrowRight className="size-[18px]" />

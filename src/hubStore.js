@@ -1,10 +1,11 @@
+import { fixCaps } from './lib/displayText'
 import { useSyncExternalStore } from 'react'
 import { FACES, IMG } from './organizer/data'
 import { seminars as CATALOG } from './seminarsData'
 import { friendlySupabaseError, supabase } from './supabaseClient'
 import { tashkentClock, tashkentDate } from './time'
 import { tashkentToday } from './tashkentDate'
-import { isTestSeminar } from './organizer/reconcile'
+import { isPast, isTestSeminar } from './organizer/reconcile'
 import {
   pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
@@ -730,8 +731,8 @@ export function toPublic(s) {
     monthKey: `${y}-${String(m || 1).padStart(2, '0')}`,
     title: s.title,
     text: String(s.about || s.days || '').slice(0, 140),
-    city: s.city,
-    place: s.place || s.city,
+    city: fixCaps(s.city),
+    place: fixCaps(s.place || s.city),
     time: `${s.startTime || '10:00'} – ${s.endTime || '18:00'}`,
     hours: Number(s.form?.hours) ? `${Number(s.form.hours)} soat` : spanHours(s.startTime, s.endTime),
     noSpeaker: !(s.speakers || []).some((sp) => sp?.name),
@@ -776,14 +777,21 @@ export function toPublic(s) {
     online,
     contactPhone: String(s.contactPhone ?? s.form?.contactPhone ?? '').trim(),
     contactTelegram: String(s.contactTelegram ?? s.form?.contactTelegram ?? '').trim(),
-    regClosed: !!(s.regClosed || s.past),
+    // Holat har doim tugash sanasidan (Toshkent vaqti) hisoblanadi — DB status eskirgan bo‘lishi mumkin
+    startIso: s.start || '',
+    endIso: s.end || s.start || '',
+    past: isPast(s),
+    regClosed: !!(s.regClosed || s.past || isPast(s) || s.status === 'bekor' || s.status === 'yakunlangan'),
     organizer: true,
   }
 }
 
+/** Yaqinlashayotganlar (eng yaqini birinchi), keyin yakunlanganlar (eng yangisi birinchi). */
+export const bySeminarDate = (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : (a.past ? -1 : 1) * String(a.startIso).localeCompare(String(b.startIso)))
+
 export function publicRecords(s = state) {
   const source = Array.isArray(s.catalog) ? s.catalog : s.seminars
-  const extra = source.filter((x) => x.published && x.status !== 'qoralama' && !isTestSeminar(x)).map(toPublic)
+  const extra = source.filter((x) => x.published && x.status !== 'qoralama' && !isTestSeminar(x)).map(toPublic).sort(bySeminarDate)
   // Real-data mode: once hub hydrated from Supabase, never merge sample seminarsData seeds.
   if (s.ready || s.catalog?.length || s.seminars?.length) return extra
   return CATALOG.map((x) => ({ ...x }))

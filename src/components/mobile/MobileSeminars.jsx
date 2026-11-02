@@ -33,7 +33,7 @@ const BracesIcon = (p) => (
 
 const CHIP_ICONS = { all: LayoutGrid, impl: ImplantIcon, endo: ToothIcon, orto: BracesIcon, estet: Sparkles, paro: HeartPulse, surg: Scissors, other: Ellipsis }
 const SORTS = {
-  date: { label: 'Sanasi bo‘yicha', fn: (a, b) => a.dateKey.localeCompare(b.dateKey) },
+  date: { label: 'Sanasi bo‘yicha', fn: (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : String(a.dateKey).localeCompare(String(b.dateKey))) },
   cheap: { label: 'Arzonroq', fn: (a, b) => a.price - b.price },
   expensive: { label: 'Qimmatroq', fn: (a, b) => b.price - a.price },
   seats: { label: 'Joy kam qolgan', fn: (a, b) => a.left - b.left },
@@ -194,7 +194,9 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
             <span className="whitespace-nowrap text-[13px] font-extrabold text-[#0d3b44]">{som(s.price)}</span>
-            {s.cancelled ? (
+            {s.past ? (
+              <span className="flex h-8 items-center rounded-lg bg-[#eef1f4] px-2 text-[10px] font-semibold text-muted">Yakunlangan</span>
+            ) : s.cancelled ? (
               <span className="flex h-8 items-center rounded-lg bg-[#fde8e8] px-2 text-[10px] font-semibold text-[#dc2626]">Bekor qilingan</span>
             ) : registered ? (
               <span className="flex h-8 items-center gap-1 rounded-lg bg-[#e5f6ec] px-2 text-[10px] font-semibold text-ok"><CircleCheck className="size-3.5" /> Ro‘yxatdasiz</span>

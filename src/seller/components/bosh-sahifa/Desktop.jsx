@@ -107,7 +107,7 @@ export function LowStock({ products }) {
       <div className="px-3 pb-4">
         <div className="grid grid-cols-[1fr_70px_90px] rounded-lg bg-[#F4F7F8] px-3 py-2.5 text-[12px] font-medium text-[#3D4E5F]"><span>Mahsulot</span><span>Stok</span><span>Amallar</span></div>
         {products.length === 0 ? (
-          <Empty icon={PackageCheck} title="Kam qolgan mahsulot yo‘q" text="Omborda 10 tadan kam qolgan mahsulotlar shu yerda ko‘rinadi." />
+          <Empty icon={PackageCheck} title="Kam qolgan mahsulot yo‘q" text="Omborda 5 ta yoki undan kam qolgan mahsulotlar shu yerda ko‘rinadi." />
         ) : products.map((p) => (
           <div key={p.id} className="grid grid-cols-[1fr_70px_90px] items-center border-b border-[#EEF3F4] px-3 py-1.5 last:border-0">
             <span className="flex min-w-0 items-center gap-4"><ProductThumb src={p.image_url} className="h-[30px] w-[42px] rounded-md" /><span className="truncate text-[12.5px]">{p.name}</span></span>

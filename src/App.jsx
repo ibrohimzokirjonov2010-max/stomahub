@@ -5,6 +5,7 @@ import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
 import { CartProvider } from './cart'
 import NotFound from './pages/NotFound'
+import { RxPrompt } from './restricted.jsx'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
 import { Privacy, Terms } from './pages/Legal'
@@ -62,6 +63,7 @@ import Hisobotlar from './pages/Hisobotlar'
 import Tolovlar from './pages/Tolovlar'
 import Ombor from './pages/Ombor'
 import Checkout from './pages/Checkout'
+import ShifokorTasdiq from './pages/ShifokorTasdiq'
 import Community from './pages/Community'
 import Sertifikatlar from './pages/Sertifikatlar'
 import Klinika from './pages/Klinika'
@@ -129,6 +131,7 @@ export default function App() {
   return (
     <CartProvider>
       <BrowserRouter>
+        <RxPrompt />
         <MobileChrome />
         <IntakeDialog />
         <FlashToast />
@@ -222,6 +225,7 @@ export default function App() {
           <Route path="/klinika" element={<CrmGate><Klinika /></CrmGate>} />
           <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
           <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
+          <Route path="/profil/shifokor" element={<ShifokorTasdiq />} />
           <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil section="addresses" /></Responsive>} />
           <Route path="/profil/tolov-usullari" element={<Responsive mobile={<MobileTolovUsullari />}><Profil section="payments" /></Responsive>} />
           <Route path="/profil/sevimlilar" element={<Responsive mobile={<MobileSevimlilar />}><Profil section="saved" /></Responsive>} />

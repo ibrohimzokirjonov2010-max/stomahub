@@ -200,7 +200,7 @@ function DesktopTickets() {
 
           <div className="space-y-3">
             <Panel title="Chipta ko‘rinishi (namuna)" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Dizaynni sozlash</button>}>
-              <VipTicket sem={sem} />
+              <VipTicket sem={sem} type={all[0]} />
               <Btn className="mt-3 w-full" onClick={() => { downloadText('qr-chiptalar.txt', all.map((t) => `${t.name} · ${t.sold || 0} ta · ${sem?.title || ''}`).join('\n')); notify('QR kod yuklab olindi') }}><Download className="size-4" /> QR kodni yuklab olish</Btn>
             </Panel>
             <Panel title="Tezkor amallar">
@@ -515,8 +515,8 @@ function SalesDonut({ rows = [] }) {
   )
 }
 
-function VipTicket({ sem }) {
-  if (!sem) {
+function VipTicket({ sem, type }) {
+  if (!sem || !type) {
     return <p className="rounded-2xl bg-[#f4fbfa] px-4 py-8 text-center text-[13px] text-[#7e9398]">Hali chipta yo‘q. Seminar yarating va chipta turini qo‘shing.</p>
   }
   return (
@@ -534,22 +534,19 @@ function VipTicket({ sem }) {
         <div className="mt-auto grid grid-cols-2 gap-2 pt-3 text-[11px]">
           <div>
             <p className="text-white/65">Ishtirokchi</p>
-            <p className="font-semibold">Ism familiya</p>
+            <p className="font-semibold text-white/80">Ishtirokchi ismi</p>
           </div>
           <div>
             <p className="text-white/65">Chipta turi</p>
-            <p className="font-semibold">VIP chipta</p>
+            <p className="font-semibold">{type.name}</p>
           </div>
         </div>
       </div>
-      <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-md bg-[#f5c518] px-1.5 py-[3px] text-[10px] font-extrabold tracking-wide text-[#3a2e08]">
-        <Crown className="size-3" strokeWidth={2.2} /> VIP
-      </span>
       <div className="absolute bottom-2.5 right-2.5 w-[78px]">
         <div className="rounded-[6px] bg-white p-1">
           <QrMark size={70} seed={4} />
         </div>
-        <p className="mt-1 text-center text-[8px] font-semibold tracking-tight text-white">#STH-2026-0001</p>
+        <p className="mt-1 text-center text-[8px] font-semibold tracking-tight text-white">Chipta raqami</p>
       </div>
     </div>
   )
@@ -646,7 +643,7 @@ function TicketForm({ open, initial, onClose, onSave, blank }) {
   return (
     <Modal open={open} title={initial ? 'Chipta turini tahrirlash' : 'Yangi chipta turi qo‘shish'} onClose={onClose} width={420}>
       <div className="space-y-3">
-        <Field label="Chipta turi nomi" req error={err.name}><input className={inputCls(err.name)} value={f.name} onChange={set('name')} placeholder="VIP chipta" /></Field>
+        <Field label="Chipta turi nomi" req error={err.name}><input className={inputCls(err.name)} value={f.name} onChange={set('name')} placeholder="Masalan: Standart chipta" /></Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Narx" req error={err.price}><input className={inputCls(err.price)} value={f.price} onChange={set('price')} placeholder="2 500 000" /></Field>
           <Field label="Joylar soni" req error={err.seats}><input className={inputCls(err.seats)} value={f.seats} onChange={set('seats')} placeholder="100" /></Field>

@@ -115,3 +115,13 @@ export function getForma(id) {
 export function colorOf(id) {
   return colors.find((c) => c.id === id) || colors[0]
 }
+
+/** Tibbiy poyabzal o‘lchamlari: 35–46. Poyabzalda harfli o‘lchamlar ko‘rsatilmaydi. */
+export const shoeSizes = Array.from({ length: 12 }, (_, i) => String(35 + i))
+export function sizesOf(p) {
+  if (!p) return []
+  const s = Array.isArray(p.sizes) ? p.sizes.map(String) : []
+  if (p.cat !== 'shoe') return s
+  const nums = s.filter((x) => shoeSizes.includes(x))
+  return nums.length ? nums : shoeSizes
+}

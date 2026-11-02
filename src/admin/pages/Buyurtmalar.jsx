@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { Eye, ShoppingBag } from 'lucide-react'
 import { listOrders, orderDetail, useAdminList } from '../api'
@@ -31,7 +32,7 @@ export default function Buyurtmalar() {
 
   async function open(id) {
     try { setDetail(await orderDetail(id)); setMsg('') }
-    catch (e) { setMsg(e.message) }
+    catch (e) { setMsg(friendlyError(e)) }
   }
 
   const kpis = [

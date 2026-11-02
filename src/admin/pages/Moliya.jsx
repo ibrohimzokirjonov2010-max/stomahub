@@ -1,3 +1,4 @@
+import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Eye, Wallet, XCircle } from 'lucide-react'
 import { fetchFinance, listPayouts, reviewPayout, useAdminList } from '../api'
@@ -39,7 +40,7 @@ export default function Moliya() {
 
   useEffect(() => {
     const { from, to } = monthBounds(month)
-    fetchFinance(from, to).then(setFinance).catch((e) => setFinErr(e.message))
+    fetchFinance(from, to).then(setFinance).catch((e) => setFinErr(friendlyError(e)))
   }, [month])
 
   const pct = Math.round(Number(finance?.commission_pct ?? (finance?.commission_rate != null ? finance.commission_rate * 100 : 12)))
@@ -62,7 +63,7 @@ export default function Moliya() {
       await reviewPayout(id, action, reason)
       setMsg(action === 'approve' ? 'To‘lov tasdiqlandi.' : 'Rad etildi.')
       setPick(null); reload()
-    } catch (e) { setMsg(e.message) }
+    } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
 

@@ -5,7 +5,8 @@ import { useMobile } from '../../useMobile'
 import { Greeting, StatCards, RecentOrders, LowStock, RecentReviews, SalesActivity, InfoCards } from '../components/bosh-sahifa/Desktop'
 import { Welcome, PeriodBar, MobileStats, MobileQuick, MobileOrders, Popular } from '../components/bosh-sahifa/Mobile'
 
-export const LOW_STOCK_LIMIT = 10
+export { LOW_STOCK_LIMIT } from '../api'
+import { LOW_STOCK_LIMIT } from '../api'
 
 export default function BoshSahifa() {
   const { shop, openQuick, openOrder } = useOutletContext()

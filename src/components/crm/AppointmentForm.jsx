@@ -54,7 +54,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
   const save = () => {
     if (!patient) return setErr('Bemorni ro‘yxatdan tanlang yoki yangi bemor qo‘shing.')
     if (!svc) return setErr('Xizmatni tanlang.')
-    if (!roomNow) return setErr('Klinika sozlamalarida kreslo sonini kiriting.')
+    if (!roomNow) return setErr('Avval kreslo sonini kiriting.')
     if (!timeNow) return setErr('Bo‘sh vaqtni tanlang.')
     const visit = {
       id: `n${Date.now()}`, date, start: timeNow, dur, name: patient.name, photo: patient.photo || '', phone: patient.phone || '', patientId: patient.id || '',
@@ -107,7 +107,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
             <label className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Kreslo *</span>
               {chairs.length
                 ? <select value={roomNow} onChange={(e) => setRoom(e.target.value)} className={input}>{chairs.map((c) => <option key={c}>{c}</option>)}</select>
-                : <p className="rounded-xl bg-[#fff8e6] px-3 py-2 text-[12px]">Kreslo soni kiritilmagan. <Link to="/klinika" state={{ settings: true }} className="font-semibold text-sea underline">Sozlamalar</Link></p>}
+                : <p className="rounded-xl bg-[#fff8e6] px-3 py-2 text-[12px]">Avval kreslo sonini kiriting. <Link to="/klinika" state={{ settings: true }} onClick={onClose} className="font-semibold text-sea underline">Sozlamalarga o‘tish</Link></p>}
             </label>
             <label className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Shifokor</span>
               <select value={doctor} onChange={(e) => setDoctor(e.target.value)} className={input}>
@@ -132,7 +132,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
         </div>
         <div className="bemor-dialog-foot flex items-center justify-end gap-2 border-t border-line px-4 py-3">
           <button type="button" onClick={onClose} className="h-10 rounded-xl border border-line px-4 text-[12.5px] font-semibold">Bekor qilish</button>
-          <button type="button" onClick={save} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white"><Calendar className="size-4" /> Yozish</button>
+          <button type="button" onClick={save} disabled={!chairs.length} title={chairs.length ? undefined : 'Avval kreslo sonini kiriting'} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-sea px-5 disabled:opacity-50 text-[12.5px] font-semibold text-white"><Calendar className="size-4" /> Yozish</button>
         </div>
       </div>
     </div>
