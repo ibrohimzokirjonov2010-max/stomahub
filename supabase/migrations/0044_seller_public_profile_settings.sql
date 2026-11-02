@@ -5,6 +5,28 @@
 alter table public.seller_settings add column if not exists show_phone boolean not null default false;
 alter table public.seller_settings add column if not exists show_address boolean not null default true;
 alter table public.seller_settings add column if not exists cover_url text not null default '';
+alter table public.seller_settings add column if not exists featured_product_ids uuid[] not null default '{}';
+
+-- 'Tavsiya etilgan mahsulotlar': max 8, unique, each must be the seller's own ACTIVE product at save time.
+-- (Products archived later are filtered out by seller_public_profile.)
+create or replace function public.seller_settings_featured_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare n int := coalesce(cardinality(new.featured_product_ids), 0);
+begin
+  if n = 0 then return new; end if;
+  if tg_op = 'UPDATE' and new.featured_product_ids is not distinct from old.featured_product_ids then return new; end if;
+  if n > 8 then raise exception 'Ko‘pi bilan 8 ta tavsiya etilgan mahsulot' using errcode = '22023'; end if;
+  if n <> (select count(distinct x) from unnest(new.featured_product_ids) x) then
+    raise exception 'Tavsiya etilgan mahsulotlar takrorlanmasin' using errcode = '22023'; end if;
+  if exists (select 1 from unnest(new.featured_product_ids) x
+             where not exists (select 1 from public.seller_products sp
+                               where sp.id = x and sp.seller_id = new.seller_id and sp.status = 'active')) then
+    raise exception 'Faqat o‘zingizning faol mahsulotlaringizni tanlang' using errcode = '22023'; end if;
+  return new;
+end $$;
+drop trigger if exists seller_settings_featured_guard on public.seller_settings;
+create trigger seller_settings_featured_guard before insert or update of featured_product_ids on public.seller_settings
+  for each row execute function public.seller_settings_featured_guard();
 
 create or replace function public.seller_public_profile(p_id uuid)
 returns jsonb language sql stable security definer set search_path = public as $$
@@ -25,6 +47,8 @@ returns jsonb language sql stable security definer set search_path = public as $
       'telegram', coalesce(s.telegram, ''),
       'instagram', coalesce(s.instagram, ''),
       'website', coalesce(s.website, ''),
+      'featured_ids', coalesce((select jsonb_agg(f.id order by f.ord) from unnest(s.featured_product_ids) with ordinality f(id, ord)
+                   join public.seller_products sp on sp.id = f.id and sp.seller_id = p.id and sp.status = 'active'), '[]'::jsonb),
       'since', p.created_at,
       'rating', (select round(avg(r.rating)::numeric, 1) from public.seller_reviews r
                  where r.seller_id = p.id and coalesce((to_jsonb(r) ->> 'hidden')::boolean, false) = false),

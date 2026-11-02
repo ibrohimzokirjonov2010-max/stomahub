@@ -5,6 +5,9 @@ import { Save, Store, Phone, MapPin, Clock, CalendarDays, Upload, UserPlus, Plus
 import { supabase } from '../../supabaseClient'
 import { useSession, signOut } from '../../sessionStore'
 import Rekvizitlar from '../components/sozlamalar/Rekvizitlar'
+import FeaturedPicker from '../components/sozlamalar/FeaturedPicker'
+import PublicPreview from '../components/sozlamalar/PublicPreview'
+import { toPublicCard, featuredError } from '../../seller-public/lib'
 import { useSellerData, upsertSettings, uploadMedia, deleteRow, logActivity } from '../api'
 import { Btn, Field, Input, Textarea, Badge, Toggle, Th, Td, Err, toast } from '../components/ui'
 import Modal from '../components/shell/Modal'
@@ -38,12 +41,24 @@ export default function Sozlamalar() {
   const [delB, setDelB] = useState(null); const [delS, setDelS] = useState(null); const [extra, setExtra] = useState(null)
   const fileRef = useRef(null); const coverRef = useRef(null); const loaded = useRef(false); const legalSave = useRef(null)
   const publicUrl = session.user?.id ? `/dokon/${session.user.id}` : ''
+  const myProducts = (d.products || []).filter((p) => p.status === 'active').map(toPublicCard)
+  const featuredLive = (shop.featured || []).filter((id) => myProducts.some((p) => p.id === id))
+  const visReviews = (d.reviews || []).filter((r) => !r.hidden)
+  // Same shape as seller_public_profile (0044) returns — fed to the real public page component.
+  const previewInfo = {
+    id: session.user?.id, shop_name: shop.name || 'Sotuvchi', description: shop.description, avatar_url: shop.logo_url, cover_url: shop.cover_url,
+    work_days: shop.pub ? shop.work_days : '', work_hours: shop.pub ? shop.work_hours : '',
+    phone: shop.pub && shop.show_phone ? shop.phone : '', address: shop.pub && shop.show_address ? withGeo(shop.address, shop) : '',
+    since: d.settings?.created_at || new Date().toISOString(), featured_ids: featuredLive,
+    reviews_count: visReviews.length, rating: visReviews.length ? visReviews.reduce((a, r) => a + Number(r.rating || 0), 0) / visReviews.length : null,
+    reviews: visReviews.slice(0, 20).map((r) => ({ rating: r.rating, body: r.body, reply: r.reply, created_at: r.created_at, author: String(r.author_name || 'Xaridor').split(' ')[0] })),
+  }
 
   useEffect(() => {
     if (d.loading || loaded.current) return
     loaded.current = true
     const s = d.settings || {}
-    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '', owner_name: s.owner_name || '', telegram: s.telegram || '', instagram: s.instagram || '', website: s.website || '', description: s.description || '', ext: 'telegram' in s, pub: 'show_phone' in s, show_phone: !!s.show_phone, show_address: s.show_address !== false, cover_url: s.cover_url || '' }))
+    setShop((x) => ({ ...x, phone: s.phone || '', address: parseGeo(s.address || '').text, lat: parseGeo(s.address || '').lat, lng: parseGeo(s.address || '').lng, work_days: s.work_days || 'Dushanba - Shanba', work_hours: s.work_hours || '09:00 - 18:00', logo_url: s.logo_url || '', owner_name: s.owner_name || '', telegram: s.telegram || '', instagram: s.instagram || '', website: s.website || '', description: s.description || '', ext: 'telegram' in s, pub: 'show_phone' in s, show_phone: !!s.show_phone, show_address: s.show_address !== false, cover_url: s.cover_url || '', featured: Array.isArray(s.featured_product_ids) ? s.featured_product_ids : [], hasFeatured: 'featured_product_ids' in s }))
     setNotify({ ...DEFAULT_NOTIFY, ...(s.notify || {}) })
     const uid = session.user?.id
     if (uid && supabase) supabase.from('profiles').select('shop_name').eq('id', uid).maybeSingle().then(({ data }) => setShop((x) => ({ ...x, name: data?.shop_name || '' })))
@@ -51,9 +66,11 @@ export default function Sozlamalar() {
 
   const saveShop = async () => {
     if (!shop.name.trim()) return setErr('Do‘kon nomini kiriting.')
+    const fErr = shop.hasFeatured ? featuredError(featuredLive) : ''
+    if (fErr) return setErr(fErr)
     setBusy(true); setErr('')
     const { error } = await supabase.from('profiles').update({ shop_name: shop.name.trim() }).eq('id', session.user.id)
-    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || '', notify, ...(shop.ext ? { owner_name: shop.owner_name.trim(), telegram: shop.telegram.trim(), instagram: shop.instagram.trim(), website: shop.website.trim(), description: shop.description.trim() } : {}), ...(shop.pub ? { show_phone: shop.show_phone, show_address: shop.show_address, cover_url: shop.cover_url || '' } : {}) })
+    const r = error ? { ok: false, error: 'Do‘kon nomi saqlanmadi.' } : await upsertSettings({ phone: shop.phone, address: withGeo(shop.address, shop), work_days: shop.work_days, work_hours: shop.work_hours, logo_url: shop.logo_url || '', notify, ...(shop.ext ? { owner_name: shop.owner_name.trim(), telegram: shop.telegram.trim(), instagram: shop.instagram.trim(), website: shop.website.trim(), description: shop.description.trim() } : {}), ...(shop.pub ? { show_phone: shop.show_phone, show_address: shop.show_address, cover_url: shop.cover_url || '' } : {}), ...(shop.hasFeatured ? { featured_product_ids: featuredLive } : {}) })
     setBusy(false)
     if (!r.ok) return setErr(r.error)
     if (legalSave.current) { const l = await legalSave.current(); if (!l.ok) return setErr(`Rekvizitlar: ${l.error}`) }
@@ -105,6 +122,7 @@ export default function Sozlamalar() {
         <div className="flex items-center justify-between gap-3"><span className="text-[13.5px]">Telefon raqamni ko‘rsatish</span><Toggle checked={shop.show_phone} onChange={(x) => setShop({ ...shop, show_phone: x })} /></div>
         <div className="flex items-center justify-between gap-3"><span className="text-[13.5px]">Manzil va xaritani ko‘rsatish</span><Toggle checked={shop.show_address} onChange={(x) => setShop({ ...shop, show_address: x })} /></div>
       </> : <p className="rounded-lg bg-[#FFF7ED] px-3 py-2 text-[12.5px] text-[#9A3412]">Telefon/manzilni ko‘rsatish va muqova uchun 0044 migratsiyasi kerak.</p>}
+      {shop.hasFeatured && <FeaturedPicker value={shop.featured} products={myProducts} onChange={(ids) => setShop((x) => ({ ...x, featured: ids }))} />}
       <ul className="divide-y divide-[#EEF3F4] rounded-xl border border-[#E2ECEE] px-3">
         {pubRow('Do‘kon nomi, logotip, tavsif', true)}{pubRow('Ish kunlari va vaqti', !!shop.pub)}{pubRow('Telefon', shop.pub && shop.show_phone)}{pubRow('Manzil va xarita', shop.pub && shop.show_address)}{pubRow('Reyting, sharhlar, mahsulotlar', true)}{pubRow('STIR, bank, MFO, hisob, rahbar', false, 'Hech qachon')}
       </ul>
@@ -123,7 +141,10 @@ export default function Sozlamalar() {
     let body
     if (v === 'dokon') body = <>{back('Do‘kon ma’lumotlari')}<div className={`${card} p-4`}><div className="mb-4 flex items-center gap-3"><span className="grid size-16 place-items-center rounded-full bg-[#F0FDFA] text-[#0F766E]">{logo}</span><Btn size="sm" variant="outline" icon={Upload} onClick={() => fileRef.current?.click()}>Logotip yuklash</Btn></div>{shopFields}<Btn className="mt-4 w-full" icon={Save} disabled={busy} onClick={saveShop}>Saqlash</Btn></div></>
     else if (v === 'xodimlar') body = <>{back('Xodimlar', <Btn size="sm" icon={UserPlus} onClick={() => setStaffForm({})}>Qo‘shish</Btn>)}<div className={card}>{staff.length ? staff.map((s, i) => <button key={s.id} type="button" onClick={() => set('xodim', s.id)} className={`flex w-full items-center gap-3 p-3 text-left ${i < staff.length - 1 ? 'border-b border-[#EEF3F4]' : ''}`}><span className="grid size-10 place-items-center rounded-full bg-[#CCFBF1] text-[13px] font-bold text-[#0F766E]">{initials(s.name)}</span><span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold">{s.name}</span><span className="block text-[12px] text-[#5C6E80]">{ROLE_LABEL[s.role]} · {branchName(s.branch_id)}</span></span><Badge tone={s.active ? 'on' : 'off'} dot>{s.active ? 'Faol' : 'Faol emas'}</Badge></button>) : staffEmpty}</div></>
-    else if (v === 'ommaviy') body = <>{back('Ommaviy profil')}<div className={`${card} p-4`}>{publicSection}<Btn className="mt-4 w-full" icon={Save} disabled={busy} onClick={saveShop}>Saqlash</Btn></div></>
+    else if (v === 'ommaviy') { const tab = sp.get('tab') === 'korinish' ? 'korinish' : 'tahrir'; body = <>{back('Ommaviy profil')}
+      <div role="tablist" className="mb-3 grid grid-cols-2 rounded-xl bg-[#F0F5F6] p-1 text-[13.5px] font-semibold">{[['tahrir', 'Tahrirlash'], ['korinish', 'Ko‘rinish']].map(([k, t]) => <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => set('tab', k === 'tahrir' ? '' : k)} className={`h-9 rounded-lg ${tab === k ? 'bg-white text-[#0F766E] shadow-sm' : 'text-[#5C6E80]'}`}>{t}</button>)}</div>
+      {tab === 'korinish' ? <PublicPreview info={previewInfo} products={myProducts} height={560} /> : <div className={`${card} p-4`}>{publicSection}</div>}
+      <Btn className="mt-4 w-full" icon={Save} disabled={busy} onClick={saveShop}>Saqlash</Btn></> }
     else if (v === 'rekvizitlar') body = <>{back('Rekvizitlar')}<Rekvizitlar settings={d.loading ? null : (d.settings || {})} uid={session.user?.id} card={card} compact /></>
     else if (v === 'filiallar') body = <>{back('Filiallar', <Btn size="sm" icon={Plus} onClick={() => setBranchForm({})}>Qo‘shish</Btn>)}<div className="space-y-2">{branches.length ? branches.map((b) => <div key={b.id} className={`${card} p-3`}><div className="flex items-center gap-2"><b className="flex-1 text-[14px]">{b.name}</b><Badge tone={b.active ? 'on' : 'off'} dot>{b.active ? 'Faol' : 'Faol emas'}</Badge></div><div className="mt-1 text-[12.5px] text-[#5C6E80]">{parseGeo(b.address).text}</div>{parseGeo(b.address).lat != null && <MapPreview lat={parseGeo(b.address).lat} lng={parseGeo(b.address).lng} />}<div className="text-[12.5px] text-[#5C6E80]">{b.phone} · {b.hours}</div><div className="mt-2 flex gap-2"><Btn size="sm" variant="outline" icon={Pencil} onClick={() => setBranchForm({ edit: b })}>Tahrirlash</Btn><Btn size="sm" variant="outline" icon={Trash2} onClick={() => setDelB(b)}>O‘chirish</Btn></div></div>) : <div className={card}>{branchEmpty}</div>}</div></>
     else body = <>
@@ -141,9 +162,9 @@ export default function Sozlamalar() {
   }
 
   return (
-    <div className="space-y-5 p-6">
+    <div className="grid grid-cols-[minmax(0,1fr)_460px] gap-5 p-6"><div className="min-w-0 space-y-5">
       <div className="flex items-center justify-between"><div><h1 className="text-[26px] font-extrabold">Sozlamalar</h1><p className="text-[13.5px] text-[#5C6E80]">Do‘kon ma’lumotlari, ommaviy profil, rekvizitlar. Barchasi bitta «Saqlash» bilan saqlanadi.</p></div><Btn icon={Save} disabled={busy} onClick={saveShop}>Saqlash</Btn></div>
-      <div className="grid grid-cols-[1.4fr_1fr] gap-5">
+      <div className="grid gap-5 2xl:grid-cols-2">
         <section className={`${card} p-5`}><h2 className="mb-4 text-[17px] font-bold">Do‘kon ma’lumotlari</h2>
           <div className="mb-4 flex items-center gap-4"><span className="grid size-20 place-items-center rounded-full bg-[#F0FDFA] text-[#0F766E]">{logo}</span><div><Btn size="sm" variant="outline" icon={Upload} onClick={() => fileRef.current?.click()}>Logotip yuklash</Btn><p className="mt-1 text-[11.5px] text-[#5C6E80]">PNG yoki JPG, 2 MB gacha</p></div></div>{shopFields}</section>
         <div className="space-y-5">
@@ -154,6 +175,8 @@ export default function Sozlamalar() {
       <Rekvizitlar settings={d.loading ? null : (d.settings || {})} uid={session.user?.id} card={card} saveRef={legalSave} />
       <section className={`${card} p-5`}><h2 className="mb-2 text-[17px] font-bold">Qo‘shimcha sozlamalar</h2><div className="grid grid-cols-3 gap-3">{EXTRA.map(([k, I, t, s]) => <button key={k} type="button" onClick={() => setExtra(k)} className="flex items-center gap-3 rounded-xl border border-[#E2ECEE] p-3 text-left hover:bg-[#F0FDFA]"><I className="size-5 shrink-0 text-[#0F766E]" /><span className="min-w-0"><span className="block text-[13px] font-semibold">{t}</span><span className="block text-[11.5px] text-[#5C6E80]">{s}</span></span></button>)}</div></section>
       {modals}
+    </div>
+    <aside className="sticky top-4 self-start"><PublicPreview info={previewInfo} products={myProducts} height={720} /></aside>
     </div>
   )
 }

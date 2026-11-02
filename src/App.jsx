@@ -116,6 +116,7 @@ import { adminRoutes } from './admin/routes'
 // dev-only screenshot harness (fixtures / injected real payloads); never in the production bundle
 const AdsShot = import.meta.env.DEV ? lazy(() => import('./dev/AdsShot')) : null
 const ShotHarness = import.meta.env.DEV ? lazy(() => import('./admin/pages/ShotHarness')) : null
+const SellerProfileShot = import.meta.env.DEV ? lazy(() => import('./dev/SellerProfileShot')) : null
 const EscrowShot = import.meta.env.DEV ? lazy(() => import('./dev/EscrowShot')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
@@ -162,6 +163,7 @@ export default function App() {
           {sellerRoutes}
           {adminRoutes}
           {AdsShot && <Route path="/ads-shot/seller" element={<Suspense fallback={null}><AdsShot /></Suspense>} />}
+          {SellerProfileShot && <Route path="/seller-profile-shot/:sec" element={<Suspense fallback={null}><SellerProfileShot /></Suspense>} />}
           {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
           {EscrowShot && <Route path="/escrow-shot/:who" element={<Suspense fallback={null}><EscrowShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
