@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.140",
     "@supabase/supabase-js": "^2.118.0",
     "ai": "^6.0.320",
     "jsqr": "^1.4.0",

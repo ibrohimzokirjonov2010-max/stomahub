@@ -6,7 +6,10 @@
 // Auth: AI_GATEWAY_API_KEY, or the Vercel OIDC token (VERCEL_OIDC_TOKEN, injected automatically
 // on Vercel deployments). Without either → 503 "Rasm qidiruvi hali sozlanmagan".
 // Model can be overridden with IMAGE_SEARCH_MODEL (default google/gemini-2.5-flash-lite).
+// Preferred: GOOGLE_GENERATIVE_AI_API_KEY → Google Gemini API directly (model IMAGE_SEARCH_GEMINI_MODEL,
+// default gemini-2.5-flash-lite). Otherwise AI Gateway as above.
 import { generateObject } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { clientIp, readJson, requirePost, send } from './_lib/http.js'
 
@@ -53,7 +56,8 @@ function cleanList(a) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store')
   if (!requirePost(req, res)) return
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+  const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  if (!googleKey && !process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
     return send(res, 503, { ok: false, error: NOT_CONFIGURED, code: 'not_configured' })
   }
   if (limited(clientIp(req) || 'unknown')) {
@@ -70,7 +74,7 @@ export default async function handler(req, res) {
 
   try {
     const { object } = await generateObject({
-      model: MODEL,
+      model: googleKey ? createGoogleGenerativeAI({ apiKey: googleKey })(process.env.IMAGE_SEARCH_GEMINI_MODEL || 'gemini-2.5-flash-lite') : MODEL,
       schema,
       maxRetries: 1,
       abortSignal: AbortSignal.timeout(25_000),
@@ -89,7 +93,8 @@ export default async function handler(req, res) {
     const status = e?.statusCode || e?.status || e?.cause?.statusCode
     const msg = String(e?.message || '')
     console.error('image-search failed', status || '', e?.name || '', msg.slice(0, 200))
-    if (status === 401 || status === 403 || /api key|oidc|authenticat|unauthori/i.test(msg)) {
+    if (status === 400 && /api key|api_key/i.test(msg)) return send(res, 503, { ok: false, error: NOT_CONFIGURED, code: 'auth' })
+    if (status === 401 || status === 403 || /api key|api_key|oidc|authenticat|unauthori|permission/i.test(msg)) {
       return send(res, 503, { ok: false, error: NOT_CONFIGURED, code: 'auth' })
     }
     return send(res, 502, { ok: false, error: 'Rasmni tahlil qilib bo‘lmadi. Qayta urinib ko‘ring.' })
