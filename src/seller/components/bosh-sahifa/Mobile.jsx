@@ -42,10 +42,10 @@ export function PeriodBar({ month, setMonth }) {
   )
 }
 
-export function MobileStats({ s }) {
+export function MobileStats({ s, period = '' }) {
   const items = [
     [ShoppingCart, 'Sotuv summasi', som(s.sum)],
-    [Box, 'Buyurtmalar soni', `${s.count} ta`],
+    [Box, 'Yetkazilgan buyurtmalar', `${s.count} ta`],
     [CreditCard, 'O‘rtacha chek', som(s.avg)],
     [Coins, 'Komissiya (12%)', som(s.commission)],
   ]
@@ -54,7 +54,7 @@ export function MobileStats({ s }) {
       {items.map(([Icon, l, v]) => (
         <div key={l} className="flex items-center gap-3 rounded-2xl border border-[#E6EEF0] bg-white px-3 py-3.5">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#E3F4F2] text-[#0F766E]"><Icon className="size-5" strokeWidth={1.8} /></span>
-          <div className="min-w-0"><div className="text-[12px] text-[#3D4E5F]">{l}</div><div className="whitespace-nowrap text-[15px] font-extrabold tracking-tight">{v}</div></div>
+          <div className="min-w-0"><div className="text-[12px] text-[#3D4E5F]">{l}</div><div className="whitespace-nowrap text-[15px] font-extrabold tracking-tight">{v}</div>{period && <div className="truncate text-[10.5px] text-[#5C6E80]">{period}</div>}</div>
         </div>
       ))}
     </div>
