@@ -8,8 +8,6 @@ import { useCart } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { marketProducts, som } from '../../marketData'
 import { useMarket } from '../../buyerApi'
-import { useAdPlacements } from '../../adsApi'
-import { AdBanner } from '../catalog/CatalogLayout'
 import { useFeed } from '../../communityFeed'
 import { useCatalogVersion } from '../../recordSync'
 import { publicRecords, useHub } from '../../hubStore'
@@ -42,7 +40,6 @@ export default function MobileHome() {
   useCatalogVersion()
   const market = useMarket()
   const deals = market.products.slice(0, 2)
-  const adBanners = useAdPlacements('banner')
   const { add } = useCart()
   const profile = useProfile()
   const session = useSession()
@@ -212,9 +209,6 @@ export default function MobileHome() {
             </article>
           ))}
         </div>
-
-        {/* Homiy banner (Reklama) — faqat faol, tasdiqlangan kampaniya bo‘lsa */}
-        <AdBanner ads={adBanners} items={market.products} />
 
         {/* Chegirmadagi mahsulotlar */}
         <SectionHead title="Yangi mahsulotlar" to="/marketplace" />

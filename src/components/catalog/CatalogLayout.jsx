@@ -1,4 +1,3 @@
-import { BannerView } from '../ads/BannerView'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../../cart'
@@ -59,6 +58,8 @@ export function HeroSlider({ slides, desktop }) {
     return () => clearInterval(t)
   }, [n, i])
   useEffect(() => { if (i >= n) setI(0) }, [i, n])
+  const curAd = slides[i]?.ad && slides[i]
+  useEffect(() => { if (curAd) trackAd('view', curAd.ad.campaign_id, curAd.item.id) }, [curAd])
   if (!n) return null
   return (
     <div
@@ -73,7 +74,7 @@ export function HeroSlider({ slides, desktop }) {
       }}
     >
       <div className="flex h-full transition-transform duration-500" style={{ transform: `translateX(-${i * 100}%)` }}>
-        {slides.map((s) => <Slide key={s.id} s={s} desktop={desktop} />)}
+        {slides.map((s) => (s.ad ? <AdSlide key={s.id} s={s} desktop={desktop} /> : <Slide key={s.id} s={s} desktop={desktop} />))}
       </div>
       {n > 1 && (
         <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5" data-testid="catalog-hero-dots">
@@ -83,6 +84,24 @@ export function HeroSlider({ slides, desktop }) {
         </div>
       )}
     </div>
+  )
+}
+
+// Reklama posteri: mavjud slayd o‘lchamida, rasm + gradient + 'Reklama' belgisi.
+function AdSlide({ s, desktop }) {
+  const { ad, item } = s
+  const img = ad.image_url || item.image
+  return (
+    <Link to={`/product/${item.id}`} data-testid="hero-ad-slide" onClick={() => trackAd('click', ad.campaign_id, item.id)} className="relative block h-full w-full shrink-0 overflow-hidden bg-[#0F766E]">
+      {img && <img src={img} alt="" className="absolute inset-0 size-full object-cover object-center" />}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/0" />
+      <div className={`relative flex h-full flex-col justify-center text-white ${desktop ? 'max-w-[58%] gap-1.5 pl-8' : 'max-w-[72%] gap-1 pl-3.5'}`}>
+        <span className="w-fit max-w-full truncate rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-semibold tracking-wide backdrop-blur-sm">Reklama · {ad.shop_name}</span>
+        <p className={`line-clamp-2 font-extrabold leading-tight drop-shadow ${desktop ? 'text-[28px]' : 'text-[16px]'}`}>{ad.headline || ad.title}</p>
+        {(ad.body_text || ad.description) && <p className={`line-clamp-2 text-white/90 drop-shadow ${desktop ? 'text-[14px]' : 'text-[11.5px]'}`}>{ad.body_text || ad.description}</p>}
+        <span className={`mt-1 inline-flex w-fit items-center gap-1 rounded-lg bg-white font-bold text-[#0F766E] ${desktop ? 'px-3.5 py-2 text-[13px]' : 'px-2.5 py-1 text-[11.5px]'}`}>{ad.cta_text || 'Ko‘rish'} <ArrowRight className="size-3.5" /></span>
+      </div>
+    </Link>
   )
 }
 
@@ -264,23 +283,6 @@ function AdCard({ ad, item, section, desktop, cartItems, add, navigate, setToast
   )
 }
 
-export function AdBanner({ ads, items, desktop }) {
-  const slides = useMemo(() => joinAds(ads, items, () => true, 5), [ads, items])
-  const [i, setI] = useState(0)
-  useEffect(() => { if (slides.length < 2) return undefined; const t = setInterval(() => setI((x) => (x + 1) % slides.length), 6000); return () => clearInterval(t) }, [slides.length])
-  const cur = slides[i % (slides.length || 1)]
-  useEffect(() => { if (cur) trackAd('view', cur.ad.campaign_id, cur.item.id) }, [cur])
-  if (!cur) return null
-  const { ad, item } = cur
-  return (
-    <div data-testid="ad-banner" className="relative mt-3">
-      <Link to={`/product/${item.id}`} onClick={() => trackAd('click', ad.campaign_id, item.id)} className="block">
-        <BannerView image={ad.image_url || item.image} headline={ad.headline || ad.title} text={ad.body_text || ad.description} cta={ad.cta_text} shop={ad.shop_name} mobile={!desktop} />
-      </Link>
-      {slides.length > 1 && <div className="absolute bottom-2 right-3 z-[2] flex gap-1">{slides.map((s, k) => <button key={s.ad.campaign_id} type="button" aria-label={`${k + 1}-reklama`} onClick={() => setI(k)} className={`h-1.5 rounded-full ${k === i % slides.length ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />)}</div>}
-    </div>
-  )
-}
 
 /**
  * section: {
@@ -342,7 +344,12 @@ export function CatalogPage({ section }) {
   const sponsoredIds = new Set(sponsored.map((x) => x.item.id))
   const adProps = { section, desktop, cartItems, add, navigate, setToast }
   const active = Object.values(values).filter(Boolean).length
-  const slides = useMemo(() => section.slides(section.items, () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })), [section])
+  const baseSlides = useMemo(() => section.slides(section.items, () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })), [section])
+  // Tasdiqlangan banner kampaniyalari — mavjud poster slayderining BOSHIGA (ko‘pi bilan 2 ta), keyin odatiy posterlar.
+  const slides = useMemo(() => {
+    const ads = adOn ? joinAds(adBanner, section.items, () => true, 2) : []
+    return ads.length ? [...ads.map(({ ad, item }) => ({ id: `ad-${ad.campaign_id}`, ad, item })), ...baseSlides] : baseSlides
+  }, [adOn, adBanner, section.items, baseSlides])
 
   const body = (
     <>
@@ -351,7 +358,6 @@ export function CatalogPage({ section }) {
       {vis ? (
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
       ) : <HeroSlider slides={slides} desktop={desktop} />}
-      {adOn && !vis && !q.trim() && cat === 'all' && <AdBanner ads={adBanner} items={section.items} desktop={desktop} />}
       {cats.length > 0 && <CategoryChips cats={cats} value={cat} onChange={setCat} desktop={desktop} />}
       {catRow.length > 0 && (
         <section data-testid="ad-cat-row" className="mt-3">
