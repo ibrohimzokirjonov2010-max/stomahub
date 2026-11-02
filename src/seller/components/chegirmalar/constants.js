@@ -5,7 +5,7 @@ export const DKINDS = [
   ['foiz', 'Foiz chegirma', 'Mahsulot narxidan foiz chegirma', Percent],
   ['summa', 'Qat’iy summa', 'Mahsulot narxidan qat’iy summa chegirma', Coins],
   ['promokod', 'Promokod', 'Maxsus kod orqali chegirma', TicketPercent],
-  ['bir_bepul', '2+1', 'Ikki mahsulot olsangiz, biri sovg‘a', Gift],
+  ['bir_bepul', '2+1', '2 ta olsangiz, 3-si sovg‘a', Gift],
 ]
 export const DKIND = Object.fromEntries(DKINDS.map((k) => [k[0], k]))
 export const SCOPES = [['all', 'Barcha mahsulotlar', 'Do‘kondagi barcha mahsulotlarga'], ['products', 'Tanlangan mahsulotlar', 'Ma’lum mahsulotlarga'], ['category', 'Kategoriya', 'Ma’lum kategoriyalarga']]

@@ -83,10 +83,13 @@ export const commissionText = (o, fmt) => (isCancelled(o) ? fmt(0) : isDelivered
 export const commissionOf = (o) => isCancelled(o) ? 0 : Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
 export const payoutOf = (o) => isCancelled(o) ? 0 : Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
 
+// Naqd buyurtma pulini sotuvchi o‘zi oladi — u yechib olinadigan balansga kirmaydi (0039 bilan bir xil).
+export const isCash = (o) => (o?.payment_method || 'cash') === 'cash'
+
 export function computeStats({ orders, products, payouts, customers, adTopups = [] }, now = new Date()) {
   const live = orders.filter((o) => o.status !== 'bekor_qilindi')
   const delivered = orders.filter((o) => o.status === 'yetkazildi')
-  const earned = delivered.reduce((s, o) => s + payoutOf(o), 0)
+  const earned = delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
   const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0) + adTopups.reduce((s, t) => s + Number(t.amount || 0), 0)
   const phones = new Set()
   orders.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
@@ -97,7 +100,9 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
     balance: Math.max(0, earned - withdrawn),
     earned,
     withdrawnPayouts: payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
-    pending: orders.filter((o) => OPEN_STATUSES.includes(o.status)).reduce((s, o) => s + payoutOf(o), 0),
+    commissionOwed: delivered.filter(isCash).reduce((s, o) => s + commissionOf(o), 0),
+    cashPending: orders.filter((o) => OPEN_STATUSES.includes(o.status) && isCash(o)).length,
+    pending: orders.filter((o) => OPEN_STATUSES.includes(o.status) && !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
     activeProducts: products.filter((p) => p.status === 'active').length,
     customers: phones.size,
     totalOrders: orders.length,
