@@ -10,6 +10,7 @@ import { productById, som } from '../../marketData'
 import { useMarket } from '../../buyerApi'
 import MobileTabBar from './MobileTabBar'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
+import Lightbox from '../Lightbox'
 
 export default function MobileProduct() {
   const { id } = useParams()
@@ -38,6 +39,7 @@ function ProductView({ id }) {
   const { add, items, setQty: setCartQty, remove } = useCart()
   const variants = p.variants || [{ label: p.type.match(/\(([^)]+)\)/)?.[1] || p.type, price: p.price, oldPrice: p.oldPrice }]
   const [shot, setShot] = useState(0)
+  const [zoom, setZoom] = useState(false)
   const [variant, setVariant] = useState(0)
   const minQty = Math.max(1, p.minQty || 1)
   const [pick, setPick] = useState(minQty)
@@ -65,7 +67,7 @@ function ProductView({ id }) {
     } else setCartQty(cartId, Math.min(99, next))
   }
   const off = v.oldPrice && v.oldPrice > v.price ? Math.round((1 - v.price / v.oldPrice) * 100) : 0
-  const thumbs = p.thumbs.slice(0, 5)
+  const thumbs = p.images
   const n = thumbs.length
 
   const share = async () => {
@@ -94,11 +96,10 @@ function ProductView({ id }) {
           touch.current = null
         }}
       >
-        <img
-          src={p.images[shot] || thumbs[shot]}
-          alt={p.name}
-          className="size-full bg-white object-contain px-4 pb-3"
-        />
+        <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full">
+          <img src={thumbs[shot]} alt={p.name} className="size-full bg-white object-contain px-4 pb-3" />
+        </button>
+        {n > 1 && <span className="pointer-events-none absolute bottom-3 right-3.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{shot + 1} / {n}</span>}
         <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/marketplace'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />
         </button>
@@ -113,14 +114,16 @@ function ProductView({ id }) {
       </div>
 
       {n > 1 && (
-        <div className={`mt-2 grid ${n > 4 ? "grid-cols-5" : "grid-cols-4"} gap-2 px-3.5`}>
+        <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto px-3.5">
           {thumbs.map((t, i) => (
-            <button key={t} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[60px] overflow-hidden rounded-xl bg-[#f3f6f9] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
+            <button key={`${i}-${t}`} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[60px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-[#f3f6f9] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
               <img src={t} alt="" className="size-full object-cover" />
             </button>
           ))}
         </div>
       )}
+
+      {zoom && <Lightbox images={thumbs} index={shot} onIndex={setShot} onClose={() => setZoom(false)} alt={p.name} />}
 
       <div className="px-3.5">
         <div className="mt-3 flex items-center gap-2 text-[11.5px]">
