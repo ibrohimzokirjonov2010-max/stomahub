@@ -1,3 +1,4 @@
+import { fixCaps } from './lib/displayText'
 import { useSyncExternalStore } from 'react'
 import { FACES, IMG } from './organizer/data'
 import { seminars as CATALOG } from './seminarsData'
@@ -730,8 +731,8 @@ export function toPublic(s) {
     monthKey: `${y}-${String(m || 1).padStart(2, '0')}`,
     title: s.title,
     text: String(s.about || s.days || '').slice(0, 140),
-    city: s.city,
-    place: s.place || s.city,
+    city: fixCaps(s.city),
+    place: fixCaps(s.place || s.city),
     time: `${s.startTime || '10:00'} – ${s.endTime || '18:00'}`,
     hours: Number(s.form?.hours) ? `${Number(s.form.hours)} soat` : spanHours(s.startTime, s.endTime),
     noSpeaker: !(s.speakers || []).some((sp) => sp?.name),

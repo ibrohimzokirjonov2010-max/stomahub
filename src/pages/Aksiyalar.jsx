@@ -7,28 +7,25 @@ import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
 import { getCatalog, clock, som, useCountdown } from '../aksiyaData'
 
-const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
 export default function Aksiyalar() {
   useCatalogVersion()
   const catalog = getCatalog()
   const [q, setQ] = useState('')
-  const [letter, setLetter] = useState('all')
   const [sort, setSort] = useState('pop')
   const [saved, setSaved] = useState({})
 
   const list = useMemo(() => {
     const query = q.trim().toLowerCase()
     let rows = catalog.filter((d) => {
-      const okLetter = letter === 'all' || d.name[0].toUpperCase() === letter
       const okQuery = !query || `${d.name} ${d.brand}`.toLowerCase().includes(query)
-      return okLetter && okQuery
+      return okQuery
     })
     if (sort === 'off') rows = [...rows].sort((a, b) => b.off - a.off)
     if (sort === 'cheap') rows = [...rows].sort((a, b) => a.price - b.price)
     if (sort === 'rich') rows = [...rows].sort((a, b) => b.price - a.price)
     return rows
-  }, [catalog, q, letter, sort])
+  }, [catalog, q, sort])
 
   return (
     <ShopLayout active="aksiya" placeholder="Mahsulot, brend yoki kategoriya qidiring...">
@@ -58,12 +55,6 @@ export default function Aksiyalar() {
           </select>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-1">
-          <Letter on={letter === 'all'} onClick={() => setLetter('all')}>Barchasi</Letter>
-          {letters.map((ch) => (
-            <Letter key={ch} on={letter === ch} onClick={() => setLetter(ch)}>{ch}</Letter>
-          ))}
-        </div>
 
         {!catalog.length ? (
           <div className="mt-4"><EmptyCatalog title="Hozircha aksiyalar yo‘q" text="Sotuvchilar chegirma e’lon qilganda ular shu yerda ko‘rinadi. Barcha mahsulotlarni Marketplace’da ko‘ring." /></div>
@@ -81,16 +72,6 @@ export default function Aksiyalar() {
   )
 }
 
-function Letter({ on, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`h-7 min-w-7 rounded-md px-2 text-[11.5px] font-semibold ${on ? 'bg-sea text-white' : 'bg-white text-ink-2 shadow-card'}`}
-    >
-      {children}
-    </button>
-  )
-}
 
 function Card({ deal, saved, onSave }) {
   const { add } = useCart()

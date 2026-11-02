@@ -12,7 +12,7 @@ const emit = () => marketListeners.forEach((l) => l())
 const CAT_KEY = {
   'Restavratsion materiallar': 'komp', Implantlar: 'impl', 'Yordamchi materiallar': 'bond', 'Sarflanadigan materiallar': 'gig',
   'Endodontik asboblar': 'endo', Instrumentlar: 'asb', Uskunalar: 'usk', 'Himoya vositalari': 'gig', 'O‘lchov materiallari': 'komp',
-  Ortodontiya: 'orto', 'Gigiena vositalari': 'gig', Boshqa: 'asb',
+  Ortodontiya: 'orto', 'Gigiyena vositalari': 'gig', 'Gigiena vositalari': 'gig', Boshqa: 'asb',
   Implantologiya: 'impl', Sterilizatsiya: 'usk', 'Qolip materiallari': 'komp', 'Qolip (ottisk) materiallari': 'komp', 'Izolyatsiya materiallari': 'komp',
   'Estetik stomatologiya': 'komp', Laboratoriya: 'lab',
 }

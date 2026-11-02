@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Download, Pencil, Tag, Megaphone, Scale, Box, Database, Eye, FileText, ShoppingCart, UserRound, Building2, BarChart3 } from 'lucide-react'
-import { useSellerData, netOf, csvDownload } from '../api'
+import { useSellerData, netOf, csvDownload, LOW_STOCK_LIMIT } from '../api'
 import { som, num } from '../format'
 import { useMobile } from '../../useMobile'
 import { card, Btn, Crumbs, Th, Td, Select } from '../components/ui'
@@ -64,7 +64,7 @@ export default function AnalitikaMahsulot() {
       </div>
       <div className="grid gap-3 md:grid-cols-[1.4fr_1fr] md:gap-4 [&>*]:min-w-0">
         {sec('Eng ko‘p sotib olgan mijozlar', 'Ushbu mahsulotni eng ko‘p xarid qilgan mijozlar.', top.length ? <div className="overflow-x-auto"><table className="w-full min-w-[480px] text-[12.5px]"><thead className="bg-[#F6FAFA]"><tr><Th>#</Th><Th>Mijoz</Th><Th className="text-center">Xaridlar soni</Th><Th className="text-center">Sotib olingan dona</Th><Th className="text-right">Jami summa</Th></tr></thead><tbody>{top.map((c, i) => { const I = c.clinic ? Building2 : UserRound; return <tr key={i} onClick={() => c.id && navigate(`/sotuvchi/mijozlar/${c.id}`)} className={`border-t border-[#EEF3F4] ${c.id ? 'cursor-pointer hover:bg-[#F8FCFC]' : ''}`}><Td>{i + 1}</Td><Td><span className="flex items-center gap-2"><I className="size-4 text-[#0F766E]" />{c.name}</span></Td><Td className="text-center">{c.n} ta</Td><Td className="text-center">{c.qty} dona</Td><Td className="whitespace-nowrap text-right">{som(c.sum)}</Td></tr> })}</tbody></table></div> : none)}
-        {sec('Stok va sotuv holati', 'Joriy qoldiq va savdo bo‘yicha ma’lumotlar.', <div className="grid grid-cols-2 rounded-xl bg-[#F0FDFA] p-4">{[[Box, 'Joriy stok qoldig‘i', p.stock], [ShoppingCart, `${ymTitle(ym).split(' ')[0]}da sotilgan`, m.qty]].map(([I, l, v], i) => <div key={l} className={`flex items-center gap-3 ${i ? 'border-l border-[#CCFBF1] pl-4' : ''}`}><span className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-[#0F766E]"><I className="size-5" /></span><div><div className="text-[12px] text-[#3D4E5F]">{l}</div><div className="text-[18px] font-extrabold">{num(v)} dona</div></div></div>)}{p.stock <= 5 && <p className="col-span-2 mt-3 text-[12px] text-[#115E59]">Stok kam qoldi — to‘ldirishni rejalashtiring.</p>}</div>)}
+        {sec('Stok va sotuv holati', 'Joriy qoldiq va savdo bo‘yicha ma’lumotlar.', <div className="grid grid-cols-2 rounded-xl bg-[#F0FDFA] p-4">{[[Box, 'Joriy stok qoldig‘i', p.stock], [ShoppingCart, `${ymTitle(ym).split(' ')[0]}da sotilgan`, m.qty]].map(([I, l, v], i) => <div key={l} className={`flex items-center gap-3 ${i ? 'border-l border-[#CCFBF1] pl-4' : ''}`}><span className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-[#0F766E]"><I className="size-5" /></span><div><div className="text-[12px] text-[#3D4E5F]">{l}</div><div className="text-[18px] font-extrabold">{num(v)} dona</div></div></div>)}{p.stock <= LOW_STOCK_LIMIT && <p className="col-span-2 mt-3 text-[12px] text-[#115E59]">Stok kam qoldi — to‘ldirishni rejalashtiring.</p>}</div>)}
       </div>
       {mobile && <div className="space-y-2">{btns.map(([I, l, f], i) => <Btn key={l} className="w-full" variant={i ? 'outline' : 'primary'} icon={I} onClick={f}>{l}</Btn>)}</div>}
       {edit && <ProductForm open product={p} onClose={() => setEdit(false)} />}

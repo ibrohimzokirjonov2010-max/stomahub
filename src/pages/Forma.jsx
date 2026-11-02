@@ -5,7 +5,7 @@ import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
-import { cats, genders, allSizes, colors, fabrics, brands, sorts, tiers, products, money, colorOf, sizeChart } from '../formaData'
+import { cats, genders, allSizes, colors, fabrics, brands, sorts, tiers, products, money, colorOf, sizeChart, sizesOf } from '../formaData'
 
 const catIcon = { all: LayoutGrid, scrub: Shirt, coat: UserRound, cap: Shirt, shoe: Footprints, apron: Stethoscope, accessory: Stethoscope }
 
@@ -42,7 +42,7 @@ function Catalog({ query }) {
   const list = useMemo(() => products
     .filter((p) => cat === 'all' || p.cat === cat)
     .filter((p) => !gender.length || gender.includes(p.gender))
-    .filter((p) => !size.length || p.sizes.some((s) => size.includes(s)))
+    .filter((p) => !size.length || sizesOf(p).some((s) => size.includes(s)))
     .filter((p) => !color.length || p.colors.some((c) => color.includes(c)))
     .filter((p) => !fabric.length || fabric.includes(p.fabric))
     .filter((p) => !brand.length || brand.some((b) => b.toLowerCase() === p.brand.toLowerCase()))
@@ -182,7 +182,7 @@ function Card({ p, saved, onSave }) {
       <Link to={`/forma/${p.id}`} className="line-clamp-2 text-[12px] font-bold leading-snug text-ink hover:text-sea">{p.title}</Link>
       <p className="line-clamp-2 text-[10px] text-muted">{p.about}</p>
       <p className="mt-1 flex items-center gap-1 text-[10px]"><Star className="size-3 fill-star text-star" /> {p.rating} <span className="text-muted">({p.reviews})</span></p>
-      <div className="mt-1 flex flex-wrap gap-1">{p.sizes.slice(0, 4).map((s) => <span key={s} className="rounded bg-[#f3f6fa] px-1 text-[8px] text-ink-2">{s}</span>)}</div>
+      <div className="mt-1 flex flex-wrap gap-1">{sizesOf(p).slice(0, 4).map((s) => <span key={s} className="rounded bg-[#f3f6fa] px-1 text-[8px] text-ink-2">{s}</span>)}</div>
       <div className="mt-1 flex gap-1">{p.colors.map((c) => <span key={c} className="size-2.5 rounded-full border border-line" style={{ background: colorOf(c).hex }} />)}</div>
       <div className="mt-auto pt-1">
         <div className="flex flex-wrap items-baseline gap-1.5">

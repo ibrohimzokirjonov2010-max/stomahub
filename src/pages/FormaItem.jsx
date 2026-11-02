@@ -3,13 +3,13 @@ import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Star, Heart, ShoppingCart, Minus, Plus, Truck, ShieldCheck, CreditCard, ChevronRight, X } from 'lucide-react'
 import { useCart } from '../cart'
-import { getForma, products, similarIds, money, colorOf, sizeChart } from '../formaData'
+import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../formaData'
 import { payPromo } from '../payments/paymentService'
 
 const perks = [
   ['Sifat kafolati', '30 kun ichida qaytarish'],
   ['Tez yetkazib berish', 'Toshkent 1 kun · Viloyatlar 2–3 kun'],
-  ['Xavfsiz to‘lov', payPromo('Click, Payme, Uzcard', 'Himoyalangan to‘lov')],
+  ['Xavfsiz to‘lov', payPromo('Click, Payme, Uzcard', 'Naqd to‘lov (yetkazilganda)')],
 ]
 const shipping = [
   ['Toshkent shahri', '1 kun'],
@@ -22,7 +22,7 @@ export default function FormaItem() {
   const product = getForma(id)
   const [shot, setShot] = useState(0)
   const [color, setColor] = useState(product?.colors[0] || 'teal')
-  const [size, setSize] = useState(product?.sizes.includes('M') ? 'M' : product?.sizes[0])
+  const [size, setSize] = useState(sizesOf(product).includes('M') ? 'M' : sizesOf(product)[0])
   const [qty, setQty] = useState(1)
   const [tab, setTab] = useState('about')
   const [saved, setSaved] = useState(false)
@@ -84,7 +84,7 @@ export default function FormaItem() {
                 <button onClick={() => setTab('size')} className="text-[11px] font-semibold text-sea">O‘lchamlar jadvali</button>
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {product.sizes.map((s) => (
+                {sizesOf(product).map((s) => (
                   <button key={s} onClick={() => setSize(s)} className={`h-8 min-w-8 rounded-lg px-2 text-[11px] font-semibold ${size === s ? 'bg-sea text-white' : 'bg-[#f3f6fa] text-ink'}`}>{s}</button>
                 ))}
               </div>

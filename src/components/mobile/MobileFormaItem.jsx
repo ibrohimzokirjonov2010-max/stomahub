@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, Ruler, Minus, Plus, Leaf, WashingMachine, Truck, ShoppingCart,
 } from 'lucide-react'
-import { getForma, products, similarIds, money, colorOf, sizeChart } from '../../formaData'
+import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../../formaData'
 import { useCart } from '../../cart'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -161,7 +161,7 @@ function FormaView({ id }) {
           <button type="button" onClick={() => setChart(true)} className="flex items-center gap-1 text-[12px] font-semibold text-[#1f5fa8]"><Ruler className="size-4" /> O‘lcham jadvali</button>
         </div>
         <div className="mt-2 grid grid-cols-6 gap-1.5">
-          {p.sizes.map((s) => (
+          {sizesOf(p).map((s) => (
             <button key={s} type="button" onClick={() => setSize(s)} aria-pressed={size === s} className={`h-10 rounded-xl text-[13px] font-semibold transition ${size === s ? 'bg-sea text-white' : 'border border-line bg-white text-ink'}`}>{sizeLabel(s)}</button>
           ))}
         </div>
@@ -267,9 +267,9 @@ function FormaView({ id }) {
             <tbody>
               {sizeChart.map((r) => {
                 const on = sizeLabel(size) === r[0]
-                const avail = p.sizes.map(sizeLabel).includes(r[0])
+                const avail = sizesOf(p).map(sizeLabel).includes(r[0])
                 return (
-                  <tr key={r[0]} onClick={() => { if (avail) { setSize(p.sizes.find((s) => sizeLabel(s) === r[0])); setChart(false) } }} className={`border-t border-line ${on ? 'bg-sea-50 font-semibold text-sea' : avail ? 'text-ink' : 'text-muted/60'} ${avail ? 'cursor-pointer' : ''}`}>
+                  <tr key={r[0]} onClick={() => { if (avail) { setSize(sizesOf(p).find((s) => sizeLabel(s) === r[0])); setChart(false) } }} className={`border-t border-line ${on ? 'bg-sea-50 font-semibold text-sea' : avail ? 'text-ink' : 'text-muted/60'} ${avail ? 'cursor-pointer' : ''}`}>
                     <td className="py-2.5 pl-1">{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td>
                   </tr>
                 )

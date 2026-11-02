@@ -4,8 +4,8 @@ import { bindBlob, touchBlob } from './recordSync'
 
 export const ANCHOR = '2026-10-20'
 export const FOCUS = '2026-10-22'
-export const WDS = ['Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak']
-export const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktyabr', 'noyabr', 'dekabr']
+export const WDS = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
+export const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 
 export const DEMO_DOCTORS_U = []
 export const doctors = []

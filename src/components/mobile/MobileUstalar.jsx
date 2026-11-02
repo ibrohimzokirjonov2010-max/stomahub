@@ -17,7 +17,7 @@ const CAT_ICONS = { all: LayoutGrid, kreslo: Armchair, rentgen: ScanLine, ornati
 const PRICES = [['', 'Narx'], ['200000', '200 ming gacha'], ['300000', '300 ming gacha'], ['500000', '500 ming gacha']]
 const SORTS = [['rec', 'Tavsiya etilgan'], ['rating', 'Reyting yuqori'], ['reviews', 'Ko‘p baholangan'], ['price', 'Arzonroq'], ['years', 'Tajribaliroq']]
 const TIMES = ['09:00', '11:00', '14:00', '16:00', '18:00']
-const DAYS = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan']
+const DAYS = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh']
 export const USTA_QUICK = ['Narxini bilmoqchiman', 'Bugun kela olasizmi?', 'Diagnostika qancha turadi?', 'Kafolat berasizmi?']
 
 export function StatusBadge({ m, className = '' }) {

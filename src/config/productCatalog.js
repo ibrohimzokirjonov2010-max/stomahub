@@ -5,7 +5,7 @@ export const MARKET_CATEGORIES = [
   'Restavratsion materiallar', 'Estetik stomatologiya', 'Implantlar', 'Endodontik asboblar',
   'Qolip (ottisk) materiallari', 'Sterilizatsiya', 'Izolyatsiya materiallari', 'Yordamchi materiallar',
   'Sarflanadigan materiallar', 'Instrumentlar', 'Uskunalar', 'Himoya vositalari', 'Ortodontiya',
-  'Gigiena vositalari', 'Boshqa',
+  'Gigiyena vositalari', 'Boshqa',
 ]
 
 // Legacy / alternative names already stored in seller_products.category
