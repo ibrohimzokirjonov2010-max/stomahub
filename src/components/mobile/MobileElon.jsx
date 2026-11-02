@@ -4,14 +4,15 @@ import {
   Heart, ChevronRight, Tag, Briefcase, Settings, CalendarDays, Ruler, MapPin, Clock, GraduationCap, Layers, FileText, CheckCircle2,
   Store, MessageCircle, Phone, Star, Eye, Flag, Package,
 } from 'lucide-react'
-import { ADS, adCatName, adPrice } from '../../elonlarData'
+import { adCatName, adPrice } from '../../elonlarData'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet, CallSheet } from './MobileMutaxassislar'
-import { AdCard, adsStore, findAd, sellerOf, useAds } from './MobileElonlar'
+import { AdCard, adsStore, allAds, findAd, sellerOf, useAds } from './MobileElonlar'
+import { useCatalogVersion } from '../../recordSync'
 
 const SPEC_ICONS = { brand: Tag, size: Briefcase, cond: Settings, year: CalendarDays, area: Ruler, place: MapPin, time: Clock, exp: GraduationCap, cat: Layers }
 const QUICK = {
@@ -28,6 +29,8 @@ export default function MobileElon() {
 function AdView({ id }) {
   const navigate = useNavigate()
   const { saved } = useAds()
+  // Katalog (catalog_items) asinxron yuklanadi — versiya o‘zgarganda qayta chizamiz.
+  useCatalogVersion()
   const a = findAd(id)
   const [cur, setCur] = useState(0)
   const [zoom, setZoom] = useState(null)
@@ -54,10 +57,12 @@ function AdView({ id }) {
   const contact = { ...seller, clinic: seller.type, city: a.city, online: true }
   const isSaved = saved.has(a.id)
   const isJob = a.deal === 'job'
-  const thumbs = a.images.slice(0, 3)
-  const extra = a.images.length - 3
-  const similar = ADS.filter((x) => x.id !== a.id && (x.cat === a.cat || x.deal === a.deal)).slice(0, 3)
-  const sellerAds = ADS.filter((x) => x.seller === a.seller && x.id !== a.id)
+  const images = a.images?.length ? a.images : []
+  const thumbs = images.slice(0, 3)
+  const extra = images.length - 3
+  const list = allAds()
+  const similar = list.filter((x) => x.id !== a.id && (x.cat === a.cat || x.deal === a.deal)).slice(0, 3)
+  const sellerAds = a.seller ? list.filter((x) => x.seller === a.seller && x.id !== a.id) : []
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/elonlar'))
   const chatText = isJob ? `Assalomu alaykum! "${a.title}" vakansiyasi bo‘yicha yozyapman.` : `Assalomu alaykum! "${a.title}" e’loni hali dolzarbmi?`
 
@@ -66,19 +71,19 @@ function AdView({ id }) {
       <div className="px-3.5 pt-3">
         <HubTopBar onBack={back} onBell={() => setToast('Yangi bildirishnomalar yo‘q')} />
 
-        <div className="mt-2.5 grid h-[236px] grid-cols-[1fr_72px] gap-2">
+        <div className="mt-2.5 grid h-[236px] grid-cols-[1fr_72px] grid-rows-[minmax(0,1fr)] gap-2 overflow-hidden">
           <div className="relative overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
             <button type="button" onClick={() => setZoom(cur)} aria-label="Kattalashtirish" className="size-full">
-              <img src={a.images[cur]} alt={a.title} className={`size-full ${a.cat === 'material' || a.cat === 'asbob' ? 'object-contain p-2' : 'object-cover'}`} />
+              <img src={images[cur]} alt={a.title} className={`size-full ${a.cat === 'material' || a.cat === 'asbob' ? 'object-contain p-2' : 'object-cover'}`} />
             </button>
             <button type="button" onClick={() => setToast(adsStore.toggleSave(a.id) ? 'Saqlanganlarga qo‘shildi' : 'Saqlanganlardan olib tashlandi')} aria-label="Saqlash" aria-pressed={isSaved} className="absolute right-2.5 top-2.5 grid size-10 place-items-center rounded-full bg-white shadow-[0_1px_4px_rgb(11_31_58/0.15)]">
               <Heart className={`size-5 ${isSaved ? 'fill-sale text-sale' : 'text-[#0b6d73]'}`} />
             </button>
-            <span className="absolute bottom-2 left-2 rounded-md bg-ink/55 px-1.5 py-0.5 text-[10.5px] font-medium text-white">{cur + 1} / {a.images.length}</span>
+            <span className="absolute bottom-2 left-2 rounded-md bg-ink/55 px-1.5 py-0.5 text-[10.5px] font-medium text-white">{cur + 1} / {Math.max(images.length, 1)}</span>
           </div>
-          <div className="grid grid-rows-4 gap-2">
+          <div className="grid min-h-0 grid-rows-4 gap-2">
             {thumbs.map((src, i) => (
-              <button key={i} type="button" onClick={() => setCur(i)} aria-label={`Rasm ${i + 1}`} aria-pressed={cur === i} className={`overflow-hidden rounded-xl bg-white ${cur === i ? 'ring-2 ring-sea' : 'ring-1 ring-line/70'}`}>
+              <button key={i} type="button" onClick={() => setCur(i)} aria-label={`Rasm ${i + 1}`} aria-pressed={cur === i} className={`min-h-0 overflow-hidden rounded-xl bg-white ${cur === i ? 'ring-2 ring-sea' : 'ring-1 ring-line/70'}`}>
                 <img src={src} alt="" className="size-full object-cover" />
               </button>
             ))}
@@ -100,7 +105,7 @@ function AdView({ id }) {
           </div>
 
           <div className="mt-3 grid grid-cols-3 divide-x divide-line/70 rounded-2xl border border-line/70 py-2.5">
-            {a.specs.map(([k, l, v]) => {
+            {(a.specs || []).map(([k, l, v]) => {
               const Icon = SPEC_ICONS[k] || Package
               return (
                 <div key={l} className="flex min-w-0 items-center gap-2 px-2">
@@ -116,7 +121,7 @@ function AdView({ id }) {
 
           <h2 className="mt-4 flex items-center gap-2 text-[15px] font-bold text-[#0d2a4a]"><span className="grid size-7 place-items-center rounded-lg bg-[#e6f4f3] text-[#0b6d73]"><FileText className="size-4" /></span> Tavsif</h2>
           <p className="mt-2 text-[13px] leading-[1.55] text-ink-2">{a.about}</p>
-          {a.features.length > 0 && (
+          {a.features?.length > 0 && (
             <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-2 rounded-2xl border border-line/70 p-3">
               {a.features.map((t) => <p key={t} className="flex items-start gap-1.5 text-[11.5px] leading-tight text-ink-2"><CheckCircle2 className="size-4 shrink-0 fill-[#0b8a95] text-white" /> {t}</p>)}
             </div>
@@ -163,18 +168,18 @@ function AdView({ id }) {
             <div className="min-w-0 flex-1">
               <p className="truncate text-[15px] font-bold text-ink">{seller.name}</p>
               <p className="text-[12px] text-muted">{seller.type}</p>
-              <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-ink-2"><Star className="size-3.5 fill-star text-star" /> <b>{seller.rating}</b> · {seller.since} yildan beri StomaHub’da</p>
+              <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-ink-2">{seller.rating != null && <><Star className="size-3.5 fill-star text-star" /> <b>{seller.rating}</b></>}{seller.rating != null && seller.since && ' · '}{seller.since && `${seller.since} yildan beri StomaHub’da`}</p>
             </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button type="button" onClick={() => setSheet('chat')} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><MessageCircle className="size-4" /> Yozish</button>
-            <a href={`tel:${seller.phone.replace(/\s/g, '')}`} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white"><Phone className="size-4" /> {seller.phone}</a>
+            <a href={seller.phone ? `tel:${seller.phone.replace(/\s/g, '')}` : undefined} aria-disabled={!seller.phone} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white"><Phone className="size-4" /> {seller.phone || 'Raqam ko‘rsatilmagan'}</a>
           </div>
           <p className="mt-4 text-[13px] font-semibold text-ink">Boshqa e’lonlari ({sellerAds.length})</p>
           <div className="mt-2 flex flex-col gap-2 pb-3">
             {sellerAds.length ? sellerAds.map((x) => (
               <Link key={x.id} to={`/elonlar/${x.id}`} className="flex items-center gap-2.5 rounded-xl border border-line/70 p-1.5">
-                <img src={x.images[0]} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
+                <img src={x.images?.[0]} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
                 <span className="min-w-0 flex-1">
                   <b className="block truncate text-[12.5px] font-semibold text-ink">{x.title}</b>
                   <span className="block truncate text-[12px] font-bold text-[#0b8a95]">{adPrice(x)}</span>
@@ -185,7 +190,7 @@ function AdView({ id }) {
           </div>
         </BottomSheet>
       )}
-      {zoom !== null && <Lightbox images={a.images} index={zoom} onClose={() => setZoom(null)} />}
+      {zoom !== null && <Lightbox images={images} index={zoom} onClose={() => setZoom(null)} />}
 
       <MobileToast text={toast} onClose={closeToast} bottom={140} />
       <MobileTabBar />
