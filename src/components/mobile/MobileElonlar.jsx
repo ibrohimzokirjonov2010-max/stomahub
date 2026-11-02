@@ -49,7 +49,11 @@ export const adsStore = {
 }
 export const allAds = () => [...store.added, ...ADS]
 export const findAd = (id) => allAds().find((a) => a.id === id) || null
-export const sellerOf = (a) => SELLERS[a.seller] || a.sellerInfo
+// Katalogdagi e’lonlarda sotuvchi ma’lumoti bo‘lmasligi mumkin — sahifa yiqilmasligi uchun xavfsiz qiymat.
+export const sellerOf = (a) => {
+  const s = SELLERS[a?.seller] || a?.sellerInfo || {}
+  return { ...s, name: s.name || 'Sotuvchi', type: s.type || 'Xususiy shaxs', phone: s.phone || '', rating: s.rating ?? null, since: s.since || '' }
+}
 
 export default function MobileElonlar() {
   const { added, saved } = useAds()
