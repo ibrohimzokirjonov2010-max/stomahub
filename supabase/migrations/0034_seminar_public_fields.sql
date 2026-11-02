@@ -1,4 +1,4 @@
--- 0033: seminar sahifasidagi barcha bloklar uchun alohida ustunlar
+-- 0034: seminar sahifasidagi barcha bloklar uchun alohida ustunlar
 -- (galereya, savol-javob, manzil izohlari, o‘z sertifikat dizayni, aloqa).
 -- Ilova hozircha shu ma’lumotlarni seminars.form (jsonb) ichida saqlaydi va
 -- ustun bo‘lsa undan, bo‘lmasa form dan o‘qiydi. Migratsiya qo‘llangach
@@ -22,6 +22,8 @@ update public.seminars set
   contact_telegram = coalesce(nullif(form->>'contactTelegram', ''), contact_telegram)
 where form is not null;
 
+alter table public.seminars drop constraint if exists seminars_gallery_is_array;
+alter table public.seminars drop constraint if exists seminars_faq_is_array;
 alter table public.seminars
   add constraint seminars_gallery_is_array check (jsonb_typeof(gallery) = 'array') not valid,
   add constraint seminars_faq_is_array check (jsonb_typeof(faq) = 'array') not valid;
