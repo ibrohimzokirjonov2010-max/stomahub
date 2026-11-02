@@ -227,14 +227,16 @@ function ProductView({ id }) {
         {/* Sotuvchi */}
         <h2 className="mt-4 text-[16px] font-bold text-ink">Sotuvchi</h2>
         <div className="mt-2 flex items-center gap-2.5 rounded-2xl border border-line p-2.5">
+          <Link to={p.sellerId ? `/dokon/${p.sellerId}` : '/marketplace'} className="flex min-w-0 flex-1 items-center gap-2.5">
           <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#0f2b5b] text-[12px] font-bold text-white">{seller.logo}</span>
           <div className="min-w-0 flex-1">
             <p className="text-[14px] font-bold text-ink">{seller.name}</p>
-            <p className="truncate text-[11px] text-muted">{seller.about}</p>
+            <p className="truncate text-[11px] font-semibold text-sea">Do‘konni ko‘rish →</p>
             <p className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-[11px] text-muted">
               Naqd to‘lov · yetkazishda
             </p>
           </div>
+          </Link>
           <button type="button" onClick={() => setChat(true)} className="flex h-10 shrink-0 items-center gap-1 rounded-xl border border-sea/70 px-2.5 text-[11.5px] font-semibold text-sea active:bg-sea-50">
             <MessageCircle className="size-4" /> Sotuvchiga yozish
           </button>

@@ -198,7 +198,7 @@ function ProductBody({ p }) {
             Hozir xarid qilish
           </button>
 
-          <div className="mt-3 flex gap-3 border-t border-line pt-3">
+          <Link to={p.sellerId ? `/dokon/${p.sellerId}` : '/marketplace'} className="mt-3 flex gap-3 rounded-lg border-t border-line pt-3 hover:bg-[#f6faf9]">
             <div className="grid size-[48px] shrink-0 place-items-center rounded-full bg-white shadow-card ring-1 ring-line">
               <div className="text-center leading-none text-sea">
                 <ToothIcon className="mx-auto size-[18px]" strokeWidth={2} />
@@ -212,8 +212,9 @@ function ProductBody({ p }) {
               <p className="mt-0.5 flex items-center gap-1 text-[9px] text-ink-2">
                 <Package className="size-[10px]" /> {marketCount(p.sellerId)} ta mahsulot sotuvda
               </p>
+              <p className="mt-1 text-[10px] font-semibold text-sea">Do‘konni ko‘rish →</p>
             </div>
-          </div>
+          </Link>
         </aside>
       </div>
 
