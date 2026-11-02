@@ -76,7 +76,7 @@ export default function MobileBrendlar() {
 
   const filter = useCallback((c, s = q, g = group) => {
     const text = s.trim().toLowerCase()
-    return brandsLive.filter((b) => inGroup(b.name, g) && (!c || b.country === c) && (!text || b.name.toLowerCase().includes(text)))
+    return brandsLive.filter((b) => b.count > 0 && inGroup(b.name, g) && (!c || b.country === c) && (!text || b.name.toLowerCase().includes(text)))
   }, [q, group, brandsLive])
 
   const list = useMemo(() => {
@@ -85,6 +85,7 @@ export default function MobileBrendlar() {
     if (sort === 'count') return out.sort((a, b) => b.count - a.count)
     return out.sort((a, b) => (b.count - a.count) || a.rank - b.rank)
   }, [filter, country, sort])
+  const soon = useMemo(() => brandsLive.filter((b) => !b.count && (!q.trim() || b.name.toLowerCase().includes(q.trim().toLowerCase()))), [brandsLive, q])
   const extra = (country ? 1 : 0) + (sort !== 'rank' ? 1 : 0)
 
   return (
@@ -127,6 +128,16 @@ export default function MobileBrendlar() {
           <p className="mt-1 text-[12px] text-muted">Qidiruv yoki filtrni o‘zgartirib ko‘ring</p>
           <button type="button" onClick={() => { setQ(''); setGroup('all'); setCountry('') }} className="mt-3 h-9 rounded-xl bg-sea-50 px-4 text-[12.5px] font-semibold text-sea">Filtrlarni tozalash</button>
         </div>
+      )}
+
+      {soon.length > 0 && (
+        <section className="mx-3.5 mt-5">
+          <h2 className="text-[14px] font-bold text-ink">Tez orada</h2>
+          <p className="mt-0.5 text-[11.5px] text-muted">Bu brendlar mahsulotlari hali Marketplace’da yo‘q</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {soon.map((b) => <span key={b.name} className="rounded-lg bg-white px-2.5 py-1 text-[11.5px] font-semibold text-ink-2">{b.name}</span>)}
+          </div>
+        </section>
       )}
 
       {sheet && (
