@@ -32,6 +32,9 @@ export default class ErrorBoundary extends Component {
           <p className="mt-2 text-[13px] leading-relaxed text-muted">
             Sahifani ko‘rsatishda muammo chiqdi. Iltimos, sahifani yangilang yoki bosh sahifaga qayting.
           </p>
+          <p className="mt-3 break-words font-mono text-[10.5px] text-muted/70">
+            {String(this.state.error?.message || this.state.error).slice(0, 160)} · {window.location.pathname}
+          </p>
           <div className="mt-5 grid gap-2">
             <button type="button" onClick={() => window.location.reload()} className="h-11 rounded-lg bg-sea text-[14px] font-semibold text-white hover:bg-sea-600">
               Sahifani yangilash
