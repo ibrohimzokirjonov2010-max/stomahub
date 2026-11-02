@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from '../supabaseClient'
 import { getSession, refreshSession } from '../sessionStore'
 
-export const COMMISSION_RATE = 0.12
+import { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash, realOrders, metrics, commissionDebt, tkDay, tkToday, ALL, monthRange, OPEN } from './lib/metrics'
+export { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash }
 
 export const STATUS = {
   yangi: { label: 'Yangi', next: 'tasdiqlandi', action: 'Tasdiqlash' },
@@ -12,7 +13,7 @@ export const STATUS = {
   yetkazildi: { label: 'Yetkazildi', next: null },
   bekor_qilindi: { label: 'Bekor qilindi', next: null },
 }
-export const OPEN_STATUSES = ['yangi', 'tasdiqlandi', 'tayyorlanmoqda', 'yetkazilmoqda']
+export const OPEN_STATUSES = OPEN
 
 const uid = () => getSession().user?.id
 
@@ -78,30 +79,22 @@ export function useSellerData() {
   return s
 }
 
-// ---- derived numbers -------------------------------------------------------------
-const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-export const netOf = (o) => Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0))
-// 12% komissiya faqat yetkazilgan (Yetkazildi) buyurtmalardan olinadi; qolganlari — Kutilmoqda.
-export const isDelivered = (o) => o?.status === 'yetkazildi'
-export const isCancelled = (o) => o?.status === 'bekor_qilindi'
+// ---- derived numbers (yagona qoidalar: ./lib/metrics.js) ---------------------------------
 export const commissionText = (o, fmt) => (isCancelled(o) ? fmt(0) : isDelivered(o) ? fmt(commissionOf(o)) : 'Kutilmoqda')
-export const commissionOf = (o) => isCancelled(o) ? 0 : Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
-export const payoutOf = (o) => isCancelled(o) ? 0 : Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
-
-// Naqd buyurtma pulini sotuvchi o‘zi oladi — u yechib olinadigan balansga kirmaydi (0039 bilan bir xil).
-export const isCash = (o) => (o?.payment_method || 'cash') === 'cash'
 
 export function computeStats({ orders, products, payouts, customers, adTopups = [], wallet = null }, now = new Date()) {
-  const live = orders.filter((o) => o.status !== 'bekor_qilindi')
-  const delivered = orders.filter((o) => o.status === 'yetkazildi')
-  const earned = delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
+  const real = realOrders(orders)
+  const all = metrics(orders, ALL)
+  const earned = all.delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
   const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0) + adTopups.reduce((s, t) => s + Number(t.amount || 0), 0)
   const phones = new Set()
-  orders.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
+  real.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
   customers.forEach((c) => { const k = (c.phone || c.name || '').trim(); if (k) phones.add(k) })
+  const today = tkToday(now)
   return {
-    today: orders.filter((o) => sameDay(new Date(o.created_at), now)).length,
-    fresh: orders.filter((o) => o.status === 'yangi').length,
+    today: real.filter((o) => tkDay(o.created_at) === today).length,
+    fresh: real.filter((o) => o.status === 'yangi').length,
+    // 0042 escrow: wallet (RPC) bo‘lsa haqiqiy balans/held/to‘lovlar; aks holda eski hisob
     balance: wallet ? Number(wallet.available || 0) : Math.max(0, earned - withdrawn),
     earned: wallet ? Number(wallet.earned || 0) : earned,
     held: wallet ? Number(wallet.held || 0) : 0,
@@ -110,26 +103,31 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
     disputes: wallet ? Number(wallet.disputes || 0) : 0,
     live: !!wallet,
     withdrawnPayouts: payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
-    commissionOwed: wallet ? Number(wallet.commission_owed || 0) : delivered.filter(isCash).reduce((s, o) => s + commissionOf(o), 0),
-    cashPending: orders.filter((o) => OPEN_STATUSES.includes(o.status) && isCash(o)).length,
-    pending: orders.filter((o) => OPEN_STATUSES.includes(o.status) && !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
+    commissionOwed: wallet ? Number(wallet.commission_owed || 0) : commissionDebt(orders),
+    commissionTotal: all.commission,
+    cashPending: all.open.filter(isCash).length,
+    pending: all.open.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
+    openCount: all.openCount,
+    openSum: all.openSum,
     activeProducts: products.filter((p) => p.status === 'active').length,
     customers: phones.size,
-    totalOrders: orders.length,
-    revenue: delivered.reduce((s, o) => s + Number(o.subtotal || 0), 0),
-    liveCount: live.length,
+    totalOrders: real.length,
+    deliveredCount: all.count,
+    revenue: all.revenue,
+    liveCount: real.filter((o) => !isCancelled(o)).length,
   }
 }
 
-export function monthStats(orders, month /* Date or null = all */) {
-  const inRange = orders.filter((o) => o.status !== 'bekor_qilindi' && (!month || (new Date(o.created_at).getMonth() === month.getMonth() && new Date(o.created_at).getFullYear() === month.getFullYear())))
-  const sum = inRange.reduce((s, o) => s + Number(o.subtotal || 0), 0)
-  return { sum, count: inRange.length, avg: inRange.length ? Math.round(sum / inRange.length) : 0, commission: inRange.filter(isDelivered).reduce((s, o) => s + commissionOf(o), 0) }
+/** month: Date (oyning istalgan kuni) yoki null = barcha vaqt */
+export function monthStats(orders, month) {
+  const r = month ? monthRange(`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`) : ALL
+  const m = metrics(orders, r)
+  return { sum: m.revenue, count: m.count, avg: m.avg, commission: m.commission, openCount: m.openCount, openSum: m.openSum }
 }
 
 export function popularProducts(orders, products, limit = 4) {
   const sold = new Map()
-  orders.filter((o) => o.status !== 'bekor_qilindi').forEach((o) => o.items.forEach((it) => {
+  metrics(orders, ALL).delivered.forEach((o) => o.items.forEach((it) => {
     const k = it.product_id || it.name
     sold.set(k, (sold.get(k) || 0) + Number(it.qty || 0))
   }))
