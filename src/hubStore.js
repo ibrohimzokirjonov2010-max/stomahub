@@ -234,7 +234,7 @@ export function saveSeminar(form, { publish, id } = {}) {
     place: form.place,
     address: form.address || '',
     lat: form.lat ?? null, lng: form.lng ?? null,
-    placeImg: form.placeImg || IMG.hall2,
+    placeImg: form.placeImg || '',
     tickets: mappedTickets,
     speakers: form.speakers || [],
     template: form.template || 'teal',
@@ -763,6 +763,19 @@ export function toPublic(s) {
     cmeHours: Number(s.form?.cmeHours) || 0,
     cmePoints: Number(s.form?.cmePoints) || 0,
     orgName: s.form?.orgName || '',
+    // Sahifadagi qo‘shimcha bloklar — faqat tashkilotchi kiritgan ma’lumot
+    speakers: (s.speakers || []).filter((sp) => sp?.name).map((sp) => ({
+      name: sp.name, role: sp.role || '', bio: String(sp.bio || '').trim(), avatar: sp.avatar && !/\/images\/avatar\.jpg$/.test(sp.avatar) ? sp.avatar : '',
+      years: sp.years || '', clinic: sp.clinic || '', certs: sp.certs || '', degree: sp.degree || '',
+    })),
+    gallery: (s.gallery ?? s.form?.gallery ?? []).filter((x) => x && !/^(data|blob):/.test(x)),
+    faq: (s.faq ?? s.form?.faq ?? []).filter((r) => r?.q && r?.a),
+    venueNotes: listOf(s.venueNotes ?? s.form?.venueNotes),
+    address: String(s.address || s.form?.address || '').trim(),
+    placeImg: s.placeImg && !/^(data|blob):/.test(s.placeImg) ? s.placeImg : '',
+    online,
+    contactPhone: String(s.contactPhone ?? s.form?.contactPhone ?? '').trim(),
+    contactTelegram: String(s.contactTelegram ?? s.form?.contactTelegram ?? '').trim(),
     regClosed: !!(s.regClosed || s.past),
     organizer: true,
   }
