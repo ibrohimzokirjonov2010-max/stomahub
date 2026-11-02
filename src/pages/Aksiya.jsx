@@ -258,7 +258,7 @@ export default function Aksiya() {
               </div>
               <button onClick={() => setShop(false)} aria-label="Yopish" className="grid size-8 place-items-center rounded-lg text-muted"><X className="size-4" /></button>
             </div>
-            <p className="mt-3 text-[13px] text-ink-2">{places[place]}. Rasmiy yetkazib beruvchi, {deal.seller.products} mahsulot, reyting {deal.seller.rating}.</p>
+            <p className="mt-3 text-[13px] text-ink-2">{places[place]}. {deal.seller.products} mahsulot, reyting {deal.seller.rating}.</p>
             <button onClick={() => setShop(false)} className="mt-4 h-9 rounded-lg bg-sea px-4 text-[12.5px] font-semibold text-white">Yopish</button>
           </div>
         </div>

@@ -10,7 +10,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { useMarket } from '../../buyerApi'
 import { masters } from '../../ustalarData'
-import { seminars } from '../../seminarsData'
+import { publicRecords, useHub } from '../../hubStore'
 import { products as uniforms } from '../../formaData'
 import { useCatalogVersion } from '../../recordSync'
 
@@ -52,6 +52,7 @@ const MENU = [
 export default function MobileKategoriyalar() {
   useCatalogVersion()
   const market = useMarket()
+  const hub = useHub()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [sheet, setSheet] = useState(null)
@@ -70,12 +71,12 @@ export default function MobileKategoriyalar() {
       orto: n('orto'),
       lab: 0,
       forma: uniforms.length,
-      seminar: seminars.length,
+      seminar: publicRecords(hub).filter((s) => !s.past && !s.cancelled).length,
       qism: n('uch'),
       xizmat: masters.length,
       boshqa: n('gig'),
     }
-  }, [market.products])
+  }, [market.products, hub])
   const list = useMemo(() => {
     const withCount = CATS.map((c) => {
       const n = counts[c.id] ?? 0
