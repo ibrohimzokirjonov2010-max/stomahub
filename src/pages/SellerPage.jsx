@@ -1,3 +1,4 @@
+import { isTestShop } from '../testData'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BadgeCheck, CalendarDays, ChevronLeft, MapPin, Package, Search, Star, Store } from 'lucide-react'
@@ -16,7 +17,7 @@ function useSellerInfo(id) {
     let off = false
     if (!supabase || !isUuid(id)) { setState({ status: 'ready', info: null }); return undefined }
     supabase.rpc('seller_public_profile', { p_id: id }).then(({ data, error }) => {
-      if (!off) setState({ status: 'ready', info: error ? null : data })
+      if (!off) setState({ status: 'ready', info: error || isTestShop(data) ? null : data, test: !error && isTestShop(data) })
     })
     return () => { off = true }
   }, [id])
@@ -35,7 +36,7 @@ export default function SellerPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const market = useMarket()
-  const { status: infoStatus, info } = useSellerInfo(id)
+  const { status: infoStatus, info, test: testShop } = useSellerInfo(id)
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('')
   const [sort, setSort] = useState('new')
@@ -52,7 +53,7 @@ export default function SellerPage() {
 
   const loading = market.status !== 'ready' && market.status !== 'error' && !products.length
   const name = info?.shop_name || products[0]?.seller || 'Sotuvchi'
-  const notFound = !loading && infoStatus === 'ready' && !info && !products.length
+  const notFound = testShop || (!loading && infoStatus === 'ready' && !info && !products.length)
   const reviews = info?.reviews || []
   const rating = Number(info?.rating) || 0
 
