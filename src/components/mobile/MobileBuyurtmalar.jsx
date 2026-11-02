@@ -6,6 +6,7 @@ import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { allOrders, profileStore, useProfile } from '../../profileStore'
 import { canReview, RatedBadge, ReviewDialog, useMyReviews } from '../OrderReview'
+import EscrowActions, { PayStatusPill } from '../EscrowActions'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -212,12 +213,14 @@ function OrderCard({ order, reviews, onTrack, onRepeat, onDetail }) {
       </div>
 
       {order.status === 'cancelled' ? (
-        <p className="mt-3 flex items-center gap-2 rounded-xl bg-[#fdf3f3] px-3 py-2.5 text-[12.5px] text-sale"><CircleX className="size-4 shrink-0" /> Buyurtma bekor qilindi, to‘lov qaytarildi</p>
+        <p className="mt-3 flex items-center gap-2 rounded-xl bg-[#fdf3f3] px-3 py-2.5 text-[12.5px] text-sale"><CircleX className="size-4 shrink-0" /> Buyurtma bekor qilindi{order.paymentStatus === 'refund_pending' ? ' — pul qaytarilmoqda' : order.paymentStatus === 'refunded' ? ', to‘lov qaytarildi' : ''}</p>
       ) : (
         <Stepper order={order} />
       )}
 
       <Thumbs items={order.items} />
+      <div className="mt-2"><PayStatusPill order={order} /></div>
+      <EscrowActions order={order} compact />
 
       {canReview(order) && reviews && order.items.some((it) => !reviews.ratingOf(order, it)) && (
         <button type="button" onClick={onDetail} className="mt-3 flex w-full items-center justify-between rounded-xl bg-[#fff8eb] px-3 py-2.5 text-left text-[12.5px] font-semibold text-[#92400e]">

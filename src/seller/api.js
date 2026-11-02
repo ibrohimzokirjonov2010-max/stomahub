@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from '../supabaseClient'
 import { getSession, refreshSession } from '../sessionStore'
 
-export const COMMISSION_RATE = 0.12
+import { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash, realOrders, metrics, commissionDebt, tkDay, tkToday, ALL, monthRange, OPEN } from './lib/metrics'
+export { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash }
 
 export const STATUS = {
   yangi: { label: 'Yangi', next: 'tasdiqlandi', action: 'Tasdiqlash' },
@@ -12,7 +13,7 @@ export const STATUS = {
   yetkazildi: { label: 'Yetkazildi', next: null },
   bekor_qilindi: { label: 'Bekor qilindi', next: null },
 }
-export const OPEN_STATUSES = ['yangi', 'tasdiqlandi', 'tayyorlanmoqda', 'yetkazilmoqda']
+export const OPEN_STATUSES = OPEN
 
 const uid = () => getSession().user?.id
 
@@ -23,7 +24,7 @@ function fail(error) {
 }
 
 // ---- tiny shared store so every widget reloads after a change ----------------
-let state = { loading: true, error: '', products: [], orders: [], reviews: [], payouts: [], customers: [], discounts: [], campaigns: [], adTopups: [], adStats: [], settings: null, staff: [], branches: [], activity: [], loadedFor: null }
+let state = { loading: true, error: '', products: [], orders: [], reviews: [], payouts: [], customers: [], discounts: [], campaigns: [], adTopups: [], adRequests: [], adStats: [], settings: null, staff: [], branches: [], activity: [], loadedFor: null }
 const listeners = new Set()
 const commit = (patch) => { state = { ...state, ...patch }; listeners.forEach((l) => l()) }
 const subscribe = (l) => { listeners.add(l); return () => listeners.delete(l) }
@@ -33,7 +34,7 @@ export async function reloadSeller() {
   if (!supabase || !me) { commit({ loading: false, error: 'Avval kiring' }); return }
   commit({ loading: state.loadedFor !== me, error: '' })
   const q = (t, order = 'created_at') => supabase.from(t).select('*').eq('seller_id', me).order(order, { ascending: false })
-  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac] = await Promise.all([
+  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac, ar, lg, wl] = await Promise.all([
     q('seller_products'),
     supabase.from('seller_orders').select('*, seller_order_items(*)').eq('seller_id', me).order('created_at', { ascending: false }),
     q('seller_reviews'), q('seller_payouts'), q('seller_customers'), q('seller_discounts'), q('seller_campaigns'),
@@ -41,6 +42,9 @@ export async function reloadSeller() {
     supabase.from('seller_settings').select('*').eq('seller_id', me).maybeSingle(),
     q('seller_staff'), q('seller_branches'),
     supabase.from('seller_activity').select('*').eq('seller_id', me).order('created_at', { ascending: false }).limit(200),
+    q('seller_ad_topup_requests'),
+    q('seller_payout_ledger', 'released_at'),
+    supabase.rpc('seller_wallet'),
   ])
   // 0004 jadvallari hali yo'q bo'lsa ham asosiy ma'lumotlar ishlayversin
   const error = fail(p.error || o.error || r.error || w.error || c.error)
@@ -58,11 +62,15 @@ export async function reloadSeller() {
     discounts: d.data || [],
     campaigns: k.data || [],
     adTopups: at.data || [],
+    adRequests: ar.data || [],
     adStats: as.data || [],
     settings: st.data || null,
     staff: sf.data || [],
     branches: br.data || [],
     activity: ac.data || [],
+    // 0042 escrow: haqiqiy hamyon (bo‘lmasa eski hisob-kitob)
+    ledger: lg.error ? [] : lg.data || [],
+    wallet: wl.error ? null : wl.data || null,
   })
 }
 
@@ -73,53 +81,55 @@ export function useSellerData() {
   return s
 }
 
-// ---- derived numbers -------------------------------------------------------------
-const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-export const netOf = (o) => Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0))
-// 12% komissiya faqat yetkazilgan (Yetkazildi) buyurtmalardan olinadi; qolganlari — Kutilmoqda.
-export const isDelivered = (o) => o?.status === 'yetkazildi'
-export const isCancelled = (o) => o?.status === 'bekor_qilindi'
+// ---- derived numbers (yagona qoidalar: ./lib/metrics.js) ---------------------------------
 export const commissionText = (o, fmt) => (isCancelled(o) ? fmt(0) : isDelivered(o) ? fmt(commissionOf(o)) : 'Kutilmoqda')
-export const commissionOf = (o) => isCancelled(o) ? 0 : Number(o.commission ?? Math.round(netOf(o) * COMMISSION_RATE))
-export const payoutOf = (o) => isCancelled(o) ? 0 : Number(o.payout ?? (netOf(o) - Math.round(netOf(o) * COMMISSION_RATE) + Number(o.delivery_fee || 0)))
 
-// Naqd buyurtma pulini sotuvchi o‘zi oladi — u yechib olinadigan balansga kirmaydi (0039 bilan bir xil).
-export const isCash = (o) => (o?.payment_method || 'cash') === 'cash'
-
-export function computeStats({ orders, products, payouts, customers, adTopups = [] }, now = new Date()) {
-  const live = orders.filter((o) => o.status !== 'bekor_qilindi')
-  const delivered = orders.filter((o) => o.status === 'yetkazildi')
-  const earned = delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
+export function computeStats({ orders, products, payouts, customers, adTopups = [], wallet = null }, now = new Date()) {
+  const real = realOrders(orders)
+  const all = metrics(orders, ALL)
+  const earned = all.delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
   const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0) + adTopups.reduce((s, t) => s + Number(t.amount || 0), 0)
   const phones = new Set()
-  orders.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
+  real.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
   customers.forEach((c) => { const k = (c.phone || c.name || '').trim(); if (k) phones.add(k) })
+  const today = tkToday(now)
   return {
-    today: orders.filter((o) => sameDay(new Date(o.created_at), now)).length,
-    fresh: orders.filter((o) => o.status === 'yangi').length,
-    balance: Math.max(0, earned - withdrawn),
-    earned,
+    today: real.filter((o) => tkDay(o.created_at) === today).length,
+    fresh: real.filter((o) => o.status === 'yangi').length,
+    // 0042 escrow: wallet (RPC) bo‘lsa haqiqiy balans/held/to‘lovlar; aks holda eski hisob
+    balance: wallet ? Number(wallet.available || 0) : Math.max(0, earned - withdrawn),
+    earned: wallet ? Number(wallet.earned || 0) : earned,
+    held: wallet ? Number(wallet.held || 0) : 0,
+    paidOut: wallet ? Number(wallet.paid_out || 0) : payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
+    requested: wallet ? Number(wallet.requested || 0) : payouts.filter((p) => p.status === 'kutilmoqda').reduce((s, p) => s + Number(p.amount || 0), 0),
+    disputes: wallet ? Number(wallet.disputes || 0) : 0,
+    live: !!wallet,
     withdrawnPayouts: payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
-    commissionOwed: delivered.filter(isCash).reduce((s, o) => s + commissionOf(o), 0),
-    cashPending: orders.filter((o) => OPEN_STATUSES.includes(o.status) && isCash(o)).length,
-    pending: orders.filter((o) => OPEN_STATUSES.includes(o.status) && !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
+    commissionOwed: wallet ? Number(wallet.commission_owed || 0) : commissionDebt(orders),
+    commissionTotal: all.commission,
+    cashPending: all.open.filter(isCash).length,
+    pending: all.open.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
+    openCount: all.openCount,
+    openSum: all.openSum,
     activeProducts: products.filter((p) => p.status === 'active').length,
     customers: phones.size,
-    totalOrders: orders.length,
-    revenue: delivered.reduce((s, o) => s + Number(o.subtotal || 0), 0),
-    liveCount: live.length,
+    totalOrders: real.length,
+    deliveredCount: all.count,
+    revenue: all.revenue,
+    liveCount: real.filter((o) => !isCancelled(o)).length,
   }
 }
 
-export function monthStats(orders, month /* Date or null = all */) {
-  const inRange = orders.filter((o) => o.status !== 'bekor_qilindi' && (!month || (new Date(o.created_at).getMonth() === month.getMonth() && new Date(o.created_at).getFullYear() === month.getFullYear())))
-  const sum = inRange.reduce((s, o) => s + Number(o.subtotal || 0), 0)
-  return { sum, count: inRange.length, avg: inRange.length ? Math.round(sum / inRange.length) : 0, commission: inRange.filter(isDelivered).reduce((s, o) => s + commissionOf(o), 0) }
+/** month: Date (oyning istalgan kuni) yoki null = barcha vaqt */
+export function monthStats(orders, month) {
+  const r = month ? monthRange(`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`) : ALL
+  const m = metrics(orders, r)
+  return { sum: m.revenue, count: m.count, avg: m.avg, commission: m.commission, openCount: m.openCount, openSum: m.openSum }
 }
 
 export function popularProducts(orders, products, limit = 4) {
   const sold = new Map()
-  orders.filter((o) => o.status !== 'bekor_qilindi').forEach((o) => o.items.forEach((it) => {
+  metrics(orders, ALL).delivered.forEach((o) => o.items.forEach((it) => {
     const k = it.product_id || it.name
     sold.set(k, (sold.get(k) || 0) + Number(it.qty || 0))
   }))
@@ -154,7 +164,14 @@ export const addCustomer = (v) => run(supabase.from('seller_customers').insert({
 
 export const addDiscount = (v) => run(supabase.from('seller_discounts').insert({ seller_id: uid(), title: v.title.trim(), percent: Number(v.percent), product_id: v.product_id || null, ends_on: v.ends_on || null }))
 
-export const addCampaign = (v) => run(supabase.from('seller_campaigns').insert({ seller_id: uid(), title: v.title.trim(), product_id: v.product_id || null, daily_budget: Number(v.daily_budget) || 0, days: Number(v.days) || 7 }))
+// ---- Reklama: to‘ldirish so‘rovi (naqd / bank o‘tkazma) — admin tasdiqlaydi -----------
+// Yangi so‘rovlar hamyondan hech narsa ayirmaydi (alohida jadval). Eski seller_ad_topups
+// (hamyondan o‘tkazmalar) tarix sifatida hisobda qoladi.
+export const requestAdTopup = (v) => run(supabase.rpc('seller_ad_topup_request', { p_amount: Number(v.amount), p_method: v.method, p_receipt_url: v.receipt_url || '', p_note: v.note || '' }))
+export const cancelAdTopup = (id) => run(supabase.rpc('seller_ad_topup_cancel', { p_id: id }))
+// Kelajakdagi Click to‘lovi uchun (hozircha o‘chiq): VITE_ADS_CLICK_TOPUP=1 bo‘lsagina UI’da ko‘rinadi.
+export const CLICK_TOPUP_ENABLED = import.meta.env.VITE_ADS_CLICK_TOPUP === '1'
+export async function startClickTopup() { return { ok: false, error: 'Click orqali to‘ldirish tez orada ishga tushadi' } }
 
 export const requestPayout = (v) => run(supabase.from('seller_payouts').insert({ seller_id: uid(), amount: Number(v.amount), note: v.note || '' }))
 
@@ -240,3 +257,6 @@ export async function removeMedia(urls = []) {
 
 /** Yagona “Kam qolgan” chegarasi: 5 dona yoki undan kam. */
 export const LOW_STOCK_LIMIT = 5
+
+/** Dev-only: skrinshot uchun soxta sotuvchi ma’lumoti (production bundle’da yo‘q). */
+export const __shotSellerState = import.meta.env.DEV ? (patch) => commit({ ...patch, loading: false, error: '', loadedFor: uid() ?? null }) : undefined

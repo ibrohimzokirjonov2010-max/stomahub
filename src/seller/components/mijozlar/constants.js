@@ -11,7 +11,7 @@ export const REGIONS = {
 export const TAGS = ['Doimiy', 'Yangi', 'VIP', 'Ulgurji', 'Kechiktiradi']
 export const initials = (n = '') => n.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'
 // mijozga tegishli buyurtmalar: customer_id bo'yicha, eski buyurtmalar uchun telefon/ism bo'yicha
-export const ordersOf = (c, orders) => orders.filter((o) => o.customer_id === c.id || (!o.customer_id && ((c.phone && o.customer_phone === c.phone) || (!c.phone && o.customer_name === c.name))))
+export const ordersOf = (c, orders) => orders.filter((o) => o.customer_id === c.id || (c.buyer_id && o.buyer_id === c.buyer_id) || (!o.customer_id && ((c.phone && o.customer_phone === c.phone) || (!c.phone && o.customer_name === c.name))))
 export function statsOf(c, orders) {
   const list = ordersOf(c, orders)
   const valid = list.filter((o) => o.status !== 'bekor_qilindi')
@@ -19,3 +19,5 @@ export function statsOf(c, orders) {
   return { list, count: valid.length, sum, last: list[0]?.created_at || null, auto: valid.length >= 3 ? 'Doimiy' : 'Yangi' }
 }
 export const tagsOf = (c, st) => [...new Set([st.auto, ...(c.tags || [])])]
+// marketplace mijozi: buyurtma orqali avtomatik qo'shilgan, ism/telefon buyurtmadan olinadi
+export const isMarket = (c) => c?.source === 'marketplace'

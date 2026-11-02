@@ -3,7 +3,7 @@ import { UserRound, Building2, Phone, Map, FileText, MapPin, FileDigit, Tag, Che
 import { insertRow, updateRow, useAsync } from '../../api'
 import { Btn, Input, Textarea, Select, Err, toast } from '../ui'
 import Modal from '../shell/Modal'
-import { KINDS, REGIONS, TAGS } from './constants'
+import { KINDS, REGIONS, TAGS, isMarket } from './constants'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
 const blank = { kind: 'klinika', name: '', contact_person: '', phone: '+998 ', region: '', city: '', address: '', stir: '', tags: [], note: '' }
@@ -15,12 +15,13 @@ export default function CustomerForm({ open, onClose, edit, onSaved }) {
   useEffect(() => { if (open) { setV(edit ? { ...blank, ...edit, tags: edit.tags || [] } : blank); a.setError('') } }, [open, edit]) // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e?.target ? e.target.value : e }))
   const label = { klinika: 'Klinika nomi', shifokor: 'Shifokor F.I.Sh.', laboratoriya: 'Laboratoriya nomi' }[v.kind]
+  const ro = isMarket(edit)
   function save() {
     if (!v.name.trim()) return a.setError(`${label}ni kiriting`)
     const ph = v.phone.replace(/\s/g, '')
     if (ph && ph !== '+998' && !/^\+998\d{9}$/.test(ph)) return a.setError('Telefon raqami +998 XX XXX XX XX ko‘rinishida bo‘lsin')
     if (v.stir && !/^\d{9}$/.test(v.stir.trim())) return a.setError('STIR 9 ta raqamdan iborat bo‘ladi')
-    const row = { kind: v.kind, name: v.name.trim(), contact_person: v.contact_person.trim(), phone: ph === '+998' ? '' : v.phone.trim(), region: v.region, city: v.city, address: v.address.trim(), stir: v.stir.trim(), tags: v.tags, note: v.note.trim().slice(0, 500) }
+    const row = ro ? { kind: v.kind, contact_person: v.contact_person.trim(), region: v.region, city: v.city, address: v.address.trim(), stir: v.stir.trim(), tags: v.tags, note: v.note.trim().slice(0, 500) } : { kind: v.kind, name: v.name.trim(), contact_person: v.contact_person.trim(), phone: ph === '+998' ? '' : v.phone.trim(), region: v.region, city: v.city, address: v.address.trim(), stir: v.stir.trim(), tags: v.tags, note: v.note.trim().slice(0, 500) }
     a.go(() => (edit ? updateRow('seller_customers', edit.id, row) : insertRow('seller_customers', row)), (r) => { toast(edit ? 'Mijoz yangilandi' : 'Mijoz qo‘shildi'); onSaved?.(r.data); onClose() })
   }
   const footer = <div className="grid grid-cols-2 gap-3 md:flex md:justify-end"><Btn variant="outline" className="md:w-[150px]" onClick={onClose}>Bekor qilish</Btn><Btn icon={Check} className="md:w-[200px]" disabled={a.busy} onClick={save}>Saqlash</Btn></div>
@@ -32,10 +33,10 @@ export default function CustomerForm({ open, onClose, edit, onSaved }) {
             <button key={k} type="button" onClick={() => set('kind')(k)} className={`relative rounded-[10px] border px-2 py-2.5 text-center ${on ? 'border-[#0F766E] bg-[#F0FDFA]' : 'border-[#DCE5E7]'}`}>
               {on ? <CircleCheck className="absolute left-2 top-2 size-4 fill-[#0F766E] text-white" /> : <Circle className="absolute left-2 top-2 size-4 text-[#AEB8C2]" />}
               <I className="mx-auto size-5 text-[#0F766E]" /><div className="mt-1 text-[13px] font-semibold">{l}</div><div className="text-[11px] text-[#5C6E80]">{sub}</div></button>) })}</div></div>
-        <div><H n={2} icon={Building2}>{label}</H><Input icon={Building2} value={v.name} onChange={set('name')} maxLength={120} placeholder={`${label}ni kiriting...`} /></div>
+        <div><H n={2} icon={Building2}>{label}</H>{ro ? <div className="flex h-11 items-center rounded-[10px] border border-[#DCE5E7] bg-[#F6FAFA] px-3 text-[14px] text-[#3D4E5F]">{v.name}</div> : <Input icon={Building2} value={v.name} onChange={set('name')} maxLength={120} placeholder={`${label}ni kiriting...`} />}{ro && <p className="mt-1 text-[11.5px] text-[#5C6E80]">Marketplace mijozi: ism va telefon buyurtmadan olinadi, tahrirlanmaydi.</p>}</div>
         <div className="grid grid-cols-2 gap-3">
           <div><H n={3} icon={UserRound}>Mas’ul shaxs</H><Input value={v.contact_person} onChange={set('contact_person')} maxLength={80} placeholder="Mas’ul shaxs F.I.Sh..." /></div>
-          <div><H n={4} icon={Phone}>Telefon</H><PhoneInput className="h-11" value={v.phone} onChange={(val) => set('phone')(toE164(val) || extractUzLocalDigits(val))} valueMode="e164" placeholder="+998 90 123 45 67" /></div>
+          <div><H n={4} icon={Phone}>Telefon</H>{ro ? <div className="flex h-11 items-center rounded-[10px] border border-[#DCE5E7] bg-[#F6FAFA] px-3 text-[14px] text-[#3D4E5F]">{v.phone || '—'}</div> : <PhoneInput className="h-11" value={v.phone} onChange={(val) => set('phone')(toE164(val) || extractUzLocalDigits(val))} valueMode="e164" placeholder="+998 90 123 45 67" />}</div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><H n={5} icon={Map}>Viloyat</H><Select value={v.region} onChange={(r) => setV((s) => ({ ...s, region: r, city: REGIONS[r]?.length === 1 ? REGIONS[r][0] : '' }))} options={Object.keys(REGIONS)} placeholder="Viloyatni tanlang" /></div>

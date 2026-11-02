@@ -42,7 +42,7 @@ export default function ReportModal({ open, onClose, range }) {
       {colTypes && <><H n={3} right={<label className="flex items-center gap-2 text-[12.5px]"><Checkbox checked={all} onChange={() => setCols(all ? [] : COLS.map((c) => c[0]))} />Barchasini tanlash</label>}>Ustunlarni tanlang</H>
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-3">{COLS.map(([k, l]) => <label key={k} className="flex items-center gap-2 text-[12.5px]"><Checkbox checked={cols.includes(k)} onChange={() => setCols((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]))} />{l}</label>)}</div></>}
       <H n={colTypes ? 4 : 3}>Formatni tanlang</H>
-      <div className="grid grid-cols-2 gap-2">{[['csv', 'CSV (Excel’da ochiladi)', FileSpreadsheet], ['pdf', 'PDF (chop etish)', FileType]].map(([k, l, I]) => <button key={k} type="button" onClick={() => setFmt(k)} className={`flex h-12 items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold ${fmt === k ? 'border-[#0F766E] bg-[#F0FDFA] text-[#0F766E]' : 'border-[#DCE5E7]'}`}><I className="size-5" />{l}</button>)}</div>
+      <div className="grid grid-cols-2 gap-2">{[['csv', 'CSV (Excel’da ochiladi)', FileSpreadsheet], ['pdf', 'Chop etish (PDF)', FileType]].map(([k, l, I]) => <button key={k} type="button" onClick={() => setFmt(k)} className={`flex h-12 items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold ${fmt === k ? 'border-[#0F766E] bg-[#F0FDFA] text-[#0F766E]' : 'border-[#DCE5E7]'}`}><I className="size-5" />{l}</button>)}</div>
       {mobile && <p className="mt-3 text-[11.5px] text-[#5C6E80]">“Ko‘rish” hisobotning dastlabki qatorlarini ochadi.</p>}
     </Modal>
   )

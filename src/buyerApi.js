@@ -96,7 +96,7 @@ export async function createOrder({ items, name, phone, city, address, note, pic
   const bad = items.filter((it) => !isUuid(it.productId || it.id))
   if (bad.length) throw new Error(`Bu mahsulot sotuvda emas: ${bad.map((b) => b.name).join(', ')}. Savatdan olib tashlang.`)
   const pay = String(paymentMethod || 'cash').toLowerCase()
-  const allowed = new Set(['cash', 'naqd', 'uzcard', 'humo', 'click', 'payme', 'card'])
+  const allowed = new Set(['cash', 'naqd', 'click', 'payme'])
   if (!allowed.has(pay)) throw new Error('To‘lov usuli qo‘llab-quvvatlanmaydi')
   const { data, error } = await supabase.rpc('buyer_create_order', {
     payload: {
@@ -129,6 +129,31 @@ export const ORDER_STATUS = {
   yangi: 'Yangi', tasdiqlandi: 'Tasdiqlandi', tayyorlanmoqda: 'Tayyorlanmoqda',
   yetkazilmoqda: 'Yo‘lda', yetkazildi: 'Yetkazildi', bekor_qilindi: 'Bekor qilingan',
 }
+// to‘lov holati (0042 escrow)
+export const ESCROW_DAYS = Number(import.meta.env.VITE_ESCROW_AUTO_RELEASE_DAYS || 3)
+export const PAY_STATUS = {
+  pending: 'Kutilmoqda', paid: 'To‘landi', held: 'Escrowda', released: 'Sotuvchiga o‘tkazildi',
+  refund_pending: 'Qaytarish kutilmoqda', refunded: 'Qaytarildi', failed: 'Bekor qilindi',
+}
+export const payStatusLabel = (st, method) => (st === 'pending' && method !== 'cash' ? 'To‘lov kutilmoqda' : PAY_STATUS[st] || 'Kutilmoqda')
+export const canConfirmReceipt = (o) => o?.live && o.method !== 'cash' && o.paymentStatus === 'held' && ['yetkazilmoqda', 'yetkazildi'].includes(o.dbStatus) && o.dispute !== 'open'
+export const canPayOnline = (o) => o?.live && ['click', 'payme'].includes(o.method) && o.paymentStatus === 'pending' && o.dbStatus !== 'bekor_qilindi'
+
+async function rpcOrThrow(name, args) {
+  if (!supabase) throw new Error('Supabase sozlanmagan')
+  const { data, error } = await supabase.rpc(name, args)
+  if (error) throw new Error(friendlySupabaseError(error))
+  return data
+}
+/** “Qabul qildim” — escrowdagi pul sotuvchiga o‘tadi. */
+export const confirmReceipt = (orderId) => rpcOrThrow('buyer_confirm_receipt', { p_order: orderId })
+/** “Muammo bor” — nizo ochiladi, pul admin hal qilguncha muzlatiladi. */
+export function openDispute(orderId, reason) {
+  const r = String(reason || '').trim()
+  if (r.length < 5) return Promise.reject(new Error('Muammoni kamida 5 ta belgi bilan yozing'))
+  return rpcOrThrow('buyer_open_dispute', { p_order: orderId, p_reason: r.slice(0, 1000) })
+}
+
 // map DB status to the profile UI buckets used by existing screens
 export const uiStatus = (s) => (s === 'yetkazildi' ? 'delivered' : s === 'bekor_qilindi' ? 'cancelled' : s === 'yetkazilmoqda' ? 'shipping' : 'processing')
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
@@ -138,10 +163,10 @@ const fmt = (iso) => {
 }
 
 export async function fetchMyOrders(uid) {
-  const full = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
+  const full = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,delivered_at,buyer_confirmed_at,dispute_status,dispute_reason,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
   const basic = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
   let { data, error } = await supabase.from('seller_orders').select(full).eq('buyer_id', uid).order('created_at', { ascending: false })
-  if (error && /payment_status|tracking_url|payment_ref/.test(error.message || '')) {
+  if (error && /payment_status|tracking_url|payment_ref|delivered_at|buyer_confirmed_at|dispute_/.test(error.message || '')) {
     ;({ data, error } = await supabase.from('seller_orders').select(basic).eq('buyer_id', uid).order('created_at', { ascending: false }))
   }
   if (error) throw new Error(friendlySupabaseError(error))
@@ -158,6 +183,9 @@ export async function fetchMyOrders(uid) {
       history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
       name: o.customer_name, phone: o.customer_phone, address: [o.city, String(o.address || '').replace(/\s*\[geo:[^\]]+\]/, '')].filter(Boolean).join(', '), lat: o.lat ?? (String(o.address || '').match(/\[geo:(-?[\d.]+),/) || [])[1] ?? null, lng: o.lng ?? (String(o.address || '').match(/\[geo:[^,]+,(-?[\d.]+)\]/) || [])[1] ?? null,
       trackingUrl: o.tracking_url || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
+      paymentLabel: payStatusLabel(o.payment_status, o.payment_method), deliveredAt: o.delivered_at || null, confirmedAt: o.buyer_confirmed_at || null,
+      dispute: o.dispute_status || '', disputeReason: o.dispute_reason || '',
+      autoReleaseAt: o.delivered_at ? new Date(new Date(o.delivered_at).getTime() + ESCROW_DAYS * 864e5).toISOString() : null,
     }
   })
 }

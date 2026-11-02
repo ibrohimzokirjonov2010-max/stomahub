@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Download, Pencil, Tag, Megaphone, Scale, Box, Database, Eye, FileText, ShoppingCart, UserRound, Building2, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Download, Pencil, Tag, Megaphone, Scale, Box, Database, FileText, ShoppingCart, UserRound, Building2, BarChart3, CalendarDays } from 'lucide-react'
 import { useSellerData, netOf, csvDownload, LOW_STOCK_LIMIT } from '../api'
 import { som, num } from '../format'
 import { useMobile } from '../../useMobile'
@@ -29,8 +29,7 @@ export default function AnalitikaMahsulot() {
     const list = liveOrders(data.orders, r).filter((o) => o.items.some((i) => i.product_id === pid))
     const line = (o) => { const k = netOf(o) / (Number(o.subtotal) || 1); return o.items.filter((i) => i.product_id === pid).reduce((a, i) => ({ qty: a.qty + Number(i.qty), sum: a.sum + Math.round(Number(i.total ?? i.qty * i.price) * k) }), { qty: 0, sum: 0 }) }
     const rows = list.map((o) => ({ o, ...line(o) }))
-    const views = data.adStats.filter((s) => s.product_id === pid && s.day >= r.from && s.day <= r.to).reduce((a, s) => a + s.impressions, 0)
-    return { rows, qty: rows.reduce((a, x) => a + x.qty, 0), sum: rows.reduce((a, x) => a + x.sum, 0), orders: rows.length, views }
+    return { rows, qty: rows.reduce((a, x) => a + x.qty, 0), sum: rows.reduce((a, x) => a + x.sum, 0), orders: rows.length }
   }
   const m = useMemo(() => (p ? calc(p.id) : null), [p, data, ym]) // eslint-disable-line react-hooks/exhaustive-deps
   if (data.loading) return null
@@ -42,7 +41,7 @@ export default function AnalitikaMahsulot() {
   const top = [...cus.values()].sort((a, b) => b.sum - a.sum).slice(0, 5)
   const exportCsv = () => csvDownload(`${p.name}_${ym}.csv`, [['Sana', 'Buyurtma', 'Mijoz', 'Hudud', 'Soni', 'Summa'], ...m.rows.map((x) => [dayOf(x.o.created_at), x.o.code, x.o.customer_name, x.o.region, x.qty, x.sum])])
   const o2 = other && data.products.find((x) => x.id === other); const m2 = o2 && calc(o2.id)
-  const stats = [[Box, 'Sotilgan dona', `${num(m.qty)} dona`], [Database, 'Sotuv summasi', som(m.sum)], [Eye, 'Ko‘rishlar', num(m.views)], [FileText, 'Buyurtmalar', `${m.orders} ta`]]
+  const stats = [[Box, 'Sotilgan dona', `${num(m.qty)} dona`], [Database, 'Sotuv summasi', som(m.sum)], [FileText, 'Yetkazilgan buyurtmalar', `${m.orders} ta`], [CalendarDays, 'Davr', ymTitle(ym)]]
   const btns = [[Download, 'Hisobotni yuklab olish', exportCsv], [Pencil, 'Mahsulotni tahrirlash', () => setEdit(true)], [Tag, 'Chegirma qo‘yish', () => navigate('/sotuvchi/chegirmalar?new=1')], [Megaphone, 'Reklama qilish', () => navigate('/sotuvchi/reklama?new=1')], [Scale, 'Taqqoslash', () => setCmp(true)]]
   const sec = (t, s, body) => <div className={`${card} p-4`}><h2 className="text-[15px] font-bold">{t}</h2><p className="mb-2 text-[12px] text-[#5C6E80]">{s}</p>{body}</div>
   const none = <p className="py-6 text-center text-[13px] text-[#5C6E80]">Bu davrda sotuv yo‘q.</p>
@@ -59,7 +58,7 @@ export default function AnalitikaMahsulot() {
       </div>
       <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4">{stats.map(([I, l, v]) => <div key={l} className={`${card} flex items-center gap-3 p-3 md:p-4`}><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F0FDFA] text-[#0F766E]"><I className="size-5" /></span><div className="min-w-0"><div className="text-[12px] text-[#3D4E5F]">{l}</div><div className="truncate text-[15px] font-extrabold md:text-[19px]">{v}</div></div></div>)}</div>
       <div className="grid gap-3 md:grid-cols-[1.4fr_1fr] md:gap-4 [&>*]:min-w-0">
-        {sec('Kunlik sotuvlar grafigi', `${ymTitle(ym)} davomidagi sotilgan dona soni.`, m.qty ? <Chart labels={dl.map((d) => `${d.slice(8)}.${d.slice(5, 7)}`)} series={[{ color: '#14958A', values: dl.map((d) => byDay[d]) }]} height={mobile ? 150 : 190} maxTicks={mobile ? 6 : 16} fmt={num} /> : none)}
+        {sec('Kunlik sotuvlar grafigi', `${ymTitle(ym)} — yetkazilgan buyurtmalardagi dona soni (Toshkent vaqti).`, m.qty ? <Chart labels={dl.map((d) => `${d.slice(8)}.${d.slice(5, 7)}`)} series={[{ color: '#14958A', values: dl.map((d) => byDay[d]) }]} height={mobile ? 150 : 190} maxTicks={mobile ? 6 : 16} fmt={num} /> : none)}
         {sec('Hududlar bo‘yicha sotuvlar', 'Mahsulot ushbu davrda qaysi hududlarda ko‘proq sotilgan.', regions.length ? <table className="w-full text-[12.5px]"><thead className="bg-[#F6FAFA]"><tr><Th>#</Th><Th>Hudud</Th><Th className="text-center">Sotilgan dona</Th><Th className="text-right">Sotuv summasi</Th></tr></thead><tbody>{regions.map(([k, v], i) => <tr key={k} className="border-t border-[#EEF3F4]"><Td>{i + 1}</Td><Td>{k}</Td><Td className="text-center">{v.qty}</Td><Td className="whitespace-nowrap text-right">{som(v.sum)}</Td></tr>)}</tbody></table> : none)}
       </div>
       <div className="grid gap-3 md:grid-cols-[1.4fr_1fr] md:gap-4 [&>*]:min-w-0">
@@ -70,7 +69,7 @@ export default function AnalitikaMahsulot() {
       {edit && <ProductForm open product={p} onClose={() => setEdit(false)} />}
       <Modal open={cmp} onClose={() => setCmp(false)} title="Mahsulotlarni taqqoslash" subtitle={ymTitle(ym)} width="md:max-w-[560px]">
         <Select value={other} onChange={setOther} placeholder="Taqqoslash uchun mahsulot tanlang" options={data.products.filter((x) => x.id !== p.id).map((x) => [x.id, x.name])} />
-        {m2 && <table className="mt-3 w-full text-[13px]"><thead className="bg-[#F6FAFA]"><tr><Th>Ko‘rsatkich</Th><Th className="text-right">{p.name}</Th><Th className="text-right">{o2.name}</Th></tr></thead><tbody>{[['Sotilgan dona', m.qty, m2.qty, num], ['Sotuv summasi', m.sum, m2.sum, som], ['Buyurtmalar', m.orders, m2.orders, num], ['Ko‘rishlar', m.views, m2.views, num], ['Stok', p.stock, o2.stock, num]].map(([l, a, b, f]) => <tr key={l} className="border-t border-[#EEF3F4]"><Td>{l}</Td><Td className={`text-right ${a > b ? 'font-bold text-[#0F766E]' : ''}`}>{f(a)}</Td><Td className={`text-right ${b > a ? 'font-bold text-[#0F766E]' : ''}`}>{f(b)}</Td></tr>)}</tbody></table>}
+        {m2 && <table className="mt-3 w-full text-[13px]"><thead className="bg-[#F6FAFA]"><tr><Th>Ko‘rsatkich</Th><Th className="text-right">{p.name}</Th><Th className="text-right">{o2.name}</Th></tr></thead><tbody>{[['Sotilgan dona', m.qty, m2.qty, num], ['Sotuv summasi', m.sum, m2.sum, som], ['Buyurtmalar', m.orders, m2.orders, num], ['Stok', p.stock, o2.stock, num]].map(([l, a, b, f]) => <tr key={l} className="border-t border-[#EEF3F4]"><Td>{l}</Td><Td className={`text-right ${a > b ? 'font-bold text-[#0F766E]' : ''}`}>{f(a)}</Td><Td className={`text-right ${b > a ? 'font-bold text-[#0F766E]' : ''}`}>{f(b)}</Td></tr>)}</tbody></table>}
       </Modal>
     </div>
   )
