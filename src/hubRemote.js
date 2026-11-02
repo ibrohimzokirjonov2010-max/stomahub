@@ -74,6 +74,13 @@ function seminarFromRow(row, tickets) {
     cancelReason: row.cancel_reason || '',
     form: row.form,
     speakers: row.speakers || [],
+    // 0033 migratsiyasidagi ustunlar; hali qo‘llanmagan bo‘lsa form jsonb dan o‘qiladi
+    gallery: row.gallery ?? row.form?.gallery ?? [],
+    faq: row.faq ?? row.form?.faq ?? [],
+    venueNotes: row.venue_notes ?? row.form?.venueNotes ?? '',
+    certDesign: row.cert_design ?? row.form?.certDesign ?? null,
+    contactPhone: row.contact_phone ?? row.form?.contactPhone ?? '',
+    contactTelegram: row.contact_telegram ?? row.form?.contactTelegram ?? '',
     wizardPromos: row.form?.promos || [],
     // early bird maydonlari tickets jadvalida yo‘q — form.tickets dan qo‘shiladi
     tickets: list.map((t) => {
@@ -166,6 +173,8 @@ function slimForm(form) {
     ...form,
     cover: slimText(form.cover),
     thumbs: (form.thumbs || []).filter((item) => !String(item).startsWith('data:')),
+    gallery: (form.gallery || []).filter((item) => !/^(data|blob):/.test(String(item))),
+    placeImg: slimText(form.placeImg),
   }
 }
 
@@ -204,6 +213,16 @@ function seminarToRow(record, uid, { isNew } = {}) {
     cancel_reason: record.cancelReason || '',
     form: slimForm(record.form),
     speakers: record.speakers || [],
+  }
+  // Migratsiya 0033 qo‘llangach VITE_SEMINAR_EXTRA_COLS=1 yoqiladi (undan oldin upsert buzilmasligi uchun)
+  if (import.meta.env?.VITE_SEMINAR_EXTRA_COLS === '1') {
+    const f = row.form || {}
+    row.gallery = f.gallery || []
+    row.faq = (f.faq || []).filter((r) => r?.q && r?.a)
+    row.venue_notes = String(f.venueNotes || '')
+    row.cert_design = f.certDesign && !/^(data|blob):/.test(f.certDesign.url || '') ? f.certDesign : null
+    row.contact_phone = String(f.contactPhone || '')
+    row.contact_telegram = String(f.contactTelegram || '')
   }
   if (isNew) row.sort_at = -Date.now()
   return row

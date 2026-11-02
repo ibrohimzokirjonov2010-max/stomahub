@@ -76,6 +76,7 @@ export function validateStep(id, f) {
     if (String(f.name || '').trim().length < 3) return 'Seminar nomini kiriting (kamida 3 belgi)'
     if (String(f.about || '').trim().length < 10) return 'Qisqa tavsif kamida 10 belgi bo‘lsin'
     if (!f.topic) return 'Mavzuni tanlang'
+    if (!f.cover) return 'Seminar posterini yuklang'
     return ''
   }
   if (id === 'when') {
@@ -112,4 +113,19 @@ export const EMPTY_DETAILS = {
   practice: { on: false, kind: 'model', perPerson: '', unit: 'implant', materials: 'tashkilotchi' },
   refundPolicy: '',
   liveSurgery: { on: false, text: '' },
+  gallery: [],
+  faq: [],
+  venueNotes: '',
+  certDesign: null,
+  contactPhone: '',
+  contactTelegram: '',
+}
+
+// Seminar sahifasida ko‘rinadigan qo‘shimcha maydonlar (form jsonb ichida saqlanadi)
+export const EXTRA_KEYS = ['gallery', 'faq', 'venueNotes', 'certDesign', 'contactPhone', 'contactTelegram']
+export function pickExtras(src = {}) {
+  const out = {}
+  for (const k of EXTRA_KEYS) out[k] = src?.[k] ?? EMPTY_DETAILS[k]
+  out.faq = (out.faq || []).filter((r) => r && (String(r.q || '').trim() || String(r.a || '').trim()))
+  return out
 }
