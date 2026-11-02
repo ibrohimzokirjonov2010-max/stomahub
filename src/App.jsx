@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
 import { CartProvider } from './cart'
+import { RxPrompt } from './restricted.jsx'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
 import { Privacy, Terms } from './pages/Legal'
@@ -129,6 +130,7 @@ export default function App() {
   return (
     <CartProvider>
       <BrowserRouter>
+        <RxPrompt />
         <MobileChrome />
         <IntakeDialog />
         <FlashToast />
