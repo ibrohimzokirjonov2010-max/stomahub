@@ -8,6 +8,7 @@ import { MobileTopBar, MobileToast } from '../mobile/parts'
 import MobileTabBar from '../mobile/MobileTabBar'
 import ShopLayout from '../market/ShopLayout'
 import { som } from '../../marketData'
+import { useAdPlacements, trackAd, joinAds } from '../../adsApi'
 import { ImageSearchButton, ImageSearchDialog, ImageSearchBanner, rankByTerms, termsFrom } from './ImageSearch'
 
 /* ---------- building blocks ---------- */
@@ -57,6 +58,8 @@ export function HeroSlider({ slides, desktop }) {
     return () => clearInterval(t)
   }, [n, i])
   useEffect(() => { if (i >= n) setI(0) }, [i, n])
+  const curAd = slides[i]?.ad && slides[i]
+  useEffect(() => { if (curAd) trackAd('view', curAd.ad.campaign_id, curAd.item.id) }, [curAd])
   if (!n) return null
   return (
     <div
@@ -71,7 +74,7 @@ export function HeroSlider({ slides, desktop }) {
       }}
     >
       <div className="flex h-full transition-transform duration-500" style={{ transform: `translateX(-${i * 100}%)` }}>
-        {slides.map((s) => <Slide key={s.id} s={s} desktop={desktop} />)}
+        {slides.map((s) => (s.ad ? <AdSlide key={s.id} s={s} desktop={desktop} /> : <Slide key={s.id} s={s} desktop={desktop} />))}
       </div>
       {n > 1 && (
         <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5" data-testid="catalog-hero-dots">
@@ -81,6 +84,24 @@ export function HeroSlider({ slides, desktop }) {
         </div>
       )}
     </div>
+  )
+}
+
+// Reklama posteri: mavjud slayd o‘lchamida, rasm + gradient + 'Reklama' belgisi.
+function AdSlide({ s, desktop }) {
+  const { ad, item } = s
+  const img = ad.image_url || item.image
+  return (
+    <Link to={`/product/${item.id}`} data-testid="hero-ad-slide" onClick={() => trackAd('click', ad.campaign_id, item.id)} className="relative block h-full w-full shrink-0 overflow-hidden bg-[#0F766E]">
+      {img && <img src={img} alt="" className="absolute inset-0 size-full object-cover object-center" />}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/0" />
+      <div className={`relative flex h-full flex-col justify-center text-white ${desktop ? 'max-w-[58%] gap-1.5 pl-8' : 'max-w-[72%] gap-1 pl-3.5'}`}>
+        <span className="w-fit max-w-full truncate rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-semibold tracking-wide backdrop-blur-sm">Reklama · {ad.shop_name}</span>
+        <p className={`line-clamp-2 font-extrabold leading-tight drop-shadow ${desktop ? 'text-[28px]' : 'text-[16px]'}`}>{ad.headline || ad.title}</p>
+        {(ad.body_text || ad.description) && <p className={`line-clamp-2 text-white/90 drop-shadow ${desktop ? 'text-[14px]' : 'text-[11.5px]'}`}>{ad.body_text || ad.description}</p>}
+        <span className={`mt-1 inline-flex w-fit items-center gap-1 rounded-lg bg-white font-bold text-[#0F766E] ${desktop ? 'px-3.5 py-2 text-[13px]' : 'px-2.5 py-1 text-[11.5px]'}`}>{ad.cta_text || 'Ko‘rish'} <ArrowRight className="size-3.5" /></span>
+      </div>
+    </Link>
   )
 }
 
@@ -249,6 +270,20 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
 
 const norm = (s) => String(s || '').toLowerCase()
 
+// ---- Reklama (0043) -----------------------------------------------------------------
+function AdCard({ ad, item, section, desktop, cartItems, add, navigate, setToast }) {
+  useEffect(() => { trackAd('view', ad.campaign_id, item.id) }, [ad.campaign_id, item.id])
+  const card = { ...section.card(item), badge: { text: 'Reklama', tone: 'info' } }
+  const added = card.cart ? cartItems.some((x) => String(x.id).startsWith(card.cart.prefix)) : false
+  return (
+    <div data-testid="ad-card" className="flex flex-col [&>a]:flex-1" onClickCapture={() => trackAd('click', ad.campaign_id, item.id)}>
+      <CatalogCard card={card} desktop={desktop} added={added}
+        onAdd={() => { if (added) navigate('/savatcha', { state: { from: section.key } }); else { add(card.cart.line); setToast(`${card.title} savatga qo‘shildi`) } }} />
+    </div>
+  )
+}
+
+
 /**
  * section: {
  *   key, title, subtitle, placeholder, shopActive, items, loading, emptyText,
@@ -276,6 +311,10 @@ export function CatalogPage({ section }) {
   const [vis, setVis] = useState(null) // image-search result { name, brand, category, terms, thumb }
   useEffect(() => setLimit(24), [cat, q, values, sort, vis])
   const searchRef = useRef(null)
+  const adOn = !!section.ads
+  const adSearch = useAdPlacements('qidiruv', adOn)
+  const adBanner = useAdPlacements('banner', adOn)
+  const adCat = useAdPlacements('kategoriya', adOn)
   const gridRef = useRef(null)
 
   const cats = useMemo(() => {
@@ -298,8 +337,19 @@ export function CatalogPage({ section }) {
     }
     return fn ? [...out].sort(fn) : out
   }, [section, cat, q, values, sort, filters, vis])
+  const inCat = (it) => cat === 'all' || [].concat(section.catOf(it) || []).includes(cat)
+  // Qidiruvda: so‘rovga mos ko‘pi bilan 2 ta homiy mahsulot tepada
+  const sponsored = useMemo(() => (adOn && q.trim() && !vis ? joinAds(adSearch, section.items, (it) => inCat(it) && norm(section.text(it)).includes(norm(q.trim())), 2) : []), [adOn, adSearch, section, q, cat, vis]) // eslint-disable-line react-hooks/exhaustive-deps
+  const catRow = useMemo(() => (adOn && cat !== 'all' && !q.trim() && !vis ? joinAds(adCat, section.items, inCat, 8) : []), [adOn, adCat, section, cat, q, vis]) // eslint-disable-line react-hooks/exhaustive-deps
+  const sponsoredIds = new Set(sponsored.map((x) => x.item.id))
+  const adProps = { section, desktop, cartItems, add, navigate, setToast }
   const active = Object.values(values).filter(Boolean).length
-  const slides = useMemo(() => section.slides(section.items, () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })), [section])
+  const baseSlides = useMemo(() => section.slides(section.items, () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })), [section])
+  // Tasdiqlangan banner kampaniyalari — mavjud poster slayderining BOSHIGA (ko‘pi bilan 2 ta), keyin odatiy posterlar.
+  const slides = useMemo(() => {
+    const ads = adOn ? joinAds(adBanner, section.items, () => true, 2) : []
+    return ads.length ? [...ads.map(({ ad, item }) => ({ id: `ad-${ad.campaign_id}`, ad, item })), ...baseSlides] : baseSlides
+  }, [adOn, adBanner, section.items, baseSlides])
 
   const body = (
     <>
@@ -309,6 +359,14 @@ export function CatalogPage({ section }) {
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
       ) : <HeroSlider slides={slides} desktop={desktop} />}
       {cats.length > 0 && <CategoryChips cats={cats} value={cat} onChange={setCat} desktop={desktop} />}
+      {catRow.length > 0 && (
+        <section data-testid="ad-cat-row" className="mt-3">
+          <div className="mb-2 flex items-center gap-2"><h2 className={`font-extrabold text-[#0d2a4a] ${desktop ? 'text-[17px]' : 'text-[15px]'}`}>Tavsiya etiladi</h2><span className="rounded-full bg-sea-50 px-2 py-0.5 text-[10px] font-semibold text-sea">Reklama</span></div>
+          <div className={`flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] ${desktop ? 'gap-4' : '-mx-4 px-4'}`}>
+            {catRow.map(({ ad, item }) => <div key={ad.campaign_id + item.id} className={`shrink-0 ${desktop ? 'w-[220px]' : 'w-[46%]'} [&>div]:h-full`}><AdCard ad={ad} item={item} {...adProps} /></div>)}
+          </div>
+        </section>
+      )}
       <div ref={gridRef} className="scroll-mt-2">
         <FilterBar filters={filters} values={values} onChange={setValues} sorts={section.sorts} sort={sort} onSort={setSort} desktop={desktop} />
       </div>
@@ -317,9 +375,10 @@ export function CatalogPage({ section }) {
           <div className={`grid gap-2.5 ${desktop ? 'grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-2'}`}>
             {[0, 1, 2, 3].map((k) => <div key={k} className="h-[250px] animate-pulse rounded-2xl bg-white" />)}
           </div>
-        ) : list.length ? (
+        ) : list.length || sponsored.length ? (
           <div data-testid="catalog-grid" className={`grid gap-2.5 ${desktop ? 'grid-cols-3 gap-4 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-2'}`}>
-            {list.slice(0, limit).map((it) => {
+            {sponsored.map(({ ad, item }) => <AdCard key={`ad-${ad.campaign_id}`} ad={ad} item={item} {...adProps} />)}
+            {list.filter((it) => !sponsoredIds.has(it.id)).slice(0, limit).map((it) => {
               const card = section.card(it)
               const added = card.cart ? cartItems.some((x) => String(x.id).startsWith(card.cart.prefix)) : false
               return (

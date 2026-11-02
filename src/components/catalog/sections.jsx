@@ -100,7 +100,7 @@ export function useMarketSection() {
   return useMemo(() => {
     const items = products.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.seller }))
     return {
-      key: 'marketplace', shopActive: 'market', imageSearch: true, title: 'Marketplace', subtitle: 'Stomatologiya materiallari va asboblari — tasdiqlangan sotuvchilardan', placeholder: 'Mahsulot, brend yoki sotuvchi qidiring...',
+      key: 'marketplace', shopActive: 'market', imageSearch: true, ads: true, title: 'Marketplace', subtitle: 'Stomatologiya materiallari va asboblari — tasdiqlangan sotuvchilardan', placeholder: 'Mahsulot, brend yoki sotuvchi qidiring...',
       items, loading: status === 'loading' || status === 'idle', emptyText: 'Hozircha sotuvdagi mahsulotlar yo‘q',
       cats: uniq(items.map((p) => p.category)).map((c) => ({ key: c, label: c, icon: MARKET_ICONS[c] || Package })), catOf: (p) => p.category,
       filters: [

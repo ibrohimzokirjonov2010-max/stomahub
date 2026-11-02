@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Box, FileText, UserRound, Tag, Megaphone, Wallet, ChevronRight, CirclePlus } from 'lucide-react'
 import Modal from '../shell/Modal'
-import { addCampaign, addCustomer, addDiscount, addManualOrder, addProduct, requestPayout, useAsync } from '../../api'
+import { addCustomer, addDiscount, addManualOrder, addProduct, requestPayout, useAsync } from '../../api'
 
 export const ACTIONS = [
   { key: 'product', icon: Box, mIcon: CirclePlus, title: 'Mahsulot qo‘shish', text: 'Yangi mahsulotni qo‘shib, sotuvga chiqaring.', mText: 'Yangi mahsulotni katalogga qo‘shing.', mobile: true },
@@ -24,8 +24,6 @@ const FORMS = {
     ['name', 'Ism familiya', 'text', true], ['phone', 'Telefon raqami', 'tel', true], ['city', 'Shahar', 'text'], ['note', 'Izoh', 'text']] },
   discount: { title: 'Chegirma yaratish', submit: 'Yaratish', fn: addDiscount, done: 'Chegirma yaratildi', fields: [
     ['title', 'Aksiya nomi', 'text', true], ['percent', 'Chegirma (%)', 'number', true], ['product_id', 'Mahsulot (bo‘sh qolsa — barchasi)', 'product'], ['ends_on', 'Tugash sanasi', 'date']] },
-  campaign: { title: 'Reklama kampaniyasi', submit: 'Moderatsiyaga yuborish', fn: addCampaign, done: 'Kampaniya moderatsiyaga yuborildi', needsProducts: true, fields: [
-    ['title', 'Kampaniya nomi', 'text', true], ['product_id', 'Mahsulot', 'product', true], ['daily_budget', 'Kunlik byudjet (so‘m)', 'number', true], ['days', 'Davomiyligi (kun)', 'number', true]] },
   payout: { title: 'Pul yechish so‘rovi', submit: 'So‘rov yuborish', fn: requestPayout, done: 'So‘rov yuborildi', note: 'To‘lov faqat naqd shaklda beriladi. Mablag‘ yetkazilgan buyurtmalardan (12% komissiya ayirilgan holda) hisoblanadi.', fields: [
     ['amount', 'Summa (so‘m)', 'number', true], ['note', 'Izoh', 'text']] },
 }
