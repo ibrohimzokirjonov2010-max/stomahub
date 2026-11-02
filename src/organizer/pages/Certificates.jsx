@@ -8,6 +8,8 @@ import { downloadText, issueCert, newestSeminar, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
+import { CertDesignCanvas, layoutOf, printDesignCert } from './certLayout'
+import { useCertBackground } from './WizardExtras'
 
 // CME soat/ball — seminar formasidan (sertifikatda chop etiladi)
 export function cmeLabel(sem) {
@@ -99,6 +101,7 @@ export default function Certificates() {
 
   const cert = rows.find((c) => c.id === selected) || slice[0] || rows[0]
   const certSem = cert ? hub.seminars.find((x) => x.id === cert.seminarId || x.id === cert.seminar_id || x.title === cert.seminar) : null
+  const certBg = useCertBackground(certSem?.certDesign)
   const certCme = cmeLabel(certSem)
 
   const issue = (c) => {
@@ -176,7 +179,8 @@ export default function Certificates() {
           setPreview={setPreview}
           onTpl={() => setTpl(true)}
           onNote={() => setNote(true)}
-          onDownload={() => { if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${cert.seminar || cert.course || 'Seminar'}\n${cert.code || 'berilmagan'}\n${cert.date || ''}${certCme ? `\n${certCme}` : ''}`); notify('Sertifikat yuklab olindi') }}
+          design={certSem?.certDesign && certBg ? { ...certSem.certDesign, bg: certBg } : null}
+          onDownload={() => { if (cert && certSem?.certDesign && certBg) { printDesignCert(certSem.certDesign, { name: cert.name, course: cert.seminar || cert.course || 'Seminar', date: cert.date || '', cme: certCme || '' }, certBg); notify('Sertifikat tayyorlandi'); return } if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${cert.seminar || cert.course || 'Seminar'}\n${cert.code || 'berilmagan'}\n${cert.date || ''}${certCme ? `\n${certCme}` : ''}`); notify('Sertifikat yuklab olindi') }}
           onMail={() => notify('Email yuborildi')}
           onQr={() => setQr(cert)}
           onResend={() => notify('Sertifikat qayta yuborildi')}
@@ -427,7 +431,9 @@ function Desktop(p) {
 
           {p.preview && p.cert && (
             <aside className="border-l border-[#eef3f2] px-3 pb-3 pt-3">
-              <CertFrame width={268} name={p.cert.name} course={p.cert.seminar || p.cert.course || 'Seminar'} date={p.cert.date || '—'} cme={p.cme || ''} />
+              {p.design
+                ? <div className="w-[268px]"><CertDesignCanvas src={p.design.bg} ratio={p.design.ratio} layout={layoutOf(p.design)} values={{ name: p.cert.name, course: p.cert.seminar || p.cert.course || 'Seminar', date: p.cert.date || '—', cme: p.cme || '' }} /></div>
+                : <CertFrame width={268} name={p.cert.name} course={p.cert.seminar || p.cert.course || 'Seminar'} date={p.cert.date || '—'} cme={p.cme || ''} />}
               <button type="button" onClick={p.onDownload} className="mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-org-teal)] text-[13px] font-semibold text-white shadow-[0_6px_14px_rgb(14_128_120/0.22)] hover:bg-[#0c756e]">
                 <Download className="size-4" /> Sertifikatni yuklab olish
               </button>

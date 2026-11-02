@@ -71,36 +71,41 @@ const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x
 export { lines as listLines }
 
 // Har bir bosqich uchun tekshiruv: xato matni yoki '' qaytaradi
-export function validateStep(id, f) {
+// Bosqich xatosi: { field, msg } — field inline xato va scroll uchun
+export function stepError(id, f) {
   if (id === 'info') {
-    if (String(f.name || '').trim().length < 3) return 'Seminar nomini kiriting (kamida 3 belgi)'
-    if (String(f.about || '').trim().length < 10) return 'Qisqa tavsif kamida 10 belgi bo‘lsin'
-    if (!f.topic) return 'Mavzuni tanlang'
-    if (!f.cover) return 'Seminar posterini yuklang'
-    return ''
+    if (String(f.name || '').trim().length < 3) return { field: 'name', msg: 'Seminar nomini kiriting (kamida 3 belgi)' }
+    if (String(f.about || '').trim().length < 10) return { field: 'about', msg: 'Qisqa tavsif kamida 10 belgi bo‘lsin' }
+    if (!f.topic) return { field: 'topic', msg: 'Mavzuni tanlang' }
+    if (!f.cover) return { field: 'cover', msg: 'Seminar posterini yuklang' }
+    return null
   }
   if (id === 'when') {
-    if (!f.start) return 'Boshlanish sanasini kiriting'
-    if (f.end && f.end < f.start) return 'Tugash sanasi boshlanishdan oldin bo‘lishi mumkin emas'
-    if ((!f.end || f.end === f.start) && f.endTime && f.startTime && f.endTime <= f.startTime) return 'Tugash vaqti boshlanishdan keyin bo‘lsin'
-    if (!String(f.place || '').trim()) return f.placeType === 'online' ? 'Webinar platformasi yoki havolasini kiriting' : 'Manzilni kiriting'
-    return ''
+    if (!f.start) return { field: 'start', msg: 'Boshlanish sanasini kiriting' }
+    if (f.end && f.end < f.start) return { field: 'end', msg: 'Tugash sanasi boshlanishdan oldin bo‘lishi mumkin emas' }
+    if ((!f.end || f.end === f.start) && f.endTime && f.startTime && f.endTime <= f.startTime) return { field: 'end', msg: 'Tugash vaqti boshlanishdan keyin bo‘lsin' }
+    if (!String(f.place || '').trim()) return { field: 'place', msg: f.placeType === 'online' ? 'Webinar platformasi yoki havolasini kiriting' : 'Manzilni kiriting' }
+    return null
   }
   if (id === 'details') {
     const bad = (f.program || []).find((r) => (r.time || r.title) && !(r.time && r.title))
-    if (bad) return 'Dasturdagi har bir qatorda vaqt va mavzu bo‘lsin'
-    if (f.cmeHours !== '' && f.cmeHours != null && (Number(f.cmeHours) < 0 || Number(f.cmeHours) > 200)) return 'CME soatlari 0–200 oralig‘ida bo‘lsin'
-    if (f.cmePoints !== '' && f.cmePoints != null && (Number(f.cmePoints) < 0 || Number(f.cmePoints) > 100)) return 'CME ballari 0–100 oralig‘ida bo‘lsin'
-    if (f.practice?.on && !f.practice.kind) return 'Amaliy qism turini tanlang'
-    if (f.practice?.on && f.practice.perPerson !== '' && f.practice.perPerson != null && (Number(f.practice.perPerson) < 0 || Number(f.practice.perPerson) > 50)) return 'Implantlar soni 0–50 oralig‘ida bo‘lsin'
-    if (f.liveSurgery?.on && String(f.liveSurgery.text || '').trim().length < 5) return 'Jonli jarrohlik haqida qisqacha yozing'
-    return ''
+    if (bad) return { field: 'details', msg: 'Dasturdagi har bir qatorda vaqt va mavzu bo‘lsin' }
+    if (f.cmeHours !== '' && f.cmeHours != null && (Number(f.cmeHours) < 0 || Number(f.cmeHours) > 200)) return { field: 'details', msg: 'CME soatlari 0–200 oralig‘ida bo‘lsin' }
+    if (f.cmePoints !== '' && f.cmePoints != null && (Number(f.cmePoints) < 0 || Number(f.cmePoints) > 100)) return { field: 'details', msg: 'CME ballari 0–100 oralig‘ida bo‘lsin' }
+    if (f.practice?.on && !f.practice.kind) return { field: 'details', msg: 'Amaliy qism turini tanlang' }
+    if (f.practice?.on && f.practice.perPerson !== '' && f.practice.perPerson != null && (Number(f.practice.perPerson) < 0 || Number(f.practice.perPerson) > 50)) return { field: 'details', msg: 'Implantlar soni 0–50 oralig‘ida bo‘lsin' }
+    if (f.liveSurgery?.on && String(f.liveSurgery.text || '').trim().length < 5) return { field: 'details', msg: 'Jonli jarrohlik haqida qisqacha yozing' }
+    return null
   }
   if (id === 'tickets') {
-    if (!(f.tickets || []).length) return 'Kamida bitta chipta turi qo‘shing'
-    return ''
+    if (!(f.tickets || []).length) return { field: 'tickets', msg: 'Kamida bitta chipta turi qo‘shing' }
+    return null
   }
-  return ''
+  return null
+}
+
+export function validateStep(id, f) {
+  return stepError(id, f)?.msg || ''
 }
 
 export const EMPTY_DETAILS = {
