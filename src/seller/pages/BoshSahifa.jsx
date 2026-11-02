@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { computeStats, monthStats, popularProducts, useSellerData } from '../api'
 import { useMobile } from '../../useMobile'
+import { monthTitle } from '../format'
 import { Greeting, StatCards, RecentOrders, LowStock, RecentReviews, SalesActivity, InfoCards } from '../components/bosh-sahifa/Desktop'
 import { Welcome, PeriodBar, MobileStats, MobileQuick, MobileOrders, Popular } from '../components/bosh-sahifa/Mobile'
 
@@ -26,7 +27,7 @@ export default function BoshSahifa() {
         {banner}
         <Welcome shop={shop} />
         <PeriodBar month={month} setMonth={setMonth} />
-        <MobileStats s={monthStats(data.orders, month)} />
+        <MobileStats s={monthStats(data.orders, month)} period={monthTitle(month)} />
         <MobileQuick openQuick={openQuick} />
         <MobileOrders orders={data.orders.slice(0, 4)} onOpen={openOrder} />
         <Popular products={popularProducts(data.orders, data.products)} />
