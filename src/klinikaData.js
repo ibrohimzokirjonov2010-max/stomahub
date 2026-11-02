@@ -58,7 +58,7 @@ export const REVENUE = {}
 
 export const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 export const MONTHS_CAP = MONTHS.map((m) => m[0].toUpperCase() + m.slice(1))
-export const WD = ['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha', 'Ya']
+export const WD = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
 export const WD_LONG = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
 
 export function label(iso) {

@@ -69,7 +69,7 @@ export default function Book() {
           <p className="mt-1 flex items-center gap-1 text-[12px]"><Stars n={Math.round(book.rating || 0)} /> <span className="font-bold">{book.rating}</span> <button onClick={() => setTab('reviews')} className="text-muted">({book.reviews} ta sharh)</button></p>
           <p className="mt-2 text-[22px] font-extrabold text-ink">{money(price)}</p>
           {priceless(book) ? <><p className="mt-2 rounded-lg bg-sea-50 px-3 py-2 text-[11.5px] text-ink-2">Narx sotuvchi bilan kelishiladi. Buyurtma uchun StomaHub bilan bog‘laning.</p>
-          {book.pdf && <Link to={`/kitoblar/${book.id}/oqish`} className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5" /> O‘qish</Link>}
+          {book.pdf && <Link to={`/kitoblar/${book.id}/oqish`} className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5" /> Namuna o‘qish</Link>}
           </> : <>
           <p className="mt-3 text-[12px] font-bold">Formatni tanlang</p>
           <div className="mt-1.5 grid grid-cols-2 gap-2">

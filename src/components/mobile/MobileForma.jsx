@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, ShoppingCart, Check, X, LayoutGrid } from 'lucide-react'
-import { products, genders, allSizes, colors, fabrics, brands, sorts, money, colorOf } from '../../formaData'
+import { products, genders, allSizes, colors, fabrics, brands, sorts, money, colorOf, sizesOf } from '../../formaData'
 import { useCart } from '../../cart'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -46,12 +46,12 @@ const SORT_FN = {
 const PRICES = [['', 'Barchasi'], ['100000', '100 000 so‘mgacha'], ['300000', '300 000 so‘mgacha'], ['500000', '500 000 so‘mgacha']]
 const EMPTY = { size: '', color: '', gender: '', price: '', fabric: '', brand: '' }
 
-export const defaultSize = (p) => (p.sizes.includes('M') ? 'M' : p.sizes[0])
+export const defaultSize = (p) => (sizesOf(p).includes('M') ? 'M' : sizesOf(p)[0])
 export const formaCartId = (p, color, size, logo = false) => `forma-${p.id}-${color}-${size}${logo ? '-logo' : ''}`
 export const sizeLabel = (s) => (s === '2XL' ? 'XXL' : s)
 
 const matches = (p, f) =>
-  (!f.size || p.sizes.includes(f.size)) &&
+  (!f.size || sizesOf(p).includes(f.size)) &&
   (!f.color || p.colors.includes(f.color)) &&
   (!f.gender || p.gender === f.gender || (p.gender === 'uni' && f.gender !== 'uni')) &&
   (!f.price || p.price <= Number(f.price)) &&
@@ -86,7 +86,7 @@ export default function MobileForma() {
   const quickAdd = (p) => {
     if (inCart(p)) return navigate('/savatcha', { state: { from: 'forma' } })
     const color = filter.color && p.colors.includes(filter.color) ? filter.color : p.colors[0]
-    const size = filter.size && p.sizes.includes(filter.size) ? filter.size : defaultSize(p)
+    const size = filter.size && sizesOf(p).includes(filter.size) ? filter.size : defaultSize(p)
     add({ id: formaCartId(p, color, size), name: `${p.title} (${colorOf(color).name}, ${sizeLabel(size)})`, type: p.brand, price: p.price, image: p.image })
     setToast(`${p.title} savatga qo‘shildi`)
   }
@@ -214,7 +214,7 @@ export default function MobileForma() {
 }
 
 function FormaCard({ p, liked, onLike, added, onAdd }) {
-  const sizes = p.sizes.filter((s) => ['S', 'M', 'L', 'XL'].includes(s))
+  const sizes = sizesOf(p).filter((s) => ['S', 'M', 'L', 'XL'].includes(s))
   return (
     <Link to={`/forma/${p.id}`} className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
       <div className="relative h-[150px] bg-[#eef3f6]">

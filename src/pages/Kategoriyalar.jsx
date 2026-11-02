@@ -12,7 +12,7 @@ const cats = [
   { id: 'jarrohlik', name: 'Jarrohlik', about: 'Jarrohlik asboblari, materiallar va sarf buyumlari', count: 0, to: '/marketplace', image: img('kat-jarrohlik'), icon: Scissors },
   { id: 'implant', name: 'Implantologiya', about: 'Implantlar, abutmentlar, jarrohlik to‘plamlar', count: 0, to: '/marketplace?cat=impl', image: img('kat-implant'), icon: Screw },
   { id: 'endo', name: 'Endodontiya', about: 'Kanal asboblari, motorlar, materiallar va irrigatsiya', count: 0, to: '/marketplace?cat=endo', image: img('kat-endo'), icon: Tooth },
-  { id: 'orto', name: 'Ortodontiya', about: 'Breketlar, alaynerlar, dog‘lar va ortodontik materiallar', count: 0, to: '/marketplace?cat=orto', image: img('kat-orto'), icon: Braces },
+  { id: 'orto', name: 'Ortodontiya', about: 'Breketlar, alaynerlar, dugalar va ortodontik materiallar', count: 0, to: '/marketplace?cat=orto', image: img('kat-orto'), icon: Braces },
   { id: 'gigiyena', name: 'Gigiyena', about: 'Cho‘tkalar, pastalar, iplar va profilaktik vositalar', count: 0, to: '/marketplace?cat=gig', image: img('kat-gigiyena'), icon: Tooth },
   { id: 'asbob', name: 'Asboblar', about: 'Diagnostik, terapevtik va jarrohlik asboblar', count: 0, to: '/marketplace?cat=asb', image: img('kat-asbob'), icon: Wrench },
   { id: 'uskuna', name: 'Uskunalar', about: 'Stomatologik unitlar, rentgen, sterilizatsiya va boshqa uskunalar', count: 0, to: '/marketplace?cat=usk', image: img('kat-uskuna'), icon: Armchair },

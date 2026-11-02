@@ -9,7 +9,7 @@ import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import { Face } from './bemorParts'
 
-export const DAY_SHORT = ['Dsh', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak']
+export const DAY_SHORT = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
 const DAY_LONG = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
 export const MON_SHORT = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
 export const MST = {

@@ -22,7 +22,7 @@ export async function detectPaymentMode() {
 
 export const isDemoPayments = () => (cachedMode || 'demo') !== 'live'
 /** Click/Payme nomlari reklama matnlarida faqat haqiqiy (live) rejimda ko‘rsatiladi. */
-export const payPromo = (live, demo = 'Xavfsiz onlayn to‘lov') => (isDemoPayments() ? demo : live)
+export const payPromo = (live, demo = 'Naqd to‘lov (yetkazilganda)') => (isDemoPayments() ? demo : live)
 
 export const CARD_BRANDS = ['UZCARD', 'HUMO']
 export const WALLET_PROVIDERS = [

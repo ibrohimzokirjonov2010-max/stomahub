@@ -232,3 +232,6 @@ export async function removeMedia(urls = []) {
   const paths = urls.filter(Boolean).map((u) => { const i = String(u).indexOf(mark); return i < 0 ? null : decodeURIComponent(String(u).slice(i + mark.length).split('?')[0]) }).filter((p) => p && p.startsWith(`${uid()}/`))
   if (paths.length) await supabase.storage.from('seller-media').remove(paths).catch(() => {})
 }
+
+/** Yagona “Kam qolgan” chegarasi: 5 dona yoki undan kam. */
+export const LOW_STOCK_LIMIT = 5

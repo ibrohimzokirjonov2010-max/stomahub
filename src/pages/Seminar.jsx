@@ -4,7 +4,7 @@ import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
 import {
   ChevronRight, ChevronDown, CalendarDays, MapPin, Users, Award, Hand, Video, MessagesSquare, BookOpen, UsersRound,
   Play, Check, ArrowRight, CalendarPlus, Phone, Send, ShieldCheck, RotateCcw, FileText, Building2, Star,
-  BadgeCheck, Syringe, HelpCircle, Car, TrainFront, X, Image as ImageIcon,
+  BadgeCheck, Syringe, HelpCircle, Car, X, Image as ImageIcon,
 } from 'lucide-react'
 import { ToothIcon } from '../components/icons'
 import { buildSeminarPage } from '../seminarsData'
@@ -49,57 +49,7 @@ const NOTES = {
 }
 
 function detail(d) {
-  if (d.id === 'implant-toj') {
-    return {
-      kicker: 'Implantologiya',
-      title: 'Implantologiya: implantdan to‘igacha',
-      lead: 'Diagnostika, jarrohlik protokoli va implant usti protezlash bo‘yicha amaliy seminar.',
-      dayTitle: '28 Oktabr 2026',
-      dayText: 'Chorshanba, 10:00 – 18:00',
-      dayShort: '28 Oktabr 2026',
-      city: 'Toshkent',
-      venueShort: 'Hyatt Regency, konferens-zal',
-      price: 1200000,
-      oldPrice: 1500000,
-      off: '-20%',
-      seats: 30,
-      taken: 0,
-      hero: '/images/hero-implant.jpg',
-      gallery: ['/images/hero-implant.jpg', yang('yang-seminar'), yang('yang-training'), pic('surgery'), pic('micro')],
-      more: 12,
-      speaker: {
-        name: 'Dr. Aziz Karimov',
-        role: 'Implantolog, PhD',
-        avatar: d.speaker.avatar,
-        lines: [],
-        bio: 'Dr. Aziz Karimov – implantologiya va rekonstruktiv jarrohlik bo‘yicha mutaxassis. ITI va Straumann sertifikatlariga ega. Ko‘plab xalqaro konferensiyalarda ma’ruzachi sifatida ishtirok etgan.',
-      },
-      about: 'Ushbu amaliy seminar implantologiyaning zamonaviy yondashuvlarini, diagnostika, jarrohlik protokollari va implant usti protezlash bosqichlarini qamrab oladi. Ishtirokchilar nazariy bilimlar bilan bir qatorda jonli jarrohlik va amaliy mashg‘ulotlarda qatnashish imkoniyatiga ega bo‘ladilar.',
-      learn: ['Implantatsiya uchun bemor tanlash', 'CBCT tahlili va diagnostika', 'Jarrohlik protokoli (bosqichma-bosqich)', 'Suyak rekonstruksiyasi asoslari', 'Implant usti protezlash', 'Komplikatsiyalar va ularni boshqarish'],
-      includes: ['Zalda qatnashish', 'Sertifikat beriladi (CME)', 'Kofe-breyk va tushlik', 'Amaliy mashg‘ulotlar', 'Seminar materiallari'],
-      schedule: [
-        ['10:00 – 11:00', 'Ro‘yxatdan o‘tish va qahva', 'Ishtirokchilarni kutib olish, tanishuv'],
-        ['11:00 – 12:30', 'Nazariy qism', 'Diagnostika, rejalashtirish, zamonaviy protokollar'],
-        ['12:30 – 13:30', 'Tushlik', 'Kofe-breyk va networking'],
-        ['13:30 – 15:00', 'Jonli jarrohlik (Live-surgery)', 'Real klinik holat asosida'],
-        ['15:30 – 17:00', 'Amaliy mashg‘ulot', 'Model va amaliy ishlar'],
-        ['17:00 – 18:00', 'Savol-javob, case muhokama va sertifikat topshirish', ''],
-      ],
-      venue: {
-        name: 'Hyatt Regency Tashkent',
-        address: 'Toshkent sh., Navoi ko‘chasi, 1A',
-        image: pic('hotel'),
-        map: 'https://maps.google.com/?q=Hyatt+Regency+Tashkent',
-        lines: [[Building2, 'Konferens-zal, 3-qavat'], [Car, 'Avtoturargoh mavjud'], [TrainFront, 'Metro: Amir Temur (10 daqiqa)']],
-      },
-      similar: [
-        { to: '/seminarlar/sinus-lifting', title: 'Sinus lifting va vertikal augmentatsiya', date: '12 Noy 2026, Toshkent', price: 2500000, image: pic('surgery') },
-        { to: '/seminarlar', title: 'Yumshoq to‘qimalar plastikasi', date: '25 Noy 2026, Toshkent', price: 1800000, image: pic('micro') },
-        { to: '/seminarlar', title: 'Implant usti protezlash', date: '10 Dek 2026, Toshkent', price: 1200000, image: pic('teeth') },
-      ],
-      ics: { start: '20261028T100000', end: '20261028T180000' },
-    }
-  }
+  // Avval bu yerda Hyatt Regency joyi qattiq yozilgan edi — endi faqat haqiqiy seminar ma’lumoti ishlatiladi.
   const plan = d.plans[0]
   const year = String(d.monthKey || '2026-11').slice(0, 4)
   const mm = String(d.monthKey || '2026-11').slice(5, 7)

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, Pencil, Copy, Package, SlidersHorizontal, ArrowUpDown, ClipboardList, Eye, Archive, Boxes, Trash2, EyeOff } from 'lucide-react'
-import { useSellerData, PRODUCT_STATUS, insertRow, updateRow, deleteRow, logActivity, removeMedia } from '../api'
+import { useSellerData, PRODUCT_STATUS, insertRow, updateRow, deleteRow, logActivity, removeMedia, LOW_STOCK_LIMIT } from '../api'
 import { num, som } from '../format'
 import { useMobile } from '../../useMobile'
 import { card, PageHead, Btn, Select, SearchInput, Tabs, Chips, Badge, Checkbox, Pager, usePaged, Menu, Fab, Th, Td, toast } from '../components/ui'
@@ -86,7 +86,7 @@ export default function Mahsulotlar() {
       if (cat && normCategory(p.category) !== cat) return false
       if (status && p.status !== status) return false
       if (stock === 'in' && p.stock <= 0) return false
-      if (stock === 'low' && !(p.stock > 0 && p.stock <= 5)) return false
+      if (stock === 'low' && !(p.stock > 0 && p.stock <= LOW_STOCK_LIMIT)) return false
       if (stock === 'out' && p.stock > 0) return false
       if (s && ![p.name, p.sku, p.brand, p.category].some((x) => (x || '').toLowerCase().includes(s))) return false
       return true

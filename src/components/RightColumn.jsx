@@ -81,7 +81,7 @@ const reasons = [
   { icon: ShieldCheck, title: 'Tasdiqlangan sotuvchilar', text: 'Ishonchli hamkorlar' },
   { icon: Truck, title: 'Tez yetkazib berish', text: 'Barcha hududlarga' },
   { icon: ToothIcon, title: 'Stomatologlar uchun', text: 'Maxsus tanlangan assortiment' },
-  { icon: CreditCard, title: 'Qulay to‘lov usullari', text: payPromo('Click, Payme, Uzum va boshqalar', 'Xavfsiz va qulay') },
+  { icon: CreditCard, title: 'Qulay to‘lov usullari', text: payPromo('Click, Payme, Uzum va boshqalar', 'Naqd to‘lov (yetkazilganda)') },
 ]
 
 function WhyUs() {

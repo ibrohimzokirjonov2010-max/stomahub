@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useCatalogVersion, isOwned } from '../../recordSync'
 import { som } from '../../marketData'
-import { cats as formaCats, colorOf, genders } from '../../formaData'
+import { cats as formaCats, colorOf, genders, sizesOf } from '../../formaData'
 import { cats as bookCats, langOptions, formatOptions } from '../../booksData'
 import { directions, levels, formats } from '../../educationData'
 import { cats as ustaCats } from '../../ustalarData'
@@ -67,7 +67,7 @@ export function useFormaSection() {
       key: 'forma', shopActive: 'forma', title: 'Tibbiy forma', subtitle: 'Qulay, sifatli va zamonaviy tibbiy kiyimlar', placeholder: 'Forma, xalat yoki brend qidiring...',
       items, cats: chipsFrom(formaCats, { scrub: Shirt, coat: Stethoscope, cap: HardHat, shoe: Footprints, apron: Layers, accessory: Glasses }), catOf: (p) => p.cat,
       filters: [
-        { key: 'size', label: 'O‘lcham', options: opts(items.flatMap((p) => p.sizes || [])), match: (p, s) => (p.sizes || []).includes(s) },
+        { key: 'size', label: 'O‘lcham', options: opts(items.flatMap((p) => sizesOf(p) || [])), match: (p, s) => sizesOf(p).includes(s) },
         { key: 'color', label: 'Rang', options: uniq(items.flatMap((p) => p.colors || [])).map((c) => [c, colorOf(c).name]), match: (p, c) => (p.colors || []).includes(c) },
         { key: 'gender', label: 'Jins', options: genders, match: (p, g) => p.gender === g || (g !== 'uni' && p.gender === 'uni') },
         { key: 'brand', label: 'Brend', options: opts(items.map((p) => p.brand)), match: (p, b) => p.brand === b },
@@ -83,10 +83,10 @@ export function useFormaSection() {
           extra: (
             <div className="mt-1 flex items-center gap-1.5">
               <span className="flex gap-1">{(p.colors || []).slice(0, 4).map((c) => <span key={c} className="size-2.5 rounded-full ring-1 ring-line" style={{ background: colorOf(c).hex }} />)}</span>
-              <span className="truncate text-[10px] text-muted">{(p.sizes || []).join(' ')}</span>
+              <span className="truncate text-[10px] text-muted">{sizesOf(p).join(' ')}</span>
             </div>
           ),
-          cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${p.sizes?.[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
+          cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${sizesOf(p)[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
         }
       },
       slides: (list, scroll) => slidesFor({ title: 'Ish kiyimingiz —', accent: 'sizning uslubingiz', text: 'Shifokor va assistentlar uchun forma, xalat va poyabzal', items: list, image: (p) => p.image, href: (p) => `/forma/${p.id}`, scroll }),
@@ -94,7 +94,7 @@ export function useFormaSection() {
   }, [v])
 }
 
-const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
+const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiyena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
 export function useMarketSection() {
   const { products, status } = useMarket()
   return useMemo(() => {

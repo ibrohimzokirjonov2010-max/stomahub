@@ -440,7 +440,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         <p className="mt-0.5 text-[12px] text-muted">Sizga qulay yetkazish usulini tanlang</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Choice on={shipMode === 'courier'} onClick={() => setShipMode('courier')} icon={Truck} title="Kuryer orqali" text="Manzilingizga yetkazib berish" meta="Narxi sotuvchi bilan kelishiladi" price="Kelishiladi" />
-          <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘ziroq olib ketish" meta="Bepul" />
+          <Choice on={shipMode === 'pickup'} onClick={() => setShipMode('pickup')} icon={Store} title="Olib ketish" text="Do‘kondan o‘zingiz olib ketasiz" meta="Bepul" />
         </div>
       </section>
 
@@ -560,7 +560,7 @@ function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree,
               <span className="grid size-9 place-items-center rounded-xl bg-sea-50 text-sea">{shipMode === 'courier' ? <Truck className="size-4" /> : <Store className="size-4" />}</span>
               <span>
                 <b className="block text-[13px]">{shipMode === 'courier' ? 'Kuryer orqali' : 'Olib ketish'}</b>
-                <span className="text-[12px] text-muted">{shipMode === 'courier' ? 'Manzilingizga yetkazib berish' : 'Do‘kondan o‘ziroq olib ketish'}</span>
+                <span className="text-[12px] text-muted">{shipMode === 'courier' ? 'Manzilingizga yetkazib berish' : 'Do‘kondan o‘zingiz olib ketasiz'}</span>
               </span>
             </div>
             <p className="mt-2 text-[13px] font-semibold">{fmtDeliveryDate(delivery.date)}</p>
