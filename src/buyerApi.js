@@ -1,3 +1,4 @@
+import { isTestProductRow } from './testData'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
@@ -73,7 +74,7 @@ export async function loadMarketProducts() {
   if (err) {
     marketState = { status: 'error', error: friendlySupabaseError(err) }
   } else {
-    marketProducts.splice(0, marketProducts.length, ...(rows || []).map(toMarketProduct))
+    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct))
     marketState = { status: 'ready', error: '' }
   }
   emit()
