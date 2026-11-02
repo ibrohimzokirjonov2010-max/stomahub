@@ -40,7 +40,7 @@ export default function SellerPage() {
   const [cat, setCat] = useState('')
   const [sort, setSort] = useState('new')
 
-  const products = useMemo(() => market.products.filter((p) => p.sellerId === id), [market.products, id])
+  const products = useMemo(() => market.products.filter((p) => p.sellerId === id), [market.products, market.status, id])
   const cats = useMemo(() => [...new Set(products.map((p) => p.category).filter(Boolean))], [products])
   const list = useMemo(() => {
     const t = q.trim().toLowerCase()
