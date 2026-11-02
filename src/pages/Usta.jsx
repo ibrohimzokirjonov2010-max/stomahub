@@ -108,13 +108,14 @@ export default function Usta() {
                   </div>
                 ))}
               </div>
+              {!view.reviewList.length && <p className="text-[12px] text-muted">{master.reviews ? `${master.reviews} ta baho bor, matnli sharhlar hozircha ko‘rsatilmaydi.` : 'Hozircha sharhlar yo‘q.'}</p>}
             </div>
             <div className="rounded-xl bg-white p-3 shadow-card">
               <h2 className="text-[14px] font-bold">Reyting taqsimoti</h2>
               <p className="mt-1 text-[22px] font-extrabold text-ink">{master.rating}/5</p>
               <p className="text-[11px] text-muted">{master.reviews} sharh asosida</p>
               <div className="mt-2 flex flex-col gap-1">
-                {view.bars.map((pct, i) => (
+                {view.bars.some(Boolean) && view.bars.map((pct, i) => (
                   <div key={i} className="grid items-center gap-2 text-[11px]" style={{ gridTemplateColumns: '52px minmax(0,1fr) 32px' }}>
                     <span className="inline-flex items-center gap-0.5">{5 - i} <Star className="size-3 fill-star text-star" /></span>
                     <span className="h-1.5 overflow-hidden rounded-full bg-[#e8eef5]"><span className="block h-full rounded-full bg-[#2f9e4f]" style={{ width: `${pct}%` }} /></span>

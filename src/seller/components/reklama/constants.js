@@ -12,7 +12,7 @@ export const CSTATUS = { moderatsiyada: ['Moderatsiyada', 'mid'], faol: ['Faol',
 // Minimal limitlar — 0043 migratsiyasidagi ads_cfg() bilan bir xil.
 export const ADS = { clickCost: 1000, minDaily: 10000, minTotal: 50000, minTopup: 50000, maxProducts: 20, maxDays: 90 }
 export const TOPUP_METHODS = { naqd: 'Naqd', bank: 'Bank o‘tkazma', click: 'Click' }
-export const TOPUP_STATUS = { kutilmoqda: ['Kutilmoqda', 'mid'], tasdiqlandi: ['Tasdiqlandi', 'on'], rad_etildi: ['Rad etildi', 'off'] }
+export const TOPUP_STATUS = { kutilmoqda: ['Kutilmoqda', 'mid'], tasdiqlandi: ['Tasdiqlangan', 'on'], rad_etildi: ['Rad etildi', 'off'] }
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)
 export function cstatusOf(c) {
   if (c.status === 'yakunlangan' || (c.ends_on && c.ends_on < today())) return 'tugagan'

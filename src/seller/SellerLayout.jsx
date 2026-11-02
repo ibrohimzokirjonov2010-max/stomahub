@@ -75,7 +75,7 @@ export default function SellerLayout() {
           </div>
         </header>
 
-        <main className="px-4 pb-28 md:px-6 md:pb-10 md:pt-6">
+        <main className="min-w-0 px-4 pb-28 md:px-6 md:pb-10 md:pt-6">
           {!verified && <UnverifiedBanner status={session.profile?.seller_status} />}
           {verified && <ApprovalNotice uid={session.user?.id} />}
           <Outlet context={ctx} />

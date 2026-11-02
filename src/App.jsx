@@ -72,6 +72,8 @@ import Rejalar from './pages/Rejalar'
 import Reja from './pages/Reja'
 import IntakeDialog from './components/market/IntakeDialog'
 import ShopLayout from './components/market/ShopLayout'
+import OrderTracking from './pages/OrderTracking'
+import { RouteTitle } from './routeTitle'
 import Responsive from './components/mobile/Responsive'
 import CrmGate from './components/CrmGate'
 import MobileChrome from './components/mobile/MobileChrome'
@@ -134,6 +136,7 @@ export default function App() {
   return (
     <CartProvider>
       <BrowserRouter>
+        <RouteTitle />
         <RxPrompt />
         <MobileChrome />
         <IntakeDialog />
@@ -238,7 +241,7 @@ export default function App() {
           <Route path="/profil/buyurtmalar" element={<Responsive mobile={<MobileBuyurtmalar />}><Profil section="orders" /></Responsive>} />
           <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Profil section="courses" /></Responsive>} />
           <Route path="/profil/seminarlar" element={<Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive>} />
-          <Route path="/buyurtma/kuzatish/:id" element={<Responsive mobile={<MobileKuzatish />}><Navigate to="/klinika" replace /></Responsive>} />
+          <Route path="/buyurtma/kuzatish/:id" element={<Responsive mobile={<MobileKuzatish />}><ShopLayout active="market" placeholder="Material, brend yoki kategoriya bo‘yicha qidiring..."><OrderTracking /></ShopLayout></Responsive>} />
           <Route path="/xizmatlar" element={<CrmGate><Xizmatlar /></CrmGate>} />
           <Route path="/davolash-rejalari" element={<CrmGate><Rejalar /></CrmGate>} />
           <Route path="/davolash-rejalari/:id" element={<CrmGate><Reja /></CrmGate>} />

@@ -6,7 +6,7 @@ import {
   Ticket, UserRound, Users, Video, X,
 } from 'lucide-react'
 import { seminarView, som } from '../../seminarsData'
-import { publicRecord, quotePromo, useHub } from '../../hubStore'
+import { checkPromo, publicRecord, useHub } from '../../hubStore'
 import { cardBrand, cvvRequired, validateCard } from '../../cardCheck'
 import { useCountdown } from '../../payBits'
 import LiveQr from '../LiveQr'
@@ -131,8 +131,8 @@ function RegView({ id, seminar }) {
   const needCvv = cvvRequired(cardDigits)
   const brand = cardBrand(cardDigits)
 
-  const applyPromo = () => {
-    const q = quotePromo(promo, s.id, subtotal)
+  const applyPromo = async () => {
+    const q = await checkPromo(promo, s.id, subtotal)
     if (!q.ok) { setPromoErr(q.error); setApplied(null); return }
     setApplied({ code: promo.trim().toUpperCase(), discount: q.discount })
     setPromoErr('')

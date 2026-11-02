@@ -38,7 +38,7 @@ export default function Reklama() {
   const navigate = useNavigate()
   const [sp, setSp] = useSearchParams()
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState(mobile ? 'all' : 'faol')
+  const [tab, setTab] = useState('all')
   const [kind, setKind] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -49,7 +49,7 @@ export default function Reklama() {
   const rows = useMemo(() => data.campaigns.map((c) => ({ ...c, s: cstatusOf(c), st: campStats(c, data.adStats), prods: campProducts(c, data.products) })).sort((a, b) => b.created_at.localeCompare(a.created_at)), [data.campaigns, data.adStats, data.products])
   const grp = (r) => r.s
   const cnt = (k) => rows.filter((r) => grp(r) === k).length
-  const tabs = [...(mobile ? [['all', 'Barchasi', rows.length]] : []), ['faol', 'Faol', cnt('faol')], ['moderatsiyada', 'Moderatsiyada', cnt('moderatsiyada')], ['toxtatilgan', mobile ? 'Pauza' : 'To‘xtatilgan', cnt('toxtatilgan')], ['rad_etilgan', 'Rad etilgan', cnt('rad_etilgan')], ['tugagan', 'Yakunlangan', cnt('tugagan')]]
+  const tabs = [['all', 'Barchasi', rows.length], ['faol', 'Faol', cnt('faol')], ['moderatsiyada', 'Moderatsiyada', cnt('moderatsiyada')], ['toxtatilgan', mobile ? 'Pauza' : 'To‘xtatilgan', cnt('toxtatilgan')], ['rad_etilgan', 'Rad etilgan', cnt('rad_etilgan')], ['tugagan', 'Yakunlangan', cnt('tugagan')]]
   const list = rows.filter((r) => {
     if (tab !== 'all' && grp(r) !== tab) return false
     if (kind && r.kind !== kind) return false

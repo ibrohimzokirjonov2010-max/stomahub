@@ -19,7 +19,7 @@ export function QtyStepper({ value, onChange, size = 'sm' }) {
 }
 
 const perks = [
-  { icon: Truck, title: 'Yetkazib berish', text: 'Narx va muddat sotuvchi bilan kelishiladi' },
+  { icon: Truck, title: 'Yetkazib berish', text: 'Sotuvchi bilan kelishiladi' },
   { icon: ShieldCheck, title: 'Tekshirilgan mahsulotlar', text: 'Har bir mahsulot admin tasdig‘idan o‘tadi' },
   { icon: CreditCard, title: 'Naqd to‘lov', text: 'Mahsulotni olganingizda to‘laysiz' },
   { icon: Clock, title: 'Buyurtma holati', text: 'Profilingizda kuzatib boring' },

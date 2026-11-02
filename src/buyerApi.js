@@ -126,7 +126,7 @@ async function notifySellers(orders) {
 
 // ---- buyer orders ---------------------------------------------------------------------
 export const ORDER_STATUS = {
-  yangi: 'Yangi', tasdiqlandi: 'Tasdiqlandi', tayyorlanmoqda: 'Tayyorlanmoqda',
+  yangi: 'Yangi', tasdiqlandi: 'Tasdiqlangan', tayyorlanmoqda: 'Tayyorlanmoqda',
   yetkazilmoqda: 'Yo‘lda', yetkazildi: 'Yetkazildi', bekor_qilindi: 'Bekor qilingan',
 }
 // to‘lov holati (0042 escrow)

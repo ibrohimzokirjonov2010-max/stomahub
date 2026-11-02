@@ -7,6 +7,7 @@ import {
   Store, Truck, UserRound, X,
 } from 'lucide-react'
 import { useCart } from '../../cart'
+import { currentUid } from '../../recordSync'
 import { som } from '../../marketData'
 import { createOrder } from '../../buyerApi'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../../payments/paymentService'
@@ -16,7 +17,6 @@ import { BottomSheet } from './MobileSeminars'
 import MapPicker, { MapPreview, withGeo, reverseGeocode } from '../MapPicker'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
-import { PROMOS } from './MobileCart'
 import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
 import { profileStore, useProfile } from '../../profileStore'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
@@ -119,8 +119,8 @@ export default function MobileCheckout() {
   const [months, setMonths] = useState(6)
   const [cardNo, setCardNo] = useState({ num: '', exp: '' })
   const [payTried, setPayTried] = useState(false)
-  const [code, setCode] = useState(loc.state?.promo || '')
-  const [promo, setPromo] = useState(loc.state?.promo || null)
+  const [code, setCode] = useState('')
+  const [promo, setPromo] = useState(null)
   const [promoErr, setPromoErr] = useState('')
   const [agree, setAgree] = useState(false)
   const [agreeErr, setAgreeErr] = useState(false)
@@ -136,8 +136,8 @@ export default function MobileCheckout() {
 
   const goods = items.reduce((s, it) => s + it.price * it.qty, 0)
   const ship = { ...shipInfo(mode, form.city), fee: 0 } // yetkazish narxi sotuvchi bilan kelishiladi
-  const promoOk = false && promo && PROMOS[promo] && goods >= (PROMOS[promo].min || 0)
-  const discount = promoOk ? Math.min(goods, PROMOS[promo].calc(goods)) : 0
+  // Marketplace promokodlari hali ishga tushmagan (desktop bilan bir xil)
+  const discount = 0
   const total = goods + ship.fee - discount
   const monthly = Math.ceil(total / months / 1000) * 1000
 
@@ -185,6 +185,7 @@ export default function MobileCheckout() {
   if (placed) return <Done order={placed} />
 
   const next1 = () => {
+    if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma/rasmiylashtirish')}`); return }
     setTried(true)
     const bad = Object.keys(errors).find((k) => errors[k])
     if (bad) {
@@ -206,6 +207,8 @@ export default function MobileCheckout() {
   }
 
   const place = async () => {
+    // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
+    if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma/rasmiylashtirish')}`); return }
     if (rxBlocked) { setPlaceErr('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (placing) return
     setPlacing(true)
@@ -450,7 +453,7 @@ export default function MobileCheckout() {
               {promo ? (
                 <div className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-[#bfe3dd] bg-[#eef8f6] px-3">
                   <Check className="size-4 text-[#0b6d73]" />
-                  <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#0b6d73]"><b>{promo}</b> · {promoOk ? PROMOS[promo].text : 'shart bajarilmagan'}</span>
+                  <span className="min-w-0 flex-1 truncate text-[12.5px] text-[#0b6d73]"><b>{promo}</b> · shart bajarilmagan</span>
                   <button type="button" onClick={() => { setPromo(null); setCode('') }} aria-label="Promokodni olib tashlash" className="grid size-7 place-items-center text-ink-2"><X className="size-4" /></button>
                 </div>
               ) : (

@@ -4,7 +4,7 @@ import {
   ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, Download, Info, Mail, MapPin, UserRound, X,
 } from 'lucide-react'
 import { buildSeminarPage } from '../seminarsData'
-import { addMessage, publicRecord, quotePromo, useHub } from '../hubStore'
+import { addMessage, checkPromo, publicRecord, useHub } from '../hubStore'
 import { register } from '../components/mobile/seminarStore'
 import { som } from '../marketData'
 import LiveQr from '../components/LiveQr'
@@ -68,8 +68,8 @@ export default function SeminarReg() {
     setStep(2)
   }
 
-  const applyCode = () => {
-    const q = quotePromo(promo, id, plan.price)
+  const applyCode = async () => {
+    const q = await checkPromo(promo, id, plan.price)
     if (!q.ok) { setDiscount(0); setPromoMsg(q.error); return }
     setDiscount(q.discount)
     setPromoMsg(`Chegirma qo‘llandi: ${som(q.discount)}`)

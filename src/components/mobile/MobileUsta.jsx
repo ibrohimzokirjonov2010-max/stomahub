@@ -137,7 +137,7 @@ function UstaView({ id }) {
                   <b className="block text-[13px] font-semibold leading-tight text-ink">{s.name}</b>
                   <span className="mt-0.5 block text-[10.5px] leading-tight text-muted">{s.note}</span>
                 </span>
-                <span className="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#0b8a95]">{som(s.price)}</span>
+                <span className="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#0b8a95]">{typeof s.price === 'number' ? som(s.price) : s.price}</span>
                 <ChevronRight className="size-4 shrink-0 text-muted" />
               </button>
             ))}

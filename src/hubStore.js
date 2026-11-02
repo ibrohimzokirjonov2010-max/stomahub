@@ -7,7 +7,7 @@ import { tashkentClock, tashkentDate } from './time'
 import { tashkentToday } from './tashkentDate'
 import { isPast, isTestSeminar } from './organizer/reconcile'
 import {
-  pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
+  checkPromoRemote, pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
   pushSettingsBundle, pushSpeaker, pushTickets, pushWithdraw, remoteRegister, subscribeHub,
 } from './hubRemote'
@@ -485,6 +485,17 @@ export function checkInPayload(seminarId, raw) {
 export function checkInQuery(seminarId, query) {
   const res = checkInPayload(seminarId, query)
   return res.ok ? res.person : null
+}
+
+// 0045: ommaviy sahifalar uchun — avval mahalliy (tashkilotchi o‘z kodlari / demo), keyin server check_promo
+export async function checkPromo(code, seminarId, amount) {
+  const c = String(code || '').trim().toUpperCase()
+  if (!c) return { ok: false, error: 'Promokodni kiriting' }
+  const local = quotePromo(c, seminarId, amount)
+  if (local.ok || !supabase) return local
+  const res = await checkPromoRemote(c, seminarId, amount)
+  if (!res) return local
+  return res.ok ? { ok: true, discount: Number(res.discount) || 0 } : { ok: false, error: res.error || 'Promokod topilmadi yoki muddati o‘tgan' }
 }
 
 export function quotePromo(code, seminarId, amount) {

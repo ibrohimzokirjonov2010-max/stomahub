@@ -8,7 +8,7 @@ import { Btn, DataTable, Empty, FilterTabs, MigrateBanner, MobileCards, Paginati
 
 const STATUS = {
   kutilmoqda: { label: 'Kutilmoqda', tone: 'orange' },
-  tasdiqlandi: { label: 'Tasdiqlandi', tone: 'teal' },
+  tasdiqlandi: { label: 'Tasdiqlangan', tone: 'teal' },
   rad_etildi: { label: 'Rad etildi', tone: 'red' },
 }
 const METHOD = { naqd: 'Naqd', bank: 'Bank o‘tkazma', click: 'Click' }

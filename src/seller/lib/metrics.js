@@ -86,6 +86,7 @@ export const commissionDebt = (orders) => metrics(orders, ALL).commissionCash
 /** Joriy davr + oldingi davr va % o‘zgarish. */
 export function compare(orders, r) {
   const cur = metrics(orders, r); const pr = prevRange(r); const prev = pr ? metrics(orders, pr) : null
-  const d = (k) => (prev ? pct(cur[k], prev[k]) : null)
+  // Joriy davrda yetkazilgan sotuv bo‘lmasa -100% o‘rniga 'nodata' (UI: 'ma’lumot yo‘q')
+  const d = (k) => (!prev ? null : (!cur.count ? 'nodata' : pct(cur[k], prev[k])))
   return { cur, prev, prevRange: pr, delta: { revenue: d('revenue'), count: d('count'), avg: d('avg'), commission: d('commission') } }
 }

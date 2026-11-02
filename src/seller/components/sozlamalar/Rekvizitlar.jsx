@@ -50,7 +50,7 @@ export default function Rekvizitlar({ settings, uid, card = '', compact = false,
     setBusy(true)
     const r = await upsertSettings({ legal: v })
     setBusy(false)
-    const msg = /legal/.test(r.error || '') ? 'Rekvizitlar uchun 0029 migratsiyasi qo‘llanmagan' : r.error
+    const msg = /legal/.test(r.error || '') ? 'Rekvizitlarni hozircha saqlab bo‘lmadi. Keyinroq urinib ko‘ring' : r.error
     if (!r.ok) { if (!quiet) toast(msg); return { ok: false, error: msg } }
     setFromApp(false)
     if (!quiet) toast('Rekvizitlar saqlandi')
@@ -77,7 +77,7 @@ export default function Rekvizitlar({ settings, uid, card = '', compact = false,
         {!compact && !saveRef && <Btn size="sm" icon={Save} disabled={busy} onClick={() => save()}>Saqlash</Btn>}
       </div>
       {fromApp && <p className="mb-3 rounded-lg bg-[#F0FDFA] px-3 py-2 text-[12.5px] text-[#0F766E]">Ma’lumotlar sotuvchi arizangizdan olindi. Tekshirib, saqlang.</p>}
-      {noCol && <p className="mb-3 rounded-lg bg-[#FFF7ED] px-3 py-2 text-[12.5px] text-[#9A3412]">Rekvizitlarni saqlash uchun 0029 migratsiyasi kerak.</p>}
+      {noCol && <p className="mb-3 rounded-lg bg-[#FFF7ED] px-3 py-2 text-[12.5px] text-[#9A3412]">Rekvizitlarni saqlash hozircha mavjud emas.</p>}
       <div className={grid}>
         <Field label="Tashkiliy shakl"><Select value={v.legal_type} onChange={set('legal_type')} options={TYPES} placeholder="Tanlang" /></Field>
         <Field label={v.legal_type === 'yatt' ? 'YaTT F.I.Sh.' : 'Tashkilot nomi'}><Input value={v.org_name} onChange={set('org_name')} placeholder={v.legal_type === 'yatt' ? 'Aliyev Vali Valiyevich' : '“Dental Trade” MChJ'} /></Field>

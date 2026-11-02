@@ -49,7 +49,7 @@ export default function MijozDetail() {
   const mk = isMarket(c)
   const hide = () => patch({ hidden: !c.hidden }, c.hidden ? 'Mijoz ro‘yxatga qaytarildi' : 'Mijoz yashirildi')
   const block = () => patch({ blocked: !c.blocked }, c.blocked ? 'Blokdan chiqarildi' : 'Mijoz bloklandi')
-  const Stat = ({ icon: I, l, v }) => <div className={`${card} flex items-center gap-3 p-3`}><span className="grid size-11 place-items-center rounded-lg bg-[#E3F4F2] text-[#0F766E]"><I className="size-5" /></span><div className="min-w-0"><div className="text-[12px] text-[#5C6E80]">{l}</div><div className="truncate text-[16px] font-extrabold xl:text-[18px]">{v}</div></div></div>
+  const Stat = ({ icon: I, l, v }) => <div className={`${card} flex items-center gap-3 p-3`}><span className="grid size-11 shrink-0 place-items-center rounded-lg bg-[#E3F4F2] text-[#0F766E]"><I className="size-5" /></span><div className="min-w-0"><div className="text-[12px] text-[#5C6E80]">{l}</div><div className="break-words text-[15px] font-extrabold leading-tight xl:text-[18px]">{v}</div></div></div>
   const Info = ({ icon: I, l, children }) => <div className="flex gap-2.5"><I className="mt-0.5 size-4 shrink-0 text-[#0F766E]" /><div className="min-w-0 text-[12px] text-[#5C6E80]">{l}<div className="text-[13px] text-[#10283F]">{children}</div></div></div>
   const modals = <>
     <CustomerForm open={edit} edit={c} onClose={() => setEdit(false)} />

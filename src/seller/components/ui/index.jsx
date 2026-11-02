@@ -197,7 +197,7 @@ export function StatCard({ icon: Icon, label, value, sub }) {
       <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#E3F4F2] text-[#0F766E] md:size-[60px]"><Icon className="size-6 md:size-7" strokeWidth={1.8} /></span>
       <div className="min-w-0">
         <div className="text-[12.5px] text-[#3D4E5F] md:text-[13.5px]">{label}</div>
-        <div className="mt-0.5 truncate text-[18px] font-extrabold text-[#10283F] md:text-[22px]">{value}</div>
+        <div className="mt-0.5 break-words text-[18px] font-extrabold leading-tight text-[#10283F] md:text-[clamp(16px,1.8vw,22px)]">{value}</div>
         {sub && <div className="mt-0.5 text-[12px] text-[#5C6E80]">{sub}</div>}
       </div>
     </div>
