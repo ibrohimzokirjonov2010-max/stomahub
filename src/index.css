@@ -224,8 +224,8 @@
 }
 @media (min-width: 1100px) {
   .klk-head { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) auto; }
-  .klk-mid { grid-template-columns: minmax(0, 1fr) 250px; }
-  .klk-bottom { grid-template-columns: minmax(0, 2.2fr) minmax(0, 0.86fr) minmax(0, 1.2fr); gap: 10px; }
+  .klk-mid { grid-template-columns: minmax(0, 1fr); }
+  .klk-bottom { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 10px; }
 }
 .sem-page, .sem-facts, .sem-feats, .sem-gallery, .sem-speaker, .sem-split, .sem-cards, .sem-reviews { display: grid; width: 100%; min-width: 0; gap: 12px; }
 .sem-page > *, .sem-facts > *, .sem-feats > *, .sem-gallery > *, .sem-speaker > *, .sem-split > *, .sem-cards > *, .sem-reviews > * { min-width: 0; }
