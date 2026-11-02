@@ -220,7 +220,7 @@ export function BottomSheet({ title, onClose, children, footer, centered }) {
           <button type="button" onClick={onClose} aria-label="Yopish" className="grid size-8 place-items-center rounded-full bg-page text-ink"><X className="size-4" /></button>
         </div>
         {title && <h2 className="px-4 text-[18px] font-bold text-ink">{title}</h2>}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 [-webkit-overflow-scrolling:touch]">{children}</div>
         {footer && <div className="flex gap-2 border-t border-line px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">{footer}</div>}
       </div>
     </div>
