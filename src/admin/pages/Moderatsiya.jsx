@@ -14,6 +14,26 @@ export const MOD_KINDS = [
   ['book', 'Kitoblar'], ['course', 'Kurslar'], ['job', 'Vakansiyalar'], ['channel', 'Kanallar'], ['seminar', 'Seminarlar'],
 ]
 
+// Muallif maydoni ba'zan JSON obyekt ({"name","avatar"}) yoki uning matni bo‘lib keladi
+export function ownerInfo(owner) {
+  let o = owner
+  if (typeof o === 'string' && /^\s*\{/.test(o)) { try { o = JSON.parse(o) } catch { /* oddiy matn */ } }
+  if (o && typeof o === 'object') return { name: String(o.name || o.full_name || o.title || '—'), avatar: typeof o.avatar === 'string' ? o.avatar : '' }
+  return { name: o == null || o === '' ? '—' : String(o), avatar: '' }
+}
+
+function Owner({ value, avatar: extra }) {
+  const info = ownerInfo(value)
+  const name = info.name
+  const avatar = info.avatar || (typeof extra === 'string' ? extra : '')
+  return (
+    <span className="inline-flex items-center gap-2">
+      {avatar && <img src={avatar} alt="" className="size-6 rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />}
+      <span>{name}</span>
+    </span>
+  )
+}
+
 export default function Moderatsiya() {
   const [kind, setKind] = useState('ad')
   const [q, setQ] = useState('')
@@ -21,9 +41,14 @@ export default function Moderatsiya() {
   const [pageSize, setPageSize] = useState(20)
   const [pick, setPick] = useState(null) // { row, action }
   const [msg, setMsg] = useState('')
-  const { loading, error, needsMigration, rows, total, reload } = useAdminList(
-    () => listContent({ kind, q, page, pageSize }), [kind, q, page, pageSize],
+  const { loading, error, needsMigration, rows: allRows, total, reload } = useAdminList(
+    async () => {
+      const raw = await listContent({ kind, q, page, pageSize })
+      // har bir qatorga so‘ralgan bo‘lim belgilanadi — boshqa tabning javobi bu tabda chiqmaydi
+      return { ...(raw || {}), rows: (raw?.rows || []).filter((r) => !r.kind || r.kind === kind).map((r) => ({ ...r, _kind: kind })) }
+    }, [kind, q, page, pageSize],
   )
+  const rows = allRows.filter((r) => r._kind === kind)
   const tabs = useMemo(() => MOD_KINDS.map(([id, label]) => ({ id, label })), [])
   const unhide = async (r) => {
     try { await moderateContent(kind, r.id, 'unhide'); setMsg('Qayta ko‘rsatildi.'); reload() } catch (e) { setMsg(friendlyError(e)) }
@@ -48,7 +73,7 @@ export default function Moderatsiya() {
       <MobileCards rows={rows} render={(r) => (
         <div className="space-y-2">
           <div className="font-semibold">{r.title}</div>
-          <div className="text-[12px] text-[#5C6E80]">{r.owner} · {typeof r.at === "string" ? dmyhm(r.at) : "—"}</div>
+          <div className="text-[12px] text-[#5C6E80]"><Owner value={r.owner} avatar={r.owner_avatar} /> · {typeof r.at === "string" ? dmyhm(r.at) : "—"}</div>
           <StatusDot tone={r.hidden ? 'gray' : 'teal'}>{r.hidden ? 'Yashirilgan' : 'Ko‘rinadi'}</StatusDot>
           {actions(r)}
         </div>
@@ -56,10 +81,10 @@ export default function Moderatsiya() {
       <TableCard className="hidden lg:block">
         <DataTable head={['#', 'Sarlavha', 'Muallif', 'Sana', 'Holat', 'Amallar']}>
           {rows.map((r, i) => (
-            <tr key={r.id} className="border-t border-[#EEF3F4]">
+            <tr key={`${r._kind}:${r.id}`} className="border-t border-[#EEF3F4]">
               <td className="px-3 py-3 text-[#8A9AA8]">{(page - 1) * pageSize + i + 1}</td>
               <td className="px-3 py-3 font-semibold">{r.title}</td>
-              <td className="px-3 py-3">{r.owner}</td>
+              <td className="px-3 py-3"><Owner value={r.owner} avatar={r.owner_avatar} /></td>
               <td className="px-3 py-3">{typeof r.at === "string" ? dmyhm(r.at) : "—"}</td>
               <td className="px-3 py-3"><StatusDot tone={r.hidden ? 'gray' : 'teal'}>{r.hidden ? 'Yashirilgan' : 'Ko‘rinadi'}</StatusDot></td>
               <td className="px-3 py-3">{actions(r)}</td>

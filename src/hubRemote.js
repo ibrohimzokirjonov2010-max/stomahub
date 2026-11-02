@@ -316,7 +316,8 @@ export async function pullHub() {
     must(supabase.from('activity_log').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true }).limit(24)),
     must(supabase.from('seminar_reviews').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
     must(supabase.from('organizer_speakers').select('*').eq('organizer_id', uid).order('sort_at', { ascending: true })),
-    must(supabase.from('organizer_settings').select('*').eq('organizer_id', uid).maybeSingle()),
+    // sozlamalar qatori bo‘lmasligi yoki so‘rov xatosi butun kabinetni yiqitmasin
+    supabase.from('organizer_settings').select('*').eq('organizer_id', uid).limit(1).then((r) => r.data?.[0] || null, () => null),
     must(supabase.from('support_messages').select('*').eq('organizer_id', uid).order('created_at', { ascending: true })),
     supabase.from('seller_applications').select('*').eq('user_id', uid).eq('kind', 'organizer').order('created_at', { ascending: false }).limit(1).then((r) => r.data?.[0] || null, () => null),
   ]) : null

@@ -193,9 +193,16 @@ export function useAdminList(fetcher, deps) {
     rows: [], total: 0, counts: {}, extra: {},
   })
   const seq = useRef(0)
+  const depsKey = useRef(null)
   const load = useCallback(async () => {
     const my = ++seq.current
-    setState((s) => ({ ...s, loading: true, error: '' }))
+    // Filtr/tab o‘zgarsa eski qatorlar yangi tab ostida ko‘rinib qolmasin (masalan, Kitoblar tabida Ustalar)
+    const key = JSON.stringify(deps)
+    const changed = depsKey.current !== key
+    depsKey.current = key
+    setState((s) => (changed
+      ? { ...s, loading: true, error: '', rows: [], total: 0, counts: {}, extra: {} }
+      : { ...s, loading: true, error: '' }))
     try {
       // a hung request must never leave the page on "Yuklanmoqda…" forever
       const raw = await Promise.race([
