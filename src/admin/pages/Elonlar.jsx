@@ -10,11 +10,14 @@ import {
 } from '../components/ui'
 
 const STATUS = {
-  moderatsiyada: { label: 'Moderatsiyada', tone: 'teal' },
+  moderatsiyada: { label: 'Moderatsiyada', tone: 'orange' },
   faol: { label: 'Faol', tone: 'teal' },
   toxtatilgan: { label: 'To‘xtatilgan', tone: 'gray' },
+  rad_etilgan: { label: 'Rad etilgan', tone: 'red' },
   yakunlangan: { label: 'Yakunlangan', tone: 'gray' },
 }
+const KIND = { qidiruv: 'Qidiruvda', banner: 'Bosh sahifa banneri', kategoriya: 'Kategoriyada' }
+const REASONS = ['Rasm yoki matn talabga mos emas', 'Mahsulot ma’lumotlari noto‘liq', 'Taqiqlangan yoki noto‘g‘ri reklama', 'Narx yoki tavsif chalg‘ituvchi']
 
 export default function Elonlar() {
   const [tab, setTab] = useState('all')
@@ -23,6 +26,7 @@ export default function Elonlar() {
   const [pageSize, setPageSize] = useState(10)
   const [detail, setDetail] = useState(null)
   const [reason, setReason] = useState('')
+  const [rej, setRej] = useState(null) // { id, title } — rad etish oynasi
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
 
@@ -35,6 +39,7 @@ export default function Elonlar() {
     { id: 'moderatsiyada', label: 'Moderatsiyada', count: counts.moderatsiyada },
     { id: 'faol', label: 'Faol', count: counts.faol },
     { id: 'toxtatilgan', label: 'To‘xtatilgan', count: counts.toxtatilgan },
+    { id: 'rad_etilgan', label: 'Rad etilgan', count: counts.rad_etilgan },
     { id: 'yakunlangan', label: 'Yakunlangan', count: counts.yakunlangan },
   ], [counts])
 
@@ -42,12 +47,16 @@ export default function Elonlar() {
     try { setDetail(await campaignDetail(id)); setReason(''); setMsg('') }
     catch (e) { setMsg(friendlyError(e)) }
   }
-  async function act(id, action) {
-    if (action === 'reject' && reason.trim().length < 3) { setMsg('Rad etish sababini yozing.'); return }
+  // Sabab parametr sifatida uzatiladi — eski state’dan o‘qilmaydi.
+  async function act(id, action, why = '') {
+    if (action === 'reject' && why.trim().length < 3) { setMsg('Rad etish sababini yozing (kamida 3 belgi).'); return }
     setBusy(id)
     try {
-      await reviewCampaign(id, action, reason)
-      setMsg('Saqlandi.'); setDetail(null); reload()
+      const r = await reviewCampaign(id, action, why.trim())
+      const st = r?.status
+      setMsg(action === 'approve' ? (st === 'faol' ? 'Kampaniya tasdiqlandi va ishga tushdi.' : 'Kampaniya tasdiqlandi. Sotuvchi balansi yetarli emas — to‘ldirilgach avtomatik ishga tushadi.')
+        : action === 'reject' ? 'Kampaniya rad etildi. Sabab sotuvchiga ko‘rsatiladi.' : 'Kampaniya to‘xtatildi.')
+      setDetail(null); setRej(null); setReason(''); reload()
     } catch (e) { setMsg(friendlyError(e)) }
     finally { setBusy('') }
   }
@@ -88,7 +97,7 @@ export default function Elonlar() {
               <td className="px-3 py-3">{r.city || '—'}</td>
               <td className="px-3 py-3 font-semibold text-[#0F766E]">{som(r.daily_budget)}</td>
               <td className="px-3 py-3">{r.days} kun</td>
-              <td className="px-3 py-3"><StatusDot tone={STATUS[r.status]?.tone || 'gray'}>{STATUS[r.status]?.label}</StatusDot></td>
+              <td className="px-3 py-3"><StatusDot tone={STATUS[r.status]?.tone || 'gray'}>{STATUS[r.status]?.label || r.status}</StatusDot>{(r.reject_reason && r.status === 'rad_etilgan') || r.pause_reason ? <div className="mt-0.5 max-w-[160px] truncate text-[11.5px] text-[#8A9AA8]" title={r.reject_reason || r.pause_reason}>{r.status === 'rad_etilgan' ? r.reject_reason : r.pause_reason}</div> : null}</td>
               <td className="px-3 py-3">{dmyhm(r.created_at)}</td>
               <td className="px-3 py-3">
                 <RowActions>
@@ -96,9 +105,10 @@ export default function Elonlar() {
                   {r.status === 'moderatsiyada' && (
                     <>
                       <Btn tone="primary" disabled={busy === r.id} onClick={() => act(r.id, 'approve')}><CheckCircle2 className="size-3.5" /> Tasdiqlash</Btn>
-                      <Btn disabled={busy === r.id} onClick={() => { setReason('Talabga mos emas'); act(r.id, 'reject') }}><XCircle className="size-3.5" /> Rad etish</Btn>
+                      <Btn disabled={busy === r.id} onClick={() => { setReason(''); setRej({ id: r.id, title: r.title }) }}><XCircle className="size-3.5" /> Rad etish</Btn>
                     </>
                   )}
+                  {r.status === 'faol' && <Btn disabled={busy === r.id} onClick={() => act(r.id, 'pause')}><Pause className="size-3.5" /> To‘xtatish</Btn>}
                 </RowActions>
               </td>
             </tr>
@@ -115,7 +125,7 @@ export default function Elonlar() {
             {detail.status === 'moderatsiyada' && (
               <>
                 <Btn tone="primary" disabled={busy === detail.id} onClick={() => act(detail.id, 'approve')}><CheckCircle2 className="size-4" /> Tasdiqlash</Btn>
-                <Btn tone="danger" disabled={busy === detail.id} onClick={() => act(detail.id, 'reject')}><XCircle className="size-4" /> Rad etish</Btn>
+                <Btn tone="danger" disabled={busy === detail.id} onClick={() => act(detail.id, 'reject', reason)}><XCircle className="size-4" /> Rad etish</Btn>
               </>
             )}
             {detail.status === 'faol' && <Btn disabled={busy === detail.id} onClick={() => act(detail.id, 'pause')}><Pause className="size-4" /> To‘xtatish</Btn>}
@@ -134,8 +144,22 @@ export default function Elonlar() {
               <div><div className="text-[#8A9AA8]">Telefon</div><div className="font-semibold">{maskPhone(detail.seller?.phone)}</div></div>
               <div><div className="text-[#8A9AA8]">Kunlik byudjet</div><div className="font-semibold text-[#0F766E]">{som(detail.daily_budget)}</div></div>
               <div><div className="text-[#8A9AA8]">Davomiylik</div><div className="font-semibold">{detail.days} kun</div></div>
+              <div><div className="text-[#8A9AA8]">Turi</div><div className="font-semibold">{KIND[detail.kind] || detail.kind}</div></div>
+              <div><div className="text-[#8A9AA8]">Umumiy byudjet</div><div className="font-semibold">{detail.total_budget ? som(detail.total_budget) : '—'}</div></div>
+              <div><div className="text-[#8A9AA8]">Muddat</div><div className="font-semibold">{detail.starts_on} – {detail.ends_on || '…'}</div></div>
+              <div><div className="text-[#8A9AA8]">Hudud</div><div className="font-semibold">{detail.region || '—'}</div></div>
+              <div><div className="text-[#8A9AA8]">Reklama balansi</div><div className={`font-semibold ${Number(detail.balance) < 1000 ? 'text-[#b42318]' : 'text-[#0F766E]'}`}>{som(detail.balance || 0)}</div></div>
+              <div><div className="text-[#8A9AA8]">Ko‘rish / bosish / sarf</div><div className="font-semibold">{detail.stats?.impressions || 0} / {detail.stats?.clicks || 0} / {som(detail.stats?.spent || 0)}</div></div>
             </div>
-            {detail.product && (
+            {(detail.reject_reason || detail.pause_reason) && <p className="rounded-xl bg-[#FFF7E6] px-3 py-2 text-[12.5px] text-[#7A4B00]">{detail.status === 'rad_etilgan' ? 'Rad sababi: ' + detail.reject_reason : detail.pause_reason}</p>}
+            {detail.products?.length > 0 ? (
+              <div className="space-y-1.5">{detail.products.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-2">
+                  {p.image_url ? <img src={p.image_url} alt="" className="size-10 rounded-lg object-cover" /> : <span className="size-10 rounded-lg bg-[#F0FDFA]" />}
+                  <div className="min-w-0 flex-1"><div className="truncate font-semibold">{p.name}</div><div className="text-[12px] text-[#5C6E80]">{p.category || ''}</div></div>
+                  <div className="text-right text-[12px]"><div className="font-semibold text-[#0F766E]">{som(p.price)}</div><div className={p.status === 'active' ? 'text-[#0F766E]' : 'text-[#b42318]'}>{p.status === 'active' ? 'Faol' : 'Faol emas'}</div></div>
+                </div>))}</div>
+            ) : detail.product && (
               <div className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
                 {detail.product.image_url && <img src={detail.product.image_url} alt="" className="size-12 rounded-lg object-cover" />}
                 <div>
@@ -147,11 +171,21 @@ export default function Elonlar() {
             {detail.status === 'moderatsiyada' && (
               <label className="block text-[13px]">
                 <span className="mb-1 block font-semibold">Rad etish sababi</span>
+                <div className="mb-2 flex flex-wrap gap-1.5">{REASONS.map((x) => <button key={x} type="button" onClick={() => setReason(x)} className={`rounded-lg border px-2 py-1 text-[12px] ${reason === x ? 'border-[#0F766E] bg-[#F0FDFA]' : 'border-[#E6EEF0]'}`}>{x}</button>)}</div>
                 <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} className="w-full rounded-xl border border-[#E6EEF0] px-3 py-2" />
               </label>
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal open={!!rej} onClose={() => setRej(null)} title="Kampaniyani rad etish" width="max-w-[480px]" sheet
+        footer={rej && <div className="flex gap-2"><Btn tone="danger" disabled={busy === rej.id} onClick={() => act(rej.id, 'reject', reason)}><XCircle className="size-4" /> Rad etish</Btn><Btn onClick={() => setRej(null)}>Bekor qilish</Btn></div>}>
+        {rej && <div className="space-y-3 text-[13px]">
+          <p>“<b>{rej.title}</b>” rad etiladi. Sabab sotuvchiga ko‘rsatiladi va u kampaniyani tahrirlab qayta yuborishi mumkin.</p>
+          <div className="flex flex-wrap gap-1.5">{REASONS.map((x) => <button key={x} type="button" onClick={() => setReason(x)} className={`rounded-lg border px-2 py-1 text-[12px] ${reason === x ? 'border-[#0F766E] bg-[#F0FDFA]' : 'border-[#E6EEF0]'}`}>{x}</button>)}</div>
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={300} placeholder="Sababni yozing…" className="w-full rounded-xl border border-[#E6EEF0] px-3 py-2" />
+        </div>}
       </Modal>
     </div>
   )

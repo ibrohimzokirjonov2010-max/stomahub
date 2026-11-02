@@ -23,7 +23,7 @@ function fail(error) {
 }
 
 // ---- tiny shared store so every widget reloads after a change ----------------
-let state = { loading: true, error: '', products: [], orders: [], reviews: [], payouts: [], customers: [], discounts: [], campaigns: [], adTopups: [], adStats: [], settings: null, staff: [], branches: [], activity: [], loadedFor: null }
+let state = { loading: true, error: '', products: [], orders: [], reviews: [], payouts: [], customers: [], discounts: [], campaigns: [], adTopups: [], adRequests: [], adStats: [], settings: null, staff: [], branches: [], activity: [], loadedFor: null }
 const listeners = new Set()
 const commit = (patch) => { state = { ...state, ...patch }; listeners.forEach((l) => l()) }
 const subscribe = (l) => { listeners.add(l); return () => listeners.delete(l) }
@@ -33,7 +33,7 @@ export async function reloadSeller() {
   if (!supabase || !me) { commit({ loading: false, error: 'Avval kiring' }); return }
   commit({ loading: state.loadedFor !== me, error: '' })
   const q = (t, order = 'created_at') => supabase.from(t).select('*').eq('seller_id', me).order(order, { ascending: false })
-  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac] = await Promise.all([
+  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac, ar] = await Promise.all([
     q('seller_products'),
     supabase.from('seller_orders').select('*, seller_order_items(*)').eq('seller_id', me).order('created_at', { ascending: false }),
     q('seller_reviews'), q('seller_payouts'), q('seller_customers'), q('seller_discounts'), q('seller_campaigns'),
@@ -41,6 +41,7 @@ export async function reloadSeller() {
     supabase.from('seller_settings').select('*').eq('seller_id', me).maybeSingle(),
     q('seller_staff'), q('seller_branches'),
     supabase.from('seller_activity').select('*').eq('seller_id', me).order('created_at', { ascending: false }).limit(200),
+    q('seller_ad_topup_requests'),
   ])
   // 0004 jadvallari hali yo'q bo'lsa ham asosiy ma'lumotlar ishlayversin
   const error = fail(p.error || o.error || r.error || w.error || c.error)
@@ -58,6 +59,7 @@ export async function reloadSeller() {
     discounts: d.data || [],
     campaigns: k.data || [],
     adTopups: at.data || [],
+    adRequests: ar.data || [],
     adStats: as.data || [],
     settings: st.data || null,
     staff: sf.data || [],
@@ -90,7 +92,9 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
   const live = orders.filter((o) => o.status !== 'bekor_qilindi')
   const delivered = orders.filter((o) => o.status === 'yetkazildi')
   const earned = delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
-  const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0) + adTopups.reduce((s, t) => s + Number(t.amount || 0), 0)
+  const withdrawn = payouts.filter((p) => p.status !== 'rad_etildi').reduce((s, p) => s + Number(p.amount || 0), 0)
+    // Eski (0043 gacha) hamyondan reklamaga o‘tkazmalar — seller_wallet() bilan bir xil.
+    + adTopups.reduce((s, t) => s + Number(t.amount || 0), 0)
   const phones = new Set()
   orders.forEach((o) => { const k = (o.customer_phone || o.buyer_id || o.customer_name || '').trim(); if (k) phones.add(k) })
   customers.forEach((c) => { const k = (c.phone || c.name || '').trim(); if (k) phones.add(k) })
@@ -154,7 +158,14 @@ export const addCustomer = (v) => run(supabase.from('seller_customers').insert({
 
 export const addDiscount = (v) => run(supabase.from('seller_discounts').insert({ seller_id: uid(), title: v.title.trim(), percent: Number(v.percent), product_id: v.product_id || null, ends_on: v.ends_on || null }))
 
-export const addCampaign = (v) => run(supabase.from('seller_campaigns').insert({ seller_id: uid(), title: v.title.trim(), product_id: v.product_id || null, daily_budget: Number(v.daily_budget) || 0, days: Number(v.days) || 7 }))
+// ---- Reklama: to‘ldirish so‘rovi (naqd / bank o‘tkazma) — admin tasdiqlaydi -----------
+// Yangi so‘rovlar hamyondan hech narsa ayirmaydi (alohida jadval). Eski seller_ad_topups
+// (hamyondan o‘tkazmalar) tarix sifatida hisobda qoladi.
+export const requestAdTopup = (v) => run(supabase.rpc('seller_ad_topup_request', { p_amount: Number(v.amount), p_method: v.method, p_receipt_url: v.receipt_url || '', p_note: v.note || '' }))
+export const cancelAdTopup = (id) => run(supabase.rpc('seller_ad_topup_cancel', { p_id: id }))
+// Kelajakdagi Click to‘lovi uchun (hozircha o‘chiq): VITE_ADS_CLICK_TOPUP=1 bo‘lsagina UI’da ko‘rinadi.
+export const CLICK_TOPUP_ENABLED = import.meta.env.VITE_ADS_CLICK_TOPUP === '1'
+export async function startClickTopup() { return { ok: false, error: 'Click orqali to‘ldirish tez orada ishga tushadi' } }
 
 export const requestPayout = (v) => run(supabase.from('seller_payouts').insert({ seller_id: uid(), amount: Number(v.amount), note: v.note || '' }))
 
@@ -240,3 +251,4 @@ export async function removeMedia(urls = []) {
 
 /** Yagona “Kam qolgan” chegarasi: 5 dona yoki undan kam. */
 export const LOW_STOCK_LIMIT = 5
+export const __shotSellerState = import.meta.env.DEV ? (patch) => commit({ ...patch, loading: false, error: '', loadedFor: uid() ?? null }) : undefined

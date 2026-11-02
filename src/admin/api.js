@@ -57,6 +57,8 @@ export const reviewOrganizer = (id, action, reason = '') => rpc('admin_review_or
 export const listCampaigns = (a) => rpc('admin_campaigns_list', { p_tab: a.tab || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 export const campaignDetail = (id) => rpc('admin_campaign_detail', { p_id: id })
 export const reviewCampaign = (id, action, reason = '') => rpc('admin_review_campaign', { p_id: id, p_action: action, p_reason: reason })
+export const listAdTopups = (a) => rpc('admin_ad_topups_list', { p_status: a.status || 'kutilmoqda', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
+export const reviewAdTopup = (id, action, reason = '') => rpc('admin_review_ad_topup', { p_id: id, p_action: action, p_reason: reason })
 
 export const listOrders = (a) => rpc('admin_orders_list', { p_tab: a.tab || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 export const orderDetail = (id) => rpc('admin_order_detail', { p_id: id })

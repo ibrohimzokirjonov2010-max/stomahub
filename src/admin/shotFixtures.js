@@ -48,12 +48,28 @@ export const SHOT_ORGS = {
 }
 
 export const SHOT_CAMPAIGNS = {
-  total: 128, counts: { all: 128, moderatsiyada: 18, faol: 86, pauza: 14, rad: 10 },
+  total: 128, counts: { all: 128, moderatsiyada: 18, faol: 86, toxtatilgan: 14, rad_etilgan: 6, yakunlangan: 4 },
   rows: [
-    { id: 'c1', title: 'Chegirma kampaniyasi', shop_name: 'MedStom', status: 'moderatsiyada', budget: 2500000, created_at: '2026-10-30T11:00:00', image_url: img(1), phone: mask },
-    { id: 'c2', title: 'Yangi implantlar', shop_name: 'DentPro', status: 'faol', budget: 5000000, created_at: '2026-10-20T09:00:00', image_url: img(2, '99F6E4'), phone: mask },
-    { id: 'c3', title: 'Kuz aksiyasi', shop_name: 'SmileLab', status: 'pauza', budget: 1800000, created_at: '2026-10-10T15:00:00', image_url: img(3, '5EEAD4'), phone: mask },
-    { id: 'c4', title: 'Seminar reklama', shop_name: 'OralTech', status: 'rad', budget: 900000, created_at: '2026-09-28T12:00:00', image_url: img(4, 'F0FDFA'), phone: mask },
+    { id: 'c1', title: 'Kompozit materiallar −15%', shop_name: 'MedStom', city: 'Toshkent', status: 'moderatsiyada', kind: 'qidiruv', daily_budget: 50000, total_budget: 1500000, days: 30, created_at: '2026-11-01T11:00:00', image_url: img(1), phone: mask, products: 3 },
+    { id: 'c2', title: 'Yangi implantlar', shop_name: 'DentPro', city: 'Samarqand', status: 'faol', kind: 'banner', daily_budget: 100000, total_budget: 3000000, days: 30, created_at: '2026-10-20T09:00:00', image_url: img(2, '99F6E4'), phone: mask, approved_at: '2026-10-20T12:00:00', products: 2 },
+    { id: 'c3', title: 'Kuz aksiyasi', shop_name: 'SmileLab', city: 'Farg‘ona', status: 'toxtatilgan', pause_reason: 'Balans tugadi', kind: 'kategoriya', daily_budget: 20000, total_budget: 600000, days: 30, created_at: '2026-10-10T15:00:00', image_url: img(3, '5EEAD4'), phone: mask, approved_at: '2026-10-11T10:00:00', products: 1 },
+    { id: 'c4', title: 'Seminar reklamasi', shop_name: 'OralTech', city: 'Buxoro', status: 'rad_etilgan', reject_reason: 'Mahsulot ma’lumotlari noto‘liq', kind: 'qidiruv', daily_budget: 15000, total_budget: 300000, days: 20, created_at: '2026-09-28T12:00:00', image_url: img(4, 'F0FDFA'), phone: mask, products: 1 },
+  ],
+}
+export const SHOT_CAMPAIGN_DETAIL = {
+  ...SHOT_CAMPAIGNS.rows[0], description: 'Kompozit plombalash materiallariga noyabr chegirmasi.', starts_on: '2026-11-03', ends_on: '2026-12-02', region: 'Barcha hududlar',
+  balance: 250000, stats: { impressions: 0, clicks: 0, spent: 0 }, seller: { shop_name: 'MedStom', phone: mask },
+  products: [
+    { id: 'p1', name: 'Filtek Z250 kompozit 4g', price: 185000, status: 'active', category: 'Materiallar', image_url: img('Z') },
+    { id: 'p2', name: 'Bond adgeziv 5ml', price: 120000, status: 'active', category: 'Materiallar', image_url: img('B', '99F6E4') },
+  ],
+}
+export const SHOT_AD_TOPUPS = {
+  total: 3, counts: { all: 9, kutilmoqda: 3, tasdiqlandi: 5, rad_etildi: 1, pending_sum: 1300000 },
+  rows: [
+    { id: 't1', shop_name: 'MedStom', city: 'Toshkent', phone: mask, amount: 500000, method: 'naqd', note: 'Ertaga ofisga olib boraman', status: 'kutilmoqda', created_at: '2026-11-02T10:15:00', balance: 0, receipt_url: '' },
+    { id: 't2', shop_name: 'DentPro', city: 'Samarqand', phone: mask, amount: 700000, method: 'bank', note: 'To‘lov topshiriqnomasi №118', status: 'kutilmoqda', created_at: '2026-11-02T09:02:00', balance: 42000, receipt_url: img('Chek', 'FFF7ED') },
+    { id: 't3', shop_name: 'SmileLab', city: 'Farg‘ona', phone: mask, amount: 100000, method: 'naqd', note: '', status: 'kutilmoqda', created_at: '2026-11-01T17:40:00', balance: 0, receipt_url: '' },
   ],
 }
 
@@ -162,8 +178,10 @@ export function shotRpc(name) {
     case 'admin_organizer_detail': return { ...SHOT_ORGS.rows[0], email: '********@mail.uz', address: 'Chilonzor', docs: [] }
     case 'admin_review_organizer': return { ok: true }
     case 'admin_campaigns_list': return SHOT_CAMPAIGNS
-    case 'admin_campaign_detail': return { ...SHOT_CAMPAIGNS.rows[0], body: 'Chegirma tafsilotlari', start_at: '2026-11-01', end_at: '2026-11-30' }
-    case 'admin_review_campaign': return { ok: true }
+    case 'admin_campaign_detail': return SHOT_CAMPAIGN_DETAIL
+    case 'admin_review_campaign': return { ok: true, status: 'faol' }
+    case 'admin_ad_topups_list': return SHOT_AD_TOPUPS
+    case 'admin_review_ad_topup': return { ok: true }
     case 'admin_orders_list': return SHOT_ORDERS
     case 'admin_order_detail': return { ...SHOT_ORDERS.rows[0], items: [{ name: 'Implant set', qty: 2, price: 1225000, image_url: img(1) }], commission: 294000, payout: 2156000 }
     case 'admin_escrow': return SHOT_ESCROW

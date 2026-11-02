@@ -4,6 +4,7 @@ import { CheckCircle2, Eye, Wallet, XCircle } from 'lucide-react'
 import { fetchFinance, listPayouts, reviewPayout, useAdminList } from '../api'
 import { dmyhm, maskPhone, monthBounds, num, payLabel, som } from '../format'
 import Modal from '../components/Modal'
+import AdTopups from '../components/AdTopups'
 import {
   Btn, DataTable, Empty, FilterTabs, KpiStrip, MigrateBanner, MobileCards,
   PageHeader, Pagination, RowActions, SearchRow, StatusDot, TableCard,
@@ -172,6 +173,7 @@ export default function Moliya() {
           </div>
         )}
       </Modal>
+      <AdTopups />
     </div>
   )
 }
