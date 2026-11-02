@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays, CalendarClock, ChevronLeft, ChevronRight, FileText, MessageCircle, MoreVertical, Phone, Plus, Send, Trash2, UserRound } from 'lucide-react'
 import { useBemorlar } from '../../bemorData'
@@ -104,20 +104,7 @@ export default function MobileUchrashuvlar() {
           </button>
         </div>
 
-        <div className="mt-3 grid grid-cols-7 gap-1.5">
-          {weekOf(date).map((iso, i) => {
-            const on = iso === date
-            const { d, m } = parts(iso)
-            return (
-              <button key={iso} type="button" aria-pressed={on} onClick={() => setDate(iso)} className={`flex h-[64px] flex-col items-center justify-center rounded-xl border text-center transition ${on ? 'border-[#0b6d73] bg-[#0b6d73] text-white shadow-[0_4px_10px_rgb(11_109_115/0.3)]' : 'border-line/70 bg-white text-ink'}`}>
-                <span className={`text-[10.5px] ${on ? 'text-white/85' : 'text-ink-2'}`}>{DAY_SHORT[i]}</span>
-                <b className="text-[16px] font-bold leading-tight">{d}</b>
-                <span className={`text-[10.5px] capitalize ${on ? 'text-white/85' : 'text-ink-2'}`}>{MON_SHORT[m - 1]}</span>
-                {iso === TODAY && !on && <span className="mt-0.5 size-1 rounded-full bg-sea" />}
-              </button>
-            )
-          })}
-        </div>
+        <WeekStrip date={date} onPick={setDate} />
 
         <div className="-mx-3.5 mt-3 flex gap-1.5 overflow-x-auto px-3.5 no-scrollbar">
           {TABS.map(([k, l, fn]) => {
@@ -217,6 +204,56 @@ function VisitCard({ v, p, onMenu, onChat, onCall }) {
       </div>
       <button type="button" onClick={onMenu} aria-label="Amallar" className="absolute right-1 top-2 grid size-7 place-items-center text-ink-2"><MoreVertical className="size-4" /></button>
     </article>
+  )
+}
+
+// Hafta tasmasi: telefonda barmoq bilan chapga/o‘ngga surib boshqa haftalarga o‘tiladi (scroll-snap, iOS Safari’da ham ishlaydi).
+const WEEKS_BACK = 12
+const WEEKS_AHEAD = 26
+function WeekStrip({ date, onPick }) {
+  const ref = useRef(null)
+  const weekStart = shift(date, -dow(date))
+  const [anchor, setAnchor] = useState(weekStart)
+  const weeks = useMemo(() => Array.from({ length: WEEKS_BACK + WEEKS_AHEAD + 1 }, (_, i) => weekOf(shift(anchor, (i - WEEKS_BACK) * 7))), [anchor])
+  const idx = weeks.findIndex((w) => w[0] === weekStart)
+  // Tanlangan kun diapazondan tashqarida bo‘lsa (kalendardan tanlanganda) — markazni qayta o‘rnatamiz.
+  if (idx === -1 && anchor !== weekStart) setAnchor(weekStart)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || idx < 0) return
+    const target = idx * el.clientWidth
+    if (Math.abs(el.scrollLeft - target) > 4) el.scrollTo({ left: target, behavior: 'auto' })
+  }, [idx])
+  const page = (n) => {
+    const el = ref.current
+    if (el) el.scrollBy({ left: n * el.clientWidth, behavior: 'smooth' })
+  }
+  return (
+    <div className="relative mt-3">
+      <div ref={ref} data-week-strip className="-mx-3.5 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain no-scrollbar [-webkit-overflow-scrolling:touch] [touch-action:pan-x_pan-y]">
+        {weeks.map((w) => (
+          <div key={w[0]} className="grid w-full shrink-0 snap-start grid-cols-7 gap-1.5 px-3.5">
+            {w.map((iso, i) => {
+              const on = iso === date
+              const { d, m } = parts(iso)
+              return (
+                <button key={iso} type="button" aria-pressed={on} onClick={() => onPick(iso)} className={`flex h-[64px] flex-col items-center justify-center rounded-xl border text-center transition ${on ? 'border-[#0b6d73] bg-[#0b6d73] text-white shadow-[0_4px_10px_rgb(11_109_115/0.3)]' : 'border-line/70 bg-white text-ink'}`}>
+                  <span className={`text-[10.5px] ${on ? 'text-white/85' : 'text-ink-2'}`}>{DAY_SHORT[i]}</span>
+                  <b className="text-[16px] font-bold leading-tight">{d}</b>
+                  <span className={`text-[10.5px] capitalize ${on ? 'text-white/85' : 'text-ink-2'}`}>{MON_SHORT[m - 1]}</span>
+                  {iso === TODAY && !on && <span className="mt-0.5 size-1 rounded-full bg-sea" />}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1.5 flex items-center justify-between text-[11.5px] font-medium text-[#0b6d73]">
+        <button type="button" onClick={() => page(-1)} className="flex h-8 items-center gap-0.5 rounded-lg px-1.5 active:bg-[#e6f4f3]"><ChevronLeft className="size-4" /> Oldingi hafta</button>
+        <button type="button" onClick={() => onPick(TODAY)} className="h-8 rounded-lg px-2 active:bg-[#e6f4f3]">Bugun</button>
+        <button type="button" onClick={() => page(1)} className="flex h-8 items-center gap-0.5 rounded-lg px-1.5 active:bg-[#e6f4f3]">Keyingi hafta <ChevronRight className="size-4" /></button>
+      </div>
+    </div>
   )
 }
 
