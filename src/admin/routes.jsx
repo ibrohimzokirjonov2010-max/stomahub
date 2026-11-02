@@ -8,6 +8,7 @@ import Tashkilotchilar from './pages/Tashkilotchilar'
 import Elonlar from './pages/Elonlar'
 import Buyurtmalar from './pages/Buyurtmalar'
 import Escrow from './pages/Escrow'
+import SotuvchigaTolov from './pages/SotuvchigaTolov'
 import Tasdiqlashlar from './pages/Tasdiqlashlar'
 import Moliya from './pages/Moliya'
 import Shikoyatlar from './pages/Shikoyatlar'
@@ -26,6 +27,7 @@ export const adminRoutes = (
     <Route path="elonlar" element={<Elonlar />} />
     <Route path="buyurtmalar" element={<Buyurtmalar />} />
     <Route path="escrow" element={<Escrow />} />
+    <Route path="sotuvchiga-tolov" element={<SotuvchigaTolov />} />
     <Route path="tasdiqlashlar" element={<Tasdiqlashlar />} />
     <Route path="moliya" element={<Moliya />} />
     <Route path="shikoyatlar" element={<Shikoyatlar />} />

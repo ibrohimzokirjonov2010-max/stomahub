@@ -16,7 +16,7 @@ export const maskEmail = (e) => {
   return `********${String(e).slice(at)}`
 }
 
-/** Dizaynda 'naqd' bo‘lishi mumkin; yangi qaror: UZCARD/HUMO/Click/Payme (demo). */
+/** To‘lov usuli yorliqlari (uzcard/humo — eski buyurtmalar uchun). */
 export const PAY_LABEL = {
   cash: 'Naqd',
   naqd: 'Naqd',
@@ -49,13 +49,15 @@ export function daysInMonth(d) {
 
 const CASH = new Set(['cash', 'naqd'])
 export const isCash = (m) => CASH.has(String(m || '').toLowerCase())
+export const DISPUTE_STATUS = { open: 'Nizo ochiq', resolved_release: 'Hal qilindi — sotuvchiga', resolved_refund: 'Hal qilindi — qaytarildi' }
+export const REFUND_METHOD = { payme: 'Payme kabineti', click: 'Click qaytarish', manual: 'Qo‘lda qaytarildi' }
 export const PAYMENT_STATUS = {
-  pending: 'Kutilmoqda', paid: 'To‘langan', held: 'Ushlab turilibdi', released: 'Sotuvchiga o‘tkazildi',
+  pending: 'Kutilmoqda', paid: 'To‘landi', held: 'Escrowda', released: 'Sotuvchiga o‘tkazildi', refund_pending: 'Qaytarish kutilmoqda',
   refunded: 'Qaytarildi', failed: 'Muvaffaqiyatsiz', cancelled: 'Bekor qilindi', unpaid: 'To‘lanmagan', wait: 'Kutilmoqda',
 }
 /** Uzbek label for an order's payment state; cash is never escrow. */
 export const payStatusLabel = (ps, method) => {
-  if (isCash(method) && !['released', 'refunded'].includes(String(ps || ''))) return 'Kutilmoqda (naqd)'
+  if (isCash(method)) return ps === 'paid' ? 'To‘landi (naqd)' : ps === 'failed' ? 'Bekor qilindi' : 'Kutilmoqda (naqd)'
   return PAYMENT_STATUS[String(ps || '').toLowerCase()] || (ps ? String(ps) : '—')
 }
 export const PRODUCT_STATUS = {

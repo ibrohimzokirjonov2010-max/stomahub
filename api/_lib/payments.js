@@ -1,115 +1,54 @@
-import crypto from 'node:crypto'
 import { adminClient } from './supabaseAdmin.js'
+export { paymeState, clickPayUrl, paymePayUrl } from './paymentsCore.js'
 
 export function clickConfigured() {
-  return !!(
-    process.env.CLICK_SECRET_KEY &&
-    process.env.CLICK_MERCHANT_ID &&
-    process.env.CLICK_SERVICE_ID
-  )
+  return !!(process.env.CLICK_SECRET_KEY && process.env.CLICK_MERCHANT_ID && process.env.CLICK_SERVICE_ID)
 }
-
+export function clickReversalConfigured() {
+  return clickConfigured() && !!process.env.CLICK_MERCHANT_USER_ID
+}
 export function paymeConfigured() {
   return !!(process.env.PAYME_KEY && process.env.PAYME_MERCHANT_ID)
 }
 
-export function clickSign(parts) {
-  const raw = parts.join('')
-  return crypto.createHash('md5').update(raw).digest('hex')
-}
-
-export function paymeAuthOk(req) {
-  const key = process.env.PAYME_KEY || ''
-  if (!key) return false
-  const hdr = String(req.headers.authorization || '')
-  if (!hdr.startsWith('Basic ')) return false
-  try {
-    const decoded = Buffer.from(hdr.slice(6), 'base64').toString('utf8')
-    // Payme: login = Paycom (or merchant id), password = PAYME_KEY
-    const [, pass] = decoded.split(':')
-    return pass === key
-  } catch {
-    return false
-  }
-}
-
-export function tiyinsToSom(amount) {
-  // Payme sends tiyin (1/100 of som). Click sends som.
-  return Math.round(Number(amount) / 100)
-}
-
-export async function loadOrderByMerchantId(merchantTransId) {
-  const sb = adminClient()
-  // merchant_trans_id is order code or uuid
-  const id = String(merchantTransId || '')
-  let q = sb.from('seller_orders').select('*')
-  if (/^[0-9a-f-]{36}$/i.test(id)) q = q.eq('id', id)
-  else q = q.eq('code', id)
-  const { data, error } = await q.maybeSingle()
+export async function loadOrderByCode(code) {
+  const id = String(code || '').trim()
+  if (!id || id.length > 64) return null
+  const { data, error } = await adminClient().from('seller_orders').select('*').eq('code', id).maybeSingle()
   if (error) throw error
   return data
 }
 
-export async function markPaid({ provider, merchantTransId, providerTransId, amount, orderId, registrationId, meta }) {
-  const sb = adminClient()
-  const { data, error } = await sb.rpc('payment_mark_paid', {
+export async function loadOrderById(id) {
+  if (!/^[0-9a-f-]{36}$/i.test(String(id || ''))) return null
+  const { data, error } = await adminClient().from('seller_orders').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function markPaid({ provider, merchantTransId, providerTransId, amount, orderId, meta }) {
+  const { data, error } = await adminClient().rpc('payment_mark_paid', {
     p_provider: provider,
     p_merchant_trans_id: String(merchantTransId),
     p_provider_trans_id: String(providerTransId || ''),
     p_amount: amount == null ? null : Number(amount),
     p_order_id: orderId || null,
-    p_registration_id: registrationId || null,
+    p_registration_id: null,
     p_meta: meta || {},
   })
   if (error) throw error
   return data
 }
 
-export async function upsertPaymeTx(row) {
-  const sb = adminClient()
-  const { data: existing } = await sb
-    .from('payment_transactions')
-    .select('*')
-    .eq('provider', 'payme')
-    .eq('merchant_trans_id', row.merchant_trans_id)
-    .maybeSingle()
-  if (existing) {
-    const { data, error } = await sb
-      .from('payment_transactions')
-      .update({ ...row, updated_at: new Date().toISOString() })
-      .eq('id', existing.id)
-      .select()
-      .single()
-    if (error) throw error
-    return data
-  }
-  const { data, error } = await sb.from('payment_transactions').insert({ provider: 'payme', ...row }).select().single()
+export async function markRefunded(orderId, method, note) {
+  const { data, error } = await adminClient().rpc('payment_mark_refunded', { p_order: orderId, p_method: method, p_note: note || '' })
   if (error) throw error
   return data
 }
 
-export async function findPaymeByProviderId(providerTransId) {
-  const sb = adminClient()
-  const { data, error } = await sb
-    .from('payment_transactions')
-    .select('*')
-    .eq('provider', 'payme')
-    .eq('provider_trans_id', String(providerTransId))
-    .maybeSingle()
-  if (error) throw error
-  return data
-}
-
-export async function findPaymeByMerchantId(merchantTransId) {
-  const sb = adminClient()
-  const { data, error } = await sb
-    .from('payment_transactions')
-    .select('*')
-    .eq('provider', 'payme')
-    .eq('merchant_trans_id', String(merchantTransId))
-    .maybeSingle()
-  if (error) throw error
-  return data
+/** onlayn buyurtmalar uchun (pending yoki failed) to‘lanishi mumkinmi */
+export function orderPayable(order) {
+  return !!order && order.status !== 'bekor_qilindi' && ['pending', 'failed'].includes(order.payment_status)
 }
 
 export function orderPayableAmount(order) {
@@ -117,28 +56,37 @@ export function orderPayableAmount(order) {
   return Math.max(0, Number(order.subtotal || 0) - Number(order.discount_amount || 0)) + Number(order.delivery_fee || 0)
 }
 
-/** Payme error helper */
+export async function activeTx(provider, merchantTransId) {
+  const { data, error } = await adminClient().from('payment_transactions').select('*')
+    .eq('provider', provider).eq('merchant_trans_id', String(merchantTransId))
+    .in('state', ['created', 'pending', 'paid']).order('created_at', { ascending: false }).limit(1)
+  if (error) throw error
+  return data?.[0] || null
+}
+
+export async function txByProviderId(provider, providerTransId) {
+  const { data, error } = await adminClient().from('payment_transactions').select('*')
+    .eq('provider', provider).eq('provider_trans_id', String(providerTransId)).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function updateTx(id, patch) {
+  const { data, error } = await adminClient().from('payment_transactions')
+    .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function insertTx(row) {
+  const { data, error } = await adminClient().from('payment_transactions').insert(row).select().single()
+  if (error) throw error
+  return data
+}
+
 export function paymeError(id, code, message, data = null) {
-  return {
-    jsonrpc: '2.0',
-    id,
-    error: { code, message: { ru: message, uz: message, en: message }, data },
-  }
+  const m = typeof message === 'string' ? { ru: message, uz: message, en: message } : message
+  return { jsonrpc: '2.0', id, error: { code, message: m, data } }
 }
-
-export function paymeResult(id, result) {
-  return { jsonrpc: '2.0', id, result }
-}
-
-export function paymeState(tx) {
-  if (!tx) return 0
-  if (tx.state === 'paid') return 2
-  if (tx.state === 'cancelled' || tx.state === 'refunded') return -1
-  if (tx.state === 'pending' || tx.state === 'created') return 1
-  return 0
-}
-
-export function toPaymeTime(iso) {
-  if (!iso) return 0
-  return new Date(iso).getTime()
-}
+export function paymeResult(id, result) { return { jsonrpc: '2.0', id, result } }
+export function toPaymeTime(iso) { return iso ? new Date(iso).getTime() : 0 }
