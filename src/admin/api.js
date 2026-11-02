@@ -61,9 +61,31 @@ export const reviewCampaign = (id, action, reason = '') => rpc('admin_review_cam
 export const listOrders = (a) => rpc('admin_orders_list', { p_tab: a.tab || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 export const orderDetail = (id) => rpc('admin_order_detail', { p_id: id })
 
-export const fetchEscrow = (a) => rpc('admin_escrow', { p_page: a.page || 1, p_page_size: a.pageSize || 10, p_q: a.q || '' })
+export const fetchEscrow = (a) => rpc('admin_escrow', { p_page: a.page || 1, p_page_size: a.pageSize || 10, p_q: a.q || '', p_tab: a.tab || 'all' })
 export const releaseEscrow = (id) => rpc('admin_escrow_release', { p_order: id })
+/** Escrowni qaytarishga o‘tkazadi (refund_pending) — pul hali qaytmagan. */
 export const refundEscrow = (id, reason = '') => rpc('admin_escrow_refund', { p_order: id, p_reason: reason })
+/** Pul qo‘lda (bank/naqd) qaytarilgach — “Qaytarildi” deb belgilash. */
+export const markRefundedManual = (id, note = '') => rpc('admin_escrow_mark_refunded', { p_order: id, p_note: note })
+/** Click orqali avtomatik qaytarish (server: Click Merchant API reversal). */
+export async function clickReversal(orderId) {
+  if (typeof window !== 'undefined' && window.__ADMIN_SHOT__) return { ok: true }
+  const { data } = await supabase.auth.getSession()
+  const token = data?.session?.access_token
+  const r = await fetch('/api/click', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` }, body: JSON.stringify({ order_id: orderId }) })
+  const j = await r.json().catch(() => ({}))
+  if (!r.ok || !j.ok) throw new Error(j.error || 'Click qaytarishni bajarib bo‘lmadi')
+  return j
+}
+export async function paymentConfig() {
+  if (typeof window !== 'undefined' && window.__ADMIN_SHOT__) return { click: { configured: true, reversal: true }, payme: { configured: true } }
+  const get = (u) => fetch(u).then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+  const [click, payme] = await Promise.all([get('/api/click'), get('/api/payme')])
+  return { click, payme }
+}
+
+export const listSellerPayouts = (a) => rpc('admin_seller_payouts', { p_tab: a.tab || 'kutilmoqda', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
+export const markSellerPaid = (sellerId, bankRef, ids = null, note = '') => rpc('admin_mark_seller_paid', { p_seller: sellerId, p_bank_ref: bankRef, p_ids: ids, p_note: note })
 
 export const listApprovals = (a) => rpc('admin_approvals_list', { p_type: a.type || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 

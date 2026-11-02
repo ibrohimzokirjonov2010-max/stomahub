@@ -68,12 +68,28 @@ export const SHOT_ORDERS = {
   ],
 }
 
+const esc = (r) => ({ ...r, amount: r.subtotal, commission: Math.round(r.subtotal * 0.12), payout: r.subtotal - Math.round(r.subtotal * 0.12) })
 export const SHOT_ESCROW = {
-  summary: { held: 68430000, released: 412500000, commission: 57918000, orders_held: 205 },
-  total: 205,
-  rows: SHOT_ORDERS.rows.filter((r) => ['yangi', 'tasdiqlandi', 'tayyorlanmoqda', 'yetkazilmoqda'].includes(r.status) || r.status === 'yetkazilmoqda' || r.status === 'tayyorlanmoqda').map((r) => ({
-    ...r, commission: Math.round(r.subtotal * 0.12), payout: Math.round(r.subtotal * 0.88),
-  })),
+  summary: { held: 6820000, orders_held: 3, disputes_open: 1, refund_pending: 980000, refund_pending_orders: 1, seller_payable: 4980800, commission: 1131600 },
+  total: 5,
+  rows: [
+    esc({ id: 'e1', code: 'STQ-00131', created_at: '2026-10-30T10:12:00', customer_phone: mask, shop_name: 'DentPro', subtotal: 1750000, status: 'yetkazildi', payment_method: 'click', payment_status: 'held', dispute_status: 'open', dispute_reason: 'Qutida 2 ta mahsulot yetishmayapti', dispute_opened_at: '2026-11-01T09:40:00', delivered_at: '2026-10-31T17:20:00' }),
+    esc({ id: 'e2', code: 'STQ-00130', created_at: '2026-10-31T12:05:00', customer_phone: mask, shop_name: 'MedStom', subtotal: 2450000, status: 'yetkazildi', payment_method: 'payme', payment_status: 'held', dispute_status: 'none', delivered_at: '2026-11-01T15:00:00', auto_release_at: '2026-11-04T15:00:00' }),
+    esc({ id: 'e3', code: 'STQ-00129', created_at: '2026-11-01T09:30:00', customer_phone: mask, shop_name: 'SmileLab', subtotal: 2620000, status: 'yetkazilmoqda', payment_method: 'click', payment_status: 'held', dispute_status: 'none' }),
+    esc({ id: 'e4', code: 'STQ-00126', created_at: '2026-10-29T11:03:00', customer_phone: mask, shop_name: 'SmileLab', subtotal: 980000, status: 'bekor_qilindi', payment_method: 'payme', payment_status: 'refund_pending', dispute_status: 'resolved_refund', escrow_refund_reason: 'Mahsulot omborda yo‘q' }),
+    esc({ id: 'e5', code: 'STQ-00125', created_at: '2026-10-27T18:42:00', customer_phone: mask, shop_name: 'OralTech', subtotal: 3200000, status: 'yetkazildi', payment_method: 'click', payment_status: 'released', dispute_status: 'none', buyer_confirmed_at: '2026-10-29T10:00:00', delivered_at: '2026-10-28T16:00:00' }),
+  ],
+}
+
+export const SHOT_SELLER_PAYOUTS = {
+  summary: { due: 4980800, due_sellers: 2, paid: 18450000, commission: 2516000 },
+  total: 2,
+  rows: [
+    { seller_id: 's1', shop_name: 'OralTech', due: 2816000, due_orders: 1, paid: 9200000, commission: 1640000, last_paid_at: '2026-10-20T12:00:00', bank: 'Kapitalbank', mfo: '01088', account: '2020 8000 •••• 4417', stir: '309876543',
+      items: [{ id: 'l1', code: 'STQ-00125', amount: 2816000, gross: 3200000, commission: 384000, released_at: '2026-10-29T10:00:00' }] },
+    { seller_id: 's2', shop_name: 'MedStom', due: 2164800, due_orders: 1, paid: 9250000, commission: 876000, last_paid_at: '2026-10-25T12:00:00', bank: 'Ipak Yo‘li banki', mfo: '00444', account: '2020 8000 •••• 9021', stir: '305112233',
+      items: [{ id: 'l2', code: 'STQ-00118', amount: 2164800, gross: 2460000, commission: 295200, released_at: '2026-10-30T09:00:00' }] },
+  ],
 }
 
 export const SHOT_APPROVALS = {
@@ -146,7 +162,7 @@ export const SHOT_SETTINGS = {
   twofa_required: true, ip_restrict: false,
 }
 
-export function shotRpc(name) {
+export function shotRpc(name, args = {}) {
   switch (name) {
     case 'admin_users_list': return SHOT_USERS
     case 'admin_user_detail': return SHOT_USER_DETAIL
@@ -166,7 +182,12 @@ export function shotRpc(name) {
     case 'admin_review_campaign': return { ok: true }
     case 'admin_orders_list': return SHOT_ORDERS
     case 'admin_order_detail': return { ...SHOT_ORDERS.rows[0], items: [{ name: 'Implant set', qty: 2, price: 1225000, image_url: img(1) }], commission: 294000, payout: 2156000 }
-    case 'admin_escrow': return SHOT_ESCROW
+    case 'admin_escrow': return args?.p_tab && args.p_tab !== 'all' ? { ...SHOT_ESCROW, rows: SHOT_ESCROW.rows.filter((r) => ({ held: ['held', 'paid'].includes(r.payment_status), dispute: r.dispute_status === 'open', refund: r.payment_status === 'refund_pending', released: r.payment_status === 'released', cash: false })[args.p_tab]) } : SHOT_ESCROW
+    case 'admin_escrow_release': return { ok: true, payment_status: 'released' }
+    case 'admin_escrow_refund': return { ok: true, payment_status: 'refund_pending' }
+    case 'admin_escrow_mark_refunded': return { ok: true, payment_status: 'refunded' }
+    case 'admin_seller_payouts': return SHOT_SELLER_PAYOUTS
+    case 'admin_mark_seller_paid': return { ok: true, amount: 2816000, count: 1 }
     case 'admin_approvals_list': return SHOT_APPROVALS
     case 'admin_review_product': return { ok: true }
     case 'admin_finance': return SHOT_FINANCE

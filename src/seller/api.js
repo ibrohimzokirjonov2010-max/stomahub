@@ -34,7 +34,7 @@ export async function reloadSeller() {
   if (!supabase || !me) { commit({ loading: false, error: 'Avval kiring' }); return }
   commit({ loading: state.loadedFor !== me, error: '' })
   const q = (t, order = 'created_at') => supabase.from(t).select('*').eq('seller_id', me).order(order, { ascending: false })
-  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac] = await Promise.all([
+  const [p, o, r, w, c, d, k, at, as, st, sf, br, ac, lg, wl] = await Promise.all([
     q('seller_products'),
     supabase.from('seller_orders').select('*, seller_order_items(*)').eq('seller_id', me).order('created_at', { ascending: false }),
     q('seller_reviews'), q('seller_payouts'), q('seller_customers'), q('seller_discounts'), q('seller_campaigns'),
@@ -42,6 +42,8 @@ export async function reloadSeller() {
     supabase.from('seller_settings').select('*').eq('seller_id', me).maybeSingle(),
     q('seller_staff'), q('seller_branches'),
     supabase.from('seller_activity').select('*').eq('seller_id', me).order('created_at', { ascending: false }).limit(200),
+    q('seller_payout_ledger', 'released_at'),
+    supabase.rpc('seller_wallet'),
   ])
   // 0004 jadvallari hali yo'q bo'lsa ham asosiy ma'lumotlar ishlayversin
   const error = fail(p.error || o.error || r.error || w.error || c.error)
@@ -64,6 +66,9 @@ export async function reloadSeller() {
     staff: sf.data || [],
     branches: br.data || [],
     activity: ac.data || [],
+    // 0042 escrow: haqiqiy hamyon (bo‘lmasa eski hisob-kitob)
+    ledger: lg.error ? [] : lg.data || [],
+    wallet: wl.error ? null : wl.data || null,
   })
 }
 
@@ -77,7 +82,7 @@ export function useSellerData() {
 // ---- derived numbers (yagona qoidalar: ./lib/metrics.js) ---------------------------------
 export const commissionText = (o, fmt) => (isCancelled(o) ? fmt(0) : isDelivered(o) ? fmt(commissionOf(o)) : 'Kutilmoqda')
 
-export function computeStats({ orders, products, payouts, customers, adTopups = [] }, now = new Date()) {
+export function computeStats({ orders, products, payouts, customers, adTopups = [], wallet = null }, now = new Date()) {
   const real = realOrders(orders)
   const all = metrics(orders, ALL)
   const earned = all.delivered.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0)
@@ -89,10 +94,16 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
   return {
     today: real.filter((o) => tkDay(o.created_at) === today).length,
     fresh: real.filter((o) => o.status === 'yangi').length,
-    balance: Math.max(0, earned - withdrawn),
-    earned,
+    // 0042 escrow: wallet (RPC) bo‘lsa haqiqiy balans/held/to‘lovlar; aks holda eski hisob
+    balance: wallet ? Number(wallet.available || 0) : Math.max(0, earned - withdrawn),
+    earned: wallet ? Number(wallet.earned || 0) : earned,
+    held: wallet ? Number(wallet.held || 0) : 0,
+    paidOut: wallet ? Number(wallet.paid_out || 0) : payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
+    requested: wallet ? Number(wallet.requested || 0) : payouts.filter((p) => p.status === 'kutilmoqda').reduce((s, p) => s + Number(p.amount || 0), 0),
+    disputes: wallet ? Number(wallet.disputes || 0) : 0,
+    live: !!wallet,
     withdrawnPayouts: payouts.filter((p) => p.status === 'tolandi').reduce((s, p) => s + Number(p.amount || 0), 0),
-    commissionOwed: commissionDebt(orders),
+    commissionOwed: wallet ? Number(wallet.commission_owed || 0) : commissionDebt(orders),
     commissionTotal: all.commission,
     cashPending: all.open.filter(isCash).length,
     pending: all.open.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
@@ -237,3 +248,6 @@ export async function removeMedia(urls = []) {
 
 /** Yagona “Kam qolgan” chegarasi: 5 dona yoki undan kam. */
 export const LOW_STOCK_LIMIT = 5
+
+/** Dev-only: skrinshot uchun soxta sotuvchi ma’lumoti (production bundle’da yo‘q). */
+export const __shotSellerState = import.meta.env.DEV ? (patch) => commit({ ...patch, loading: false, error: '', loadedFor: uid() ?? null }) : undefined

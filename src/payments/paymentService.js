@@ -4,19 +4,58 @@
  * Never accept or persist full PAN or CVV here.
  */
 
+import { useEffect, useState } from 'react'
+
 let cachedMode = null
+let cachedConfig = null
+let configPromise = null
+
+/** Server Click/Payme sozlanganmi — faqat shunda onlayn to‘lov ko‘rsatiladi. */
+export function fetchPaymentConfig() {
+  if (cachedConfig) return Promise.resolve(cachedConfig)
+  if (!configPromise) {
+    const get = (u) => fetch(u).then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+    configPromise = Promise.all([get('/api/click'), get('/api/payme')]).then(([click, payme]) => {
+      cachedConfig = {
+        click: { configured: !!click.configured, serviceId: click.service_id || '', merchantId: click.merchant_id || '', reversal: !!click.reversal },
+        payme: { configured: !!payme.configured, merchantId: payme.merchant_id || '', test: !!payme.test },
+      }
+      cachedMode = cachedConfig.click.configured || cachedConfig.payme.configured ? 'live' : 'demo'
+      return cachedConfig
+    })
+  }
+  return configPromise
+}
+
+export function usePaymentConfig() {
+  const [cfg, setCfg] = useState(cachedConfig)
+  useEffect(() => { let on = true; fetchPaymentConfig().then((c) => on && setCfg(c)); return () => { on = false } }, [])
+  return cfg
+}
+
+/** Onlayn usullar ro‘yxati (faqat sozlanganlar). */
+export const onlineMethods = (cfg) => ['click', 'payme'].filter((id) => cfg?.[id]?.configured)
+
+const b64 = (str) => btoa(unescape(encodeURIComponent(str)))
+
+/** Buyurtma uchun to‘lov havolasi. amount — so‘mda (server qaytargan summa). */
+export function payUrlFor(provider, { code, amount }, cfg, returnUrl = `${location.origin}/profil?tab=buyurtmalar`) {
+  const sum = Math.round(Number(amount) || 0)
+  if (!code || sum <= 0) return ''
+  if (provider === 'click' && cfg?.click?.configured) {
+    const q = new URLSearchParams({ service_id: cfg.click.serviceId, merchant_id: cfg.click.merchantId, amount: String(sum), transaction_param: code, return_url: returnUrl })
+    return `https://my.click.uz/services/pay?${q}`
+  }
+  if (provider === 'payme' && cfg?.payme?.configured) {
+    const host = cfg.payme.test ? 'https://checkout.test.paycom.uz/' : 'https://checkout.paycom.uz/'
+    return host + b64(`m=${cfg.payme.merchantId};ac.order_id=${code};a=${sum * 100};c=${returnUrl}`)
+  }
+  return ''
+}
 
 export async function detectPaymentMode() {
   if (cachedMode) return cachedMode
-  try {
-    const [click, payme] = await Promise.all([
-      fetch('/api/click').then((r) => r.json()).catch(() => ({ configured: false })),
-      fetch('/api/payme').then((r) => r.json()).catch(() => ({ configured: false })),
-    ])
-    cachedMode = click.configured || payme.configured ? 'live' : 'demo'
-  } catch {
-    cachedMode = 'demo'
-  }
+  await fetchPaymentConfig()
   return cachedMode
 }
 
