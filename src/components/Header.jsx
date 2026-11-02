@@ -5,7 +5,7 @@ import { Logo } from './icons'
 import { useCart } from '../cart'
 import { profileStore, useProfile } from '../profileStore'
 import { fetchNotifications } from '../buyerApi'
-import { signOut, useSession } from '../sessionStore'
+import { pickDisplayName, signOut, useSession } from '../sessionStore'
 import { initialsOf, looksLikeDemoName } from '../demoPurge'
 
 // variant="home" — bosh sahifa dizayni, variant="shop" — marketplace sahifalari
@@ -19,7 +19,8 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const remoteName = session.profile?.full_name || session.profile?.name || ''
   const localName = profile.accountLive ? (profile.name || '') : ''
   const rawName = authed ? (localName || remoteName || '') : ''
-  const who = !authed ? 'Mehmon' : (looksLikeDemoName(rawName) && remoteName && !looksLikeDemoName(remoteName) ? remoteName : (rawName || remoteName || 'Shifokor'))
+  // Lokal profil nomi test/placeholder bo‘lsa ('Test Stomatolog'), sessiyadagi haqiqiy ism ishlatiladi
+  const who = !authed ? 'Mehmon' : (looksLikeDemoName(rawName) && remoteName && !looksLikeDemoName(remoteName) ? remoteName : (pickDisplayName(rawName, remoteName) || 'Shifokor'))
   const role = !authed ? 'Hisobga kiring' : (profile.accountLive ? (profile.role || session.profile?.specialty || '') : (session.profile?.specialty || profile.role || '')) || '—'
   const avatarUrl = (profile.accountLive ? profile.avatar : '') || session.profile?.avatar_url || ''
   const showInitials = authed && !avatarUrl

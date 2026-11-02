@@ -15,6 +15,12 @@ export function isPlaceholderName(n) {
   return /^(test|e2e|demo|sinov)\b/i.test(String(n || '').trim())
 }
 
+/** Birinchi haqiqiy (test/placeholder bo‘lmagan) ismni qaytaradi; hammasi placeholder bo‘lsa birinchisini. */
+export function pickDisplayName(...names) {
+  const list = names.map((n) => String(n || '').trim()).filter(Boolean)
+  return list.find((n) => !isPlaceholderName(n)) || list[0] || ''
+}
+
 export function getSession() {
   return state
 }
@@ -61,7 +67,8 @@ export async function refreshSession() {
   const metaName = String(meta.full_name || meta.name || '').trim()
   const stored = String(data?.full_name || data?.name || '').trim()
   const shown = (!stored || isPlaceholderName(stored)) && metaName ? metaName : stored
-  const profile = data ? { ...data, full_name: shown, name: (!data.name || isPlaceholderName(data.name)) && metaName ? metaName : data.name } : null
+  const metaAvatar = String(meta.avatar_url || meta.picture || '').trim()
+  const profile = data ? { ...data, full_name: shown, name: (!data.name || isPlaceholderName(data.name)) && metaName ? metaName : data.name, avatar_url: data.avatar_url || metaAvatar } : null
   commit({
     status: 'authed',
     user: session.user,

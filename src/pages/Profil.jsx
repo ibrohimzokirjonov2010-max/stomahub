@@ -18,7 +18,7 @@ import {
 } from '../profileStore'
 import { demoBadgeProps, isDemoPayments, linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
 import { supabase } from '../supabaseClient'
-import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../sessionStore'
+import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Ortoped stomatolog', 'Stomatolog', 'Terapevt', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba', 'Klinika egasi']
@@ -149,7 +149,7 @@ function Board({ initial }) {
   }, [toast])
 
   const live = session.status === 'authed' || profile.accountLive
-  const name = profile.name || session.profile?.name || ''
+  const name = pickDisplayName(profile.name, session.profile?.full_name, session.profile?.name)
   const avatar = profile.avatar || session.profile?.avatar_url || ''
   const role = profile.role || session.profile?.specialty || ''
   const orders = allOrders(profile)

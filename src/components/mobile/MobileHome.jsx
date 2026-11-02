@@ -15,7 +15,7 @@ import { seminarCard } from '../../seminarsData'
 import MobileTabBar from './MobileTabBar'
 import { MobileTopBar, MobileToast } from './parts'
 import { initialsOf, looksLikeDemoName } from '../../demoPurge'
-import { useSession } from '../../sessionStore'
+import { pickDisplayName, useSession } from '../../sessionStore'
 import { SectionIcons, MenuIcons } from '../tealIcons'
 
 const QUICK = [
@@ -44,7 +44,7 @@ export default function MobileHome() {
   const profile = useProfile()
   const session = useSession()
   const feed = useFeed()
-  const rawHello = profile.accountLive ? (profile.name || session.profile?.full_name || session.profile?.name || '') : (session.profile?.full_name || session.profile?.name || '')
+  const rawHello = profile.accountLive ? pickDisplayName(profile.name, session.profile?.full_name, session.profile?.name) : pickDisplayName(session.profile?.full_name, session.profile?.name)
   // Uzbek convention: «Familiya Ism» → greet with Ism (2nd word); single token stays as-is
   const helloName = (() => {
     const parts = String(rawHello || '').trim().split(/\s+/).filter(Boolean)
