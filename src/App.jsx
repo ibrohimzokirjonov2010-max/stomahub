@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
 import { CartProvider } from './cart'
+import NotFound from './pages/NotFound'
 import { RxPrompt } from './restricted.jsx'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
@@ -245,6 +246,9 @@ export default function App() {
               </Responsive>
             }
           />
+          <Route path="/hamjamiyat" element={<Navigate to="/community" replace />} />
+          <Route path="/hamjamiyat/*" element={<Navigate to="/community" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </CartProvider>
