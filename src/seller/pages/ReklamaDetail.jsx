@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CircleDot, Pencil, Pause, Play, Copy, Flag, Trash2, ArrowLeft, CalendarDays, Wallet, Database, CreditCard, Eye, MousePointerClick, Users, ShoppingBag, FileText, Package, MapPin, PieChart, StickyNote, ChevronRight, Plus, Coins, X, BarChart3 } from 'lucide-react'
@@ -47,7 +48,7 @@ export default function ReklamaDetail() {
   const d = daysBetween(c.starts_on, c.ends_on)
   const total = c.total_budget || (d ? c.daily_budget * d : null)
   // grafik
-  const a0 = from || c.starts_on; const b0 = to || c.ends_on || iso(new Date())
+  const a0 = from || c.starts_on; const b0 = to || c.ends_on || tashkentToday()
   let days = dayRange(a0, b0 < a0 ? a0 : b0)
   const byDay = Object.fromEntries(days.map((x) => [x, { v: 0, k: 0 }])); stats.forEach((r) => { if (byDay[r.day]) { byDay[r.day].v += r.impressions; byDay[r.day].k += r.clicks } })
   let labels = days.map((x) => `${x.slice(8)}.${x.slice(5, 7)}`); let views = days.map((x) => byDay[x].v); let clicks = days.map((x) => byDay[x].k)

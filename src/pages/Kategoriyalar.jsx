@@ -13,9 +13,9 @@ const cats = [
   { id: 'implant', name: 'Implantologiya', about: 'Implantlar, abutmentlar, jarrohlik to‘plamlar', count: 0, to: '/marketplace?cat=impl', image: img('kat-implant'), icon: Screw },
   { id: 'endo', name: 'Endodontiya', about: 'Kanal asboblari, motorlar, materiallar va irrigatsiya', count: 0, to: '/marketplace?cat=endo', image: img('kat-endo'), icon: Tooth },
   { id: 'orto', name: 'Ortodontiya', about: 'Breketlar, alaynerlar, dugalar va ortodontik materiallar', count: 0, to: '/marketplace?cat=orto', image: img('kat-orto'), icon: Braces },
-  { id: 'gigiyena', name: 'Gigiyena', about: 'Cho‘tkalar, pastalar, iplar va profilaktik vositalar', count: 0, to: '/marketplace?cat=gig', image: img('kat-gigiyena'), icon: Tooth },
+  { id: 'gigiyena', name: 'Gigiyena', about: 'Gigiyena, himoya vositalari va sarflanadigan materiallar', count: 0, to: '/marketplace?cat=gig', image: img('kat-gigiyena'), icon: Tooth },
   { id: 'asbob', name: 'Asboblar', about: 'Diagnostik, terapevtik va jarrohlik asboblar', count: 0, to: '/marketplace?cat=asb', image: img('kat-asbob'), icon: Wrench },
-  { id: 'uskuna', name: 'Uskunalar', about: 'Stomatologik unitlar, rentgen, sterilizatsiya va boshqa uskunalar', count: 0, to: '/marketplace?cat=usk', image: img('kat-uskuna'), icon: Armchair },
+  { id: 'uskuna', name: 'Uskunalar', about: 'Stomatologik unitlar, rentgen, sterilizatsiya uskunalari', count: 0, to: '/marketplace?cat=usk', image: img('kat-uskuna'), icon: Armchair },
 ]
 
 export default function Kategoriyalar() {
@@ -53,7 +53,7 @@ export default function Kategoriyalar() {
             return (
               <Link key={c.id} to={c.to} className="min-w-0 overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-0.5">
                 <div className="h-[148px] overflow-hidden bg-white">
-                  <img src={c.image} alt="" className="size-full object-contain" />
+                  <img src={c.image} alt={`${c.name} kategoriyasi`} className="size-full object-contain" />
                 </div>
                 <div className="flex items-center gap-2.5 border-t border-[#f2f5f8] p-3">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f6f4] text-sea"><Icon className="size-4" /></span>

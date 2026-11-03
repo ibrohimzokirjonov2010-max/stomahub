@@ -66,7 +66,7 @@ export default function BuyurtmaDetail() {
   const deliv = DELIVERY.find((d) => d[0] === o.delivery_method)?.[1] || 'Kuryer orqali yetkazish'
 
   const stepper = (mobile) => {
-    const steps = mobile ? [['yangi', 'Yangi', FileText], ['tasdiqlandi', 'Tasdiqlangan', BadgeCheck], ['tayyorlanmoqda', 'Yig‘ilmoqda', Box], ['yetkazilmoqda', 'Yetkazilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
+    const steps = mobile ? [['yangi', 'Yangi', FileText], ['tasdiqlandi', 'Tasdiqlangan', BadgeCheck], ['tayyorlanmoqda', 'Tayyorlanmoqda', Box], ['yetkazilmoqda', 'Yetkazilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
     return (
       <div className="flex">
         {steps.map(([s, l, I], i) => {
@@ -118,7 +118,7 @@ export default function BuyurtmaDetail() {
               <div className="pr-3">Buyurtma raqami<div className="mt-1 flex items-center gap-2 text-[17px] font-bold text-[#10283F]">{o.code}<button type="button" aria-label="Nusxalash" onClick={copy}><Copy className="size-4 text-[#5C6E80]" /></button></div></div>
               <div className="px-4">Sana<div className="mt-1 text-[17px] font-bold text-[#10283F]">{dmy(o.created_at)}</div>{hm(o.created_at)}</div>
               <div className="px-4">To‘lov usuli<div className="mt-1 flex items-center gap-2"><Wallet className="size-5 text-[#0F766E]" /><div><b className="text-[15px] text-[#10283F]">{PAY_METHOD[o.payment_method || 'cash'] || String(o.payment_method).toUpperCase()}</b><br />{o.payment_status === 'paid' || o.payment_status === 'released' ? 'To‘langan' : o.payment_method === 'cash' ? 'Yetkazilganda' : (o.payment_status || 'kutilmoqda')}</div></div></div>
-              <div className="pl-4">Holat<div className="mt-2"><OrderBadge status={o.status} /></div></div>
+              <div className="pl-4">Holat<div className="mt-2"><OrderBadge order={o} status={o.status} /></div></div>
             </div>
             <div className="pt-5">{cancelled ? <div className="rounded-lg bg-[#F3F5F6] p-3 text-[13px] text-[#3D4E5F]"><b>Bekor qilingan.</b> Sabab: {o.cancel_reason || '—'}</div> : stepper(false)}</div>
           </div>
@@ -196,7 +196,7 @@ export default function BuyurtmaDetail() {
         </div>
         <Err>{a.error}</Err>
         <div className="space-y-3">
-          <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : stepper(true)}</div>
+          <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge order={o} status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : stepper(true)}</div>
           <div className={`${card} p-3`}>
             <div className="flex items-center justify-between"><h3 className="flex items-center gap-2 text-[15px] font-bold"><span className="grid size-8 place-items-center rounded-full bg-[#E3F4F2] text-[#0F766E]"><UserRound className="size-4" /></span>Mijoz ma’lumotlari</h3>{o.customer_id && <Link to={`/sotuvchi/mijozlar/${o.customer_id}`} className="text-[12.5px] text-[#0F766E]">Mijoz profilini ko‘rish ›</Link>}</div>
             <div className="mt-2 flex items-center gap-3"><span className="grid size-12 place-items-center rounded-full bg-[#E3F4F2] font-semibold text-[#0F766E]">{(o.customer_name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span><div className="text-[12.5px] text-[#5C6E80]"><div className="text-[14.5px] font-semibold text-[#10283F]">{o.customer_name || '—'}</div><div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{phoneOf(o)}</div><div className="flex items-center gap-1.5"><MapPin className="size-3.5 text-[#0F766E]" />{o.city || o.region || '—'}</div></div></div>
