@@ -6,7 +6,7 @@ const TIME_RE = /^(\d{1,2}[:.]\d{2}(?:\s*[–—-]\s*\d{1,2}[:.]\d{2})?)(?:\s*[�
 export function splitTimeTitle(str) {
   const m = String(str || '').trim().match(TIME_RE)
   // '10:00–10:30' ning o‘zi (mavzusiz) — bo‘linmaydi, aks holda tugash vaqti yo‘qoladi
-  if (!m || !m[2].trim() || /^\d{1,2}[:.]\d{2}\b/.test(m[2].trim())) return null
+  if (!m || !m[2].trim() || /^[\d:.\s]*$/.test(m[2].trim()) || /^\d{1,2}[:.]\d{2}\b/.test(m[2].trim())) return null
   return { time: m[1].trim(), title: m[2].trim() }
 }
 // Bitta maydonga yozilgan eski qatorni ajratish
