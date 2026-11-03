@@ -18,19 +18,12 @@ import { BottomSheet } from './MobileSeminars'
 import MapPicker, { MapPreview, withGeo, reverseGeocode } from '../MapPicker'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
-import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
+import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, earliestDeliveryISO, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
 import { profileStore, useProfile } from '../../profileStore'
+import { CHECKOUT_CITIES_SHORT } from '../../lib/uzRegions'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
-export const CITIES = {
-  Toshkent: ['Yunusobod', 'Chilonzor', 'Mirzo Ulug‘bek', 'Yakkasaroy', 'Mirobod', 'Shayxontohur', 'Sergeli', 'Uchtepa', 'Yashnobod', 'Olmazor', 'Bektemir'],
-  Samarqand: ['Markaz', 'Siab', 'Temiryo‘l'],
-  Buxoro: ['Markaz', 'Kogon'],
-  Andijon: ['Markaz', 'Asaka'],
-  'Farg‘ona': ['Markaz', 'Qo‘qon'],
-  Namangan: ['Markaz', 'Chortoq'],
-  Nukus: ['Markaz'],
-}
+export const CITIES = CHECKOUT_CITIES_SHORT
 export const ADDRESS_ICONS = { home: House, work: Hospital, branch: Store, other: MapPin }
 const PINS = [
   { x: 210, y: 60, district: 'Yunusobod', address: 'Yunusobod tumani, Amir Temur ko‘chasi, 108-uy' },
@@ -105,7 +98,7 @@ export default function MobileCheckout() {
     const me = profile.accountLive ? { name: profile.name, phone: profile.phone } : { name: '', phone: '' }
     const s = profile.accountLive ? (SAVED.find((a) => a.id === profile.defaultAddr) || SAVED[0]) : null
     return loc.state?.ship === 'region' || !s
-      ? { ...me, city: 'Samarqand', district: 'Markaz', address: '', note: '', saved: '' }
+      ? { ...me, city: '', district: '', address: '', note: '', saved: '' }
       : { ...me, city: s.city, district: s.district, address: s.address, note: '', saved: s.id }
   })
   const [mode, setMode] = useState('courier')
@@ -150,8 +143,9 @@ export default function MobileCheckout() {
   const errors = {
     name: form.name.trim().length < 3 && 'Ism va familiyani kiriting',
     phone: phone.length !== 9 && PHONE_INCOMPLETE_MSG,
+    city: mode === 'courier' && (!form.city || !form.district) && 'Shahar va tumanni tanlang',
     address: mode === 'courier' && form.address.trim().length < 5 && 'Aniq manzilni kiriting',
-    when: (!delivery.date || delivery.date < todayISO() || !windowsFor(delivery.date).includes(delivery.slot)) && 'Sana va vaqt oralig‘ini tanlang',
+    when: (!delivery.date || delivery.date < earliestDeliveryISO(form.city, mode === 'pickup') || !windowsFor(delivery.date).includes(delivery.slot)) && 'Sana va vaqt oralig‘ini tanlang',
   }
   const invErr = invoiceError(invoice, inv)
   const cardDigits = cardNo.num.replace(/\D/g, '')
@@ -234,7 +228,7 @@ export default function MobileCheckout() {
         goods, fee: 0, discount: 0, total: goods, method, months: 0, monthly: 0, paymentRef,
         payLinks: online ? (res.orders || []).map((o) => ({ code: o.code, amount: Number(o.amount) || 0, url: payUrlFor(method, o, payCfg) })) : [],
         mode, eta: `${fmtDeliveryDate(delivery.date)}, ${delivery.slot}`, days: ship.days, invoice: invoice ? { ...inv } : null, name: form.name.trim(), phone,
-        address: mode === 'pickup' ? SHOP : `${form.city}, ${form.address}`,
+        address: mode === 'pickup' ? SHOP : [form.city, form.district, form.address].filter(Boolean).join(', '),
       }
       sessionStorage.setItem(ORDER_KEY, JSON.stringify(order))
       if (buyNow) endBuyNow()
@@ -311,16 +305,18 @@ export default function MobileCheckout() {
                       placeholder="+998 90 123 45 67"
                     />
                 </Field>
-                <Field icon={Building} label="Shahar" chevron>
-                  <span className="block truncate text-[13px] text-[#0d2a4a]">{form.city}</span>
-                  <select value={form.city} aria-label="Shahar" onChange={(e) => { const city = e.target.value; setForm((f) => ({ ...f, city, district: CITIES[city][0], address: '', saved: '' })) }} className="absolute inset-0 opacity-0">
+                <Field f="city" icon={Building} label="Shahar" chevron err={tried && errors.city}>
+                  <span className={`block truncate text-[13px] ${form.city ? 'text-[#0d2a4a]' : 'text-muted'}`}>{form.city || 'Shaharni tanlang'}</span>
+                  <select value={form.city} aria-label="Shahar" onChange={(e) => { const city = e.target.value; setForm((f) => ({ ...f, city, district: (CITIES[city] || [])[0] || '', address: '', saved: '' })) }} className="absolute inset-0 opacity-0">
+                    {!form.city && <option value="">Shaharni tanlang</option>}
                     {Object.keys(CITIES).map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </Field>
                 <Field icon={MapIcon} label="Tuman" chevron>
-                  <span className="block truncate text-[13px] text-[#0d2a4a]">{form.district}</span>
+                  <span className={`block truncate text-[13px] ${form.district ? 'text-[#0d2a4a]' : 'text-muted'}`}>{form.district || 'Tumanni tanlang'}</span>
                   <select value={form.district} aria-label="Tuman" onChange={(e) => patch('district', e.target.value)} className="absolute inset-0 opacity-0">
-                    {CITIES[form.city].map((d) => <option key={d}>{d}</option>)}
+                    {!form.district && <option value="">Tumanni tanlang</option>}
+                    {(CITIES[form.city] || []).map((d) => <option key={d}>{d}</option>)}
                   </select>
                 </Field>
               </div>
@@ -374,7 +370,7 @@ export default function MobileCheckout() {
               </div>
             </section>
 
-            <WhenPicker delivery={delivery} setDelivery={setDelivery} pickup={mode === 'pickup'} err={tried && errors.when} />
+            <WhenPicker delivery={delivery} setDelivery={setDelivery} pickup={mode === 'pickup'} minDate={earliestDeliveryISO(form.city, mode === 'pickup')} err={tried && errors.when} />
 
             <section className={`${card} mt-3 p-3`}>
               <Head icon={Truck} title="Yetkazish usuli" text="Sizga qulay usulni tanlang" />
@@ -549,6 +545,7 @@ export default function MobileCheckout() {
                 <button type="button" onClick={(e) => { e.preventDefault(); setSheet('oferta') }} className="font-medium text-[#0b6d73] underline underline-offset-2">Ommaviy oferta</button> bilan tanishdim va roziman
               </span>
             </label>
+            {agreeErr && !agree && <p role="alert" className="mb-2 text-[12px] font-semibold text-sale">Davom etish uchun oferta shartlariga rozilik belgisini qo‘ying.</p>}
             {rxBlocked && <RestrictedNotice className="mb-2" />}
             {otherProblems.map((x) => <BlockNotice key={x.it.id} className="mt-2" text={`${x.it.name}: ${x.problem.text}`} />)}
             {placeErr && <p role="alert" className="mb-2 rounded-lg bg-[#fff4f4] px-3 py-2 text-[12.5px] text-[#b42318]">{placeErr}</p>}
@@ -894,10 +891,13 @@ function GeoSheet({ lat, lng, onClose, onPick }) {
   )
 }
 
-function WhenPicker({ delivery, setDelivery, pickup, err }) {
+function WhenPicker({ delivery, setDelivery, pickup, err, minDate }) {
+  useEffect(() => {
+    if (delivery.date < minDate) setDelivery({ date: minDate, slot: windowsFor(minDate)[0] || '' })
+  }, [minDate]) // eslint-disable-line react-hooks/exhaustive-deps
   const slots = windowsFor(delivery.date)
   const setDate = (date) => {
-    if (!date || date < todayISO()) date = todayISO()
+    if (!date || date < minDate) date = minDate
     const open = windowsFor(date)
     setDelivery((d) => ({ date, slot: open.includes(d.slot) ? d.slot : (open[0] || '') }))
   }
@@ -908,7 +908,7 @@ function WhenPicker({ delivery, setDelivery, pickup, err }) {
         <span><b className="block text-[14px] text-[#0d2a4a]">{pickup ? 'Olib ketish vaqti' : 'Yetkazish vaqti'}</b><span className="text-[11.5px] text-ink-2">Toshkent vaqti bo‘yicha</span></span>
       </div>
       <label className="mt-3 block text-[12px] font-semibold text-[#0d2a4a]">Sana
-        <input type="date" min={todayISO()} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#dfe8ec] bg-white px-3 text-[14px] font-normal outline-none focus:border-[#0b8a7a]" />
+        <input type="date" min={minDate} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#dfe8ec] bg-white px-3 text-[14px] font-normal outline-none focus:border-[#0b8a7a]" />
       </label>
       <p className="mt-2 text-[12px] font-semibold text-[#0d2a4a]">Vaqt oralig‘i</p>
       {slots.length ? (

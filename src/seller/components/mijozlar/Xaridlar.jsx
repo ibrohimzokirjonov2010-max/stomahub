@@ -20,7 +20,7 @@ export default function Xaridlar({ orders, per = 5, bare }) {
           <div key={o.id} className={`${bare ? 'border border-[#EEF3F4] rounded-xl' : card} p-3`}>
             <button type="button" onClick={() => navigate(`/sotuvchi/buyurtmalar/${o.id}`)} className="flex w-full items-center justify-between gap-2 text-left">
               <div className="min-w-0"><div className="text-[14px] font-bold text-[#10283F]">#{o.code}</div><div className="text-[12px] text-[#5C6E80]">{dmy(o.created_at)} {hm(o.created_at)}{o.city ? ` · ${o.city}` : ''}</div></div>
-              <span className="flex shrink-0 items-center gap-1"><OrderBadge status={o.status} /><ChevronRight className="size-4 text-[#5C6E80]" /></span>
+              <span className="flex shrink-0 items-center gap-1"><OrderBadge order={o} status={o.status} /><ChevronRight className="size-4 text-[#5C6E80]" /></span>
             </button>
             <div className="mt-2 divide-y divide-[#EEF3F4] border-t border-[#EEF3F4]">
               {(o.items || []).map((it) => (

@@ -15,7 +15,7 @@ import { CATEGORIES } from '../components/mahsulotlar/constants'
 import { normCategory } from '../../config/productCatalog'
 
 const TONE = { active: 'on', review: 'mid', rejected: 'off', inactive: 'off', archived: 'off', draft: 'off' }
-export const ProductBadge = ({ status, className }) => <Badge tone={TONE[status]} className={`min-w-[72px] ${className || ''}`}>{PRODUCT_STATUS[status]?.label || status}</Badge>
+export const ProductBadge = ({ status, stock, className }) => stock !== undefined && Number(stock) <= 0 && ['active', 'review'].includes(status) ? <Badge tone="off" className={`min-w-[72px] ${className || ''}`}>Tugagan</Badge> : <Badge tone={TONE[status]} className={`min-w-[72px] ${className || ''}`}>{PRODUCT_STATUS[status]?.label || status}</Badge>
 
 export function useProductActions() {
   const [edit, setEdit] = useState(null)
@@ -76,7 +76,7 @@ export default function Mahsulotlar() {
   const products = data.products
   const count = (f) => products.filter(f).length
   const tabs = [['all', 'Barchasi', count((p) => p.status !== 'archived')], ['active', 'Faol', count((p) => p.status === 'active')], ['review', 'Tekshiruvda', count((p) => p.status === 'review')], ['rejected', 'Rad etilgan', count((p) => p.status === 'rejected')], ['archived', 'Arxiv', count((p) => p.status === 'archived')]]
-  const mtabs = [['all', 'Barchasi', count((p) => p.status !== 'archived')], ['active', 'Faol', count((p) => p.status === 'active' && p.stock > 0)], ['out', 'Tugagan', count((p) => p.status !== 'archived' && p.stock <= 0)]]
+  const mtabs = [['all', 'Barchasi', count((p) => p.status !== 'archived')], ['active', 'Faol', count((p) => p.status === 'active' && p.stock > 0)], ['out', 'Tugagan', count((p) => p.status !== 'archived' && p.stock <= 0)], ['review', 'Tekshiruvda', count((p) => p.status === 'review')], ['rejected', 'Rad etilgan', count((p) => p.status === 'rejected')], ['archived', 'Arxiv', count((p) => p.status === 'archived')]]
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
@@ -152,7 +152,7 @@ export default function Mahsulotlar() {
                   <Td className="truncate text-[#5C6E80]">{p.category || '—'}</Td>
                   <Td>{num(p.price)}</Td>
                   <Td>{p.stock}</Td>
-                  <Td><ProductBadge status={p.status} /></Td>
+                  <Td><ProductBadge status={p.status} stock={p.stock} /></Td>
                   <Td><div className="flex items-center justify-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                     <IconBtn label="Tahrirlash" onClick={() => act.setEdit(p)}><Pencil className="size-4" /></IconBtn>
                     <IconBtn label="Nusxa olish" onClick={() => act.copy(p)}><Copy className="size-4" /></IconBtn>
@@ -184,7 +184,7 @@ export default function Mahsulotlar() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-1">
                   <div className="truncate pt-0.5 text-[14.5px] font-bold">{p.name}</div>
-                  <div className="flex shrink-0 items-center"><Badge dot tone={p.stock <= 0 ? 'off' : TONE[p.status]} className="rounded-full">{p.stock <= 0 && p.status === 'active' ? 'Tugagan' : PRODUCT_STATUS[p.status]?.label}</Badge><Menu items={act.items(p)} className="-mr-1" /></div>
+                  <div className="flex shrink-0 items-center"><Badge dot tone={p.stock <= 0 ? 'off' : TONE[p.status]} className="rounded-full">{p.stock <= 0 && ['active', 'review'].includes(p.status) ? 'Tugagan' : PRODUCT_STATUS[p.status]?.label}</Badge><Menu items={act.items(p)} className="-mr-1" /></div>
                 </div>
                 <div className="truncate text-[12px] text-[#5C6E80]">SKU: {p.sku || '—'} <span className="mx-1 text-[#C9D6DA]">|</span> {p.category || '—'}</div>
                 <div className="text-[16px] font-extrabold">{som(p.price)}</div>

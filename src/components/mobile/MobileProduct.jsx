@@ -126,7 +126,7 @@ function ProductView({ id }) {
         <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto px-3.5">
           {thumbs.map((t, i) => (
             <button key={`${i}-${t}`} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[60px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-[#f3f6f9] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
-              <img src={t} alt="" className="size-full object-cover" />
+              <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-cover" />
             </button>
           ))}
         </div>
@@ -140,9 +140,9 @@ function ProductView({ id }) {
         </div>
         <h1 className="mt-1.5 text-[21px] font-bold leading-tight text-ink">{p.name}</h1>
         <div className="mt-1.5 flex items-center gap-2 text-[12.5px] text-muted">
-          {p.stock > 0 ? `Omborda ${p.stock} dona` : 'Tugagan'}
+          {p.stock > 0 ? `Omborda ${p.stock} ${p.uom || 'dona'}` : 'Tugagan'}
           <span className="mx-1 h-3 w-px bg-line" />
-          <MessageSquareText className="size-4" /> {p.reviews || 0} ta sharh
+          <MessageSquareText className="size-4" /> {Number(p.rating) > 0 ? `${p.rating} · ${p.reviews || 0} ta sharh` : 'Hali baho yo‘q'}
         </div>
 
         {/* Narx */}
@@ -201,9 +201,10 @@ function ProductView({ id }) {
           </button>
         )}
 
-        <h2 className="mt-3 text-[16px] font-bold text-ink">Xususiyatlari</h2>
+        {/* Bitta "Xususiyatlari" bo‘limi: jadval (techSpecs) bo‘lsa pastda chiqadi, ro‘yxat takrorlanmaydi */}
+        {!p.techSpecs?.length && (p.highlights || p.features)?.length > 0 && <h2 className="mt-3 text-[16px] font-bold text-ink">Xususiyatlari</h2>}
         <ul className="mt-1.5 space-y-1">
-          {(p.highlights || p.features).map((f) => (
+          {(p.techSpecs?.length ? [] : (p.highlights || p.features || [])).map((f) => (
             <li key={f} className="flex gap-2 text-[12.5px] leading-[1.45] text-ink-2">
               <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-sea" /> {f}
             </li>
@@ -219,7 +220,7 @@ function ProductView({ id }) {
         )}
         {[
           ['Klinik qo‘llanish', p.clinicalUse, null],
-          ['Texnik xususiyatlar', '', p.techSpecs],
+          ['Xususiyatlari', '', p.techSpecs],
           ['Sertifikat', '', p.certificate],
           ['Yetkazib berish', p.deliveryInfo, null],
           ['Qayta buyurtma', p.reorder?.enabled ? `Har ${p.reorder.intervalDays} kunda qayta buyurtma qilish tavsiya etiladi.` : '', null],
@@ -283,6 +284,7 @@ function ProductView({ id }) {
       {chat && <SellerChat seller={seller} product={p} onClose={() => setChat(false)} onSent={() => { setChat(false); setToast('Xabar sotuvchiga yuborildi') }} />}
 
       <MobileToast
+        warn={/^Omborda faqat/.test(toast)}
         text={toast}
         onClose={closeToast}
         bottom={140}
@@ -301,7 +303,7 @@ export function SellerChat({ seller, product, onClose, onSent, quick = SHOP_QUIC
       <div role="dialog" aria-modal="true" aria-label="Sotuvchiga yozish" onClick={(e) => e.stopPropagation()} className="rounded-t-3xl bg-white px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3">
         <div className="flex items-center gap-3">
           {seller.avatar ? (
-            <img src={seller.avatar} alt="" className="size-10 rounded-full object-cover" />
+            <img src={seller.avatar} alt={seller.name || 'Sotuvchi'} className="size-10 rounded-full object-cover" />
           ) : (
             <span className="grid size-10 place-items-center rounded-full bg-[#0f2b5b] text-[11px] font-bold text-white">{seller.logo}</span>
           )}

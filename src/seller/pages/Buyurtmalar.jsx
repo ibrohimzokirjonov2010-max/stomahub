@@ -11,11 +11,11 @@ import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
 import ProductThumb from '../components/bosh-sahifa/ProductThumb'
 import OrderForm from '../components/buyurtmalar/OrderForm'
-import { O_LABEL, O_NEXT, O_TONE, phoneOf } from '../components/buyurtmalar/constants'
+import { O_LABEL, O_NEXT, O_TONE, phoneOf, isLate } from '../components/buyurtmalar/constants'
 
-export const OrderBadge = ({ status, className = '', icon }) => {
+export const OrderBadge = ({ status, className = '', icon, order }) => {
   const I = { yangi: FileText, tasdiqlandi: CircleCheck, tayyorlanmoqda: Box, yetkazilmoqda: Truck, yetkazildi: CircleCheck, bekor_qilindi: CircleX }[status]
-  return <Badge tone={O_TONE[status]} className={`min-w-[86px] ${className}`}>{icon && I && <I className="size-3.5" />}{O_LABEL[status] || status}</Badge>
+  return <><Badge tone={O_TONE[status]} className={`min-w-[86px] ${className}`}>{icon && I && <I className="size-3.5" />}{O_LABEL[status] || status}</Badge>{isLate(order) && <Badge tone="off" className="ml-1 whitespace-nowrap" title="Yetkazish sanasi o‘tib ketdi">Kechikmoqda</Badge>}</>
 }
 const total = (o) => netOf(o) + Number(o.delivery_fee || 0)
 const city = (o) => o.city || o.region || (o.address || '').split(',')[0] || ''
@@ -42,7 +42,7 @@ export default function Buyurtmalar() {
   const orders = data.orders
   const c = (f) => orders.filter(f).length
   const tabs = [['all', 'Barchasi', orders.length], ...Object.entries(O_LABEL).map(([k, l]) => [k, l, c((o) => o.status === k)])]
-  const mtabs = [['all', 'Barchasi', orders.length], ['yangi', 'Yangi', c((o) => o.status === 'yangi')], ['tayyorlanmoqda', 'Yig‘ilmoqda', c((o) => o.status === 'tayyorlanmoqda')], ['yetkazilmoqda', 'Yetkazilmoqda', c((o) => o.status === 'yetkazilmoqda')], ['yetkazildi', 'Yakunlangan', c((o) => o.status === 'yetkazildi')]]
+  const mtabs = [['all', 'Barchasi', orders.length], ['yangi', 'Yangi', c((o) => o.status === 'yangi')], ['tayyorlanmoqda', 'Tayyorlanmoqda', c((o) => o.status === 'tayyorlanmoqda')], ['yetkazilmoqda', 'Yetkazilmoqda', c((o) => o.status === 'yetkazilmoqda')], ['yetkazildi', 'Yakunlangan', c((o) => o.status === 'yetkazildi')]]
   const buyers = [...new Set(orders.map((o) => o.customer_name).filter(Boolean))].sort()
 
   const list = useMemo(() => {
@@ -130,7 +130,7 @@ export default function Buyurtmalar() {
                 <Td>{o.items.reduce((s, it) => s + it.qty, 0)} ta</Td>
                 <Td>{num(total(o))}</Td>
                 <Td>Naqd</Td>
-                <Td className="text-center"><OrderBadge status={o.status} /></Td>
+                <Td className="text-center"><OrderBadge order={o} status={o.status} /></Td>
                 <Td><div className="flex items-center justify-center gap-0.5" onClick={(e) => e.stopPropagation()}><button type="button" aria-label="Ko‘rish" onClick={() => navigate(`/sotuvchi/buyurtmalar/${o.id}`)} className="grid size-8 place-items-center rounded-lg hover:bg-[#F0FDFA]"><Eye className="size-4" /></button><Menu items={items(o)} /></div></Td>
               </tr>))}</tbody>
           </table>
@@ -151,7 +151,7 @@ export default function Buyurtmalar() {
             <button key={o.id} type="button" onClick={() => navigate(`/sotuvchi/buyurtmalar/${o.id}`)} className={`${card} flex w-full items-center gap-3 p-2.5 text-left`}>
               <ProductThumb src={o.items[0]?.image_url} className="h-[72px] w-[68px] shrink-0" />
               <div className="min-w-0 flex-1 text-[12px] text-[#5C6E80]">
-                <div className="flex items-center justify-between gap-2"><span className="truncate text-[14.5px] font-bold text-[#10283F]">#{o.code}</span><OrderBadge status={o.status} icon className="shrink-0 rounded-full !min-w-0" /></div>
+                <div className="flex items-center justify-between gap-2"><span className="truncate text-[14.5px] font-bold text-[#10283F]">#{o.code}</span><OrderBadge order={o} status={o.status} icon className="shrink-0 rounded-full !min-w-0" /></div>
                 <div>{dmy(o.created_at)} {hm(o.created_at)}</div>
                 <div className="flex items-center gap-1.5 truncate"><UserRound className="size-3.5 shrink-0" /><span className="truncate">{o.customer_name || '—'}</span></div>
                 <div className="flex items-center gap-1.5"><Phone className="size-3.5 shrink-0" />{phoneOf(o)}</div>

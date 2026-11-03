@@ -22,6 +22,7 @@ export function isoOf(date) {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : s.slice(0, 10)
 }
 const shiftIso = (iso, days) => {
+// Sof sana arifmetikasi (UTC yarim tun) — vaqt zonasiga bog‘liq emas; bugungi sana tashkentToday() dan olinadi
   const [y, m, d] = iso.split('-').map(Number)
   const dt = new Date(Date.UTC(y, m - 1, d + days))
   return dt.toISOString().slice(0, 10)

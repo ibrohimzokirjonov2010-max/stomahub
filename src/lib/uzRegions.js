@@ -59,3 +59,8 @@ export function normalizeDistrict(name = '') {
 }
 
 export const isTashkentCity = (c = '') => /^toshkent( shahri)?$/i.test(String(c).trim())
+
+// Buyurtma formasi uchun: shahar → tumanlar. Toshkent uchun 12 tuman, qolganlar uchun "Markaz" (aniq manzil matnda).
+export const CHECKOUT_CITIES = Object.fromEntries(UZ_CITIES.map((c) => [c, c === 'Toshkent' ? TASHKENT_DISTRICTS : ['Markaz']]))
+// Mobil ko‘rinish uchun qisqa tuman nomlari ("Chilonzor tumani" → "Chilonzor")
+export const CHECKOUT_CITIES_SHORT = Object.fromEntries(Object.entries(CHECKOUT_CITIES).map(([c, l]) => [c, l.map((d) => d.replace(/ tumani$/, ''))]))

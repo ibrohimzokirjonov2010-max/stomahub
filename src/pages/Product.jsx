@@ -36,7 +36,7 @@ export default function Product() {
 function productTabs(p) {
   const t = [{ key: 'tavsif', label: 'Tavsif' }]
   if (p.clinicalUse) t.push({ key: 'klinik', label: 'Klinik qo‘llanish', text: p.clinicalUse })
-  if (p.techSpecs?.length) t.push({ key: 'texnik', label: 'Texnik xususiyatlar', rows: p.techSpecs })
+  if (p.techSpecs?.length) t.push({ key: 'texnik', label: 'Xususiyatlari', rows: p.techSpecs })
   if (p.certificate?.length) t.push({ key: 'sertifikat', label: 'Sertifikat', rows: p.certificate })
   const terms = [
     ...(p.minQty > 1 ? [['Minimal buyurtma', `${p.minQty} ${p.uom || 'dona'}`]] : []),
@@ -128,7 +128,7 @@ function ProductBody({ p }) {
                 onClick={() => setImg(i)}
                 className={`aspect-[70/55] w-[calc((100%-2rem)/5)] shrink-0 overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
               >
-                <img src={t} alt="" className="size-full object-cover" />
+                <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-cover" />
               </button>
             ))}
           </div>

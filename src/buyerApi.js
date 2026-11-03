@@ -44,7 +44,7 @@ export const toMarketProduct = (row) => ({
   deliveryInfo: row.delivery_info || '',
   reorder: row.reorder && typeof row.reorder === 'object' && row.reorder.enabled ? { enabled: true, intervalDays: Number(row.reorder.interval_days) || 30 } : null,
   variantType: row.variant_type || '',
-  uom: row.uom || 'dona',
+  uom: row.uom || row.unit || 'dona',
   minQty: Math.max(1, Number(row.min_qty) || 1),
   priceTiers: Array.isArray(row.price_tiers) ? row.price_tiers.filter((t) => Number(t?.min_qty) > 1 && Number(t?.price) > 0) : [],
   regCertNo: row.reg_cert_no || '',
