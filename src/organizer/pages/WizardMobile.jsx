@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { cleanProgram, programRows } from '../../programDays'
 import DatePick from './DatePick'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -179,7 +180,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     cover: form.cover, thumbs: [form.cover].filter(Boolean),
     start: form.date, startTime: form.start, end: base?.end && base.end > form.date ? base.end : form.date, endTime: form.end,
     place: form.place, address: form.place, lat: form.lat ?? null, lng: form.lng ?? null,
-    program: (form.program || []).filter((r) => r.time || r.title), learn: form.learn, audience: form.audience, includes: form.includes,
+    program: cleanProgram(form.program), learn: form.learn, audience: form.audience, includes: form.includes,
     cmeHours: form.cmeHours, cmePoints: form.cmePoints, practice: form.practice, refundPolicy: form.refundPolicy, liveSurgery: form.liveSurgery,
     ...pickExtras(form), placeImg: form.placeImg || '', orgName: hub.settings?.orgName || base?.orgName || '',
     tickets, speakers, template: form.certDesign ? 'custom' : (base?.template && base.template !== 'custom' ? base.template : 'teal'), promos,
@@ -375,7 +376,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           <p className="text-[15px] font-bold">{form.name}</p>
           <p className="mt-1 text-[13px] text-[#607078]">{uzDate(form.date, 'words')} · {form.start} – {form.end}</p>
           <p className="text-[13px] text-[#607078]">{FORMAT_OF[form.placeType]} · {form.place}</p>
-          <p className="text-[13px] text-[#607078]">{tickets.length} chipta · {speakers.length} ma’ruzachi · dastur: {(form.program || []).filter((r) => r.title).length} qator</p>
+          <p className="text-[13px] text-[#607078]">{tickets.length} chipta · {speakers.length} ma’ruzachi · dastur: {programRows(form.program).filter((r) => r.title).length} qator</p>
           <Next err={stepErr} onClick={() => publish(false)}>E’lon qilish</Next>
           <button type="button" onClick={() => publish(true)} className="mt-2 h-11 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Qoralama saqlash</button>
           <button type="button" onClick={() => setStep(6)} className="h-10 w-full text-[14px] font-semibold" style={{ color: GREEN }}>Ortga</button>

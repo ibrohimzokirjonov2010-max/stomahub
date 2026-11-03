@@ -1,4 +1,14 @@
 import { som } from './marketData'
+import { normalizeProgram } from './programDays'
+
+const UZ_MON = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
+const uzDay = (iso) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${Number(m[3])} ${UZ_MON[Number(m[2]) - 1]}` : '' }
+// Tashkilotchi dasturi kunlar bo‘yicha: [{ label, title, date, items: [[vaqt, mavzu, izoh]] }]
+export function programDaysOf(raw) {
+  return normalizeProgram(raw)
+    .map((d, i) => ({ label: `${i + 1}-kun`, title: d.title, date: uzDay(d.date), items: d.items.map((r) => [r.time, r.title, r.sub || '']).filter((r) => r[1]) }))
+    .filter((d) => d.items.length)
+}
 
 const pic = (n) => `/images/seminars/${n}.jpg`
 
@@ -153,8 +163,9 @@ export function buildSeminarPage(s) {
     speaker,
     scheduleTitle: `Dastur (${s.day} ${s.mon})`,
     schedule: s.organizer
-      ? (s.program || []).map((p) => Array.isArray(p) ? p : [p?.time || '', p?.title || p?.text || '', p?.sub || '']).filter((p) => p[1])
+      ? programDaysOf(s.program).flatMap((d) => d.items)
       : scheduleFor(s),
+    programDays: s.organizer ? programDaysOf(s.program) : null,
     gear: ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
     venue: s.organizer
       ? { name: s.place, address: [s.address, s.city].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', '), image: s.placeImg || '', notes: s.venueNotes || [], online: !!s.online, map: `https://maps.google.com/?q=${encodeURIComponent([s.address || s.place, s.city].filter(Boolean).join(' '))}` }
@@ -222,7 +233,7 @@ export function seminarView(record) {
   const d = Number(page.day)
   const items = page.schedule.filter(([, t]) => !BREAKS.test(t))
   const program = page.organizer
-    ? (items.length ? [{ label: '1-kun', date: `${d} ${month}`, items }] : [])
+    ? page.programDays.map((x, i) => ({ ...x, date: x.date || (i === 0 ? `${d} ${month}` : '') }))
     : card.days > 1
     ? [
         { label: '1-kun', date: `${d} ${month}`, items: items.slice(0, 4) },

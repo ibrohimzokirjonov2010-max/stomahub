@@ -97,6 +97,7 @@ function detail(d) {
     regClosed: !!d.regClosed,
     earlyUntil: plan.earlyUntil || '',
     schedule: d.schedule.map(([time, text]) => [time, text, '']),
+    programDays: d.programDays?.length ? d.programDays : [{ label: '', title: '', date: '', items: d.schedule.map(([time, text]) => [time, text, '']) }],
     organizer: !!d.organizer,
     venue: { ...d.venue, lines: d.organizer ? (d.venue.notes || []).map((t) => [Check, t]) : [[Building2, 'Konferens-zal'], [Car, 'Avtoturargoh mavjud']] },
     similar: d.similar.map((s) => ({ to: `/seminarlar/${s.id}`, title: s.title, date: `${s.date}, ${s.city}`, price: s.price, image: s.image })),
@@ -280,17 +281,28 @@ export default function Seminar() {
               <h2 className="text-[15px] font-bold">Dastur</h2>
               <span className="inline-flex items-center gap-1 rounded-lg bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea"><CalendarDays className="size-3.5" /> {v.dayShort}</span>
             </div>
-            <ol className="mt-3 border-l-2 border-sea-100 pl-4">
-              {v.schedule.map(([time, title, sub]) => (
-                <li key={time} className="relative pb-3 last:pb-0">
-                  <span className="absolute -left-[23px] top-1 size-3 rounded-full border-2 border-white bg-sea" />
-                  <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
-                    <span className="h-fit rounded-md bg-[#f3f6fa] px-2 py-0.5 text-[11px] font-semibold text-ink-2">{time}</span>
-                    <span><b className="block text-[12.5px]">{title}</b>{sub && <span className="text-[11.5px] text-muted">{sub}</span>}</span>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            {v.programDays.map((day, di) => (
+              <div key={di} className="mt-3">
+                {v.programDays.length > 1 && (
+                  <h3 className="mb-2 flex flex-wrap items-baseline gap-x-2 text-[13px] font-bold text-ink">
+                    <span className="rounded-md bg-sea px-1.5 py-0.5 text-[11px] text-white">{day.label}</span>
+                    {day.title && <span>{day.title}</span>}
+                    {day.date && <span className="text-[11.5px] font-medium text-muted">{day.date}</span>}
+                  </h3>
+                )}
+                <ol className="border-l-2 border-sea-100 pl-4">
+                  {day.items.map(([time, title, sub], i) => (
+                    <li key={`${time}-${i}`} className="relative pb-3 last:pb-0">
+                      <span className="absolute -left-[23px] top-1 size-3 rounded-full border-2 border-white bg-sea" />
+                      <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
+                        <span className="h-fit rounded-md bg-[#f3f6fa] px-2 py-0.5 text-[11px] font-semibold text-ink-2">{time}</span>
+                        <span><b className="block text-[12.5px]">{title}</b>{sub && <span className="text-[11.5px] text-muted">{sub}</span>}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
           </section>}
           <section id="sem-place" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
             <h2 className="text-[15px] font-bold">Manzil</h2>

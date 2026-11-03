@@ -1,3 +1,4 @@
+import { programError } from '../../programDays'
 import { supabase } from '../../supabaseClient'
 export const TEAL = 'var(--color-org-teal)'
 export const TEAL_MOBILE = 'var(--color-org-teal)'
@@ -88,8 +89,8 @@ export function stepError(id, f) {
     return null
   }
   if (id === 'details') {
-    const bad = (f.program || []).find((r) => (r.time || r.title) && !(r.time && r.title))
-    if (bad) return { field: 'details', msg: 'Dasturdagi har bir qatorda vaqt va mavzu bo‘lsin' }
+    const pErr = programError(f.program)
+    if (pErr) return { field: 'details', msg: pErr }
     if (f.cmeHours !== '' && f.cmeHours != null && (Number(f.cmeHours) < 0 || Number(f.cmeHours) > 200)) return { field: 'details', msg: 'CME soatlari 0–200 oralig‘ida bo‘lsin' }
     if (f.cmePoints !== '' && f.cmePoints != null && (Number(f.cmePoints) < 0 || Number(f.cmePoints) > 100)) return { field: 'details', msg: 'CME ballari 0–100 oralig‘ida bo‘lsin' }
     if (f.practice?.on && !f.practice.kind) return { field: 'details', msg: 'Amaliy qism turini tanlang' }
