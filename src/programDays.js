@@ -5,7 +5,9 @@ const TIME_RE = /^(\d{1,2}[:.]\d{2}(?:\s*[–—-]\s*\d{1,2}[:.]\d{2})?)(?:\s*[�
 // '10:00–10:30 — Mavzu' → { time, title }; vaqt bo‘lmasa — null
 export function splitTimeTitle(str) {
   const m = String(str || '').trim().match(TIME_RE)
-  return m && m[2].trim() ? { time: m[1].trim(), title: m[2].trim() } : null
+  // '10:00–10:30' ning o‘zi (mavzusiz) — bo‘linmaydi, aks holda tugash vaqti yo‘qoladi
+  if (!m || !m[2].trim() || /^\d{1,2}[:.]\d{2}\b/.test(m[2].trim())) return null
+  return { time: m[1].trim(), title: m[2].trim() }
 }
 // Bitta maydonga yozilgan eski qatorni ajratish
 function fixRow(row) {
@@ -63,22 +65,28 @@ export function cleanProgram(raw) {
     .filter((d) => d.items.length || d.title)
 }
 
-// Faqat vaqt yoki faqat mavzu bor qator — xato. Bo‘sh qatorlar/kunlar e’tiborsiz (saqlashda tashlanadi)
+// Bo‘sh qatorlar/kunlar e’tiborsiz (saqlashda tashlanadi). Qisman to‘ldirilgan qator — xato.
 export function programErrorAt(raw) {
   const days = normalizeProgram(raw)
   for (let d = 0; d < days.length; d++) {
     for (let r = 0; r < days[d].items.length; r++) {
       const x = days[d].items[r]
       const t = String(x.time).trim(), ti = String(x.title).trim()
-      if ((t || ti) && !(t && ti)) return { day: d, row: r, missing: t ? 'title' : 'time' }
+      if (!t && !ti) continue
+      if (!ti) return { day: d, row: r, missing: 'title' }
+      const [a, b] = splitRange(t)
+      if (!a) return { day: d, row: r, missing: 'time' }
+      if (!b) return { day: d, row: r, missing: 'end' }
+      if (b <= a) return { day: d, row: r, missing: 'order' }
     }
   }
   return null
 }
 
+const ERR = { title: 'mavzu yetishmayapti', time: 'boshlanish vaqti yetishmayapti', end: 'tugash vaqti yetishmayapti', order: 'tugash vaqti boshlanishdan keyin bo‘lsin' }
 export function programError(raw) {
   const e = programErrorAt(raw)
-  return e ? `Dasturdagi ${e.day + 1}-kun, ${e.row + 1}-qatorda ${e.missing === 'time' ? 'vaqt' : 'mavzu'} yetishmayapti` : ''
+  return e ? `Dasturdagi ${e.day + 1}-kun, ${e.row + 1}-qatorda ${ERR[e.missing]}` : ''
 }
 
 // Step 2 sanalaridan kunlar soni (1..14)

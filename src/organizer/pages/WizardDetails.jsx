@@ -110,8 +110,8 @@ function TopicArea({ value, onChange, invalid }) {
   }, [])
   return (
     <textarea ref={ref} aria-label="Mavzu" rows={2} placeholder="Mavzu" value={value} onChange={(e) => onChange(e.target.value)} aria-invalid={invalid}
-      style={{ overflowWrap: 'anywhere', wordBreak: 'normal' }}
-      className={`mt-1 block w-full min-w-0 resize-none overflow-hidden rounded-lg border border-[#e3eeec] bg-white px-2 py-1.5 text-[13px] leading-snug text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-org-teal${invalid ? ' ring-2 ring-[#e11d48]/50 border-[#e11d48]' : ''}`} />
+      lang="uz" style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'auto' }}
+      className={`block w-full min-w-0 resize-none overflow-hidden rounded-lg border border-[#e3eeec] bg-white px-2 py-1.5 text-[13px] leading-snug text-[#143044] outline-none placeholder:text-[#9aafb4] focus:border-org-teal${invalid ? ' ring-2 ring-[#e11d48]/50 border-[#e11d48]' : ''}`} />
   )
 }
 
@@ -125,7 +125,6 @@ function ProgramEditor({ form, set }) {
   const days = withDayDates(saved.length ? saved : Array.from({ length: n }, () => emptyDay()), start)
   const multi = days.length > 1
   const err = programErrorAt(days)
-  const bad = (d, i, f) => err && err.day === d && err.row === i && err.missing === f ? ' ring-2 ring-[#e11d48]/50 border-[#e11d48]' : ''
   const put = (next) => set({ program: next })
   const patchDay = (d, patch) => put(days.map((x, i) => (i === d ? { ...x, ...patch } : x)))
   const setRow = (d, r, patch) => patchDay(d, { items: days[d].items.map((x, j) => (j === r ? { ...x, ...patch } : x)) })
@@ -156,16 +155,35 @@ function ProgramEditor({ form, set }) {
               </div>
             )}
             <div className="space-y-1.5">
-              <div className="grid min-w-0 grid-cols-1 items-stretch gap-1.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {day.items.map((r, i) => (
-                  <div key={i} className="flex min-w-0 flex-col rounded-xl border border-[#e3eeec] bg-white p-1.5">
-                    <div className="flex items-center gap-1">
-                      <input aria-label="Vaqt (boshlanish–tugash)" inputMode="numeric" placeholder="10:00–10:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} onBlur={(e) => { const [x, y] = splitRange(e.target.value); if (x) setRow(d, i, { time: joinRange(x, y) }) }} aria-invalid={!!bad(d, i, 'time')} className={`h-9 w-full min-w-0 flex-1 rounded-lg border border-[#e3eeec] bg-white px-2 text-[13px] font-semibold tabular-nums text-[#143044] outline-none placeholder:font-normal placeholder:text-[#9aafb4] focus:border-org-teal${bad(d, i, 'time')}`} />
-                      <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-8 shrink-0 place-items-center rounded-lg text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
-                    </div>
-                    <TopicArea value={r.title || ''} onChange={(v) => setRow(d, i, { title: v })} invalid={!!bad(d, i, 'title')} />
-                  </div>
-                ))}
+              <div className="@container min-w-0">
+                <div className="grid min-w-0 grid-cols-1 items-stretch gap-1.5 @[440px]:grid-cols-2 @[660px]:grid-cols-3 @[900px]:grid-cols-4">
+                  {day.items.map((r, i) => {
+                    const [ts, te] = splitRange(r.time)
+                    const raw = String(r.time || '').split(/\s*[–—-]\s*/)
+                    const tv = (k, v) => (v || raw[k] || '')
+                    const setT = (k, v) => { const p = [tv(0, ts), tv(1, te)]; p[k] = v; setRow(d, i, { time: p[0] || p[1] ? `${p[0]}–${p[1]}`.replace(/–$/, '') : '' }) }
+                    const fixT = (k) => { const v = splitRange(tv(k, k ? te : ts))[0]; if (v) setT(k, v) }
+                    const e = err && err.day === d && err.row === i ? err.missing : ''
+                    const red = ' border-[#e11d48] ring-2 ring-[#e11d48]/40'
+                    const tcls = (on) => `h-9 w-full min-w-[90px] rounded-lg border border-[#e3eeec] bg-white px-2 text-[13px] font-semibold tabular-nums text-[#143044] outline-none placeholder:font-normal placeholder:text-[#9aafb4] focus:border-org-teal${on ? red : ''}`
+                    return (
+                      <div key={i} className="relative flex min-w-0 flex-col gap-1.5 rounded-xl border border-[#e3eeec] bg-white p-2">
+                        <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="absolute right-1 top-1 grid size-7 place-items-center rounded-lg text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
+                        <label className="block min-w-0">
+                          <span className="mb-0.5 block text-[11px] font-semibold text-[#5e787e]">Mavzu</span>
+                          <TopicArea value={r.title || ''} onChange={(v) => setRow(d, i, { title: v })} invalid={e === 'title'} />
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <label className="block min-w-0"><span className="mb-0.5 block text-[11px] font-semibold text-[#5e787e]">Boshlanishi</span>
+                            <input aria-label="Boshlanishi" inputMode="numeric" placeholder="11:00" value={tv(0, ts)} onChange={(ev) => setT(0, ev.target.value)} onBlur={() => fixT(0)} aria-invalid={e === 'time' || e === 'order'} className={tcls(e === 'time' || e === 'order')} /></label>
+                          <label className="block min-w-0"><span className="mb-0.5 block text-[11px] font-semibold text-[#5e787e]">Tugashi</span>
+                            <input aria-label="Tugashi" inputMode="numeric" placeholder="11:30" value={tv(1, te)} onChange={(ev) => setT(1, ev.target.value)} onBlur={() => fixT(1)} aria-invalid={e === 'end' || e === 'order'} className={tcls(e === 'end' || e === 'order')} /></label>
+                        </div>
+                        {e === 'order' && <p className="text-[11px] font-medium text-[#e11d48]">Tugash vaqti boshlanishdan keyin bo‘lsin</p>}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <button type="button" onClick={() => addRow(d)} className={btn} style={{ color: TEAL }}><Plus className="size-4" /> Qator qo‘shish</button>
