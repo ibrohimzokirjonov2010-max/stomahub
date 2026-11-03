@@ -222,7 +222,7 @@ export default function Certificates() {
         <div className="mt-4 grid grid-cols-2 gap-2 text-[12.5px]">
           <div className="rounded-xl border border-[#e6f1ef] px-3 py-2">
             <p className="text-[#8aa0a4]">Kredit soati</p>
-            <p className="text-[18px] font-bold">—</p>
+            <p className="text-[18px] font-bold">{hub.seminars[0]?.form?.cmeHours || '—'}</p>
           </div>
           <div className="rounded-xl border border-[#e6f1ef] px-3 py-2">
             <p className="text-[#8aa0a4]">QR tekshirish</p>
@@ -609,7 +609,7 @@ function Mobile(p) {
           <div className="mt-1.5 grid grid-cols-2 gap-1">
             <div className="rounded-xl bg-white px-2 py-1.5">
               <p className="flex items-center gap-1 text-[10px] text-[#8aa0a4]"><Clock className="size-3 text-[var(--color-org-teal)]" /> Kredit soati</p>
-              <p className="text-[16px] font-bold leading-tight">{sem?.form?.hours || '—'}</p>
+              <p className="text-[16px] font-bold leading-tight">{sem?.form?.cmeHours || '—'}</p>
             </div>
             <button type="button" onClick={p.onTpl} className="flex items-center justify-between rounded-xl bg-white px-2 py-1.5 text-left">
               <span>

@@ -350,6 +350,16 @@ export async function pullHub() {
   next.application = application
   const prefix = `${uid}:`
   next.participants = (registrations || []).map(personFromRow)
+  // Sotilgan soni yagona manbadan: bekor qilinmagan ro‘yxatdan o‘tishlar (Dashboard, Chiptalar, Seminarlar bir xil ko‘rsatadi)
+  next.seminars = next.seminars.map((s) => {
+    const regs = next.participants.filter((p) => p.seminarId === s.id && p.pay !== 'cancel')
+    const tickets = (s.tickets || []).map((tk) => {
+      const n = regs.filter((p) => String(p.ticket || '').trim().toLowerCase() === String(tk.name || '').trim().toLowerCase()).length
+      return { ...tk, sold: n, left: Math.max(0, (Number(tk.seats) || 0) - n) }
+    })
+    const matched = tickets.reduce((n, tk) => n + tk.sold, 0)
+    return { ...s, sold: regs.length, tickets: matched === regs.length ? tickets : s.tickets }
+  })
   next.payments = (payments || []).map(paymentFromRow)
   next.certs = (certs || []).map((row) => ({
     id: reviveId(row.id),

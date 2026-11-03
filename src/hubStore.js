@@ -797,6 +797,8 @@ export function toPublic(s) {
   return {
     id: s.id,
     cat,
+    startIso: s.start || '',
+    endIso: s.end && s.end > s.start ? s.end : (s.start || ''),
     day: String(d || 1).padStart(2, '0'),
     mon: MON_CODE[(m || 1) - 1],
     weekday: WEEK[date.getDay()],

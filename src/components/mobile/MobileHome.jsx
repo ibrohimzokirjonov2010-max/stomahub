@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -54,7 +55,7 @@ export default function MobileHome() {
   })()
   const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()
-  const todaySeminars = publicRecords(hub).filter((x) => !x.past && !x.cancelled).slice(0, 2).map((raw) => {
+  const todaySeminars = publicRecords(hub).filter((x) => !x.past && !x.cancelled && x.startIso && x.startIso <= tashkentToday() && x.endIso >= tashkentToday()).slice(0, 2).map((raw) => {
     const s = seminarCard(raw)
     return {
       id: s.id,

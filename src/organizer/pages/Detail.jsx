@@ -49,7 +49,7 @@ function modelFor(id, seminars = []) {
     revenue: sem.revenue,
     mobileRevenue: sem.revenue,
     checked: sem.checked || 0,
-    hours: Number(sem.form?.hours) || 0,
+    hours: Number(sem.form?.cmeHours) || 0,
     minPeople: Number(sem.form?.min) || 0,
     description: sem.about || `${sem.title} — ${sem.days}.${sem.speaker && sem.speaker !== 'Ma’ruzachi' ? ` ${sem.speaker} ishtirokida.` : ''}`,
     mobileDescription: sem.about || `${sem.title}. ${sem.days}.`,
