@@ -465,7 +465,7 @@ function Mobile() {
         })}
       </div>
 
-      <Link to="/tashkilotchi/seminarlar/yangi" aria-label="Yangi seminar" className="fixed bottom-[92px] right-4 z-40 grid size-14 place-items-center rounded-full text-white shadow-[0_10px_22px_rgb(12_143_134/0.35)]" style={{ background: BRAND }}>
+      <Link to="/tashkilotchi/seminarlar/yangi" aria-label="Yangi seminar" className="fixed bottom-[calc(64px+max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px))+16px)] right-4 z-40 grid size-14 place-items-center rounded-full text-white shadow-[0_10px_22px_rgb(12_143_134/0.35)]" style={{ background: BRAND }}>
         <Plus className="size-7" strokeWidth={2.2} />
       </Link>
     </div>

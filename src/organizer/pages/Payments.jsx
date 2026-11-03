@@ -5,10 +5,10 @@ import {
   Download, Eye, Filter, Home, Mail, MapPin, MoreHorizontal, Phone, RefreshCw,
   Search, Ticket, UserRound, Users, Wallet, X, XCircle,
 } from 'lucide-react'
-import { FACES, num, som } from '../data'
+import { num, som } from '../data'
 import { useOrg } from '../Shell'
 import { downloadText, moneyOf, newestSeminar, refundPayment, useHub } from '../../hubStore'
-import { Modal } from '../ui'
+import { Avatar, Modal } from '../ui'
 
 const TEAL = 'var(--color-org-teal)'
 const INK = '#163044'
@@ -368,7 +368,7 @@ export default function Payments() {
                         <td className="px-1.5 py-0 text-[10.5px] leading-[1.15] text-[#5e787e]"><div>{p.when}</div><div className="text-[#8aa0a4]">{p.time}</div></td>
                         <td className="px-1.5 py-0">
                           <span className="flex min-w-0 items-center gap-1.5">
-                            <img src={FACES[p.face % FACES.length]} alt="" className="size-5 shrink-0 rounded-full object-cover" />
+                            <Avatar src={p.avatar} name={p.who} size={20} />
                             <span className="min-w-0">
                               <span className="block truncate text-[12px] font-semibold" style={{ color: INK }}>{p.who}</span>
                               <span className="block truncate text-[10.5px] text-[#8aa0a4]">{p.clinic}</span>
@@ -433,7 +433,7 @@ export default function Payments() {
                 <Row icon={Calendar} label="Sana va vaqt">{pay.when}, {pay.time}</Row>
                 <Row icon={CreditCard} label="To‘lov usuli"><span className="inline-flex items-center gap-1"><MethodMark name={pay.method} size={14} />{pay.method}</span></Row>
                 <Row icon={UserRound} label="Ishtirokchi">
-                  <span className="inline-flex items-center gap-1"><img src={FACES[pay.face % FACES.length]} alt="" className="size-4 rounded-full object-cover" />{pay.who}</span>
+                  <span className="inline-flex items-center gap-1"><Avatar src={pay.avatar} name={pay.who} size={16} />{pay.who}</span>
                 </Row>
                 <Row icon={Phone} label="Telefon">{pay.phone}</Row>
                 <Row icon={Mail} label="Email">{pay.email}</Row>

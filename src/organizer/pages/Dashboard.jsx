@@ -8,7 +8,7 @@ import {
 import { MONTHS, SEAT, som } from '../data'
 import { useOrg } from '../Shell'
 import { moneyOf, useHub, walletOf } from '../../hubStore'
-import { Badge, Btn, MiniSelect, Modal, cx } from '../ui'
+import { Avatar, Badge, Btn, MiniSelect, Modal, cx } from '../ui'
 
 const TICKET_COLORS = ['#0a8a82', '#5ed0c6', '#b7ebe4', '#7ec8c0', '#e5f7f4']
 
@@ -402,7 +402,7 @@ function Mobile() {
       ticket: p.ticket,
       time: String(p.registered || '').split(', ')[1] || p.registered,
       ok: !!p.arrived,
-      avatar: p.avatar || '/images/avatar.jpg',
+      avatar: p.avatar,
     }))
   const hello = hub.settings?.name || 'Tashkilotchi'
 
@@ -516,7 +516,7 @@ function Mobile() {
       <ul className="mt-2 divide-y divide-[#eef3f2] overflow-hidden rounded-2xl border border-[#e7f2f0] bg-white">
         {rows.map((r) => (
           <li key={`${r.name}-${r.phone}`} className="flex items-center gap-2 px-2.5 py-2">
-            <img src={r.avatar} alt="" className="size-9 shrink-0 rounded-full object-cover" />
+            <Avatar src={r.avatar} name={r.name} size={36} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13.5px] font-semibold leading-tight text-[#143044]">{r.name}</p>
               <p className="mt-0.5 truncate text-[11.5px] text-[#8aa0a4]">{r.phone}</p>

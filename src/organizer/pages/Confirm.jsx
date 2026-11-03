@@ -8,7 +8,7 @@ import { ToothIcon } from '../../components/icons'
 import { som } from '../data'
 import { confirmHeld, FEE, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
-import { Modal } from '../ui'
+import { Avatar, Modal } from '../ui'
 
 const TEETH = '/images/seminars/teeth.jpg'
 
@@ -271,7 +271,7 @@ function Desktop({ photos, countLabel, arrivedLabel, rows, all, setAll, over, se
                       <td className="py-2.5 pr-2 text-[12.5px] text-[#8aa0a4]">{i + 1}</td>
                       <td className="py-2.5 pr-3">
                         <span className="flex items-center gap-2">
-                          <img src={p.avatar} alt="" className="size-7 rounded-full object-cover" />
+                          <Avatar src={p.avatar} name={p.name} size={28} />
                           <span className="text-[13px] font-semibold text-[#143044]">{p.name}</span>
                         </span>
                       </td>

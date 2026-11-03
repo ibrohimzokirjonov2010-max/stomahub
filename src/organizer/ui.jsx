@@ -379,10 +379,25 @@ export function QrMark({ size = 112, seed = 1 }) {
   )
 }
 
+// Faqat haqiqiy yuklangan rasm (http/https/data/blob). Ichki demo rasmlar (/images/...) qabul qilinmaydi.
+export const realAvatar = (src) => (typeof src === 'string' && /^(https?:|data:image\/|blob:)/.test(src.trim()) ? src.trim() : '')
+
+const initialsOf = (name) => String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?'
+
+export function Avatar({ src, name, size = 36, className = '' }) {
+  const url = realAvatar(src)
+  if (url) return <img src={url} alt="" className={`shrink-0 rounded-full object-cover ${className}`} style={{ width: size, height: size }} />
+  return (
+    <span aria-hidden="true" className={`grid shrink-0 place-items-center rounded-full bg-[#e3f4f1] font-bold text-[#0b6d73] ${className}`} style={{ width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)) }}>
+      {initialsOf(name)}
+    </span>
+  )
+}
+
 export function Person({ name, sub, avatar, size = 32 }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
-      <img src={avatar} alt="" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+      <Avatar src={avatar} name={name} size={size} />
       <span className="min-w-0">
         <span className="block truncate text-[12.5px] font-semibold text-[#143044]">{name}</span>
         {sub && <span className="block truncate text-[11px] text-[#8aa0a4]">{sub}</span>}
