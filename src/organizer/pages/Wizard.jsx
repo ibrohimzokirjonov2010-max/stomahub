@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { cleanProgram, programRows } from '../../programDays'
+import { programDaysOf } from '../../seminarsData'
 import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -189,7 +191,7 @@ export default function Wizard() {
         if (e) { fail(STEPS.indexOf(st), e); return }
       }
     }
-    const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: (form.program || []).filter((r) => r.time || r.title) }, { publish, id: editing || undefined })
+    const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: cleanProgram(form.program) }, { publish, id: editing || undefined })
     if (!res.ok) {
       setFormError(res.error)
       notify(res.error)
@@ -620,7 +622,7 @@ export default function Wizard() {
               <li>{form.place}</li>
               <li>{form.tickets.length} chipta · {form.speakers.length} ma’ruzachi · {form.certDesign ? 'O‘z dizayni' : CERTS.find((t) => t.id === form.template)?.name}</li>
               {(form.cmeHours || form.cmePoints) && <li>CME: {[form.cmeHours && `${form.cmeHours} soat`, form.cmePoints && `${form.cmePoints} ball`].filter(Boolean).join(' · ')}</li>}
-              <li>Dastur: {(form.program || []).filter((r) => r.title).length} qator{form.practice?.on ? ' · amaliy qism bor' : ''}{form.liveSurgery?.on ? ' · jonli jarrohlik' : ''}</li>
+              <li>Dastur: {programRows(form.program).filter((r) => r.title).length} qator{form.practice?.on ? ' · amaliy qism bor' : ''}{form.liveSurgery?.on ? ' · jonli jarrohlik' : ''}</li>
             </ul>
           </section>
 
@@ -746,12 +748,31 @@ function PreviewExtras({ form, orgName }) {
         {faq.length > 0 && <li>Savol-javob: {faq.length} ta</li>}
         {(form.contactPhone || form.contactTelegram) && <li>Aloqa: {[form.contactPhone, form.contactTelegram].filter(Boolean).join(' · ')}</li>}
       </ul>
+      <PreviewProgram program={form.program} />
       {form.certDesign && bg && (
         <div className="mt-1.5 flex items-center gap-2">
           <div className="w-[56px] shrink-0"><CertDesignCanvas src={bg} ratio={form.certDesign.ratio} layout={layoutOf(form.certDesign)} values={{ name: 'Aliyeva', course: form.name || 'Seminar', date: '', cme: '' }} /></div>
           <span className="text-[10.5px] text-[#5e787e]">Sertifikat: o‘z dizayni</span>
         </div>
       )}
+    </div>
+  )
+}
+
+function PreviewProgram({ program }) {
+  const days = programDaysOf(program)
+  if (!days.length) return null
+  return (
+    <div className="mt-2" data-shot="preview-program">
+      <p className="mb-0.5 text-[12px] font-bold">Dastur</p>
+      {days.map((d) => (
+        <div key={d.label} className="mt-1">
+          {days.length > 1 && <p className="text-[11px] font-bold" style={{ color: TEAL }}>{d.label}{d.title ? ` · ${d.title}` : ''}{d.date ? <span className="font-normal text-[#7e9398]"> · {d.date}</span> : null}</p>}
+          <ul className="space-y-0.5">
+            {d.items.map(([t, x], i) => <li key={i} className="flex gap-1.5 text-[10.5px] text-[#5e787e]"><span className="w-[70px] shrink-0 font-semibold">{t}</span><span className="min-w-0">{x}</span></li>)}
+          </ul>
+        </div>
+      ))}
     </div>
   )
 }

@@ -185,20 +185,23 @@ function SeminarView({ id }) {
         <h2 className="text-[17px] font-bold text-[#0d3b44]">Seminar dasturi</h2>
         <div className="mt-2 flex flex-col gap-3">
           {s.program.map((day) => (
-            <div key={day.label} className="flex gap-3">
+            <div key={day.label}>
+            {day.title && <p className="mb-1 text-[12px] font-bold text-[#0d3b44]">{day.label} · {day.title}</p>}
+            <div className="flex gap-3">
               <div className="flex h-[52px] w-[66px] shrink-0 flex-col items-center justify-center self-center rounded-xl bg-[#e6f4f3] text-sea-600">
                 <span className="text-[13px] font-bold">{day.label}</span>
                 <span className="text-[9.5px]">{day.date}</span>
               </div>
               <ol className="relative min-w-0 flex-1 border-l-2 border-sea/80 pl-3">
-                {day.items.map(([t, text]) => (
-                  <li key={t} className="relative flex gap-2 py-[3px] text-[10.5px] leading-snug">
+                {day.items.map(([t, text], i) => (
+                  <li key={`${t}-${i}`} className="relative flex gap-2 py-[3px] text-[10.5px] leading-snug">
                     <span className="absolute -left-[17px] top-[7px] size-2 rounded-full bg-sea ring-2 ring-white" />
                     <span className="w-[74px] shrink-0 whitespace-nowrap text-ink-2">{t}</span>
                     <span className="min-w-0 text-ink">{text}</span>
                   </li>
                 ))}
               </ol>
+            </div>
             </div>
           ))}
         </div>

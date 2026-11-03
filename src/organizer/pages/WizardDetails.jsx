@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { TEAL, box } from './wizardBits'
+import { normalizeProgram, dayCount, addDaysIso } from '../../programDays'
 
 const PRACTICE_KINDS = [['model', 'Model'], ['fantom', 'Fantom'], ['bemor', 'Jonli bemor']]
 const MATERIALS = [['tashkilotchi', 'Tashkilotchi beradi'], ['ishtirokchi', 'Ishtirokchi olib keladi'], ['aralash', 'Qisman tashkilotchidan']]
@@ -37,28 +38,12 @@ const area = 'w-full resize-y rounded-xl border border-[#e3eeec] px-3 py-2 text-
 
 // "Dastur va tafsilotlar" bosqichi — desktop va mobil ustalarda bir xil
 export default function WizardDetails({ form, set, compact = false }) {
-  const program = form.program || []
   const practice = form.practice || { on: false, kind: 'model', perPerson: '', unit: 'implant', materials: 'tashkilotchi' }
   const live = form.liveSurgery || { on: false, text: '' }
-  const setRow = (i, patch) => set({ program: program.map((r, j) => (j === i ? { ...r, ...patch } : r)) })
   const cols = compact ? '' : 'sm:grid-cols-2'
   return (
     <div className="space-y-4">
-      <div>
-        <Lab hint="(vaqt va mavzu)">Dastur</Lab>
-        <div className="space-y-1.5">
-          {program.map((r, i) => (
-            <div key={i} className="flex gap-1.5">
-              <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(i, { time: e.target.value })} className={`${box} w-[120px] shrink-0`} />
-              <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(i, { title: e.target.value })} className={`${box} min-w-0 flex-1`} />
-              <button type="button" aria-label="Qatorni o‘chirish" onClick={() => set({ program: program.filter((_, j) => j !== i) })} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
-            </div>
-          ))}
-          <button type="button" onClick={() => set({ program: [...program, { time: '', title: '' }] })} className="inline-flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: TEAL }}>
-            <Plus className="size-4" /> Qator qo‘shish
-          </button>
-        </div>
-      </div>
+      <ProgramEditor form={form} set={set} />
 
       <div className={`grid gap-3 ${cols}`}>
         <label className="block">
@@ -104,6 +89,64 @@ export default function WizardDetails({ form, set, compact = false }) {
             <textarea rows={3} value={live.text || ''} onChange={(e) => set({ liveSurgery: { ...live, text: e.target.value } })} className={area} placeholder="Masalan: 2 ta bemorda implant o‘rnatish, ekranda translyatsiya" />
           </label>
         )}
+      </div>
+    </div>
+  )
+}
+
+const emptyDay = (date = '') => ({ title: '', date, items: [{ time: '', title: '' }] })
+
+// Dastur: kunlarga bo‘lingan bloklar. Bitta kun bo‘lsa — oddiy ro‘yxat ko‘rinishida.
+function ProgramEditor({ form, set }) {
+  const saved = normalizeProgram(form.program)
+  const n = dayCount(form.start, form.end)
+  const days = saved.length ? saved : Array.from({ length: n }, (_, i) => emptyDay(n > 1 ? addDaysIso(form.start, i) : ''))
+  const multi = days.length > 1
+  const put = (next) => set({ program: next })
+  const patchDay = (d, patch) => put(days.map((x, i) => (i === d ? { ...x, ...patch } : x)))
+  const setRow = (d, r, patch) => patchDay(d, { items: days[d].items.map((x, j) => (j === r ? { ...x, ...patch } : x)) })
+  const addRow = (d) => patchDay(d, { items: [...days[d].items, { time: '', title: '' }] })
+  const delRow = (d, r) => patchDay(d, { items: days[d].items.filter((_, j) => j !== r) })
+  const addDay = () => {
+    const last = days[days.length - 1]
+    const date = last?.date ? addDaysIso(last.date, 1) : form.start ? addDaysIso(form.start, days.length) : ''
+    put([...days, emptyDay(date)])
+  }
+  const delDay = (d) => {
+    const filled = days[d].items.some((r) => r.time || r.title)
+    if (filled && !window.confirm(`${d + 1}-kun dasturini o‘chirasizmi? Undagi qatorlar ham o‘chadi.`)) return
+    put(days.filter((_, i) => i !== d))
+  }
+  const btn = 'inline-flex items-center gap-1 text-[12.5px] font-semibold'
+  return (
+    <div>
+      <Lab hint="(vaqt va mavzu)">Dastur</Lab>
+      <div className="space-y-3" data-shot="program">
+        {days.map((day, d) => (
+          <div key={d} className={multi ? 'rounded-xl border border-[#e3eeec] bg-[#fbfdfd] p-2.5' : ''}>
+            {multi && (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-lg px-2 py-1 text-[12px] font-bold text-white" style={{ background: TEAL }}>{d + 1}-kun</span>
+                <input aria-label={`${d + 1}-kun nomi`} placeholder="Kun nomi (masalan: Nazariy qism)" value={day.title} onChange={(e) => patchDay(d, { title: e.target.value })} className={`${box} min-w-[160px] flex-1`} />
+                <input type="date" aria-label={`${d + 1}-kun sanasi`} value={day.date} onChange={(e) => patchDay(d, { date: e.target.value })} className={`${box} w-[150px] shrink-0`} />
+                <button type="button" aria-label={`${d + 1}-kunni o‘chirish`} onClick={() => delDay(d)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              {day.items.map((r, i) => (
+                <div key={i} className="flex gap-1.5">
+                  <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} className={`${box} w-[120px] shrink-0`} />
+                  <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} className={`${box} min-w-0 flex-1`} />
+                  <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
+                </div>
+              ))}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <button type="button" onClick={() => addRow(d)} className={btn} style={{ color: TEAL }}><Plus className="size-4" /> Qator qo‘shish</button>
+                {d === days.length - 1 && <button type="button" onClick={addDay} className={btn} style={{ color: TEAL }}><Plus className="size-4" /> Dastur qo‘shish <span className="font-normal text-[#7e9398]">(yangi kun)</span></button>}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
