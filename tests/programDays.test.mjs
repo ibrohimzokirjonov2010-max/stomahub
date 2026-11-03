@@ -56,3 +56,14 @@ test('half-filled row is reported with its position', async () => {
   assert.deepEqual(programErrorAt(p), { day: 1, row: 0, missing: 'time' })
   assert.match(programError(p), /2-kun, 1-qatorda vaqt/)
 })
+
+test('legacy rows keep full time range; range split/join', async () => {
+  const { splitRange, joinRange } = await import('../src/programDays.js')
+  const d = normalizeProgram([{ time: '10:00–10:30 — Ishtirokchilarni kutib olish va kursga kirish', title: '' }])
+  assert.deepEqual(d[0].items[0], { time: '10:00–10:30', title: 'Ishtirokchilarni kutib olish va kursga kirish' })
+  assert.deepEqual(splitRange('10:00–10:30'), ['10:00', '10:30'])
+  assert.deepEqual(splitRange('9.00 - 11:30'), ['09:00', '11:30'])
+  assert.deepEqual(splitRange('10:00'), ['10:00', ''])
+  assert.equal(joinRange('10:00', '10:30'), '10:00–10:30')
+  assert.equal(joinRange('10:00', ''), '10:00')
+})
