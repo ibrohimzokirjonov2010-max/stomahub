@@ -376,7 +376,7 @@ function Steps({ step }) {
 function SeminarCard({ s, m }) {
   return (
     <div className={`${card} mt-2 flex gap-3 p-2.5`}>
-      <img src={s.image} alt="" className="h-[118px] w-[118px] shrink-0 rounded-xl object-cover" />
+      <div className="relative w-[40%] shrink-0 self-stretch overflow-hidden rounded-xl bg-[#f1f5f7]"><img src={s.image} alt="" className="absolute inset-0 h-full w-full object-cover" /></div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1">
           <span className="rounded-full bg-[#e3f4f1] px-2 py-0.5 text-[9.5px] font-medium text-[#0b6d73]">{s.catName}</span>
@@ -568,7 +568,7 @@ function Done({ s, m, reg }) {
             <span className="rounded-lg bg-[#e3f4f1] px-2 py-1 text-[11.5px] font-bold text-[#0b6d73]">#{order}</span>
           </div>
           <div className="flex gap-3 p-3.5">
-            <img src={s.image} alt="" className="h-[150px] w-[132px] shrink-0 rounded-xl object-cover" />
+            <div className="flex w-[120px] shrink-0 items-start justify-center self-start overflow-hidden rounded-xl bg-[#f1f5f7]"><img src={s.image} alt="" className="block h-auto max-h-[180px] w-full object-contain" /></div>
             <div className="min-w-0 flex-1">
               <span className="rounded-full bg-[#e3f4f1] px-2 py-0.5 text-[9.5px] font-medium text-[#0b6d73]">{s.catName}</span>
               <p className="mt-1.5 line-clamp-3 text-[14px] font-bold leading-tight text-[#0d2a4a]">{s.title}</p>

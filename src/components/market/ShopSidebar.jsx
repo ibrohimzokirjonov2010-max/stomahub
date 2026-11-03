@@ -5,7 +5,7 @@ import {
   Store, LayoutGrid, BadgeCheck, Tag, Shirt, Monitor, Recycle,
   Presentation, MonitorPlay, IdCard,
   CalendarDays, CalendarCheck, ClipboardList, Wallet, HeartPulse, Warehouse, ChartPie,
-  Wrench, MessagesSquare, Newspaper, Rss, Briefcase,
+  Wrench, MessagesSquare, Newspaper, Rss, Briefcase, Megaphone, Stethoscope,
   ChevronDown, LogOut, X,
 } from 'lucide-react'
 import { MenuIcons as M, SectionIcons as SI } from '../tealIcons'
@@ -60,6 +60,8 @@ const GROUPS = [
     icon: Handshake,
     items: [
       { label: 'Ustalar', icon: Wrench, to: '/ustalar', keys: ['ustalar'] },
+      { label: 'Mutaxassislar', icon: Stethoscope, to: '/mutaxassislar', keys: ['mutaxassislar'] },
+      { label: 'E’lonlar', icon: Megaphone, to: '/elonlar', keys: ['elonlar'] },
       { label: 'Vakansiyalar', icon: M.vakansiyalar, to: '/ishlar', keys: ['ishlar'] },
     ],
   },
@@ -74,6 +76,14 @@ const GROUPS = [
     ],
   },
 ]
+
+// Mobil drawer uchun: URL -> faol kalit
+export function activeKeyFor(pathname) {
+  if (pathname === '/') return 'home'
+  if (pathname.startsWith('/profil')) return 'profil'
+  for (const g of GROUPS) for (const it of g.items) if (pathname === it.to || pathname.startsWith(it.to + '/')) return it.keys[0]
+  return ''
+}
 
 const groupOf = (active) => GROUPS.find((g) => g.items.some((it) => it.keys.includes(active)))?.id || ''
 
