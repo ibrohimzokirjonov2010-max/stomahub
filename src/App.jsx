@@ -110,7 +110,7 @@ import MobileTolovlar from './components/mobile/MobileTolovlar'
 import MobileTolovNew from './components/mobile/MobileTolovNew'
 import MobileOmbor from './components/mobile/MobileOmbor'
 import MobileOmborNew from './components/mobile/MobileOmborNew'
-import MobileSeminar from './components/mobile/MobileSeminar'
+import MobileSeminarV2 from './components/mobile/MobileSeminarV2'
 import MobileSeminarReg from './components/mobile/MobileSeminarReg'
 import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
@@ -191,7 +191,7 @@ export default function App() {
             <Route path="yordam" element={<HelpPage />} />
           </Route>
           <Route path="/seminarlar/:id/royxat" element={<Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive>} />
-          <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminar />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
+          <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminarV2 />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />
           <Route path="/talim" element={<EducationCatalog />} />
           <Route path="/kitoblar" element={<BooksCatalog />} />

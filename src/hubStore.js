@@ -6,6 +6,7 @@ import { friendlySupabaseError, supabase } from './supabaseClient'
 import { tashkentClock, tashkentDate } from './time'
 import { tashkentToday } from './tashkentDate'
 import { isPast, isTestSeminar } from './organizer/reconcile'
+import { dayCount } from './programDays'
 import {
   checkPromoRemote, pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
@@ -209,7 +210,7 @@ export function seminarRecordFromForm(form, { publish, existing } = {}) {
     city: cityOf(form.place, form.address, existing?.city),
     format: /onlayn|online/i.test(form.format || '') && /gibrid|offline|oflayn/i.test(form.format || '') ? 'Gibrid' : /onlayn|online/i.test(form.format || '') ? 'Onlayn' : 'Oflayn',
     formatDetail: form.format || 'Offline (joyida)',
-    days: form.start && form.end && form.start !== form.end ? '2 kunlik seminar' : '1 kunlik seminar',
+    days: `${dayCount(form.start, form.end || form.start)} kunlik seminar`,
     sold,
     seats: Math.max(seats, sold),
     revenue: existing?.revenue || 0,
@@ -751,6 +752,8 @@ export function toPublic(s) {
     monthKey: `${y}-${String(m || 1).padStart(2, '0')}`,
     title: s.title,
     text: String(s.about || s.days || '').slice(0, 140),
+    // To‘liq tavsif (mobil sahifa uchun — so‘z o‘rtasida kesilmaydi)
+    aboutFull: String(s.about || '').trim(),
     city: fixCaps(s.city),
     place: fixCaps(s.place || s.city),
     time: `${s.startTime || '10:00'} – ${s.endTime || '18:00'}`,

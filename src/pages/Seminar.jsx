@@ -52,7 +52,7 @@ const NOTES = {
   invite: ['Rasmiy taklifnoma', 'Ro‘yxatdan o‘tgandan so‘ng ish joyingiz uchun rasmiy taklifnoma PDF ko‘rinishida elektron pochtangizga yuboriladi.'],
 }
 
-function detail(d) {
+export function detail(d) {
   // Avval bu yerda Hyatt Regency joyi qattiq yozilgan edi — endi faqat haqiqiy seminar ma’lumoti ishlatiladi.
   const plan = d.plans[0]
   const year = String(d.monthKey || '2026-11').slice(0, 4)
