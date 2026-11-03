@@ -1,16 +1,32 @@
 // Seminar dasturi kunlarga bo‘lingan holda: [{ title, date, items: [{ time, title }] }]
 // seminars.form.program (jsonb) ichida saqlanadi. Eski format (tekis qatorlar) 1-kun sifatida o‘qiladi.
 
+const TIME_RE = /^(\d{1,2}[:.]\d{2}(?:\s*[–—-]\s*\d{1,2}[:.]\d{2})?)(?:\s*[—–-]\s*|\s+)(.+)$/
+// '10:00–10:30 — Mavzu' → { time, title }; vaqt bo‘lmasa — null
+export function splitTimeTitle(str) {
+  const m = String(str || '').trim().match(TIME_RE)
+  return m && m[2].trim() ? { time: m[1].trim(), title: m[2].trim() } : null
+}
+// Bitta maydonga yozilgan eski qatorni ajratish
+function fixRow(row) {
+  const t = String(row.time || '').trim(), ti = String(row.title || '').trim()
+  if (t && ti) {
+    const sp = splitTimeTitle(t)
+    return sp ? { ...row, time: sp.time } : row
+  }
+  const sp = splitTimeTitle(t || ti)
+  return sp ? { ...row, ...sp } : row
+}
+
 function toRow(r) {
   if (r == null) return null
   if (typeof r === 'string') {
     const s = r.trim()
     if (!s) return null
-    const m = s.match(/^(\d{1,2}[:.]\d{2}(?:\s*[–—-]\s*\d{1,2}[:.]\d{2})?)\s*[—–-]?\s*(.*)$/)
-    return m ? { time: m[1].trim(), title: m[2].trim() } : { time: '', title: s }
+    return splitTimeTitle(s) || { time: '', title: s }
   }
-  if (Array.isArray(r)) return { time: String(r[0] || ''), title: String(r[1] || ''), ...(r[2] ? { sub: String(r[2]) } : {}) }
-  if (typeof r === 'object') return { ...r, time: String(r.time || ''), title: String(r.title || r.text || '') }
+  if (Array.isArray(r)) return fixRow({ time: String(r[0] || ''), title: String(r[1] || ''), ...(r[2] ? { sub: String(r[2]) } : {}) })
+  if (typeof r === 'object') return fixRow({ ...r, time: String(r.time || ''), title: String(r.title || r.text || r.topic || '') })
   return null
 }
 
@@ -47,9 +63,22 @@ export function cleanProgram(raw) {
     .filter((d) => d.items.length || d.title)
 }
 
+// Faqat vaqt yoki faqat mavzu bor qator — xato. Bo‘sh qatorlar/kunlar e’tiborsiz (saqlashda tashlanadi)
+export function programErrorAt(raw) {
+  const days = normalizeProgram(raw)
+  for (let d = 0; d < days.length; d++) {
+    for (let r = 0; r < days[d].items.length; r++) {
+      const x = days[d].items[r]
+      const t = String(x.time).trim(), ti = String(x.title).trim()
+      if ((t || ti) && !(t && ti)) return { day: d, row: r, missing: t ? 'title' : 'time' }
+    }
+  }
+  return null
+}
+
 export function programError(raw) {
-  const bad = programRows(raw).find((r) => (String(r.time).trim() || String(r.title).trim()) && !(String(r.time).trim() && String(r.title).trim()))
-  return bad ? 'Dasturdagi har bir qatorda vaqt va mavzu bo‘lsin' : ''
+  const e = programErrorAt(raw)
+  return e ? `Dasturdagi ${e.day + 1}-kun, ${e.row + 1}-qatorda ${e.missing === 'time' ? 'vaqt' : 'mavzu'} yetishmayapti` : ''
 }
 
 // Step 2 sanalaridan kunlar soni (1..14)

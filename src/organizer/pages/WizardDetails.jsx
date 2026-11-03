@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { TEAL, box } from './wizardBits'
-import { normalizeProgram, dayCount, addDaysIso, withDayDates, parseDateLoose } from '../../programDays'
+import { normalizeProgram, dayCount, addDaysIso, withDayDates, parseDateLoose, programErrorAt } from '../../programDays'
 
 const PRACTICE_KINDS = [['model', 'Model'], ['fantom', 'Fantom'], ['bemor', 'Jonli bemor']]
 const MATERIALS = [['tashkilotchi', 'Tashkilotchi beradi'], ['ishtirokchi', 'Ishtirokchi olib keladi'], ['aralash', 'Qisman tashkilotchidan']]
@@ -103,6 +103,8 @@ function ProgramEditor({ form, set }) {
   const n = dayCount(start, parseDateLoose(form.end))
   const days = withDayDates(saved.length ? saved : Array.from({ length: n }, () => emptyDay()), start)
   const multi = days.length > 1
+  const err = programErrorAt(days)
+  const bad = (d, i, f) => err && err.day === d && err.row === i && err.missing === f ? ' ring-2 ring-[#e11d48]/50 border-[#e11d48]' : ''
   const put = (next) => set({ program: next })
   const patchDay = (d, patch) => put(days.map((x, i) => (i === d ? { ...x, ...patch } : x)))
   const setRow = (d, r, patch) => patchDay(d, { items: days[d].items.map((x, j) => (j === r ? { ...x, ...patch } : x)) })
@@ -136,8 +138,8 @@ function ProgramEditor({ form, set }) {
             <div className="space-y-1.5">
               {day.items.map((r, i) => (
                 <div key={i} className="flex gap-1.5">
-                  <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} className={`${box} w-[120px] shrink-0`} />
-                  <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} className={`${box} min-w-0 flex-1`} />
+                  <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} aria-invalid={!!bad(d, i, 'time')} className={`${box} w-[120px] shrink-0${bad(d, i, 'time')}`} />
+                  <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} aria-invalid={!!bad(d, i, 'title')} className={`${box} min-w-0 flex-1${bad(d, i, 'title')}`} />
                   <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
                 </div>
               ))}
