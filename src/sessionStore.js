@@ -186,6 +186,3 @@ function boot() {
 }
 
 boot()
-
-// Dev-only screenshot harness (src/dev/MarketingShot.jsx): sessiyani qo‘lda o‘rnatadi. Production buildda undefined.
-export const __shotSession = import.meta.env.DEV ? (next) => commit({ status: 'authed', error: '', ...next }) : undefined

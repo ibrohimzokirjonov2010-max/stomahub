@@ -116,7 +116,6 @@ import MobileCart from './components/mobile/MobileCart'
 import MobileCheckout from './components/mobile/MobileCheckout'
 import { adminRoutes } from './admin/routes'
 // dev-only screenshot harness (fixtures / injected real payloads); never in the production bundle
-const MarketingShot = import.meta.env.DEV ? lazy(() => import('./dev/MarketingShot')) : null
 const AdsShot = import.meta.env.DEV ? lazy(() => import('./dev/AdsShot')) : null
 const ShotHarness = import.meta.env.DEV ? lazy(() => import('./admin/pages/ShotHarness')) : null
 const SellerProfileShot = import.meta.env.DEV ? lazy(() => import('./dev/SellerProfileShot')) : null
@@ -166,7 +165,6 @@ export default function App() {
           <Route path="/tashkilotchi-bolish" element={<OrganizerRegister />} />
           {sellerRoutes}
           {adminRoutes}
-          {MarketingShot && <Route path="/marketing-shot" element={<Suspense fallback={null}><MarketingShot /></Suspense>} />}
           {AdsShot && <Route path="/ads-shot/seller" element={<Suspense fallback={null}><AdsShot /></Suspense>} />}
           {SellerProfileShot && <Route path="/seller-profile-shot/:sec" element={<Suspense fallback={null}><SellerProfileShot /></Suspense>} />}
           {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
