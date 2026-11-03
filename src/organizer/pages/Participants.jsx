@@ -8,9 +8,8 @@ import {
 import { PAY_LABEL, som } from '../data'
 import { useOrg } from '../Shell'
 import { addParticipant, checkIn, confirmPayment, downloadText, newestSeminar, removeParticipant, useHub } from '../../hubStore'
-import { Btn, Field, Modal, inputCls } from '../ui'
+import { Avatar, Btn, Field, Modal, inputCls } from '../ui'
 import { useMobile } from '../../useMobile'
-import { FACE } from './participantsData'
 import './participants.css'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../components/PhoneInput'
 
@@ -32,7 +31,7 @@ const PAY_CLS = {
   refund: 'bg-[#eef2f3] text-[#5f7278]',
 }
 
-const faceOf = (p) => FACE[p.id] || p.avatar
+const faceOf = (p) => p.avatar
 
 function splitWhen(value) {
   const [date, time] = String(value || '').split(', ')
@@ -373,7 +372,7 @@ function DesktopParticipants() {
                       className={`h-9 cursor-pointer border-b border-[#f3f7f6] ${on ? 'bg-[#f3fbf9]' : 'hover:bg-[#f8fcfb]'}`}
                     >
                       <td className="px-2.5"><span className="grid size-[22px] place-items-center rounded-full text-[11px] font-semibold leading-none text-white" style={{ background: TEAL }}>{from + i}</span></td>
-                      <td className="px-2"><span className="flex min-w-0 items-center gap-2"><img src={faceOf(p)} alt="" className="size-7 shrink-0 rounded-full object-cover" /><span className="min-w-0 leading-tight"><span className="block truncate text-[12.5px] font-semibold">{p.name}</span><span className="block truncate text-[11px] text-[#8aa0a4]">{p.clinic}</span></span></span></td>
+                      <td className="px-2"><span className="flex min-w-0 items-center gap-2"><Avatar src={faceOf(p)} name={p.name} size={28} /><span className="min-w-0 leading-tight"><span className="block truncate text-[12.5px] font-semibold">{p.name}</span><span className="block truncate text-[11px] text-[#8aa0a4]">{p.clinic}</span></span></span></td>
                       <td className="px-2 text-[12px] leading-none text-[#1c4a5a]">{p.phone}</td>
                       <td className="max-w-[140px] truncate px-2 text-[12px] leading-none text-[#4e6a72]">{p.email}</td>
                       <td className="px-2"><Pill className={TICKET_CLS[p.ticket] || TICKET_CLS.Standart}>{p.ticket}</Pill></td>
@@ -432,7 +431,7 @@ function DesktopParticipants() {
         {person && (
           <aside className="rounded-2xl border border-[#e6f1ef] bg-white p-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <div className="flex items-center gap-2">
-              <img src={faceOf(person)} alt="" className="size-10 rounded-full object-cover" />
+              <Avatar src={faceOf(person)} name={person.name} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13.5px] font-bold leading-tight">{person.name}</p>
                 <p className="truncate text-[11.5px] text-[#8aa0a4]">{person.clinic}</p>

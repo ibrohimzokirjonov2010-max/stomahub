@@ -9,7 +9,7 @@ import { signOut, useSession } from '../../sessionStore'
 import { useOrg } from '../Shell'
 import { uploadDoc } from '../../apply/api'
 import { SpeakerModal } from './WizardModals'
-import { Badge, Btn, Card, Field, Toggle, inputCls } from '../ui'
+import { Avatar, Badge, Btn, Card, Field, Toggle, inputCls } from '../ui'
 
 export function Marketing() {
   const { notify } = useOrg()
@@ -65,7 +65,7 @@ export function Speakers() {
           return (
             <article key={s.id} className="rounded-2xl border border-[#e6f1ef] bg-white p-4">
               <div className="flex items-center gap-3">
-                <img src={s.avatar || '/images/avatar.jpg'} alt="" className="size-12 rounded-full object-cover" />
+                <Avatar src={s.avatar} name={s.name} size={48} />
                 <div className="min-w-0"><p className="truncate font-bold">{s.name}</p><p className="truncate text-[12px] text-[#6e868c]">{[s.role, s.city].filter(Boolean).join(' · ')}</p></div>
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5 text-[11.5px]">
@@ -141,7 +141,7 @@ export function Ratings() {
         {hub.reviews.map((r) => (
           <article key={r.name} className="rounded-2xl border border-[#e6f1ef] bg-white p-4">
             <div className="flex items-center gap-3">
-              <img src={r.avatar} alt="" className="size-10 rounded-full object-cover" />
+              <Avatar src={r.avatar} name={r.name} size={40} />
               <div className="flex-1"><p className="font-semibold">{r.name}</p><p className="text-[12px] text-[#8aa0a4]">{r.clinic} · {r.date}</p></div>
               <span className="text-[#f5b400]">{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</span>
             </div>

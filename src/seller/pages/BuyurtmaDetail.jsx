@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, RefreshCw, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink } from 'lucide-react'
+import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink, BadgeCheck } from 'lucide-react'
 import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync, commissionText, payoutOf } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Menu, Err } from '../components/ui'
@@ -39,6 +39,7 @@ export default function BuyurtmaDetail() {
   const [cancel, setCancel] = useState(false)
   const [reason, setReason] = useState(REASONS[0])
   const [other, setOther] = useState('')
+  const [confirm, setConfirm] = useState(false)
   const a = useAsync()
   const { shop } = useOutletContext() || {}
   useEffect(() => { if (o) { setNote(o.internal_note || ''); setTrackUrl(o.tracking_url || '') } }, [o?.id, o?.internal_note, o?.tracking_url]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -65,19 +66,20 @@ export default function BuyurtmaDetail() {
   const deliv = DELIVERY.find((d) => d[0] === o.delivery_method)?.[1] || 'Kuryer orqali yetkazish'
 
   const stepper = (mobile) => {
-    const steps = mobile ? [['yangi', 'Yangi', FileText], ['tayyorlanmoqda', 'Yig‘ilmoqda', Box], ['yetkazilmoqda', 'Yetkazilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
+    const steps = mobile ? [['yangi', 'Yangi', FileText], ['tasdiqlandi', 'Tasdiqlangan', BadgeCheck], ['tayyorlanmoqda', 'Yig‘ilmoqda', Box], ['yetkazilmoqda', 'Yetkazilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
     return (
       <div className="flex">
         {steps.map(([s, l, I], i) => {
           const done = !cancelled && O_FLOW.indexOf(s) <= idx
+          const isNext = !cancelled && next && next[0] === s
           const lineDone = !cancelled && i < steps.length - 1 && O_FLOW.indexOf(steps[i + 1][0]) <= idx
           return (
-            <div key={s} className="relative flex flex-1 flex-col items-center text-center">
+            <Step key={s} tap={mobile && isNext} onTap={() => setConfirm(true)} label={l}>
               {i < steps.length - 1 && <span className={`absolute top-[11px] left-1/2 w-full md:top-[9px] ${lineDone ? 'h-[3px] bg-[#0F766E]' : 'border-t-2 border-dashed border-[#CFDADD]'} ${mobile ? 'top-[16px]' : ''}`} />}
-              <span className={`relative grid place-items-center rounded-full ${mobile ? 'size-9' : 'size-5'} ${done ? 'bg-[#0F766E] text-white' : 'bg-[#E6EEF0] text-[#5C6E80]'}`}>{mobile ? <I className="size-4" /> : <Check className="size-3" strokeWidth={3} />}</span>
-              <div className={`mt-1.5 text-[12px] ${done ? 'font-semibold text-[#10283F]' : 'text-[#3D4E5F]'} ${mobile && done && s !== 'yangi' ? '!text-[#0F766E]' : ''}`}>{l}</div>
-              <div className="text-[11px] leading-tight text-[#5C6E80]">{hist[s] ? <>{dmy(hist[s])}<br />{hm(hist[s])}</> : mobile ? '—' : ''}</div>
-            </div>
+              <span className={`relative grid place-items-center rounded-full ${mobile ? 'size-9' : 'size-5'} ${done ? 'bg-[#0F766E] text-white' : mobile && isNext ? 'bg-white text-[#0F766E] ring-2 ring-[#0F766E] ring-offset-2 animate-pulse' : 'bg-[#E6EEF0] text-[#5C6E80]'}`}>{mobile ? <I className="size-4" /> : <Check className="size-3" strokeWidth={3} />}</span>
+              <div className={`mt-1.5 ${mobile ? 'min-w-0 break-words px-0.5 text-[10.5px] leading-tight' : 'text-[12px]'} ${done ? 'font-semibold text-[#10283F]' : 'text-[#3D4E5F]'} ${mobile && done && s !== 'yangi' ? '!text-[#0F766E]' : ''}`}>{l}</div>
+              <div className={`${mobile ? 'text-[10px]' : 'text-[11px]'} leading-tight text-[#5C6E80]`}>{hist[s] ? <>{dmy(hist[s])}<br />{hm(hist[s])}</> : mobile && isNext ? <span className="mt-0.5 inline-block rounded-full bg-[#0F766E] px-1.5 py-px text-[10px] font-semibold text-white">Bosing</span> : mobile ? '—' : ''}</div>
+            </Step>
           )
         })}
       </div>
@@ -91,6 +93,14 @@ export default function BuyurtmaDetail() {
       <div className="mt-5 grid grid-cols-2 gap-3"><Btn variant="outline" onClick={() => setCancel(false)}>Ortga</Btn><Btn disabled={a.busy} onClick={doCancel}>Bekor qilish</Btn></div>
     </Modal>
   )
+
+  const confirmModal = next && (
+    <Modal open={confirm} onClose={() => setConfirm(false)} title="Holatni o‘zgartirish" width="max-w-[420px]">
+      <p className="text-[14px] text-[#3D4E5F]">Buyurtma holatini «{O_LABEL[next[0]]}» ga o‘zgartirasizmi?</p>
+      <div className="mt-5 grid grid-cols-2 gap-3"><Btn variant="outline" onClick={() => setConfirm(false)}>Ortga</Btn><Btn disabled={a.busy} onClick={() => { setConfirm(false); go(next[0]) }}>Tasdiqlash</Btn></div>
+    </Modal>
+  )
+  const showBar = open && next
 
   return (
     <div>
@@ -210,16 +220,24 @@ export default function BuyurtmaDetail() {
             <div className="mt-2 space-y-1"><Row l="Mahsulotlar jami:" v={som(o.subtotal)} />{Number(o.discount_amount) > 0 && <Row l="Chegirma:" v={`−${som(o.discount_amount)}`} />}{Number(o.delivery_fee) > 0 && <Row l="Yetkazish:" v={som(o.delivery_fee)} />}<Row l="Komissiya (12%):" v={commissionText(o, som)} /></div>
             <div className="mt-2 flex justify-between border-t border-[#CCFBF1] pt-2 font-bold"><span>Mijozdan olinadigan summa:</span><span className="text-[15px]">{som(total)}</span></div>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 pb-4">
-            <Btn icon={RefreshCw} disabled={!next || a.busy} onClick={() => next && go(next[0])}>{next ? 'Holatni yangilash' : O_LABEL[o.status]}</Btn>
+          <div className={`grid grid-cols-2 gap-2.5 ${showBar ? 'pb-24' : 'pb-4'}`}>
             <Btn variant="outline" icon={Printer} onClick={() => printWaybill(o, shop)}>Chek chop etish</Btn>
             <Btn variant="outline" icon={Phone} onClick={call}>Mijoz bilan bog‘lanish</Btn>
-            <Btn variant="outline" icon={X} disabled={!open} onClick={() => setCancel(true)}>Bekor qilish</Btn>
+            <Btn variant="outline" icon={X} className="col-span-2" disabled={!open} onClick={() => setCancel(true)}>Bekor qilish</Btn>
           </div>
         </div>
+        {showBar && (
+          <div data-testid="order-action-bar" className="fixed inset-x-0 z-20 border-t border-[#E6EEF0] bg-white/95 px-4 py-2.5 shadow-[0_-4px_12px_rgba(16,40,63,0.06)] backdrop-blur bottom-[calc(max(env(safe-area-inset-bottom),8px)+58px)]">
+            <Btn className="w-full" icon={next[0] === 'tayyorlanmoqda' ? Box : next[0] === 'yetkazilmoqda' ? Truck : Check} disabled={a.busy} onClick={() => setConfirm(true)}>{next[1]}</Btn>
+          </div>
+        )}
       </div>
       {cancelModal}
+      {confirmModal}
     </div>
   )
 }
+const Step = ({ tap, onTap, label, children }) => tap
+  ? <button type="button" onClick={onTap} aria-label={`${label} — holatni o‘zgartirish`} className="relative flex min-w-0 flex-1 flex-col items-center text-center">{children}</button>
+  : <div className="relative flex min-w-0 flex-1 flex-col items-center text-center">{children}</div>
 const Row = ({ l, v }) => <div className="flex justify-between gap-2 text-[#3D4E5F]"><span>{l}</span><span className="text-[#10283F]">{v}</span></div>

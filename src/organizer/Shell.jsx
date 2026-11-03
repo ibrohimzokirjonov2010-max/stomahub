@@ -441,7 +441,7 @@ export default function Shell() {
           </div>
         </div>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e7eeec] bg-white pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Asosiy">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e7eeec] bg-white pb-[max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px))] md:hidden" aria-label="Asosiy">
           <ul className="grid h-16 grid-cols-5">
             <li>
               <TabLink to="/tashkilotchi" end label="Panel" icon={House} active={pathname === '/tashkilotchi'} />

@@ -1,3 +1,4 @@
+import { Avatar } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import jsQR from 'jsqr'
@@ -23,7 +24,6 @@ const TICKET_TONE = {
   Guruh: 'bg-[#f1e8ff] text-[#8b5cf6]',
 }
 
-const FACES = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `/images/qr-face-${i}.png`)
 
 export default function Qr() {
   const { notify } = useOrg()
@@ -40,7 +40,7 @@ export default function Qr() {
   const pop = useRef(null)
   const sem = SEMINARS.find((s) => s.id === seminar) || SEMINARS[0]
   const list = hub.participants.filter((p) => p.seminarId === sem?.id).map((p, i) => ({
-    id: p.id, name: p.name, clinic: p.clinic, time: p.arrived ? 'hozir' : '—', ticket: p.ticket, ok: !!p.arrived, avatar: FACES[i] || p.avatar,
+    id: p.id, name: p.name, clinic: p.clinic, time: p.arrived ? 'hozir' : '—', ticket: p.ticket, ok: !!p.arrived, avatar: p.avatar,
   }))
   const arrived = list.filter((p) => p.ok).length
   const pct = sem?.seats ? Math.round((sem.sold / sem.seats) * 100) : 0
@@ -247,7 +247,7 @@ export default function Qr() {
           ) : (
             <>
               <div className="flex items-center gap-2.5">
-                <img src="/images/qr-face-0.png" alt="" className="size-12 rounded-full object-cover" />
+                <Avatar src={last?.avatar} name={last?.name || 'Ishtirokchi'} size={48} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[16px] font-bold leading-tight text-[#16324a]">{last?.name || 'Ishtirokchi'}</p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-[#5e787e]">
@@ -388,7 +388,7 @@ function CheckRow({ p }) {
   const tone = TICKET_TONE[p.ticket] || TICKET_TONE.Standart
   return (
     <li className="grid grid-cols-[36px_minmax(0,1fr)_34px_auto] items-center gap-x-2 px-3 py-[7px]">
-      <img src={p.avatar} alt="" className="size-9 rounded-full object-cover" />
+      <Avatar src={p.avatar} name={p.name} size={36} />
       <div className="min-w-0">
         <p className="truncate text-[13px] font-semibold leading-tight text-[#163044]">{p.name}</p>
         <p className="truncate text-[11px] leading-tight text-[#8aa0a4]">{p.clinic}</p>

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { downloadText, issueCert, newestSeminar, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
-import { Modal, QrMark } from '../ui'
+import { Avatar, Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
 import { CertDesignCanvas, layoutOf, printDesignCert } from './certLayout'
 import { useCertBackground } from './WizardExtras'
@@ -377,7 +377,7 @@ function Desktop(p) {
                       <td className="px-1 text-[12.5px] text-[#8aa0a4]">{p.from + i}</td>
                       <td className="px-2 py-1.5">
                         <span className="flex min-w-0 items-center gap-2">
-                          <img src={c.avatar} alt="" className="size-8 shrink-0 rounded-full object-cover" />
+                          <Avatar src={c.avatar} name={c.name} size={32} />
                           <span className="min-w-0">
                             <span className="block truncate text-[13px] font-semibold leading-tight text-[#143044]">{c.name}</span>
                             <span className="block truncate text-[11px] text-[#9aa8ae]">{c.clinic}</span>
