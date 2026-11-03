@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { cleanProgram, programRows, normalizeProgram, withDayDates, parseDateLoose, dateRangeLabel } from '../../programDays'
-import { programDaysOf } from '../../seminarsData'
+import { buildSeminarPage, programDaysOf } from '../../seminarsData'
+import { SeminarView } from '../../pages/Seminar'
 import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react'
 import { num, som } from '../data'
 import { useOrg } from '../Shell'
-import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
+import { getHub, saveSeminar, seminarFormCopy, seminarRecordFromForm, toPublic, useHub } from '../../hubStore'
 import { useMobile } from '../../useMobile'
 import { CATS, EMPTY_DETAILS, FORMAT_OF, STEPS, TEAL, TOPICS, box, placeTypeOf, stepError, uploadImage, uzDate } from './wizardBits'
 import WizardDetails from './WizardDetails'
@@ -198,6 +199,19 @@ export default function Wizard() {
     }))
   }, [editing])
 
+  // Saqlash va ko‘rib chiqish bir xil shakldan foydalanadi
+  const saveShape = () => ({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: cleanProgram(withDayDates(normalizeProgram(form.program), form.start)) })
+  const isReview = STEPS[active].id === 'review'
+  const publicPreview = useMemo(() => {
+    if (!isReview) return null
+    try {
+      const existing = editing ? hub.seminars.find((x) => x.id === editing) : null
+      return buildSeminarPage(toPublic({ ...seminarRecordFromForm(saveShape(), { publish: true, existing }), id: existing?.id || 'korib-chiqish' }))
+    } catch {
+      return null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReview, form, hub.seminars, editing, orgName])
   const persist = (publish) => {
     if (publish) {
       for (const st of STEPS) {
@@ -205,7 +219,7 @@ export default function Wizard() {
         if (e) { fail(STEPS.indexOf(st), e); return }
       }
     }
-    const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: cleanProgram(withDayDates(normalizeProgram(form.program), form.start)) }, { publish, id: editing || undefined })
+    const res = saveSeminar(saveShape(), { publish, id: editing || undefined })
     if (!res.ok) {
       setFormError(res.error)
       notify(res.error)
@@ -337,7 +351,7 @@ export default function Wizard() {
           </ol>
         </nav>
 
-        <div className="mt-3 min-w-0 space-y-3 xl:col-start-2 xl:row-start-2 xl:mt-0">
+        <div className={`mt-3 min-w-0 space-y-3 xl:col-start-2 xl:row-start-2 xl:mt-0 ${isReview ? 'xl:col-span-2' : ''}`}>
           <ol className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 xl:hidden" aria-label="Bosqichlar">
             {STEPS.map((s, i) => {
               const on = i === active
@@ -628,21 +642,17 @@ export default function Wizard() {
             )}
           </section>
 
-          <section id="review" hidden={STEPS[active].id !== 'review'} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
-            <Head n={num0('review')} title="Ko‘rib chiqish" sub="E’lon qilishdan oldin ma’lumotlarni tekshiring" />
-            <ul className="mt-3 space-y-1 text-[13px] text-[#3e5a62]">
-              <li><b>{form.name}</b> · {form.topic} · {FORMAT_OF[form.placeType]}</li>
-              <li>{uzDate(form.start)} {form.startTime} — {uzDate(form.end)} {form.endTime}</li>
-              <li>{form.place}</li>
-              <li>{form.tickets.length} chipta · {form.speakers.length} ma’ruzachi · {form.certDesign ? 'O‘z dizayni' : CERTS.find((t) => t.id === form.template)?.name}</li>
-              {(form.cmeHours || form.cmePoints) && <li>CME: {[form.cmeHours && `${form.cmeHours} soat`, form.cmePoints && `${form.cmePoints} ball`].filter(Boolean).join(' · ')}</li>}
-              <li>Dastur: {programRows(form.program).filter((r) => r.title).length} qator{form.practice?.on ? ' · amaliy qism bor' : ''}{form.liveSurgery?.on ? ' · jonli jarrohlik' : ''}</li>
-            </ul>
+          <section id="review" hidden={!isReview} className="scroll-mt-3 rounded-2xl border border-[#e6f1ef] bg-white p-4 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
+            <Head n={num0('review')} title="Ko‘rib chiqish" sub="Ishtirokchilarga shunday ko‘rinadi" />
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[#eef8f7] px-2.5 py-1 text-[12px] font-semibold" style={{ color: TEAL }}><Info className="size-3.5" /> Ishtirokchilarga shunday ko‘rinadi — tugmalar bu yerda ishlamaydi</p>
+            <div className="mt-3 rounded-xl border border-dashed border-[#d7ebe6] bg-[#f6f9fb] px-3">
+              {publicPreview ? <SeminarView d={publicPreview} preview /> : <p className="py-6 text-center text-[13px] text-[#7e9398]">Ko‘rinishni yaratish uchun asosiy ma’lumotlarni to‘ldiring</p>}
+            </div>
           </section>
 
           {formError && <p role="alert" className="text-[12.5px] font-semibold text-[#e11d48]">{formError}</p>}
           <p className="text-[12px] text-[#7e9398]">{active + 1}-bosqich / {STEPS.length} · {STEPS[active].title}</p>
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className={`flex flex-wrap items-center justify-between gap-2 pt-1 ${isReview ? 'sticky bottom-0 z-20 -mx-1 rounded-xl border border-[#e6f1ef] bg-white/95 p-2 shadow-[0_-4px_12px_rgb(16_40_40/0.08)] backdrop-blur' : ''}`}>
             <button type="button" onClick={() => go(active - 1)} disabled={active === 0} className="h-10 rounded-xl border border-[#e4eeec] bg-white px-4 text-[13px] font-semibold text-[#1c4a5a] disabled:opacity-40"><span className="inline-flex items-center gap-1"><ChevronLeft className="size-4" /> Oldingi bosqich</span></button>
             <div className="flex gap-2">
               <button type="button" onClick={() => persist(false)} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#d7ebe6] bg-white px-3.5 text-[13px] font-semibold" style={{ color: TEAL }}>
@@ -655,7 +665,7 @@ export default function Wizard() {
           </div>
         </div>
 
-        <aside className="mt-3 xl:sticky xl:top-2 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:max-h-[calc(100vh-96px)] xl:self-start xl:overflow-y-auto xl:overscroll-contain">
+        <aside hidden={isReview} className="mt-3 xl:sticky xl:top-2 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:max-h-[calc(100vh-96px)] xl:self-start xl:overflow-y-auto xl:overscroll-contain">
           <div className="rounded-2xl border border-[#e6f1ef] bg-white p-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <div className="mb-1.5 flex items-center justify-between">
               <p className="text-[13px] font-bold">Oldindan ko‘rish</p>

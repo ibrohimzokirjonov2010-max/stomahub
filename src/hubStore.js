@@ -182,16 +182,10 @@ function pushActivity(list, item) {
   return [{ ...item, time: item.time || nowLabel() }, ...list].slice(0, 24)
 }
 
-export function saveSeminar(form, { publish, id } = {}) {
+/** Wizard formasidan seminar yozuvi (sof funksiya — saqlamaydi). Ko‘rib chiqish bosqichi ham ishlatadi. */
+export function seminarRecordFromForm(form, { publish, existing } = {}) {
   const name = String(form.name || '').trim()
-  if (name.length < 3) return { ok: false, error: 'Seminar nomini kiriting' }
-  if (String(form.about || '').trim().length < 10) return { ok: false, error: 'Qisqa tavsif kamida 10 belgi bo‘lsin' }
-  if (!form.start) return { ok: false, error: 'Sana kiriting' }
-  if (!String(form.place || '').trim()) return { ok: false, error: 'Joyni kiriting' }
   const tickets = form.tickets || []
-  if (publish && !tickets.length) return { ok: false, error: 'Kamida bitta chipta turi kerak' }
-
-  const existing = id ? state.seminars.find((s) => s.id === id) : null
   const nextId = existing?.id || `${name.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 36) || 'seminar'}-${Math.random().toString(36).slice(2, 6)}`
   const status = publish ? (existing && existing.status !== 'qoralama' ? existing.status : 'rejalashtirilgan') : 'qoralama'
   const seats = tickets.reduce((n, t) => n + (Number(t.seats || t.total) || 0), 0) || existing?.seats || 0
@@ -245,6 +239,21 @@ export function saveSeminar(form, { publish, id } = {}) {
     checked: existing?.checked || 0,
     updatedAt: Date.now(),
   }
+  return record
+}
+
+export function saveSeminar(form, { publish, id } = {}) {
+  const name = String(form.name || '').trim()
+  if (name.length < 3) return { ok: false, error: 'Seminar nomini kiriting' }
+  if (String(form.about || '').trim().length < 10) return { ok: false, error: 'Qisqa tavsif kamida 10 belgi bo‘lsin' }
+  if (!form.start) return { ok: false, error: 'Sana kiriting' }
+  if (!String(form.place || '').trim()) return { ok: false, error: 'Joyni kiriting' }
+  const tickets = form.tickets || []
+  if (publish && !tickets.length) return { ok: false, error: 'Kamida bitta chipta turi kerak' }
+
+  const existing = id ? state.seminars.find((s) => s.id === id) : null
+  const record = seminarRecordFromForm(form, { publish, existing })
+  const nextId = record.id
   const promos = [...state.promos]
   ;(form.promos || []).filter((p) => p.on !== false && p.code).forEach((p) => {
     const code = String(p.code).toUpperCase()

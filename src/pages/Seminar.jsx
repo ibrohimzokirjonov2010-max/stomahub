@@ -115,12 +115,6 @@ export default function Seminar() {
     ? publicRecords(hub).filter((x) => x.id !== rec.id && !x.cancelled).sort((a, b) => (b.cat === rec.cat) - (a.cat === rec.cat)).slice(0, 3)
       .map((x) => ({ to: `/seminarlar/${x.id}`, title: x.title, date: `${Number(x.day)} ${MONTHS[x.mon] || ''} ${String(x.monthKey || '').slice(0, 4)}, ${x.city || ''}`, price: x.price, image: x.image }))
     : null
-  const [tab, setTab] = useState('about')
-  const [faq, setFaq] = useState(0)
-  const [shot, setShot] = useState(null)
-  const [note, setNote] = useState(null)
-  const [corp, setCorp] = useState(false)
-  const [profile, setProfile] = useState(false)
   if (!d) {
     return (
       <div className="py-16 text-center">
@@ -129,8 +123,20 @@ export default function Seminar() {
       </div>
     )
   }
+  return <SeminarView d={d} similar={realSimilar} />
+}
+
+/** Seminar sahifasi ko‘rinishi. `preview` — tashkilotchi ko‘rib chiqishi: harakat tugmalari o‘chirilgan. */
+export function SeminarView({ d, similar = null, preview = false }) {
+  const [tab, setTab] = useState('about')
+  const [faq, setFaq] = useState(0)
+  const [shot, setShot] = useState(null)
+  const [note, setNote] = useState(null)
+  const [corp, setCorp] = useState(false)
+  const [profile, setProfile] = useState(false)
   const v = detail(d)
-  if (realSimilar) v.similar = realSimilar
+  if (similar) v.similar = similar
+  if (preview) v.similar = []
   const cancelled = !!d.cancelled || !!v.regClosed
   const left = v.seats - v.taken
   const regTo = `/seminarlar/${d.id}/royxat`
@@ -141,7 +147,7 @@ export default function Seminar() {
   }
 
   return (
-    <div className="sem-page pb-8 pt-3">
+    <div className="sem-page pb-8 pt-3" onClickCapture={preview ? (e) => { if (e.target.closest('a')) e.preventDefault() } : undefined}>
       <div className="min-w-0 space-y-3">
         <nav className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
           <Link to="/seminarlar" className="hover:text-sea">Seminarlar</Link>
@@ -365,10 +371,12 @@ export default function Seminar() {
           <div className="mt-3 flex justify-between text-[11.5px] text-muted"><span>Band joylar</span><span>{v.taken}/{v.seats}</span></div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#e7eef5]"><span className="block h-full rounded-full bg-sea" style={{ width: `${Math.max(4, (v.taken / v.seats) * 100)}%` }} /></div>
           <p className="mt-2 text-[13px] font-bold text-sea">{left} ta o‘rin qoldi</p>
-          {cancelled
+          {preview
+            ? <button type="button" disabled title="Ko‘rib chiqish rejimi" className="mt-3 flex h-11 w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-xl bg-sea text-[13.5px] font-semibold text-white opacity-60">Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></button>
+            : cancelled
             ? <span className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#fde8e8] text-[13.5px] font-semibold text-[#dc2626]">Ro‘yxat yopiq</span>
             : <Link to={regTo} className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-xl bg-sea text-[13.5px] font-semibold text-white">Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></Link>}
-          <button type="button" onClick={() => downloadIcs(v)} className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sea text-[12.5px] font-semibold text-sea"><CalendarPlus className="size-4" /> Kalendarga qo‘shish</button>
+          <button type="button" disabled={preview} onClick={() => downloadIcs(v)} className="mt-2 flex disabled:cursor-not-allowed disabled:opacity-60 h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sea text-[12.5px] font-semibold text-sea"><CalendarPlus className="size-4" /> Kalendarga qo‘shish</button>
         </section>
 
         <section className="rounded-2xl bg-white p-3 shadow-card">
