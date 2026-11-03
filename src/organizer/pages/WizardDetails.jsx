@@ -124,24 +124,24 @@ function ProgramEditor({ form, set }) {
   return (
     <div>
       <Lab hint="(vaqt va mavzu)">Dastur</Lab>
-      <div className="space-y-3" data-shot="program">
+      <div className="min-w-0 space-y-3" data-shot="program">
         {days.map((day, d) => (
-          <div key={d} className={multi ? 'rounded-xl border border-[#e3eeec] bg-[#fbfdfd] p-2.5' : ''}>
+          <div key={d} className={multi ? 'min-w-0 overflow-hidden rounded-xl border border-[#e3eeec] bg-[#fbfdfd] p-2.5' : ''}>
             {multi && (
-              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              <div className="mb-2 flex min-w-0 items-center gap-1.5">
                 <span className="rounded-lg px-2 py-1 text-[12px] font-bold text-white" style={{ background: TEAL }}>{d + 1}-kun</span>
-                <input aria-label={`${d + 1}-kun nomi`} placeholder="Kun nomi (masalan: Nazariy qism)" value={day.title} onChange={(e) => patchDay(d, { title: e.target.value })} className={`${box} min-w-[160px] flex-1`} />
-                <input type="date" aria-label={`${d + 1}-kun sanasi`} value={day.date} onChange={(e) => patchDay(d, { date: e.target.value })} className={`${box} w-[150px] shrink-0`} />
+                <input aria-label={`${d + 1}-kun nomi`} placeholder="Kun nomi (masalan: Nazariy qism)" value={day.title} onChange={(e) => patchDay(d, { title: e.target.value })} className={`${box} min-w-0 flex-1`} />
+                <input type="date" aria-label={`${d + 1}-kun sanasi`} value={day.date} onChange={(e) => patchDay(d, { date: e.target.value })} className={`${box} w-[138px] min-w-0 shrink`} />
                 <button type="button" aria-label={`${d + 1}-kunni o‘chirish`} onClick={() => delDay(d)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
               </div>
             )}
             <div className="space-y-1.5">
-              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4">
                 {day.items.map((r, i) => (
-                  <div key={i} className="relative rounded-xl border border-[#e3eeec] bg-white p-1.5">
+                  <div key={i} className="min-w-0 rounded-xl border border-[#e3eeec] bg-white p-1.5">
                     <div className="flex gap-1">
                       <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} aria-invalid={!!bad(d, i, 'time')} className={`${box} min-w-0 flex-1${bad(d, i, 'time')}`} />
-                      <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
+                      <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-8 shrink-0 place-items-center self-start rounded-lg text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
                     </div>
                     <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} aria-invalid={!!bad(d, i, 'title')} className={`${box} mt-1 w-full min-w-0${bad(d, i, 'title')}`} />
                   </div>
