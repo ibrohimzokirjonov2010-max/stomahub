@@ -62,7 +62,7 @@ export default function Qr() {
     window.setTimeout(() => { if (seen.current === raw) seen.current = '' }, 1800)
     const res = checkInPayload(sem?.id, raw)
     if (!res.ok) { notify(res.error); return }
-    setLast(res.person)
+    setLast({ ...res.person, already: !!res.already })
     notify(res.already ? `${res.person.name} allaqachon kirgan` : (sound ? `${res.person.name} — Keldi` : `${res.person.name} qayd etildi`))
   }
 
@@ -268,8 +268,8 @@ export default function Qr() {
                   <Check className="size-3.5" strokeWidth={3} />
                 </span>
                 <div>
-                  <p className="text-[14px] font-bold text-[#143044]">Kirish tasdiqlandi</p>
-                  <p className="text-[12px] leading-snug text-[#5e787e]">Ishtirokchi muvaffaqiyatli ro‘yxatdan o‘tkazildi.</p>
+                  <p className="text-[14px] font-bold text-[#143044]">{!last ? 'Skaner kutilmoqda' : last.already ? 'Avval kirgan' : 'Kirish tasdiqlandi'}</p>
+                  <p className="text-[12px] leading-snug text-[#5e787e]">{!last ? 'Ishtirokchi QR kodini skaner qiling yoki qo‘lda belgilang.' : last.already ? 'Bu ishtirokchi allaqachon check-in qilingan.' : 'Ishtirokchi muvaffaqiyatli ro‘yxatdan o‘tkazildi.'}</p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">

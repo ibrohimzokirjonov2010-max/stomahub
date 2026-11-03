@@ -4,7 +4,7 @@ import {
   Search, SlidersHorizontal, LayoutGrid, Scissors, Sparkles, HeartPulse, Ellipsis, ChevronDown, Bookmark, CalendarDays,
   Clock, MapPin, UserRound, ArrowRight, ShoppingCart, Bell, Video, X, Check, CircleCheck,
 } from 'lucide-react'
-import { seminarChips, seminarCard, som } from '../../seminarsData'
+import { seminarChips, seminarCard, seminarPrice, som } from '../../seminarsData'
 import { publicRecords, useHub } from '../../hubStore'
 import HubNotice from '../HubNotice'
 import { useCart } from '../../cart'
@@ -193,7 +193,7 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="whitespace-nowrap text-[13px] font-extrabold text-[#0d3b44]">{som(s.price)}</span>
+            <span className="whitespace-nowrap text-[13px] font-extrabold text-[#0d3b44]">{seminarPrice(s.price)}</span>
             {s.past ? (
               <span className="flex h-8 items-center rounded-lg bg-[#eef1f4] px-2 text-[10px] font-semibold text-muted">Yakunlangan</span>
             ) : s.cancelled ? (

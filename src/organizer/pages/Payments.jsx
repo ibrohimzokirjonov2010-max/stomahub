@@ -24,7 +24,7 @@ const METHOD_COLORS = {
 }
 
 const STATE_META = {
-  ok: { label: 'Muvaffaqiyatli', pill: 'bg-[#e8f8ef] text-[#16a34a]', dot: '#22c55e' },
+  ok: { label: 'To‘langan', pill: 'bg-[#e8f8ef] text-[#16a34a]', dot: '#22c55e' },
   wait: { label: 'Kutilmoqda', pill: 'bg-[#fff6e0] text-[#d0890b]', dot: '#e8a317' },
   cancel: { label: 'Bekor qilingan', pill: 'bg-[#fdecef] text-[#e11d48]', dot: '#f43f5e' },
   refund: { label: 'Qaytarilgan', pill: 'bg-[#eef1f3] text-[#64748b]', dot: '#94a3b8' },
@@ -32,8 +32,8 @@ const STATE_META = {
 
 const TABS = [
   { id: 'all', label: 'Barcha to‘lovlar' },
-  { id: 'ok', label: 'Muvaffaqiyatli' },
-  { id: 'wait', label: 'Kutilayotgan' },
+  { id: 'ok', label: 'To‘langan' },
+  { id: 'wait', label: 'Kutilmoqda' },
   { id: 'cancel', label: 'Bekor qilingan' },
   { id: 'refund', label: 'Qaytarilgan' },
 ]
@@ -315,7 +315,7 @@ export default function Payments() {
               {[
                 ['all', `Barcha to‘lovlar (${counts.all})`],
                 ['ok', `Muvaffaqiyatli (${counts.ok})`],
-                ['wait', `Kutilayotgan (${counts.wait})`],
+                ['wait', `Kutilmoqda (${counts.wait})`],
                 ['cancel', `Bekor qilingan (${counts.cancel})`],
                 ['refund', `Qaytarilgan (${counts.refund})`],
               ].map(([id, label]) => (
@@ -602,8 +602,8 @@ function MobilePay({ notify }) {
                   <span className="block text-[10px] text-[#9aa3b5]">so‘m</span>
                 </span>
                 <span className="text-[10.5px] leading-tight text-[#5c6480]">{r.via}</span>
-                <span className={`inline-flex h-5 w-fit items-center rounded-full px-1.5 text-[10px] font-semibold ${r.state === 'paid' ? 'bg-[#e7f8ee] text-[#16a34a]' : 'bg-[#fff4d6] text-[#d0890b]'}`}>
-                  {r.state === 'paid' ? 'To‘langan' : 'Kutilmoqda'}
+                <span className={`inline-flex h-5 w-fit items-center rounded-full px-1.5 text-[10px] font-semibold ${r.state === 'paid' ? 'bg-[#e7f8ee] text-[#16a34a]' : r.state === 'wait' ? 'bg-[#fff4d6] text-[#d0890b]' : r.state === 'refund' ? 'bg-[#eef1f3] text-[#64748b]' : 'bg-[#fdecef] text-[#e11d48]'}`}>
+                  {r.state === 'paid' ? 'To‘langan' : r.state === 'wait' ? 'Kutilmoqda' : r.state === 'refund' ? 'Qaytarilgan' : 'Bekor qilingan'}
                 </span>
                 <ChevronRight className="size-3.5 text-[#c5cdd8]" />
               </button>

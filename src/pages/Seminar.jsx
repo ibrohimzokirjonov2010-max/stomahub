@@ -4,12 +4,14 @@ import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
 import {
   ChevronRight, ChevronDown, CalendarDays, MapPin, Users, Award, Hand, Video, MessagesSquare, BookOpen, UsersRound,
   Play, Check, ArrowRight, CalendarPlus, Phone, Send, ShieldCheck, RotateCcw, FileText, Building2, Star,
-  BadgeCheck, Syringe, HelpCircle, Car, X, Image as ImageIcon, Target, Box, Package, Settings2, UserRound, Layers, CreditCard, GraduationCap, Info,
+  BadgeCheck, Syringe, Clock, HelpCircle, Car, X, Image as ImageIcon, Target, Box, Package, Settings2, UserRound, Layers, CreditCard, GraduationCap, Info,
 } from 'lucide-react'
 import { ToothIcon } from '../components/icons'
 import { buildSeminarPage } from '../seminarsData'
 import { publicRecord, publicRecords, useHub } from '../hubStore'
 import { som } from '../marketData'
+import { seminarPrice } from '../seminarsData'
+import { formatPhone, telegramHandle } from '../seminarAddress'
 import { dateRangeLabel } from '../programDays'
 import { IMG } from '../organizer/data'
 
@@ -234,6 +236,8 @@ export function SeminarView({ d, similar = null, preview = false }) {
               )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-ink"><CalendarDays className="size-4 text-sea" /> {dateLabel}</span>
+                {d.organizer && d.time && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-ink"><Clock className="size-4 text-sea" /> {d.time}{d.hours ? ` · ${d.hours}` : ''}</span>}
+                {v.cmeLine && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-ink"><Award className="size-4 text-sea" /> {v.cmeLine}</span>}
                 {(v.venueShort || v.city) && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-ink"><MapPin className="size-4 shrink-0 text-sea" /> <span className="min-w-0"><span className="block leading-tight">{v.venueShort || v.city}</span>{v.venueShort && v.city && v.city !== v.venueShort && <span className="block text-[11px] font-medium text-muted">{v.city}</span>}</span></span>}
                 {v.handsOn && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-sea"><Hand className="size-4" /> Amaliy mashg‘ulot</span>}
               </div>
@@ -298,6 +302,10 @@ export function SeminarView({ d, similar = null, preview = false }) {
               ))}
             </div>
           </Card>
+        )}
+
+        {d.organizer && (d.bring || []).length > 0 && (
+          <Card id="bring" icon={Package} title="Olib kelish kerak narsalar"><Checks items={d.bring} /></Card>
         )}
 
         {!d.noSpeaker && (
@@ -408,9 +416,9 @@ export function SeminarView({ d, similar = null, preview = false }) {
               <b className="block text-[13px]">Savollar bormi?</b>
               {v.orgName && <span className="block text-[11.5px] text-muted">Tashkilotchi: <b className="font-semibold text-ink">{v.orgName}</b></span>}
               {v.contact?.phone
-                ? <a href={`tel:${v.contact.phone.replace(/[^\d+]/g, '')}`} className="block text-[12px] text-ink-2">{v.contact.phone}</a>
+                ? <a href={`tel:${formatPhone(v.contact.phone).replace(/[^\d+]/g, '')}`} className="block text-[12px] text-ink-2">{formatPhone(v.contact.phone)}</a>
                 : CONTACT_PHONE && <a href={CONTACT_PHONE_TEL} className="block text-[12px] text-ink-2">{CONTACT_PHONE}</a>}
-              <a href={v.contact?.telegram ? (/^https?:/.test(v.contact.telegram) ? v.contact.telegram : `https://t.me/${v.contact.telegram.replace(/^@/, '')}`) : 'https://t.me/stomahub'} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-sea"><Send className="size-3.5" /> Telegram orqali yozish</a>
+              <a href={telegramHandle(v.contact?.telegram).url || 'https://t.me/stomahub'} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-sea"><Send className="size-3.5" /> Telegram orqali yozish{telegramHandle(v.contact?.telegram).handle ? ` (${telegramHandle(v.contact?.telegram).handle})` : ''}</a>
             </span>
           </div>
         </section>
@@ -419,7 +427,7 @@ export function SeminarView({ d, similar = null, preview = false }) {
             <div className="mb-2 flex items-center justify-between"><b className="text-[13px]">O‘xshash seminarlar</b><Link to="/seminarlar" className="text-[11.5px] font-semibold text-sea">Barchasi</Link></div>
             <ul className="space-y-2">
               {v.similar.map((s) => (
-                <li key={s.title}><Link to={s.to} className="flex items-center gap-2 rounded-lg p-1 hover:bg-[#f4f8fb]"><img src={s.image} alt="" className="h-12 w-14 shrink-0 rounded-lg object-cover" /><span className="min-w-0 flex-1"><b className="block text-[12px] leading-snug">{s.title}</b><span className="block text-[10.5px] text-muted">{s.date}</span><b className="block text-[12px] text-sea">{som(s.price)}</b></span><ChevronRight className="size-4 shrink-0 text-muted" /></Link></li>
+                <li key={s.title}><Link to={s.to} className="flex items-center gap-2 rounded-lg p-1 hover:bg-[#f4f8fb]"><img src={s.image} alt="" className="h-12 w-14 shrink-0 rounded-lg object-cover" /><span className="min-w-0 flex-1"><b className="block text-[12px] leading-snug">{s.title}</b><span className="block text-[10.5px] text-muted">{s.date}</span><b className="block text-[12px] text-sea">{seminarPrice(s.price)}</b></span><ChevronRight className="size-4 shrink-0 text-muted" /></Link></li>
               ))}
             </ul>
           </section>

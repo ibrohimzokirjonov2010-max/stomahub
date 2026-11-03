@@ -44,6 +44,7 @@ const MSTATUS = {
   otgan: { label: 'O‘tgan', dot: '#b0b7c3', text: '#98a0ae' },
   bekor: { label: 'Bekor qilingan', dot: '#e11d48', text: '#e11d48' },
   yashirin: { label: 'Yashirin', dot: '#e8a317', text: '#b7791f' },
+  moderatsiya: { label: 'Moderatsiyada', dot: '#e8a317', text: '#b7791f' },
 }
 
 export default function Seminars() {
@@ -280,8 +281,17 @@ function Progress({ s }) {
   )
 }
 
-function StatusPill({ status }) {
-  const label = status === 'rejalashtirilgan' ? 'Rejalashtirilgan' : status === 'jarayonda' ? 'Jarayonda' : status === 'yakunlangan' ? 'Yakunlangan' : status === 'qoralama' ? 'Qoralama' : 'Bekor qilingan'
+function StatusPill({ status, moderation = '' }) {
+  if (moderation && status !== 'qoralama') {
+    const pending = moderation === 'pending'
+    return (
+      <span className="inline-flex h-[24px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full border bg-white px-2 text-[11.5px] font-semibold" style={{ color: '#b7791f', borderColor: '#f3dca4' }}>
+        <span className="size-1.5 rounded-full" style={{ background: '#e8a317' }} />
+        {pending ? 'Moderatsiyada' : 'Yashirilgan'}
+      </span>
+    )
+  }
+  const label = { rejalashtirilgan: 'Rejalashtirilgan', jarayonda: 'Jarayonda', yakunlangan: 'Yakunlangan', qoralama: 'Qoralama', faol: 'Faol', bekor: 'Bekor qilingan' }[status] || 'Faol'
   const tone = status === 'bekor' ? '#e11d48' : status === 'qoralama' ? '#8d93a3' : status === 'yakunlangan' ? '#3b82f6' : GREEN
   return (
     <span className="inline-flex h-[24px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full border bg-white px-2 text-[11.5px] font-semibold" style={{ color: tone, borderColor: '#b7e3d4' }}>
@@ -333,7 +343,7 @@ function SeminarLine({ s }) {
         <Chips s={s} />
       </div>
       <Progress s={s} />
-      <StatusPill status={s.status} />
+      <StatusPill status={s.status} moderation={s.moderation} />
       <DetailsBtn id={s.id} />
       <Kebab id={s.id} />
     </article>
@@ -348,7 +358,7 @@ function SeminarTile({ s }) {
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="text-[14px] font-bold leading-snug" style={{ color: INK }}>{s.title}</p>
-          <StatusPill status={s.status} />
+          <StatusPill status={s.status} moderation={s.moderation} />
         </div>
         <Meta s={s} />
         <div className="mt-2 flex items-center gap-2">
@@ -379,6 +389,7 @@ function Mobile() {
     seats: s.seats,
     status: s.status === 'qoralama' ? 'qoralama' : s.status === 'yakunlangan' ? 'otgan' : s.status === 'bekor' ? 'bekor' : 'faol',
     hidden: s.published === false && s.status !== 'qoralama',
+    moderation: s.moderation || '',
     image: s.image,
     pos: 'center',
   }))
@@ -411,7 +422,7 @@ function Mobile() {
 
       <div className="mt-3 space-y-3 pb-24">
         {rows.map((s) => {
-          const st = s.hidden && s.status === 'faol' ? MSTATUS.yashirin : MSTATUS[s.status]
+          const st = s.moderation === 'pending' && s.status !== 'qoralama' ? MSTATUS.moderatsiya : (s.hidden || s.moderation) && s.status === 'faol' ? MSTATUS.yashirin : MSTATUS[s.status]
           const pct = s.seats ? Math.round((s.sold / s.seats) * 100) : 0
           return (
             <article key={s.id} className="relative rounded-[18px] border border-[#eef1f4] bg-white px-3 py-3 shadow-[0_6px_18px_rgb(16_36_58/0.05)]">

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays, Check, GraduationCap, Heart, MapPin, Megaphone, ShoppingBag, ShoppingCart } from 'lucide-react'
 import { useCart } from '../../cart'
 import { marketProducts, som } from '../../marketData'
+import { seminarPrice } from '../../seminarsData'
 import { seminars, seminarCard } from '../../seminarsData'
 import { ADS, adPrice } from '../../elonlarData'
 import { COURSES, courseDone, profileStore, useProfile } from '../../profileStore'
@@ -58,7 +59,7 @@ export default function MobileSevimlilar() {
       </Card>
     ),
     seminars: (s) => (
-      <Card key={s.id} image={s.image} badge={s.dateShort} onOpen={() => navigate(`/seminarlar/${s.id}`)} onHeart={() => unfav('seminars', s.id)} title={s.title} sub={s.online ? 'Onlayn' : s.city} price={som(s.price)}>
+      <Card key={s.id} image={s.image} badge={s.dateShort} onOpen={() => navigate(`/seminarlar/${s.id}`)} onHeart={() => unfav('seminars', s.id)} title={s.title} sub={s.online ? 'Onlayn' : s.city} price={seminarPrice(s.price)}>
         <ActionBtn onClick={() => navigate(seminarStore.registered[s.id] ? `/seminarlar/${s.id}` : `/seminarlar/${s.id}/royxat`)} done={!!seminarStore.registered[s.id]}>
           {seminarStore.registered[s.id] ? <><Check className="size-4" /> Ro‘yxatdasiz</> : 'Ro‘yxatdan o‘tish'}
         </ActionBtn>

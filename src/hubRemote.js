@@ -42,6 +42,7 @@ function seminarFromRow(row, tickets) {
     .sort((a, b) => (a.sort_at || 0) - (b.sort_at || 0))
   return {
     id: row.id,
+    organizerId: row.organizer_id || '',
     title: row.title,
     speaker: row.speaker,
     date: row.date_label,
@@ -57,6 +58,8 @@ function seminarFromRow(row, tickets) {
     image: row.image,
     topic: row.topic,
     published: row.published,
+    // 0060: yangi seminar admin moderatsiyasidan o‘tguncha yashirin (hidden_reason = 'moderatsiya')
+    moderation: row.hidden ? (/moderatsiya/i.test(row.hidden_reason || '') ? 'pending' : 'hidden') : '',
     held: row.held,
     about: row.about,
     category: row.category,
@@ -347,6 +350,16 @@ export async function pullHub() {
   next.application = application
   const prefix = `${uid}:`
   next.participants = (registrations || []).map(personFromRow)
+  // Sotilgan soni yagona manbadan: bekor qilinmagan ro‘yxatdan o‘tishlar (Dashboard, Chiptalar, Seminarlar bir xil ko‘rsatadi)
+  next.seminars = next.seminars.map((s) => {
+    const regs = next.participants.filter((p) => p.seminarId === s.id && p.pay !== 'cancel')
+    const tickets = (s.tickets || []).map((tk) => {
+      const n = regs.filter((p) => String(p.ticket || '').trim().toLowerCase() === String(tk.name || '').trim().toLowerCase()).length
+      return { ...tk, sold: n, left: Math.max(0, (Number(tk.seats) || 0) - n) }
+    })
+    const matched = tickets.reduce((n, tk) => n + tk.sold, 0)
+    return { ...s, sold: regs.length, tickets: matched === regs.length ? tickets : s.tickets }
+  })
   next.payments = (payments || []).map(paymentFromRow)
   next.certs = (certs || []).map((row) => ({
     id: reviveId(row.id),
@@ -427,7 +440,7 @@ export async function remoteRegister(input) {
   const { data, error } = await supabase.rpc('register_sale', {
     payload: {
       seminarId: input.seminarId,
-      ticket: input.ticket || 'Standart',
+      ticket: input.ticket || '',
       ticketId: input.ticketId || '',
       name: input.name,
       phone: input.phone || '',
@@ -446,6 +459,7 @@ export async function remoteRegister(input) {
   return {
     ok: true,
     paid: Number(data.paid) || 0,
+    gross: data.gross != null ? Number(data.gross) || 0 : undefined,
     discount: Number(data.discount) || 0,
     promo: data.promo || '',
     promoId: data.promoId || '',
@@ -506,7 +520,7 @@ export async function pushSeminar(record, promos, { isNew } = {}) {
   }
   await logActivity(uid, {
     icon: 'cal',
-    title: record.published ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi',
+    title: record.published ? 'Seminar moderatsiyaga yuborildi' : 'Qoralama saqlandi',
     text: record.title,
   })
 }
@@ -622,6 +636,16 @@ export async function pushRequisite(item) {
   if (error) throw error
 }
 
+export async function pushCertRows(rows) {
+  if (!rows.length) return
+  const uid = await requireUid()
+  const { error } = await supabase.from('certificates').upsert(rows.map((r) => ({
+    id: String(r.id), organizer_id: uid, seminar_id: r.seminarId || null, name: r.name || '', clinic: r.clinic || '',
+    seminar_title: r.seminar || '', state: 'none', code: '', date_label: '', avatar: r.avatar || '', sort_at: Date.now(),
+  })), { onConflict: 'id', ignoreDuplicates: true })
+  if (error) throw error
+}
+
 export async function pushCert(id, code, date) {
   const { error } = await supabase.from('certificates').update({
     state: 'done', code, date_label: date,
@@ -682,8 +706,13 @@ export async function pushMessage(text) {
 export { friendlySupabaseError }
 
 // 0045: promokodni server tekshiradi (kodlar ro‘yxati ommaga berilmaydi)
-export async function checkPromoRemote(code, seminarId, amount) {
+export async function checkPromoRemote(code, seminarId, amount, ticketId = '') {
   if (!supabase) return null
+  // 0060: chipta bo‘yicha server narxi bilan tekshirish; migratsiya hali qo‘llanmagan bo‘lsa eski RPC
+  if (ticketId) {
+    const r = await supabase.rpc('check_promo_ticket', { p_seminar_id: seminarId, p_ticket_id: String(ticketId), p_code: String(code || '') })
+    if (!r.error) return r.data || { ok: false, error: 'Promokod topilmadi yoki muddati o‘tgan' }
+  }
   const { data, error } = await supabase.rpc('check_promo', { p_seminar_id: seminarId, p_code: String(code || ''), p_amount: Number(amount) || 0 })
   if (error) return { ok: false, error: 'Promokodni tekshirib bo‘lmadi. Qayta urinib ko‘ring' }
   return data || { ok: false, error: 'Promokod topilmadi yoki muddati o‘tgan' }

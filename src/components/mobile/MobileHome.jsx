@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -7,6 +8,7 @@ import {
 import { useCart } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { marketProducts, som } from '../../marketData'
+import { seminarPrice } from '../../seminarsData'
 import { useMarket } from '../../buyerApi'
 import { useFeed } from '../../communityFeed'
 import { useCatalogVersion } from '../../recordSync'
@@ -54,7 +56,7 @@ export default function MobileHome() {
   })()
   const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()
-  const todaySeminars = publicRecords(hub).filter((x) => !x.past && !x.cancelled).slice(0, 2).map((raw) => {
+  const todaySeminars = publicRecords(hub).filter((x) => !x.past && !x.cancelled && x.startIso && x.startIso <= tashkentToday() && x.endIso >= tashkentToday()).slice(0, 2).map((raw) => {
     const s = seminarCard(raw)
     return {
       id: s.id,
@@ -202,7 +204,7 @@ export default function MobileHome() {
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end justify-center gap-2">
-                <p className="whitespace-nowrap text-[11.5px] font-bold text-sea">{som(s.price)}</p>
+                <p className="whitespace-nowrap text-[11.5px] font-bold text-sea">{seminarPrice(s.price)}</p>
                 <Link to={`/seminarlar/${s.id}/royxat`} className="whitespace-nowrap rounded-lg border border-sea/60 px-1.5 py-1.5 text-[9px] font-semibold text-sea active:bg-sea-50">
                   Ro‘yxatdan o‘tish
                 </Link>
