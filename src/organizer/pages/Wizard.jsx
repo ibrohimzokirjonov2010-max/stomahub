@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { cleanProgram, programRows } from '../../programDays'
+import { cleanProgram, programRows, normalizeProgram, withDayDates, parseDateLoose, dateRangeLabel } from '../../programDays'
 import { programDaysOf } from '../../seminarsData'
 import MapPicker from '../../components/MapPicker'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -154,16 +154,30 @@ export default function Wizard() {
     promos: [],
   })
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+  // Sana o‘zgarsa: ko‘p kunlik belgisi va avtomatik kun sanalari yangilanadi
+  const setDates = (patch) => setForm((f) => {
+    const next = { ...f, ...patch }
+    const s = parseDateLoose(next.start), e = parseDateLoose(next.end)
+    if (s && e && e > s) next.multi = true
+    if ('start' in patch && f.program?.length) next.program = withDayDates(normalizeProgram(f.program), s, f.start)
+    return next
+  })
+  const withDates = (f) => {
+    const start = parseDateLoose(f.start) || f.start
+    const end = parseDateLoose(f.end) || f.end
+    const program = Array.isArray(f.program) && f.program.length ? withDayDates(normalizeProgram(f.program), start) : f.program
+    return { ...f, start, end, program, multi: f.multi || !!(start && end && end > start) }
+  }
 
   useEffect(() => {
     if (!editing) return
     const s = getHub().seminars.find((x) => x.id === editing)
     if (!s) return
     if (s.form) {
-      setForm({ ...EMPTY_DETAILS, ...s.form, placeType: s.form.placeType || placeTypeOf(s.form.format) })
+      setForm(withDates({ ...EMPTY_DETAILS, ...s.form, placeType: s.form.placeType || placeTypeOf(s.form.format) }))
       return
     }
-    setForm((f) => ({
+    setForm((f) => withDates({
       ...f,
       name: s.title,
       about: s.about || f.about,
@@ -191,7 +205,7 @@ export default function Wizard() {
         if (e) { fail(STEPS.indexOf(st), e); return }
       }
     }
-    const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: cleanProgram(form.program) }, { publish, id: editing || undefined })
+    const res = saveSeminar({ ...form, orgName, gallery: (form.gallery || []).filter(Boolean), faq: (form.faq || []).filter((r) => String(r.q || '').trim() && String(r.a || '').trim()), format: FORMAT_OF[form.placeType] || form.format, program: cleanProgram(withDayDates(normalizeProgram(form.program), form.start)) }, { publish, id: editing || undefined })
     if (!res.ok) {
       setFormError(res.error)
       notify(res.error)
@@ -390,12 +404,12 @@ export default function Wizard() {
             <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-2">
               <div className="min-w-0 flex-1 basis-[220px]" data-field="start">
                 <Lab req>Boshlanish sanasi va vaqti</Lab>
-                <div className={`flex gap-1.5 ${errOf('start') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Boshlanish sanasi" invalid={!!errOf('start')} value={form.start} onChange={(v) => set({ start: v, ...(!form.end || form.end < v || !form.multi ? { end: v } : {}) })} /><TimeBox value={form.startTime} onChange={(v) => set({ startTime: v })} /></div>
+                <div className={`flex gap-1.5 ${errOf('start') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Boshlanish sanasi" invalid={!!errOf('start')} value={form.start} onChange={(v) => setDates({ start: v, ...(!form.end || form.end < v || !form.multi ? { end: v } : {}) })} /><TimeBox value={form.startTime} onChange={(v) => set({ startTime: v })} /></div>
                 {errOf('start') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('start')}</p>}
               </div>
               <div className="min-w-0 flex-1 basis-[220px]" data-field="end">
                 <Lab req>Tugash sanasi va vaqti</Lab>
-                <div className={`flex gap-1.5 ${errOf('end') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Tugash sanasi" invalid={!!errOf('end')} min={form.start} value={form.end} onChange={(v) => set({ end: v })} /><TimeBox value={form.endTime} onChange={(v) => set({ endTime: v })} /></div>
+                <div className={`flex gap-1.5 ${errOf('end') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Tugash sanasi" invalid={!!errOf('end')} min={form.start} value={form.end} onChange={(v) => setDates({ end: v })} /><TimeBox value={form.endTime} onChange={(v) => set({ endTime: v })} /></div>
                 {errOf('end') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('end')}</p>}
               </div>
               <button type="button" onClick={() => set({ multi: !form.multi })} className="mb-2 inline-flex items-center gap-2 whitespace-nowrap text-[12.5px] text-[#3e5a62]">
@@ -649,7 +663,7 @@ export default function Wizard() {
             </div>
             <PreviewExtras form={form} orgName={orgName} />
             <p className="mt-1.5 text-[13px] font-bold leading-snug">{form.name || 'Seminar nomi kiritilmagan'}</p>
-            <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0" style={{ color: TEAL }} /> {uzDate(form.start)}, {form.startTime} – {form.endTime}</p>
+            <p className="mt-1 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><Calendar className="size-3.5 shrink-0" style={{ color: TEAL }} /> {dateRangeLabel(form.start, form.end) || uzDate(form.start)}, {form.startTime} – {form.endTime}</p>
             <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#5e787e]"><MapPin className="size-3.5 shrink-0" style={{ color: TEAL }} /> {form.place || 'Joy kiritilmagan'}</p>
             <div className="mt-1.5 flex flex-wrap gap-1">
               {previewTags.map((t) => <span key={t} className="rounded-full bg-[#e7f6f3] px-1.5 py-0.5 text-[10.5px] font-semibold" style={{ color: TEAL }}>{t}</span>)}

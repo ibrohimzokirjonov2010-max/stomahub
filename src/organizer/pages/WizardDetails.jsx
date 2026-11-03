@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { TEAL, box } from './wizardBits'
-import { normalizeProgram, dayCount, addDaysIso } from '../../programDays'
+import { normalizeProgram, dayCount, addDaysIso, withDayDates, parseDateLoose } from '../../programDays'
 
 const PRACTICE_KINDS = [['model', 'Model'], ['fantom', 'Fantom'], ['bemor', 'Jonli bemor']]
 const MATERIALS = [['tashkilotchi', 'Tashkilotchi beradi'], ['ishtirokchi', 'Ishtirokchi olib keladi'], ['aralash', 'Qisman tashkilotchidan']]
@@ -99,8 +99,9 @@ const emptyDay = (date = '') => ({ title: '', date, items: [{ time: '', title: '
 // Dastur: kunlarga bo‘lingan bloklar. Bitta kun bo‘lsa — oddiy ro‘yxat ko‘rinishida.
 function ProgramEditor({ form, set }) {
   const saved = normalizeProgram(form.program)
-  const n = dayCount(form.start, form.end)
-  const days = saved.length ? saved : Array.from({ length: n }, (_, i) => emptyDay(n > 1 ? addDaysIso(form.start, i) : ''))
+  const start = parseDateLoose(form.start)
+  const n = dayCount(start, parseDateLoose(form.end))
+  const days = withDayDates(saved.length ? saved : Array.from({ length: n }, () => emptyDay()), start)
   const multi = days.length > 1
   const put = (next) => set({ program: next })
   const patchDay = (d, patch) => put(days.map((x, i) => (i === d ? { ...x, ...patch } : x)))
@@ -109,7 +110,7 @@ function ProgramEditor({ form, set }) {
   const delRow = (d, r) => patchDay(d, { items: days[d].items.filter((_, j) => j !== r) })
   const addDay = () => {
     const last = days[days.length - 1]
-    const date = last?.date ? addDaysIso(last.date, 1) : form.start ? addDaysIso(form.start, days.length) : ''
+    const date = last?.date ? addDaysIso(last.date, 1) : start ? addDaysIso(start, days.length) : ''
     put([...days, emptyDay(date)])
   }
   const delDay = (d) => {

@@ -65,3 +65,59 @@ export function addDaysIso(start, n) {
   if (!Number.isFinite(t)) return ''
   return new Date(t + n * 86400000).toISOString().slice(0, 10)
 }
+
+// Sanani har qanday saqlangan ko‘rinishdan YYYY-MM-DD ga o‘tkazish ('' — noto‘g‘ri/qisman)
+const UZ_MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
+const monthIdx = (w) => {
+  const s = String(w).toLowerCase().replace(/[‘’'`ʻ]/g, '')
+  if (s.startsWith('sent')) return 8
+  return UZ_MONTHS.findIndex((m) => s.startsWith(m.slice(0, 3)))
+}
+const pad = (n) => String(n).padStart(2, '0')
+const valid = (y, m, d) => {
+  const t = new Date(Date.UTC(y, m - 1, d))
+  return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d ? `${y}-${pad(m)}-${pad(d)}` : ''
+}
+export function parseDateLoose(v, fallbackYear) {
+  const s = String(v || '').trim()
+  if (!s) return ''
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (m) return valid(+m[1], +m[2], +m[3])
+  m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/)
+  if (m) return valid(+m[3], +m[2], +m[1])
+  m = s.match(/^(\d{1,2})\s*[-–\s]\s*([A-Za-z‘’'`ʻ]+)\.?(?:\s+(\d{4}))?/)
+  if (m) {
+    const mi = monthIdx(m[2])
+    const y = m[3] ? +m[3] : fallbackYear ? +fallbackYear : 0
+    return mi >= 0 && y ? valid(y, mi + 1, +m[1]) : ''
+  }
+  return ''
+}
+
+// Kun sanalarini boshlanish sanasidan hosil qilish: N-kun = start + (N-1).
+// Bo‘sh/noto‘g‘ri sana to‘ldiriladi; prevStart berilsa, avtomatik (eski start bo‘yicha) sanalar suriladi.
+export function withDayDates(days, start, prevStart) {
+  const s = parseDateLoose(start)
+  const p = parseDateLoose(prevStart)
+  const year = s ? s.slice(0, 4) : undefined
+  return days.map((d, i) => {
+    const iso = parseDateLoose(d.date, year)
+    if (!s) return iso === d.date ? d : { ...d, date: iso }
+    const auto = addDaysIso(s, i)
+    const date = !iso || (p && p !== s && iso === addDaysIso(p, i)) ? auto : iso
+    return date === d.date ? d : { ...d, date }
+  })
+}
+
+// '12–13-noyabr 2026', '30-noyabr – 2-dekabr 2026', '12-noyabr 2026'
+export function dateRangeLabel(start, end) {
+  const a = parseDateLoose(start), b = parseDateLoose(end)
+  if (!a) return ''
+  const [ay, am, ad] = a.split('-').map(Number)
+  const one = (y, m, d) => `${d}-${UZ_MONTHS[m - 1]}`
+  if (!b || b <= a) return `${one(ay, am, ad)} ${ay}`
+  const [by, bm, bd] = b.split('-').map(Number)
+  if (ay !== by) return `${one(ay, am, ad)} ${ay} – ${one(by, bm, bd)} ${by}`
+  if (am !== bm) return `${one(ay, am, ad)} – ${one(by, bm, bd)} ${by}`
+  return `${ad}–${bd}-${UZ_MONTHS[am - 1]} ${ay}`
+}
