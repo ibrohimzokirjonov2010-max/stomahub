@@ -1,4 +1,5 @@
 import OrgProfileCard from '../OrgProfileCard'
+import { priceDigits, priceFmt } from '../../lib/priceInput'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Megaphone, Star, Mic, ChartColumn, Settings, CircleQuestionMark } from 'lucide-react'
@@ -33,7 +34,7 @@ export function Marketing() {
         ))}
       </div>
       <Card className="mt-3" title="Reklama byudjeti">
-        <Field label="Kunlik byudjet, so‘m"><input className={inputCls()} value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="Masalan: 150 000" /></Field>
+        <Field label="Kunlik byudjet, so‘m"><input className={inputCls()} inputMode="numeric" value={priceFmt(budget)} onChange={(e) => setBudget(priceDigits(e.target.value))} placeholder="Masalan: 150 000" /></Field>
         <Btn className="mt-3" onClick={() => { saveMarketing({ ...on, budget }); notify('Marketing sozlamalari saqlandi') }}>Saqlash</Btn>
       </Card>
     </div>

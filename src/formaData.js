@@ -80,7 +80,7 @@ export const premium = {
   colors: ['teal', 'navy', 'white', 'wine', 'black'],
   price: 389000,
   oldPrice: 450000,
-  off: 14,
+  off: Math.round((1 - 389000 / 450000) * 100),
   rating: 0,
   reviews: 0,
   sold: 0,

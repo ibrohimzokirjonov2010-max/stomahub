@@ -39,7 +39,9 @@ export default function PatientForm({ initialName = '', onClose, onSaved }) {
   const [error, setError] = useState('')
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }))
   const submit = () => {
-    if (!f.name.trim() || f.phone.replace(/\D/g, '').length < 9) return setError('Ism familiya va telefon raqami majburiy.')
+    if (!f.name.trim()) return setError('Ism familiya majburiy.')
+    if (!f.phone.replace(/\D/g, '')) return setError('Telefon raqami majburiy.')
+    if (f.phone.replace(/\D/g, '').replace(/^998/, '').length !== 9) return setError('Telefon raqami noto‘g‘ri (+998 XX XXX XX XX)')
     if (f.birth && f.birth > tashkentToday()) return setError('Tug‘ilgan sana kelajakda bo‘lishi mumkin emas.')
     const max = rows.reduce((m, p) => Math.max(m, Number(/^P-(\d+)$/.exec(p.code || '')?.[1] || 0)), 0)
     const flags = anamnezLabels(an)

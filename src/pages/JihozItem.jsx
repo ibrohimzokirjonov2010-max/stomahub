@@ -182,7 +182,7 @@ export default function JihozItem() {
                 <img src={p.image} alt="" className="w-full rounded-lg object-cover" style={{ height: 88 }} />
                 <p className="mt-1 text-[9px] font-bold uppercase text-sea">{p.brand}</p>
                 <p className="line-clamp-2 text-[12px] font-semibold leading-tight">{p.title}</p>
-                <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted"><Star className="size-3 fill-star text-star" /> {p.rating} <span>({p.reviews})</span></p>
+                <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted">{Number(p.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {p.rating} <span>({p.reviews})</span></> : 'Hali baho yo‘q'}</p>
                 <p className="text-[13px] font-extrabold">{money(p.price)}</p>
               </Link>
             ))}
@@ -207,7 +207,7 @@ export default function JihozItem() {
               <img src={installer.photo} alt="" className="size-10 rounded-full object-cover" />
               <div>
                 <p className="text-[12px] font-bold">{installer.name}</p>
-                <p className="flex items-center gap-1 text-[11px]"><Star className="size-3 fill-star text-star" /> {installer.rating} <span className="text-muted">({installer.reviews})</span></p>
+                <p className="flex items-center gap-1 text-[11px]">{Number(installer.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {installer.rating} <span className="text-muted">({installer.reviews})</span></> : 'Hali baho yo‘q'}</p>
               </div>
             </div>
             <p className="mt-1 flex items-center gap-1 text-[11px] text-muted"><MapPin className="size-3" /> {installer.city}</p>

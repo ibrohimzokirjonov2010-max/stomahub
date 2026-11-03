@@ -65,7 +65,7 @@ export default function FormaItem() {
             <div className="min-w-0">
               <h1 className="text-[22px] font-extrabold leading-tight text-ink">{product.title}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-ink-2">
-                <Star className="size-3.5 fill-star text-star" /> {product.rating} <span className="text-muted">({product.reviews} sharh)</span>
+                {Number(product.reviews) > 0 ? <><Star className="size-3.5 fill-star text-star" /> {product.rating} <span className="text-muted">({product.reviews} sharh)</span></> : 'Hali baho yo‘q'}
                 {product.sold ? <span className="text-muted">{product.sold} ta sotilgan</span> : null}
               </p>
               <div className="mt-2 flex items-end gap-2">

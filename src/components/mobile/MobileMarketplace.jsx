@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { marketProducts, som } from '../../marketData'
-import { useMarket } from '../../buyerApi'
+import { useMarket, matchKat, KAT_DEFS } from '../../buyerApi'
 import { profileStore, useProfile } from '../../profileStore'
 import { ToothIcon } from '../icons'
 import MobileTabBar from './MobileTabBar'
@@ -43,6 +43,8 @@ export default function MobileMarketplace() {
   const qtyOf = (id) => items.find((it) => it.id === id)?.qty || 0
   const dec = (id) => (qtyOf(id) > 1 ? setQty(id, qtyOf(id) - 1) : remove(id))
   const [group, setGroup] = useState(() => (params.get('cat') ? groupOfCat(params.get('cat')) || null : null))
+  // QA2-7: /kategoriyalar havolasi ?kat=<id> — son bilan aynan bir xil filtr (matchKat)
+  const [kat, setKat] = useState(() => (KAT_DEFS[params.get('kat')] ? params.get('kat') : null))
   const [query, setQuery] = useState(() => params.get('q') || '')
   const [filters, setFilters] = useState(() => ({ ...EMPTY, brands: params.get('brand') ? [params.get('brand')] : [] }))
   const [sheet, setSheet] = useState(false)
@@ -58,12 +60,13 @@ export default function MobileMarketplace() {
     const cats = GROUPS.find((x) => x.key === g)?.cats
     const text = q.trim().toLowerCase()
     return marketProducts
+      .filter((p) => !kat || g || matchKat(p, kat))
       .filter((p) => !cats || cats.includes(p.cat))
       .filter((p) => !text || `${p.name} ${p.brand} ${p.type}`.toLowerCase().includes(text))
       .filter((p) => !f.brands.length || f.brands.includes(p.brand))
       .filter((p) => p.price >= f.min && p.price <= f.max)
       .filter((p) => !f.sale || p.oldPrice)
-  }, [])
+  }, [kat])
 
   const list = useMemo(() => apply(filters, query, group).sort(SORTS[sort].fn), [apply, filters, query, group, sort, market.status])
   const activeCount = (filters.brands.length ? 1 : 0) + (filters.min > 0 || filters.max < PRICE_MAX ? 1 : 0) + (filters.inStock ? 1 : 0) + (filters.sale ? 1 : 0)
@@ -106,7 +109,7 @@ export default function MobileMarketplace() {
               key={key}
               type="button"
               aria-pressed={on}
-              onClick={() => setGroup(on ? null : key)}
+              onClick={() => { setKat(null); setGroup(on ? null : key) }}
               className={`flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-[12.5px] font-medium transition ${on ? 'bg-sea text-white shadow-[0_4px_12px_rgb(11_138_149/0.28)]' : 'bg-white text-ink shadow-[0_1px_3px_rgb(11_31_58/0.07)]'}`}
             >
               <Icon className="size-[17px]" strokeWidth={1.7} /> {label}
@@ -148,7 +151,7 @@ export default function MobileMarketplace() {
           <div className="mt-3 rounded-2xl bg-white px-6 py-10 text-center shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
             <p className="text-[14px] font-semibold text-ink">{marketProducts.length ? 'Mahsulot topilmadi' : 'Hozircha sotuvda mahsulot yo‘q'}</p>
             <p className="mt-1 text-[12px] text-muted">Boshqa kategoriya yoki filtrni tanlab ko‘ring</p>
-            <button type="button" onClick={() => { setGroup(null); setQuery(''); setFilters(EMPTY) }} className="mt-4 h-10 rounded-xl bg-sea px-5 text-[13px] font-semibold text-white">
+            <button type="button" onClick={() => { setKat(null); setGroup(null); setQuery(''); setFilters(EMPTY) }} className="mt-4 h-10 rounded-xl bg-sea px-5 text-[13px] font-semibold text-white">
               Filtrlarni tozalash
             </button>
           </div>
@@ -166,7 +169,7 @@ export default function MobileMarketplace() {
                   <p className="truncate text-[14px] font-bold text-ink">{p.name}</p>
                   <p className="truncate text-[11px] text-muted">{p.type}</p>
                   <p className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-                    <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)
+                    {Number(p.reviews) > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)</> : 'Hali baho yo‘q'}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5">
                     <p className={`whitespace-nowrap font-extrabold text-ink ${p.price >= 10000000 ? 'text-[13.5px]' : 'text-[15px]'}`}>{som(p.price)}</p>
@@ -202,7 +205,7 @@ export default function MobileMarketplace() {
                     <p className="truncate text-[11px] text-muted">{p.type}</p>
                   </Link>
                   <p className="mt-1 flex items-center gap-1 text-[11px] text-muted">
-                    <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews})
+                    {Number(p.reviews) > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews})</> : 'Hali baho yo‘q'}
                     <span className="ml-1 rounded-md bg-[#e6f6ee] px-1.5 py-0.5 text-[10px] font-medium text-ok">Sotuvda</span>
                   </p>
                   <div className="mt-1 flex items-end justify-between gap-2">

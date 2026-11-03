@@ -1,4 +1,5 @@
 import { tashkentToday } from '../../../tashkentDate'
+import { priceDigits, priceFmt } from '../../../lib/priceInput'
 import { useEffect, useRef, useState } from 'react'
 import { CloudUpload, Plus, X, Trash2, Info, Send, Camera, Save, FileText } from 'lucide-react'
 import Modal from '../shell/Modal'
@@ -206,7 +207,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       <div className={sec}>
         <div className={h}>Narx va xarid shartlari</div>
         <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-          <Field label="Narx (so‘m)" required><Input inputMode="numeric" value={v.price} onChange={set('price')} placeholder="250 000" /></Field>
+          <Field label="Narx (so‘m)" required><Input inputMode="numeric" value={priceFmt(v.price)} onChange={(e) => set('price')(priceDigits(e.target.value))} placeholder="250 000" /></Field>
           <Field label="O‘lchov birligi"><Select value={v.uom} onChange={set('uom')} options={UOMS} /></Field>
           <Field label="Minimal buyurtma" hint={`${v.uom} hisobida`}><Input inputMode="numeric" value={v.min_qty} onChange={set('min_qty')} placeholder="1" /></Field>
           <Field label={`Qoldiq (${v.uom})`} required hint={hasVariants ? 'Variantlar bo‘yicha hisoblanadi' : ''}><Input inputMode="numeric" value={hasVariants ? sumStock(v.variants) : v.stock} disabled={hasVariants} onChange={set('stock')} placeholder="15" /></Field>
@@ -222,7 +223,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
             <div key={i} className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
               <input inputMode="numeric" value={t.min_qty} onChange={(e) => setList('price_tiers', i, 'min_qty', e.target.value)} className={`${cell} w-[80px]`} aria-label="Minimal miqdor" />
               <span>{v.uom} va undan ko‘p —</span>
-              <input inputMode="numeric" value={t.price} onChange={(e) => setList('price_tiers', i, 'price', e.target.value)} placeholder="230 000" className={`${cell} w-[130px]`} aria-label="Narx" />
+              <input inputMode="numeric" value={priceFmt(t.price)} onChange={(e) => setList('price_tiers', i, 'price', priceDigits(e.target.value))} placeholder="230 000" className={`${cell} w-[130px]`} aria-label="Narx" />
               <span>so‘m / {v.uom}</span>
               <button type="button" aria-label="O‘chirish" onClick={() => setV((s) => ({ ...s, price_tiers: s.price_tiers.filter((_, j) => j !== i) }))} className="rounded p-1 hover:bg-[#F0FDFA]"><Trash2 className="size-4" /></button>
             </div>
@@ -248,7 +249,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
                   <tr key={i} className="border-t border-[#EEF3F4]">
                     <td className="px-3 py-1.5 text-[13px] text-[#5C6E80]">{i + 1}</td>
                     {varCols.map(([k, , render]) => <td key={k} className="py-1.5 pr-2">{render(x, i)}</td>)}
-                    <td className="py-1.5 pr-2"><input inputMode="numeric" value={x.price} onChange={(e) => setVar(i, 'price', e.target.value)} className={`${cell} w-[110px]`} /></td>
+                    <td className="py-1.5 pr-2"><input inputMode="numeric" value={priceFmt(x.price)} onChange={(e) => setVar(i, 'price', priceDigits(e.target.value))} className={`${cell} w-[110px]`} /></td>
                     <td className="py-1.5 pr-2"><input inputMode="numeric" value={x.stock} onChange={(e) => setVar(i, 'stock', e.target.value)} className={`${cell} w-[64px]`} /></td>
                     <td className="py-1.5 pr-2"><input value={x.sku} onChange={(e) => setVar(i, 'sku', e.target.value)} placeholder="avtomatik" className={`${cell} w-[120px]`} /></td>
                     <td className="text-center"><button type="button" aria-label="O‘chirish" onClick={() => setV((s) => ({ ...s, variants: s.variants.filter((_, j) => j !== i) }))} className="rounded p-1 text-[#10283F] hover:bg-[#F0FDFA]"><Trash2 className="size-4" /></button></td>

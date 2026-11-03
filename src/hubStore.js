@@ -620,13 +620,23 @@ export function saveTickets(seminarId, tickets) {
   remote(() => pushTickets(seminarId, tickets))
 }
 
-export function upsertPromo(row) {
+// Saqlash natijasi qaytariladi: muvaffaqiyat xabari faqat server tasdiqlagandan keyin ko‘rsatiladi,
+// xato bo‘lsa lokal o‘zgarish bekor qilinadi (avval ham xato, ham "saqlandi" chiqardi).
+export async function upsertPromo(row) {
+  const before = state.promos
   patch((s) => {
     const i = s.promos.findIndex((p) => p.id === row.id)
     const promos = i >= 0 ? s.promos.map((p) => (p.id === row.id ? { ...p, ...row } : p)) : [row, ...s.promos]
     return { ...s, promos }
   })
-  remote(() => pushPromo(getHub().promos.find((item) => item.id === row.id) || row))
+  try {
+    await pushPromo(getHub().promos.find((item) => item.id === row.id) || row)
+    scheduleRefresh()
+    return { ok: true }
+  } catch (error) {
+    patch((s) => ({ ...s, promos: before }))
+    return { ok: false, error: friendlySupabaseError(error) }
+  }
 }
 
 export async function withdraw(amount, requisite) {
@@ -671,7 +681,27 @@ export function generateCerts() {
   return rows.length
 }
 
+/** Seminar boshlanish vaqti (Asia/Tashkent, UTC+5) — ms; sana yo‘q bo‘lsa null. */
+export function seminarStartMs(sem) {
+  const d = String(sem?.start || '').slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null
+  const t = /^\d{1,2}:\d{2}$/.test(String(sem?.startTime || '')) ? String(sem.startTime).padStart(5, '0') : '00:00'
+  const ms = Date.parse(`${d}T${t}:00+05:00`)
+  return Number.isFinite(ms) ? ms : null
+}
+
+/** Sertifikatni hozir berib bo‘lmasa sababini qaytaradi (seminar hali boshlanmagan) — QA2 #3. Server: 0049 trigger. */
+export function certIssueBlock(id, now = Date.now()) {
+  const c = state.certs.find((x) => x.id === id)
+  if (!c) return ''
+  const sem = state.seminars.find((x) => x.id === c.seminarId)
+  const at = seminarStartMs(sem)
+  if (at != null && now < at) return `Sertifikat seminar boshlangandan keyin beriladi (${uzLong(String(sem.start).slice(0, 10))}, ${sem.startTime || '00:00'})`
+  return ''
+}
+
 export function issueCert(id) {
+  if (certIssueBlock(id)) return null
   const code = `STH-2026-${String(id).padStart(4, '0')}`
   const date = uzLong(tashkentToday())
   patch((s) => ({

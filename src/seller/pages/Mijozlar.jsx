@@ -1,4 +1,4 @@
-import { normalizeDistrict, TASHKENT_DISTRICTS } from '../../lib/uzRegions'
+import { normalizeDistrict, TASHKENT_DISTRICTS, isTashkentCity } from '../../lib/uzRegions'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, Eye, SlidersHorizontal, ChevronRight, Phone, MapPin, ShoppingCart, CalendarDays, Users, Pencil, Ban, Trash2, Download, EyeOff } from 'lucide-react'
@@ -13,7 +13,20 @@ import CustomerForm from '../components/mijozlar/CustomerForm'
 import { KIND, REGIONS, statsOf, tagsOf, initials, isMarket } from '../components/mijozlar/constants'
 
 // Mijoz manzili: Toshkent tumanlari "… tumani", boshqalar shahar nomi bilan ("Shayxontohur shahri" emas)
-export const placeLabel = (c) => { const city = (c?.city || '').trim(); if (!city) return c?.region || '—'; const d = normalizeDistrict(city); if (/tumani$/.test(d) && TASHKENT_DISTRICTS.includes(d)) return `Toshkent, ${d}`; return /shahri|viloyati|tumani/i.test(city) || city === 'Toshkent viloyati' ? city : `${city} shahri` }
+// QA2-6: bazada city "Toshkent, Shayxontohur" / "Toshkent, Markaz" ko‘rinishida keladi — avval vergul bo‘yicha ajratamiz.
+// Toshkent tumani → "Toshkent, X tumani"; "Markaz" (aniq tuman yo‘q) → faqat shahar; boshqa shahar → "X shahri".
+export const placeLabel = (c) => {
+  const raw = (c?.city || '').trim()
+  if (!raw) return c?.region || '—'
+  const parts = raw.split(',').map((p) => p.trim()).filter(Boolean)
+  const cityPart = parts.length > 1 ? parts[0] : ''
+  const tail = parts[parts.length - 1]
+  const d = normalizeDistrict(tail)
+  if (TASHKENT_DISTRICTS.includes(d) && (!cityPart || isTashkentCity(cityPart))) return `Toshkent, ${d}`
+  const cityLabel = (x) => (/shahri|viloyati|tumani/i.test(x) ? x : `${x} shahri`)
+  if (cityPart) return /^markaz$/i.test(tail) ? cityLabel(cityPart) : `${cityLabel(cityPart)}, ${tail}`
+  return /^markaz$/i.test(tail) ? '—' : cityLabel(tail)
+}
 export const masked = (p) => (p ? p.replace(/^(\+998)\s?(\d{2}).*$/, '$1 $2 *** ** **') : '—')
 export const SourceBadge = ({ c }) => (isMarket(c)
   ? <span title="Sizdan marketplace orqali xarid qilgan — avtomatik qo‘shildi" className="inline-flex shrink-0 items-center rounded-md bg-[#E0F2FE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0369A1]">Marketplace</span>

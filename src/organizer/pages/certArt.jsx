@@ -16,7 +16,10 @@ export function CertFrame({ width = PAPER_W, className = '', ...props }) {
   )
 }
 
-export function MiniCert({ issued = true }) {
+export function MiniCert({ issued = true, name = '' }) {
+  // Haqiqiy ishtirokchi familiyasi (namuna 'Aliyeva' emas) — QA2 #2
+  const label = String(name || '').trim().split(/\s+/)[0] || ''
+  const short = label.length > 12 ? `${label.slice(0, 11)}…` : label
   return (
     <svg viewBox="0 0 46 34" className="h-[28px] w-[38px] shrink-0" aria-hidden>
       <rect x="0.5" y="0.5" width="45" height="33" rx="2" fill="#fffef9" stroke="#e4cb86" />
@@ -26,7 +29,7 @@ export function MiniCert({ issued = true }) {
       <text x="26" y="13" textAnchor="middle" fontSize="3.1" fill="#0e6e72" fontFamily="Georgia, serif" letterSpacing="0.4">SERTIFIKAT</text>
       {issued ? (
         <>
-          <text x="26" y="18.5" textAnchor="middle" fontSize="4.2" fill="#1c2c38" fontFamily="Georgia, cursive">Aliyeva</text>
+          <text x="26" y="18.5" textAnchor="middle" fontSize="4.2" fill="#1c2c38" fontFamily="Georgia, cursive">{short}</text>
           <rect x="5" y="21" width="8" height="8" fill="#fff" stroke="#143044" strokeWidth="0.4" />
           <path d="M6 22h2v2H6zm4 0h2v2h-2zM6 26h2v2H6zm3 1h1v1H9z" fill="#143044" />
         </>

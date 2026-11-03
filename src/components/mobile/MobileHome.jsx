@@ -121,7 +121,7 @@ export default function MobileHome() {
           {profile.avatar ? (
             <img src={profile.avatar} alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
           ) : (
-            <span className="grid size-12 place-items-center rounded-full bg-sea-50 text-[14px] font-bold text-sea ring-2 ring-white">{initialsOf(profile.name || hello)}</span>
+            <span className="grid size-12 place-items-center rounded-full bg-sea-50 text-[14px] font-bold text-sea ring-2 ring-white">{initialsOf(hello === helloName ? [helloName, session.profile?.last_name].filter(Boolean).join(' ') : hello)}</span>
           )}
           <div className="min-w-0">
             <p className="text-[18px] font-bold leading-tight text-ink">Salom, {hello}!</p>
@@ -241,7 +241,7 @@ export default function MobileHome() {
               <div className="mt-1 flex items-end justify-between gap-1">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1 text-[11px] text-muted">
-                    <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)
+                    {Number(p.reviews) > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)</> : 'Hali baho yo‘q'}
                   </p>
                   <p className="mt-1 whitespace-nowrap text-[15px] font-extrabold text-ink">{som(p.price)}</p>
                   {p.oldPrice ? <p className="text-[11px] text-muted line-through">{som(p.oldPrice)}</p> : null}

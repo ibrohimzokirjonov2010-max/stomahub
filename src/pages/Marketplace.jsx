@@ -7,7 +7,7 @@ import ProductCard from '../components/market/ProductCard'
 import FilterPanel from '../components/market/FilterPanel'
 import CartPanel from '../components/market/CartPanel'
 import { filterChips, marketProducts } from '../marketData'
-import { loadMarketProducts, useMarket } from '../buyerApi'
+import { loadMarketProducts, useMarket, matchKat, KAT_DEFS } from '../buyerApi'
 
 const chipIcons = { all: LayoutGrid, komp: PenTool, bond: Hash, endo: Syringe, impl: Pipette, uch: Wrench, asb: Scissors, usk: Microwave, gig: Sparkles }
 
@@ -30,19 +30,22 @@ export default function Marketplace() {
     cats: initialCat ? [initialCat] : [],
     brands: initialBrand ? [initialBrand] : [],
   })
+  // QA2-7: ?kat=<id> — Kategoriyalar sahifasidagi son bilan aynan bir xil filtr
+  const [kat, setKat] = useState(() => (KAT_DEFS[params.get('kat')] ? params.get('kat') : null))
   const [sort, setSort] = useState('popular')
   const [showFilters, setShowFilters] = useState(true)
 
-  const chip = filters.cats.length === 1 ? filters.cats[0] : filters.cats.length === 0 ? 'all' : null
+  const chip = kat && !filters.cats.length ? null : filters.cats.length === 1 ? filters.cats[0] : filters.cats.length === 0 ? 'all' : null
 
   const list = useMemo(
     () =>
       marketProducts
+        .filter((p) => !kat || filters.cats.length || matchKat(p, kat))
         .filter((p) => !filters.cats.length || filters.cats.includes(p.cat))
         .filter((p) => !filters.brands.length || filters.brands.includes(p.brand))
         .filter((p) => p.price >= filters.min && p.price <= filters.max)
         .sort(sorts[sort].fn),
-    [filters, sort, market.status],
+    [filters, sort, market.status, kat],
   )
 
   return (
@@ -59,7 +62,7 @@ export default function Marketplace() {
             return (
               <button
                 key={key}
-                onClick={() => setFilters((f) => ({ ...f, cats: key === 'all' ? [] : [key] }))}
+                onClick={() => { setKat(null); setFilters((f) => ({ ...f, cats: key === 'all' ? [] : [key] })) }}
                 className={`flex h-[31px] shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[9.5px] xl:min-w-0 xl:shrink font-medium shadow-card transition ${
                   active ? 'bg-sea px-4 text-white' : 'bg-white text-ink hover:text-sea'
                 } ${key === 'all' ? 'min-w-[82px] justify-center' : 'justify-center xl:flex-1'}`}

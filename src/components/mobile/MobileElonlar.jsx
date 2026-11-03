@@ -1,4 +1,5 @@
 import { tashkentToday } from '../../tashkentDate'
+import { priceDigits, priceFmt } from '../../lib/priceInput'
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Search, X, Plus, Filter, LayoutGrid, Armchair, Building2, BriefcaseBusiness, Wrench, Heart, MapPin, CalendarDays, Check, ImagePlus } from 'lucide-react'
@@ -288,9 +289,9 @@ export function PostAdSheet({ onClose, onDone }) {
         <AdLabel text={isJob ? 'Lavozim' : 'Sarlavha'} required><input value={f.title} onChange={set('title')} placeholder={isJob ? 'Masalan, Stomatolog kerak' : 'Masalan, Kompozit A2'} className={field(errs.title)} /></AdLabel>
         <AdLabel text="Qisqacha tavsif"><textarea value={f.sub} onChange={set('sub')} rows={2} placeholder="Qisqacha tavsif" className="w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] outline-none focus:border-sea" /></AdLabel>
         <div className="grid grid-cols-2 gap-2">
-          <AdLabel text={isJob ? 'Maosh (dan)' : f.deal === 'rent' ? 'Narx / oy, so‘m' : 'Narx, so‘m'} required><input value={f.price} onChange={set('price')} inputMode="numeric" placeholder={isJob ? 'Maosh dan' : f.deal === 'rent' ? 'Narx / oy' : 'Narx, so‘m'} className={field(errs.price)} /></AdLabel>
+          <AdLabel text={isJob ? 'Maosh (dan)' : f.deal === 'rent' ? 'Narx / oy, so‘m' : 'Narx, so‘m'} required><input value={priceFmt(f.price)} onChange={(e) => setF((s) => ({ ...s, price: priceDigits(e.target.value) }))} inputMode="numeric" placeholder={isJob ? 'Maosh dan' : f.deal === 'rent' ? 'Narx / oy' : 'Narx, so‘m'} className={field(errs.price)} /></AdLabel>
           {isJob
-            ? <AdLabel text="Maosh (gacha)" required><input value={f.priceMax} onChange={set('priceMax')} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.price)} /></AdLabel>
+            ? <AdLabel text="Maosh (gacha)" required><input value={priceFmt(f.priceMax)} onChange={(e) => setF((s) => ({ ...s, priceMax: priceDigits(e.target.value) }))} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.price)} /></AdLabel>
             : <AdLabel text="Holati"><select value={f.cond} onChange={set('cond')} aria-label="Holati" className={field(false)}><option>Yangi</option><option>Ishlatilgan</option></select></AdLabel>}
           <AdLabel text="Shahar"><select value={f.city} onChange={set('city')} aria-label="Shahar" className={field(false)}>{AD_CITIES.map((c) => <option key={c}>{c}</option>)}</select></AdLabel>
           <AdLabel text="Telefon" required><PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" /></AdLabel>

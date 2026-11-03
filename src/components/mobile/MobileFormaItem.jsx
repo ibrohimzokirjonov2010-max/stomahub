@@ -56,7 +56,8 @@ function FormaView({ id }) {
   const gallery = (p.gallery?.length ? p.gallery : [p.image]).slice(0, 4)
   const n = gallery.length
   const oldPrice = p.oldPrice || null
-  const off = p.off || (oldPrice ? Math.round((1 - p.price / oldPrice) * 100) : 0)
+  // QA2-F: foiz har doim haqiqiy narxlardan hisoblanadi (saqlangan p.off eskirgan bo‘lishi mumkin: 450 000→380 000 = 16%, -15% emas)
+  const off = oldPrice && oldPrice > p.price ? Math.round((1 - p.price / oldPrice) * 100) : 0
   const unit = p.price + (logo ? LOGO_PRICE : 0)
   const sku = `${p.brand.slice(0, 2).toUpperCase()}-${String(p.rank + 1).padStart(3, '0')}`
   const cartId = formaCartId(p, color, size, logo)
@@ -140,7 +141,7 @@ function FormaView({ id }) {
         </Link>
         <h1 className="mt-0.5 text-[20px] font-bold leading-tight text-[#0d2a4a]">{p.title}</h1>
         <div className="mt-2 flex items-center gap-2 text-[11.5px]">
-          <span className="flex items-center gap-1 text-ink-2"><Star className="size-4 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta sharh)</span>
+          <span className="flex items-center gap-1 text-ink-2">{Number(p.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta sharh)</> : 'Hali baho yo‘q'}</span>
           <span className="ml-auto flex items-center gap-1 text-ink-2"><CircleCheck className="size-4 fill-ok text-white" /> Sotuvda mavjud</span>
           <span className="h-3 w-px bg-line" />
           <span className="text-muted">SKU: {sku}</span>

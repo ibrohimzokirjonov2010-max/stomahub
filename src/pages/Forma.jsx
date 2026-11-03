@@ -181,7 +181,7 @@ function Card({ p, saved, onSave }) {
       <p className="mt-1.5 text-[9px] font-bold uppercase tracking-wide text-sea">{p.brand}</p>
       <Link to={`/forma/${p.id}`} className="line-clamp-2 text-[12px] font-bold leading-snug text-ink hover:text-sea">{p.title}</Link>
       <p className="line-clamp-2 text-[10px] text-muted">{p.about}</p>
-      <p className="mt-1 flex items-center gap-1 text-[10px]"><Star className="size-3 fill-star text-star" /> {p.rating} <span className="text-muted">({p.reviews})</span></p>
+      <p className="mt-1 flex items-center gap-1 text-[10px]">{Number(p.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {p.rating} <span className="text-muted">({p.reviews})</span></> : 'Hali baho yo‘q'}</p>
       <div className="mt-1 flex flex-wrap gap-1">{sizesOf(p).slice(0, 4).map((s) => <span key={s} className="rounded bg-[#f3f6fa] px-1 text-[8px] text-ink-2">{s}</span>)}</div>
       <div className="mt-1 flex gap-1">{p.colors.map((c) => <span key={c} className="size-2.5 rounded-full border border-line" style={{ background: colorOf(c).hex }} />)}</div>
       <div className="mt-auto pt-1">

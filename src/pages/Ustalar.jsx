@@ -137,8 +137,8 @@ function Catalog({ query }) {
               <div className="absolute left-6 top-6 h-10 w-16 rounded bg-white/70" />
               <div className="absolute bottom-4 right-8 h-8 w-20 rounded bg-white/60" />
               <div className="absolute left-1/2 top-8 -translate-x-1/2 rounded-lg bg-white px-2 py-1 shadow">
-                <p className="text-[10px] font-bold">Sardor Rahimov</p>
-                <p className="text-[9px] text-muted">4.9 (125) · Toshkent</p>
+                <p className="text-[10px] font-bold">Ustalar xaritasi</p>
+                <p className="text-[9px] text-muted">Toshkent</p>
               </div>
               <MapPin className="absolute left-1/2 top-4 size-4 -translate-x-1/2 text-sea" />
             </div>
@@ -201,7 +201,7 @@ function Card({ m, saved, onSave, onCall, onOrder }) {
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-ink-2">
           <span className="inline-flex items-center gap-1"><Briefcase className="size-3 text-sea" /> {m.years} yil tajriba</span>
           <span>{m.jobs}+ bajarilgan ish</span>
-          <span className="inline-flex items-center gap-1"><Star className="size-3 fill-star text-star" /> {m.rating} <span className="text-muted">({m.reviews} sharh)</span></span>
+          <span className="inline-flex items-center gap-1">{Number(m.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {m.rating} <span className="text-muted">({m.reviews} sharh)</span></> : 'Hali baho yo‘q'}</span>
         </p>
       </div>
       <div className="relative hidden w-[280px] shrink-0 rounded-xl border border-line p-2 sm:block">

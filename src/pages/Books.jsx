@@ -220,7 +220,7 @@ function BookCard({ book }) {
       <Link to={`/kitoblar/${book.id}`} className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-ink">{book.title}</Link>
       <p className="truncate text-[10px] text-muted">{book.author}</p>
       <p className="text-[9.5px] text-muted">{book.year} · {book.pages} sahifa · {langName[book.lang]}</p>
-      <p className="mt-1 flex items-center gap-1 text-[10px] text-ink-2"><Star className="size-3 fill-star text-star" /> {book.rating} <span className="text-muted">({book.reviews} ta sharh)</span></p>
+      <p className="mt-1 flex items-center gap-1 text-[10px] text-ink-2">{Number(book.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {book.rating} <span className="text-muted">({book.reviews} ta sharh)</span></> : 'Hali baho yo‘q'}</p>
       <div className="mt-1">
         <p className="text-[13px] font-extrabold text-ink">{money(book.price)}</p>
         {book.oldPrice ? <p className="text-[9.5px] text-muted line-through">{money(book.oldPrice)}</p> : null}

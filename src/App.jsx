@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'react'
 import FlashToast from './components/FlashToast'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import { roleForPath, setIntendedRole } from './sessionStore'
+import { roleForPath, setIntendedRole, useSession } from './sessionStore'
 import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
 import { CartProvider } from './cart'
@@ -137,7 +137,9 @@ import MobileKurslarim from './components/mobile/MobileKurslarim'
 // stomahub-auth-role har doim ochiq turgan kabinetni aks ettiradi (QA: /sotuvchi da 'organizer' qolib ketardi)
 function CabinetRole() {
   const { pathname } = useLocation()
-  useEffect(() => { const r = roleForPath(pathname); if (r) setIntendedRole(r) }, [pathname])
+  const { status } = useSession()
+  // faqat kirgan foydalanuvchi uchun: mehmon /marketplace ga kirsa rol kaliti qayta paydo bo‘lmasin (QA2 #10)
+  useEffect(() => { if (status !== 'authed') return; const r = roleForPath(pathname); if (r) setIntendedRole(r) }, [pathname, status])
   return null
 }
 

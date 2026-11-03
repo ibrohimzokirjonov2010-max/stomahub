@@ -98,8 +98,8 @@ function BookView({ id }) {
           <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-muted">{subtitle}</p>
           <p className="mt-2 flex items-center gap-1.5 text-[12px] text-ink-2"><UserRound className="size-3.5 shrink-0" /> <span className="truncate">{b.author}</span></p>
           <p className="mt-1.5 flex items-center gap-1 text-[11.5px] text-ink-2">
-            <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{b.rating}</b>
-            <button type="button" onClick={() => setSheet('reviews')} className="text-muted">({Math.max(0, reviews.length + (b.reviews || 0))} ta sharh)</button>
+            {reviews.length + (b.reviews || 0) > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{b.rating}</b>
+            <button type="button" onClick={() => setSheet('reviews')} className="text-muted">({reviews.length + (b.reviews || 0)} ta sharh)</button></> : <button type="button" onClick={() => setSheet('reviews')} className="text-muted">Hali baho yo‘q</button>}
             <span className="mx-1 h-3 w-px bg-line" />
           </p>
           {b.formats.length > 1 && (

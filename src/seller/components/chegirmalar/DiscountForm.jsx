@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { priceDigits, priceFmt } from '../../../lib/priceInput'
 import { Check, FileText, Search, X, Plus, CircleCheck, Circle } from 'lucide-react'
 import { insertRow, updateRow, useAsync, useSellerData } from '../../api'
 import { Btn, Input, Textarea, Select, Err, toast } from '../ui'
@@ -57,7 +58,7 @@ export default function DiscountForm({ open, onClose, edit, copy, onSaved }) {
           <div className="mt-2 flex flex-wrap gap-2">{v.product_ids.map((id) => { const p = products.find((x) => x.id === id); return <span key={id} className="flex items-center gap-1.5 rounded-lg border border-[#E6EEF0] p-1 pr-2 text-[12px]"><ProductThumb src={p?.image_url} className="h-6 w-8" /><span className="max-w-[140px] truncate">{p?.name || 'O‘chirilgan'}</span><button type="button" aria-label="Olib tashlash" onClick={() => setV((x) => ({ ...x, product_ids: x.product_ids.filter((y) => y !== id) }))}><X className="size-3.5" /></button></span> })}{!v.product_ids.length && <span className="text-[12px] text-[#5C6E80]">Hali mahsulot tanlanmagan — yuqoridan qidiring.</span>}</div></div>}
         {v.scope === 'category' && <div><L>Kategoriya *</L><Select value={v.category} onChange={set('category')} placeholder="Kategoriyani tanlang" options={cats.map((c) => [c, c])} /></div>}
         <div className="grid grid-cols-2 gap-3">
-          <div><L>Minimal buyurtma summasi</L><div className="relative"><Input type="number" min="0" value={v.min_order} onChange={set('min_order')} placeholder="Masalan: 500 000" className="pr-12" /><span className="absolute inset-y-0 right-3 grid place-items-center text-[12.5px] text-[#5C6E80]">so‘m</span></div></div>
+          <div><L>Minimal buyurtma summasi</L><div className="relative"><Input inputMode="numeric" value={priceFmt(v.min_order)} onChange={(e) => set('min_order')(priceDigits(e.target.value))} placeholder="Masalan: 500 000" className="pr-12" /><span className="absolute inset-y-0 right-3 grid place-items-center text-[12.5px] text-[#5C6E80]">so‘m</span></div></div>
           <div><L>Foydalanish limiti</L><div className="relative"><Input type="number" min="1" value={v.usage_limit} onChange={set('usage_limit')} placeholder="Masalan: 100" className="pr-14" /><span className="absolute inset-y-0 right-3 grid place-items-center text-[12.5px] text-[#5C6E80]">marta</span></div></div>
           <div><L>Boshlanish sanasi *</L><Input type="date" value={v.starts_on} onChange={set('starts_on')} /></div>
           <div><L>Tugash sanasi *</L><Input type="date" value={v.ends_on} min={v.starts_on} onChange={set('ends_on')} /></div>

@@ -128,7 +128,7 @@ export function Popular({ products }) {
           {products.map((p) => (
             <div key={p.id} className="w-[104px] shrink-0 overflow-hidden rounded-xl border border-[#E6EEF0] bg-white">
               <ProductThumb src={p.image_url} className="h-[74px] w-full rounded-none" />
-              <div className="p-1.5"><div className="truncate text-[11px]">{p.name}</div><div className="text-[12px] font-bold">{som(p.price)}</div><div className="text-[10.5px] text-[#6B7A88]">{p.sold} dona sotilgan</div></div>
+              <div className="p-1.5"><div className="truncate text-[11px]">{p.name}</div><div className="text-[12px] font-bold">{som(p.price)}</div><div className="text-[10.5px] text-[#6B7A88]">{p.sold} dona · {p.orderCount} ta buyurtma</div></div>
             </div>
           ))}
         </div>

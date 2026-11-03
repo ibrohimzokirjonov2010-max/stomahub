@@ -244,7 +244,7 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
         <h3 className={`line-clamp-2 font-bold leading-snug text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[12.5px]'}`}>{card.title}</h3>
         {card.rating && (
           <p data-testid="catalog-rating" className="mt-0.5 flex items-center gap-1 text-[10.5px] text-ink-2">
-            <Star className="size-3 fill-star text-star" /> <b className="font-semibold text-ink">{card.rating.value}</b> ({card.rating.count} ta baho)
+            {Number(card.rating.count) > 0 ? <><Star className="size-3 fill-star text-star" /> <b className="font-semibold text-ink">{card.rating.value}</b> ({card.rating.count} ta baho)</> : 'Hali baho yo‘q'}
           </p>
         )}
         {(card.meta || []).filter(Boolean).slice(0, 2).map((m) => <p key={m} className="mt-0.5 truncate text-[10.5px] text-ink-2">{m}</p>)}

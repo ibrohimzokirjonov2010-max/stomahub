@@ -50,7 +50,7 @@ export default function Usta() {
                   <span>{master.jobs} bajarilgan ish</span>
                   <span>Javob vaqti: {master.reply}</span>
                 </p>
-                <p className="mt-1 flex items-center gap-1 text-[13px]"><Star className="size-4 fill-star text-star" /> <b>{master.rating}</b> <span className="text-muted">({master.reviews} sharh)</span> <span className="ml-2 rounded-md bg-[#f3f6fa] px-1.5 py-0.5 text-[10px]">{statusLabel[master.status]}</span></p>
+                <p className="mt-1 flex items-center gap-1 text-[13px]">{Number(master.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b>{master.rating}</b> <span className="text-muted">({master.reviews} sharh)</span></> : 'Hali baho yo‘q'} <span className="ml-2 rounded-md bg-[#f3f6fa] px-1.5 py-0.5 text-[10px]">{statusLabel[master.status]}</span></p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button onClick={() => setCall(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Phone className="size-3.5" /> Qo‘ng‘iroq qilish</button>
                   <button onClick={() => setOrder(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Calendar className="size-3.5" /> Buyurtma berish</button>

@@ -7,6 +7,7 @@ import { applyDiscount } from './lib/discounts'
 
 // ---- marketplace feed (active seller products) -------------------------------------
 let marketState = { status: 'idle', error: '' }
+let marketLoadedAt = 0
 const marketListeners = new Set()
 const emit = () => marketListeners.forEach((l) => l())
 
@@ -81,6 +82,7 @@ export async function loadMarketProducts() {
     const disc = await supabase.rpc('market_discounts').then((r) => (r.error ? [] : r.data || []), () => [])
     marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct).map((p) => applyDiscount(p, disc)))
     marketState = { status: 'ready', error: '' }
+    marketLoadedAt = Date.now()
   }
   emit()
 }
@@ -88,7 +90,15 @@ export async function loadMarketProducts() {
 const subMarket = (l) => { marketListeners.add(l); return () => marketListeners.delete(l) }
 export function useMarket() {
   const s = useSyncExternalStore(subMarket, () => marketState)
-  useEffect(() => { if (marketState.status === 'idle') loadMarketProducts() }, [])
+  // Avval faqat bir marta (idle) yuklanardi: sotuvchi keyin yoqqan chegirma sahifa to‘liq yangilanmaguncha
+  // xaridor narxida ko‘rinmasdi. Endi har ochilganda va oynaga qaytilganda 60 s dan eski bo‘lsa qayta yuklanadi.
+  useEffect(() => {
+    const stale = () => marketState.status !== 'loading' && (marketState.status === 'idle' || Date.now() - marketLoadedAt > 60000)
+    if (stale()) loadMarketProducts()
+    const onVis = () => { if (document.visibilityState === 'visible' && stale()) loadMarketProducts() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
   return { ...s, products: marketProducts }
 }
 
@@ -274,3 +284,29 @@ export async function adminReview(id, approve, reason = '') {
   if (error) throw new Error(friendlySupabaseError(error))
   loadMarketProducts()
 }
+
+// QA2-7: Kategoriyalar sahifasi soni va Marketplace havolasi uchun YAGONA filtr.
+// Har ikkala joy ham faqat shu ta’rif orqali `matchKat` ni chaqiradi — son va ro‘yxat farq qilolmaydi.
+export const KAT_DEFS = {
+  terapiya: { label: 'Terapiya', cats: ['komp', 'bond'] },
+  material: { label: 'Stomatologik materiallar', cats: ['komp', 'bond'] },
+  ortopediya: { label: 'Ortopediya', re: /ortoped|krona|protez/i },
+  jarrohlik: { label: 'Jarrohlik', re: /jarroh/i },
+  implant: { label: 'Implantologiya', cats: ['impl'] },
+  endo: { label: 'Endodontiya', cats: ['endo'] },
+  orto: { label: 'Ortodontiya', cats: ['orto'] },
+  gigiyena: { label: 'Gigiyena', cats: ['gig'] },
+  asbob: { label: 'Asboblar', cats: ['asb', 'uch'] },
+  instrument: { label: 'Instrumentlar', cats: ['asb'] },
+  uskuna: { label: 'Uskunalar', cats: ['usk'] },
+  qism: { label: 'Ehtiyot qismlar', cats: ['uch'] },
+  lab: { label: 'Laboratoriya', cats: ['lab'] },
+}
+export function matchKat(p, id) {
+  const d = KAT_DEFS[id]
+  if (!d) return true
+  if (d.cats) return d.cats.includes(p.cat)
+  return d.re.test(`${p.category || ''} ${p.name || ''}`)
+}
+export const katCount = (products, id) => (products || []).filter((p) => matchKat(p, id)).length
+export const katLink = (id) => `/marketplace?kat=${id}`
