@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, Eye, CalendarDays, SlidersHorizontal, ChevronRight, UserRound, Phone, ShoppingCart, ClipboardList, Truck, Box, FileText, CircleCheck, CircleX, Download } from 'lucide-react'
@@ -70,7 +71,7 @@ export default function Buyurtmalar() {
   }
   const exportCsv = () => csvDownload('buyurtmalar.csv', [['Raqam', 'Sana', 'Xaridor', 'Telefon', 'Mahsulotlar', 'Summa', 'Komissiya', 'Sizga', 'Holat'],
     ...list.map((o) => [o.code, `${dmy(o.created_at)} ${hm(o.created_at)}`, o.customer_name, phoneOf(o), o.items.reduce((s, i) => s + i.qty, 0), total(o), o.commission, o.payout, O_LABEL[o.status]])])
-  const stamp = () => new Date().toISOString().slice(0, 10)
+  const stamp = () => tashkentToday()
   const exportXlsx = () => {
     const head = ['Raqam', 'Sana', 'Xaridor', 'Telefon', 'Manzil', 'Mahsulot', 'Variant', 'Soni', 'Narx', 'Qator summasi', 'Buyurtma summasi', 'Komissiya', 'Sizga', 'To‘lov', 'Holat']
     const rows = list.flatMap((o) => (o.items.length ? o.items : [{}]).map((i, k) => [o.code, `${dmy(o.created_at)} ${hm(o.created_at)}`, o.customer_name || '', phoneOf(o) || '', [o.city, o.address].filter(Boolean).join(', '),

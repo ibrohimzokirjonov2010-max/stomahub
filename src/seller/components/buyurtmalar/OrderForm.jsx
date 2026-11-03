@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../../tashkentDate'
 import { useEffect, useMemo, useState } from 'react'
 import { UserRound, MapPin, Box, Truck, CalendarDays, CreditCard, FileText, Search, Plus, Minus, Trash2, Store, X, Check, Info, Banknote, Calculator, Tag } from 'lucide-react'
 import Modal from '../shell/Modal'
@@ -10,7 +11,7 @@ import { DELIVERY } from './constants'
 import { variantLabel } from '../mahsulotlar/constants'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../../../components/PhoneInput'
 
-const today = () => new Date().toISOString().slice(0, 10)
+const today = () => tashkentToday()
 const H = ({ icon: Icon, n, children, right }) => (
   <div className="mb-2.5 flex items-center justify-between gap-2"><div className="flex items-center gap-2 text-[14.5px] font-bold text-[#0F766E] md:text-[14px]"><Icon className="size-5" />{n && <span>{n}.</span>}<span className="text-[#10283F] md:text-[#0F766E]">{children}</span></div>{right}</div>
 )

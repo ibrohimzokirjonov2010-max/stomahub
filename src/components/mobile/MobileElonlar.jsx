@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Search, X, Plus, Filter, LayoutGrid, Armchair, Building2, BriefcaseBusiness, Wrench, Heart, MapPin, CalendarDays, Check, ImagePlus } from 'lucide-react'
@@ -236,7 +237,7 @@ export function PostAdSheet({ onClose, onDone }) {
     title: f.title.trim().length < 3,
     price: !num(f.price) || (isJob && num(f.priceMax) < num(f.price)),
     phone: f.phone.replace(/\D/g, '').length !== 12,
-    expires: Boolean(f.expires) && f.expires < new Date().toISOString().slice(0, 10),
+    expires: Boolean(f.expires) && f.expires < tashkentToday(),
   }
   const ok = !Object.values(errs).some(Boolean)
   const field = (bad) => `h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && bad ? 'border-sale' : 'border-line'}`
@@ -294,7 +295,7 @@ export function PostAdSheet({ onClose, onDone }) {
           <AdLabel text="Shahar"><select value={f.city} onChange={set('city')} aria-label="Shahar" className={field(false)}>{AD_CITIES.map((c) => <option key={c}>{c}</option>)}</select></AdLabel>
           <AdLabel text="Telefon" required><PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" /></AdLabel>
         </div>
-        <AdLabel text="E’lon amal qilish muddati (ixtiyoriy)"><input type="date" value={f.expires} min={new Date().toISOString().slice(0, 10)} onChange={set('expires')} className={field(errs.expires)} /></AdLabel>
+        <AdLabel text="E’lon amal qilish muddati (ixtiyoriy)"><input type="date" value={f.expires} min={tashkentToday()} onChange={set('expires')} className={field(errs.expires)} /></AdLabel>
         {tried && !ok && <p className="text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
       </div>
     </BottomSheet>

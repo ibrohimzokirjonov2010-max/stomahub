@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from './cart'
 import { ShieldAlert } from 'lucide-react'
@@ -28,7 +29,8 @@ export function RestrictedNotice({ className = '', onNavigate }) {
 
 /** Kartochkadagi tezkor “savatga” tugmasi cheklangan mahsulotni bosganda chiqadigan oyna. */
 export function RxPrompt() {
-  const { rxPrompt, closeRxPrompt } = useCart()
+  const { rxPrompt, closeRxPrompt, cartNotice, closeCartNotice } = useCart()
+  if (!rxPrompt && cartNotice) return <CartNotice text={cartNotice} onClose={closeCartNotice} />
   if (!rxPrompt) return null
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center" onClick={closeRxPrompt}>
@@ -36,6 +38,28 @@ export function RxPrompt() {
         <RestrictedNotice onNavigate={closeRxPrompt} />
         <button type="button" onClick={closeRxPrompt} className="mt-2 h-10 w-full rounded-lg border border-slate-200 text-sm font-semibold text-slate-700">Yopish</button>
       </div>
+    </div>
+  )
+}
+
+/** Savat cheklovi xabari (ombor qoldig‘i, o‘z mahsuloti) — bir necha soniyada yopiladi. */
+function CartNotice({ text, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [text, onClose])
+  return (
+    <div role="alert" className="fixed inset-x-0 bottom-[max(5.5rem,env(safe-area-inset-bottom))] z-[100] flex justify-center px-4">
+      <div className="flex max-w-sm items-center gap-2 rounded-xl bg-[#3a2a00] px-4 py-3 text-[13px] font-medium text-white shadow-lg">
+        <ShieldAlert className="size-4 shrink-0 text-[#f5d48a]" /> <span>{text}</span>
+        <button type="button" onClick={onClose} className="ml-2 text-[12px] font-semibold text-[#f5d48a]">Yopish</button>
+      </div>
+    </div>
+  )
+}
+
+/** Mahsulot sahifasi va savat uchun cheklov bloki (rx bo‘lmagan holatlar). */
+export function BlockNotice({ text, className = '' }) {
+  return (
+    <div role="note" className={`rounded-xl border border-[#f5d48a] bg-[#fff8e6] p-3 text-[12.5px] font-semibold text-[#7a5200] ${className}`}>
+      <p className="flex items-center gap-1.5"><ShieldAlert className="size-4 shrink-0" /> {text}</p>
     </div>
   )
 }

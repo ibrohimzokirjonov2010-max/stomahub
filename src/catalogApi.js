@@ -2,7 +2,7 @@ import { supabase, friendlySupabaseError } from './supabaseClient'
 import { loadCatalog, currentUid } from './recordSync'
 
 /** Upsert one catalog row owned by the current user. */
-export async function upsertCatalogItem(kind, item, sortAt = 0) {
+export async function upsertCatalogItem(kind, item, sortAt = 0, extra = {}) {
   const uid = currentUid()
   if (!supabase) throw new Error('Supabase sozlanmagan')
   if (!uid) throw new Error('Hisobga kiring')
@@ -14,6 +14,7 @@ export async function upsertCatalogItem(kind, item, sortAt = 0) {
     sort_at: sortAt,
     owner_id: uid,
     updated_at: new Date().toISOString(),
+    ...extra,
   })
   if (error) throw new Error(friendlySupabaseError(error))
   await loadCatalog()

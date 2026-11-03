@@ -167,7 +167,7 @@ function SurplusView({ id }) {
               {s.name} <BadgeCheck className="-mt-0.5 inline size-4 fill-sea text-white" />
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
-              <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{s.rating}</b> ({s.reviews} ta baho)
+              {s.reviews > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{s.rating}</b> ({s.reviews} ta baho)</> : 'Hali baho yo‘q'}
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted"><MapPin className="size-3" /> {s.city}</p>
           </div>
