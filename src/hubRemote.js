@@ -42,6 +42,7 @@ function seminarFromRow(row, tickets) {
     .sort((a, b) => (a.sort_at || 0) - (b.sort_at || 0))
   return {
     id: row.id,
+    organizerId: row.organizer_id || '',
     title: row.title,
     speaker: row.speaker,
     date: row.date_label,
@@ -57,6 +58,8 @@ function seminarFromRow(row, tickets) {
     image: row.image,
     topic: row.topic,
     published: row.published,
+    // 0060: yangi seminar admin moderatsiyasidan o‘tguncha yashirin (hidden_reason = 'moderatsiya')
+    moderation: row.hidden ? (/moderatsiya/i.test(row.hidden_reason || '') ? 'pending' : 'hidden') : '',
     held: row.held,
     about: row.about,
     category: row.category,
@@ -427,7 +430,7 @@ export async function remoteRegister(input) {
   const { data, error } = await supabase.rpc('register_sale', {
     payload: {
       seminarId: input.seminarId,
-      ticket: input.ticket || 'Standart',
+      ticket: input.ticket || '',
       ticketId: input.ticketId || '',
       name: input.name,
       phone: input.phone || '',
@@ -446,6 +449,7 @@ export async function remoteRegister(input) {
   return {
     ok: true,
     paid: Number(data.paid) || 0,
+    gross: data.gross != null ? Number(data.gross) || 0 : undefined,
     discount: Number(data.discount) || 0,
     promo: data.promo || '',
     promoId: data.promoId || '',
@@ -682,8 +686,13 @@ export async function pushMessage(text) {
 export { friendlySupabaseError }
 
 // 0045: promokodni server tekshiradi (kodlar ro‘yxati ommaga berilmaydi)
-export async function checkPromoRemote(code, seminarId, amount) {
+export async function checkPromoRemote(code, seminarId, amount, ticketId = '') {
   if (!supabase) return null
+  // 0060: chipta bo‘yicha server narxi bilan tekshirish; migratsiya hali qo‘llanmagan bo‘lsa eski RPC
+  if (ticketId) {
+    const r = await supabase.rpc('check_promo_ticket', { p_seminar_id: seminarId, p_ticket_id: String(ticketId), p_code: String(code || '') })
+    if (!r.error) return r.data || { ok: false, error: 'Promokod topilmadi yoki muddati o‘tgan' }
+  }
   const { data, error } = await supabase.rpc('check_promo', { p_seminar_id: seminarId, p_code: String(code || ''), p_amount: Number(amount) || 0 })
   if (error) return { ok: false, error: 'Promokodni tekshirib bo‘lmadi. Qayta urinib ko‘ring' }
   return data || { ok: false, error: 'Promokod topilmadi yoki muddati o‘tgan' }

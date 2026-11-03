@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, Bookmark, Share2, CalendarDays, Clock, MapPin, Tag, CalendarRange, ListChecks, Gift, BookOpen,
   Users, Coffee, FileBadge, Folder, ArrowRight, CircleCheck, CalendarPlus, Check, Ticket,
 } from 'lucide-react'
-import { seminarView, som } from '../../seminarsData'
+import { seminarView, seminarPrice, som } from '../../seminarsData'
 import { publicRecord, useHub } from '../../hubStore'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -127,7 +127,7 @@ function SeminarView({ id }) {
         <div className="flex items-start gap-1 px-1.5">
           <Tag className="mt-0.5 size-3.5 shrink-0 text-sea" strokeWidth={1.8} />
           <span className="min-w-0 leading-tight">
-            <span className="block whitespace-nowrap text-[11px] font-bold text-ink">{som(s.price)}</span>
+            <span className="block whitespace-nowrap text-[11px] font-bold text-ink">{seminarPrice(s.price)}</span>
             {s.oldPrice > s.price && <span className="block whitespace-nowrap text-[9px] text-muted line-through">{som(s.oldPrice)}</span>}
             {s.off > 0 && <span className="mt-0.5 inline-block rounded-full bg-sea px-1.5 text-[9px] font-bold text-white">-{s.off}%</span>}
           </span>
@@ -301,7 +301,7 @@ function SeminarView({ id }) {
         ) : (
           <>
             <div className="min-w-0">
-              <p className="whitespace-nowrap text-[18px] font-extrabold leading-tight text-[#0d3b44]">{som(s.price)}</p>
+              <p className="whitespace-nowrap text-[18px] font-extrabold leading-tight text-[#0d3b44]">{seminarPrice(s.price)}</p>
               {s.oldPrice > s.price && <p className="flex items-center gap-1.5 text-[11.5px]">
                 <span className="text-muted line-through">{som(s.oldPrice)}</span>
                 <span className="rounded-md bg-sale px-1.5 font-bold text-white">-{s.off}%</span>

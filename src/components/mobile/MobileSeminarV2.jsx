@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, ChevronDown, Bookmark, Share2, CalendarDays, MapPin, Wallet, ArrowRight, Check, CircleCheck, Ticket,
-  LayoutGrid, ListChecks, Target, Layers, MessageCircle, BookOpen, Users, Gift, RotateCcw, Send, Phone, FileText, CreditCard, BadgeCheck, User,
+  LayoutGrid, ListChecks, Target, Layers, MessageCircle, BookOpen, Users, Gift, RotateCcw, Send, Phone, FileText, CreditCard, BadgeCheck, User, Clock, Award, Package,
 } from 'lucide-react'
 import { buildSeminarPage, som } from '../../seminarsData'
 import { publicRecord, useHub } from '../../hubStore'
 import { detail } from '../../pages/Seminar'
 import { dateRangeLabel, dayCount } from '../../programDays'
 import { IMG } from '../../organizer/data'
+import { splitAddress, joinAddress, telegramHandle, formatPhone } from '../../seminarAddress'
 import { MobileToast } from './parts'
 import { useSeminarStore, toggleSaved } from './seminarStore'
 
@@ -88,13 +89,18 @@ function Page({ id }) {
   const program = (v.programDays || []).filter((x) => x.items?.length)
   const gallery = (rec.gallery || []).filter((x) => x && x !== poster)
   // Manzil: URL bo‘lsa — matn sifatida ko‘rsatilmaydi, faqat "Xaritada ochish" tugmasi
-  const addrRaw = String(rec.address || '').trim()
-  const mapUrl = isUrl(addrRaw) ? cleanMapUrl(addrRaw) : v.venue?.map || ''
-  const addrText = [isUrl(addrRaw) ? '' : addrRaw, rec.city].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', ')
+  // utm/fbclid olib tashlanadi, matndagi havola ajratiladi, shahar takrorlanmaydi
+  const addrParts = splitAddress(String(rec.address || '').trim())
+  const mapUrl = addrParts.mapUrl || v.venue?.map || ''
+  const addrText = joinAddress([addrParts.text, rec.city])
   const venueNotes = (rec.venueNotes || []).filter((t) => !isUrl(t))
   const sp = v.speaker?.name ? v.speaker : null
-  const tg = v.contact?.telegram || ''
-  const tgUrl = tg ? (isUrl(tg) ? tg : `https://t.me/${tg.replace(/^@/, '')}`) : ''
+  const { handle: tg, url: tgUrl } = telegramHandle(v.contact?.telegram)
+  const phone = formatPhone(v.contact?.phone)
+  const cmeLine = d.cmeLine || ''
+  const timeLine = rec.time ? `${rec.time}${rec.hours ? ` · ${rec.hours}` : ''}` : ''
+  const spLines = (d.speaker?.lines || []).filter(Boolean)
+  const bring = rec.bring || []
 
   const tabs = [
     ['about', 'Umumiy', LayoutGrid, true],
@@ -149,9 +155,12 @@ function Page({ id }) {
         <h1 className="mt-2 text-[22px] font-extrabold leading-tight text-[#115E59]">{v.title}</h1>
         <div className="mt-3 grid grid-cols-1 gap-2.5 border-t border-[#CCFBF1] pt-3">
           <Fact icon={CalendarDays} text={dateLabel} sub={days > 1 ? `${days} kun` : ''} />
+          {timeLine && <Fact icon={Clock} text={rec.time} sub={rec.hours ? `Davomiyligi: ${rec.hours}` : ''} />}
+          {cmeLine && <Fact icon={Award} text={`Sertifikat: ${cmeLine}`} />}
           {(v.venueShort || v.city) && <Fact icon={MapPin} text={v.venueShort || v.city} sub={v.venueShort && v.city !== v.venueShort ? v.city : ''} />}
           <Fact icon={Wallet} text={v.price ? som(v.price) : 'Bepul'} sub={v.oldPrice ? `${som(v.oldPrice)} o‘rniga` : ''} />
         </div>
+        {reg && <p className="mt-3.5 flex h-12 items-center justify-center gap-2 rounded-xl bg-[#CCFBF1] text-[15px] font-semibold text-[#0F766E]"><CircleCheck className="size-5" /> Ro‘yxatdan o‘tgansiz</p>}
         {!reg && !v.regClosed && (
           <button type="button" onClick={register} className="mt-3.5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0F766E] text-[16px] font-semibold text-white">Ro‘yxatdan o‘tish <ArrowRight className="size-5" /></button>
         )}
@@ -165,6 +174,7 @@ function Page({ id }) {
             <p className="text-[13px] text-[#0F766E]">Ma’ruzachi</p>
             <p className="text-[17px] font-bold leading-snug text-[#115E59]">{sp.name}</p>
             {sp.role && <p className="text-[13px] text-[#115E59]/80">{sp.role}</p>}
+            {spLines.length > 0 && <p className="mt-0.5 text-[13px] text-[#115E59]/80">{spLines.join(' · ')}</p>}
             {sp.bio && <p className="mt-0.5 line-clamp-2 text-[13px] text-[#115E59]/80">{sp.bio}</p>}
           </div>
         </section>
@@ -228,7 +238,12 @@ function Page({ id }) {
       )}
 
       {v.audience?.length > 0 && <Card icon={Users} title="Kimlar uchun?"><Checks items={v.audience} /></Card>}
-      {v.practice && <Card icon={BadgeCheck} title="Amaliyot"><Checks items={[v.practice]} /></Card>}
+      {(v.practice || v.liveSurgery) && (
+        <Card icon={BadgeCheck} title="Amaliyot formati">
+          <Checks items={[v.practice && `Amaliy qism: ${v.practice}`, v.liveSurgery && `Jonli jarrohlik: ${v.liveSurgery}`].filter(Boolean)} />
+        </Card>
+      )}
+      {bring.length > 0 && <Card icon={Package} title="Olib kelish kerak narsalar"><Checks items={bring} /></Card>}
 
       <div ref={sec('price')}>
         <Card icon={Gift} title="Narxga nimalar kiradi?">
@@ -278,11 +293,11 @@ function Page({ id }) {
         </div>
       )}
 
-      {(v.orgName || v.contact?.phone || tg) && (
+      {(v.orgName || phone || tg) && (
         <Card icon={Send} title="Tashkilotchi">
           {v.orgName && <p className="text-[15px] font-semibold">{v.orgName}</p>}
-          {v.contact?.phone && <a href={`tel:${v.contact.phone.replace(/[^\d+]/g, '')}`} className="mt-1 flex items-center gap-1.5 text-[15px]"><Phone className="size-4 text-[#0F766E]" />{v.contact.phone}</a>}
-          {tg && <a href={tgUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-1.5 rounded-xl text-[15px] font-semibold text-[#0F766E] ring-1 ring-[#0F766E]">Telegramda yozish <ChevronRight className="size-4" /></a>}
+          {phone && <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="mt-1 flex items-center gap-1.5 text-[15px]"><Phone className="size-4 text-[#0F766E]" />{phone}</a>}
+          {tg && <a href={tgUrl} target="_blank" rel="noreferrer" className="mt-2 flex h-11 items-center justify-center gap-1.5 rounded-xl text-[15px] font-semibold text-[#0F766E] ring-1 ring-[#0F766E]">Telegramda yozish ({tg}) <ChevronRight className="size-4" /></a>}
         </Card>
       )}
 

@@ -62,7 +62,8 @@ export async function register(id, info) {
       clinic: info.clinic,
       city: info.city,
       spec: info.spec,
-      ticket: info.ticketName || 'Standart',
+      ticket: info.ticketName || '',
+      ticketId: info.ticketId || '',
       method: info.methodLabel || info.method || 'Click',
       subtotal: Number(info.gross) || 0,
       promoCode: info.promo || '',
@@ -73,6 +74,8 @@ export async function register(id, info) {
     next = {
       ...info,
       price: res.paid,
+      gross: res.gross != null ? res.gross : info.gross,
+      discount: res.discount != null ? res.discount : info.discount,
       synced: true,
       // Pullik chipta mijoz tomonida hech qachon "to‘landi" bo‘lmaydi — tashkilotchi tasdiqlaguncha kutilmoqda.
       pending: res.pending != null ? !!res.pending : Number(res.paid) > 0,
@@ -96,6 +99,11 @@ if (typeof window !== 'undefined') {
       const sid = row.seminar_id || row.seminarId
       if (!sid) return
       const prev = registered[sid] || {}
+      // Bekor qilingan ro‘yxat "Ro‘yxatdan o‘tgansiz" deb ko‘rsatilmaydi
+      if (row.pay === 'cancel') {
+        if (registered[sid]) { delete registered[sid]; changed = true }
+        return
+      }
       registered[sid] = {
         ...prev,
         name: row.name || prev.name,
@@ -106,6 +114,12 @@ if (typeof window !== 'undefined') {
         spec: row.role || prev.spec,
         ticketName: row.ticket || prev.ticketName,
         order: prev.order || row.id,
+        personId: prev.personId || row.id,
+        code: prev.code || row.code || '',
+        // To‘lov holati — tashkilotchi ko‘rgan bilan bir xil manba (registrations.pay)
+        pending: row.pay ? row.pay === 'wait' : prev.pending,
+        paidConfirmed: row.pay === 'paid',
+        arrived: !!row.arrived,
         synced: true,
       }
       changed = true
