@@ -47,11 +47,12 @@ export default function MobileHome() {
   const session = useSession()
   const feed = useFeed()
   const rawHello = profile.accountLive ? pickDisplayName(profile.name, session.profile?.full_name, session.profile?.name) : pickDisplayName(session.profile?.full_name, session.profile?.name)
-  // Uzbek convention: «Familiya Ism» → greet with Ism (2nd word); single token stays as-is
+  // Ism: profildagi first_name, bo‘lmasa ko‘rsatiladigan ismning birinchi so‘zi (familiya emas)
   const helloName = (() => {
+    const first = String(session.profile?.first_name || profile.firstName || '').trim()
+    if (first) return first
     const parts = String(rawHello || '').trim().split(/\s+/).filter(Boolean)
-    if (!parts.length) return ''
-    return parts.length >= 2 ? parts[1] : parts[0]
+    return parts[0] || ''
   })()
   const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()

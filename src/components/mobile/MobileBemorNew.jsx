@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, X, Camera, UserRound, Phone, ChevronDown, CalendarDays, Mars, Venus, UsersRound, MapPin, Mail, Megaphone, FileText, Save, Check } from 'lucide-react'
@@ -33,7 +34,7 @@ export default function MobileBemorNew() {
   const [photoErr, setPhotoErr] = useState('')
   const [tried, setTried] = useState(false)
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
-  const today = new Date().toISOString().slice(0, 10)
+  const today = tashkentToday()
 
   const errs = {
     first: f.first.trim().length < 2,

@@ -670,7 +670,7 @@ export function generateCerts() {
 
 export function issueCert(id) {
   const code = `STH-2026-${String(id).padStart(4, '0')}`
-  const date = uzLong(new Date().toISOString().slice(0, 10))
+  const date = uzLong(tashkentToday())
   patch((s) => ({
     ...s,
     certs: s.certs.map((c) => (c.id === id ? { ...c, state: 'done', code, date } : c)),

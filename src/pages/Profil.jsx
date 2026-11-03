@@ -344,7 +344,7 @@ function Board({ initial }) {
 
       {/* Stats */}
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5">
-        {stats.map((s) => (
+        {stats.filter((s) => s.label !== 'Kurslar' || s.value > 0).map((s) => (
           <div key={s.label} className={`${card} flex items-center gap-3 p-3.5`}>
             <span className={`grid size-10 place-items-center rounded-xl ${s.tone}`}><s.icon className={s.icon.raster ? 'size-8' : 'size-5'} /></span>
             <div className="min-w-0">
@@ -358,7 +358,7 @@ function Board({ initial }) {
       <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className={`${card} h-fit p-2`}>
           <nav className="grid gap-0.5">
-            {NAV.map(([id, label]) => (
+            {NAV.filter(([id]) => id !== 'courses' || myCourses.length > 0).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
@@ -410,7 +410,7 @@ function Board({ initial }) {
                 />
                 <SettingsCard profile={profile} />
               </div>
-              <CoursesBlock courses={myCourses} />
+              {myCourses.length > 0 && <CoursesBlock courses={myCourses} />}
               <div className="grid gap-4 xl:grid-cols-2">
                 <OrdersBlock orders={orders.slice(0, 5)} status={profile.ordersStatus} error={profile.ordersError} />
                 <AddressesBlock

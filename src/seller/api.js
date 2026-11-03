@@ -110,6 +110,8 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
     cashPending: all.open.filter(isCash).length,
     pending: all.open.filter((o) => !isCash(o)).reduce((s, o) => s + payoutOf(o), 0),
     openCount: all.openCount,
+    // Escrowda faqat onlayn (Click/Payme) va to‘langan buyurtmalar; naqd buyurtmalar kirmaydi
+    heldCount: real.filter((o) => !isCash(o) && ['held', 'paid'].includes(o.payment_status)).length,
     openSum: all.openSum,
     activeProducts: products.filter((p) => p.status === 'active').length,
     customers: phones.size,
@@ -129,8 +131,8 @@ export function monthStats(orders, month) {
 
 export function popularProducts(orders, products, limit = 4) {
   const sold = new Map()
-  metrics(orders, ALL).delivered.forEach((o) => o.items.forEach((it) => {
-    const k = it.product_id || it.name
+  realOrders(orders).filter((o) => !isCancelled(o)).forEach((o) => (o.items || []).forEach((it) => {
+    const p = products.find((x) => x.id === it.product_id || (!it.product_id && x.name === it.name)); if (!p) return; const k = p.id
     sold.set(k, (sold.get(k) || 0) + Number(it.qty || 0))
   }))
   return products

@@ -118,7 +118,7 @@ export default function MobileKategoriyalar() {
               return (
                 <Link key={o.name} to={o.to} className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
                   <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f3f7fb] text-sea">
-                    {o.image ? <img src={o.image} alt="" className="size-full object-cover mix-blend-multiply" /> : <Icon className="size-5" />}
+                    {o.image ? <img src={o.image} alt={o.name} className="size-full object-cover mix-blend-multiply" /> : <Icon className="size-5" />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-semibold text-ink">{o.name}</span>
@@ -154,7 +154,7 @@ function CatTile({ c, onMore }) {
         ) : (
           <img
             src={c.image}
-            alt=""
+            alt={c.name}
             loading="lazy"
             className={`size-full ${c.contain ? 'object-contain' : 'object-cover'} ${c.photo ? '' : 'mix-blend-multiply'}`}
             style={{ objectPosition: c.pos, maskImage: FADE, WebkitMaskImage: FADE }}

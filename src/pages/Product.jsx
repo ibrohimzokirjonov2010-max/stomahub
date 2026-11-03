@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
+import { RestrictedNotice, BlockNotice, useDoctorVerified } from '../restricted.jsx'
+import { purchaseBlock } from '../lib/purchaseGuard'
+import { useSession } from '../sessionStore'
 import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -34,7 +36,7 @@ export default function Product() {
 function productTabs(p) {
   const t = [{ key: 'tavsif', label: 'Tavsif' }]
   if (p.clinicalUse) t.push({ key: 'klinik', label: 'Klinik qo‘llanish', text: p.clinicalUse })
-  if (p.techSpecs?.length) t.push({ key: 'texnik', label: 'Texnik xususiyatlar', rows: p.techSpecs })
+  if (p.techSpecs?.length) t.push({ key: 'texnik', label: 'Xususiyatlari', rows: p.techSpecs })
   if (p.certificate?.length) t.push({ key: 'sertifikat', label: 'Sertifikat', rows: p.certificate })
   const terms = [
     ...(p.minQty > 1 ? [['Minimal buyurtma', `${p.minQty} ${p.uom || 'dona'}`]] : []),
@@ -67,7 +69,9 @@ function ProductTabBody({ t, p }) {
 
 function ProductBody({ p }) {
   const verified = useDoctorVerified()
-  const rxBlocked = isRestricted(p) && !verified
+  const uid = useSession()?.user?.id || ''
+  const block = purchaseBlock(p, { uid, verified })
+  const rxBlocked = block?.code === 'rx'
   const id = p.id
   const similarProducts = similarTo(p)
   const [img, setImg] = useState(0)
@@ -124,7 +128,7 @@ function ProductBody({ p }) {
                 onClick={() => setImg(i)}
                 className={`aspect-[70/55] w-[calc((100%-2rem)/5)] shrink-0 overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
               >
-                <img src={t} alt="" className="size-full object-cover" />
+                <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-cover" />
               </button>
             ))}
           </div>
@@ -197,15 +201,15 @@ function ProductBody({ p }) {
 
           <div className="mt-3 flex items-center gap-4">
             <QtyStepper value={qty} onChange={(q) => setQty(Math.max(minQty, Math.min(Math.max(p.stock, minQty) || 1, q)))} size="lg" />
-            <span className="text-[10px] text-muted">{p.stock} dona mavjud</span>
+            <span className="text-[10px] text-muted">{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</span>
           </div>
 
-          {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : <>
+          {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : block?.code === 'own' ? <BlockNotice className="mt-2.5" text={block.text} /> : <>
           <button
             disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(qty, p.stock))}
-            className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600"
+            className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <ShoppingCart className="size-4" /> Savatga qo‘shish
+            <ShoppingCart className="size-4" /> {p.stock < 1 ? 'Tugagan' : 'Savatga qo‘shish'}
           </button>
           <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, Math.min(qty, p.stock), 'market')} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
             Hozir xarid qilish

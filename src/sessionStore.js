@@ -42,10 +42,18 @@ export function intendedRole() {
 
 export function setIntendedRole(role) {
   try {
-    localStorage.setItem(ROLE_KEY, role === 'organizer' ? 'organizer' : 'customer')
+    localStorage.setItem(ROLE_KEY, role === 'organizer' || role === 'seller' ? role : 'customer')
   } catch {
     /* ignore private mode */
   }
+}
+
+// Joriy kabinetga qarab rol: /sotuvchi → seller, /tashkilotchi → organizer, mijoz kabineti → customer.
+export function roleForPath(path = '') {
+  if (/^\/sotuvchi(\/|$)/.test(path)) return 'seller'
+  if (/^\/tashkilotchi(\/|$)/.test(path)) return 'organizer'
+  if (/^\/(klinika|profil|buyurtma|marketplace|savatcha)(\/|$)/.test(path)) return 'customer'
+  return ''
 }
 
 export async function refreshSession() {

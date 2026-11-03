@@ -28,6 +28,14 @@ export function nextWorkingDayISO() {
 }
 
 /** Never return a past date: anything earlier than today is bumped to the next working day. */
+/** Eng erta yetkazish sanasi: Toshkent / olib ketish — bugun; viloyatlar — kamida 2 kun keyin (kuryer 2–4 kun). */
+export function earliestDeliveryISO(city, pickup) {
+  const today = todayISO()
+  if (pickup || !city || city === 'Toshkent') return today
+  const d = isoToDate(today); d.setDate(d.getDate() + 2)
+  if (d.getDay() === 0) d.setDate(d.getDate() + 1)
+  return toISODate(d)
+}
 export const maxDeliveryISO = () => { const d = isoToDate(todayISO()); d.setDate(d.getDate() + 30); return toISODate(d) }
 
 export const TIME_WINDOWS = ['09:00–12:00', '12:00–15:00', '15:00–18:00', '18:00–21:00']
