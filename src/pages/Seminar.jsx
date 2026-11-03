@@ -170,7 +170,6 @@ export function SeminarView({ d, similar = null, preview = false }) {
   ].filter(Boolean)
   const practiceTiles = tiles.length ? tiles : (v.practice ? [[Hand, 'Amaliy qism', v.practice]] : [])
   const days = (v.programDays || []).filter((day) => day.items?.length)
-  const dayDesc = (day) => day.items.filter(([, t]) => !BREAK_RE.test(t)).slice(0, 3).map(([, t]) => t).join(', ')
   const gallery = v.gallery.slice(1)
   const faqs = v.faq
   const tabs = [
@@ -208,9 +207,7 @@ export function SeminarView({ d, similar = null, preview = false }) {
       <div className="grid gap-3 @[900px]:grid-cols-[minmax(0,1fr)_260px]">
         {/* Hero */}
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e6f6f5] via-[#eef8f8] to-[#d9efee] p-4 shadow-card @[640px]:p-5">
-          {v.hero && <img src={v.hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.16] @[640px]:left-auto @[640px]:w-[48%] @[640px]:opacity-100" />}
-          {v.hero && <span className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] @[640px]:block" style={{ background: 'linear-gradient(90deg, #e9f7f6 0%, rgb(233 247 246 / 0.55) 30%, rgb(233 247 246 / 0) 65%)' }} />}
-          <div className="relative grid gap-4 @[640px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+          <div className="relative grid gap-4 @[640px]:grid-cols-[minmax(0,1fr)_auto] @[640px]:items-center">
             <div className="min-w-0">
               <span className="inline-block rounded-md bg-sea px-2 py-0.5 text-[11px] font-semibold text-white">{v.kicker}</span>
               <h1 className="mt-2 text-[24px] font-extrabold leading-[1.12] tracking-tight text-ink @[640px]:text-[28px]">{v.title}</h1>
@@ -227,14 +224,9 @@ export function SeminarView({ d, similar = null, preview = false }) {
                 {v.handsOn && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-sea"><Hand className="size-4" /> Amaliy mashg‘ulot</span>}
               </div>
             </div>
-            {days.length > 0 && (
-              <div className="flex min-w-0 flex-col justify-center gap-2 @[640px]:items-end">
-                {days.slice(0, 4).map((day, i) => (
-                  <div key={i} className="w-full max-w-[260px] rounded-xl bg-sea/90 px-3 py-2 text-white shadow-lg backdrop-blur">
-                    <b className="block text-[13.5px]">{day.label || `${i + 1}-kun`}{day.title ? ` — ${day.title}` : ''}</b>
-                    {dayDesc(day) && <span className="line-clamp-2 block text-[11.5px] leading-snug text-white/90">{dayDesc(day)}</span>}
-                  </div>
-                ))}
+            {v.hero && (
+              <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-xl bg-white/70 p-1.5 shadow-sm @[640px]:w-[clamp(180px,30cqw,320px)] @[640px]:max-w-[320px]">
+                <img src={v.hero} alt={v.title} className="block max-h-[200px] w-full rounded-lg object-contain @[640px]:max-h-[240px]" />
               </div>
             )}
           </div>
