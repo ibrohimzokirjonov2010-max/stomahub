@@ -214,6 +214,10 @@ export function SeminarView({ d, similar = null, preview = false }) {
           <section className="min-w-0 overflow-hidden rounded-2xl bg-white p-2 shadow-card">
             <h1 className="sr-only">{v.title}</h1>
             <img src={v.hero} alt={v.title} className="block max-h-[78vh] w-full rounded-xl bg-white object-contain" />
+            {!preview && <div className="px-1.5 pb-1 pt-2 @[900px]:hidden"><div className="min-w-0">
+                {v.kicker && <span className="inline-block max-w-full truncate rounded-md bg-sea-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-sea">{v.kicker}</span>}
+                <p title={v.title} className="mt-1 line-clamp-2 text-[15px] font-bold leading-snug text-ink">{v.title}</p>
+              </div></div>}
           </section>
         ) : (
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e6f6f5] via-[#eef8f8] to-[#d9efee] p-4 shadow-card @[640px]:p-5">
@@ -242,6 +246,10 @@ export function SeminarView({ d, similar = null, preview = false }) {
         <aside id="sem-buy" className={`${preview ? '' : 'hidden'} min-w-0 @[900px]:block`}>
           <div className="sticky top-[54px] space-y-3">
             <section className="rounded-2xl border border-[#e3efed] bg-white p-4 shadow-card">
+              {hasPoster && <div className="mb-3 border-b border-[#e3efed] pb-3"><div className="min-w-0">
+                {v.kicker && <span className="inline-block max-w-full truncate rounded-md bg-sea-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-sea">{v.kicker}</span>}
+                <p title={v.title} className="mt-1 line-clamp-2 text-[15px] font-bold leading-snug text-ink">{v.title}</p>
+              </div></div>}
               {v.oldPrice > v.price && <p className="text-[12px] text-muted line-through">{som(v.oldPrice)}</p>}
               <div className="flex items-start justify-between gap-2">
                 <b className="text-[24px] leading-tight text-ink">{som(v.price)}</b>
