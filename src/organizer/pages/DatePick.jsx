@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useEffect, useRef, useState } from 'react'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { MONTHS } from './wizardBits'
@@ -15,7 +16,7 @@ export const uzLong = (v) => {
 // Yengil kalendar popover: dushanbadan boshlanadi, touch va #root zoom bilan ishlaydi (absolute joylashuv)
 export default function DatePick({ value, onChange, min = '', placeholder = 'Sanani tanlang', color = '#0f766e', invalid = false, className = '', label }) {
   const [open, setOpen] = useState(false)
-  const base = value || min || new Date().toISOString().slice(0, 10)
+  const base = value || min || tashkentToday()
   const [view, setView] = useState(() => { const [y, m] = base.split('-').map(Number); return { y, m: m - 1 } })
   const ref = useRef(null)
   useEffect(() => {
@@ -28,7 +29,7 @@ export default function DatePick({ value, onChange, min = '', placeholder = 'San
   }, [open])
   const first = (new Date(view.y, view.m, 1).getDay() + 6) % 7
   const days = new Date(view.y, view.m + 1, 0).getDate()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = tashkentToday()
   const shift = (k) => setView(({ y, m }) => { const t = new Date(y, m + k, 1); return { y: t.getFullYear(), m: t.getMonth() } })
   const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)]
   return (

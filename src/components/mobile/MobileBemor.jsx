@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -305,7 +306,7 @@ function VisitSheet({ p, preset, onClose, onDone }) {
   const [doctor, setDoctor] = useState('')
   const [note, setNote] = useState('')
   const [tried, setTried] = useState(false)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = tashkentToday()
   const toothBad = tooth && !/^[1-8][1-8]$/.test(tooth)
   const ok = date >= today && time && kind && !toothBad
   const save = () => {

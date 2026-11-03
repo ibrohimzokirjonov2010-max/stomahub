@@ -72,7 +72,7 @@ export function productById(id) {
   const images = s.images?.length ? s.images : [s.image]
   return {
     ...s,
-    oldPrice: undefined,
+    oldPrice: s.oldPrice > s.price ? s.oldPrice : undefined,
     badge: '',
     sold: '',
     images,
@@ -82,7 +82,7 @@ export function productById(id) {
     description: s.description || 'Sotuvchi tavsif qo‘shmagan.',
     features: [],
     highlights: s.specs?.length ? s.specs.map(([k, v]) => `${k}: ${v}`) : null,
-    variants: s.variants?.length ? s.variants.map((v) => ({ label: variantLabel(v, v.type || s.variantType) || v.name || v.sku, sku: v.sku, price: Number(v.price) || s.price, stock: Number(v.stock) || 0 })) : null,
+    variants: s.variants?.length ? s.variants.map((v) => ({ label: variantLabel(v, v.type || s.variantType) || v.name || v.sku, sku: v.sku, price: Number(v.price) || s.price, ...(Number(v.oldPrice) > Number(v.price) ? { oldPrice: Number(v.oldPrice) } : {}), stock: Number(v.stock) || 0 })) : null,
     techSpecs: s.specs || [],
     certificate: [
       ...(s.regCertNo ? [['Ro‘yxatdan o‘tish guvohnomasi', s.regCertNo]] : []),

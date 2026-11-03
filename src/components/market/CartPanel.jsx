@@ -26,7 +26,7 @@ const perks = [
 ]
 
 export default function CartPanel() {
-  const { items, setQty, remove, clear, count, total } = useCart()
+  const { items, problems = [], setQty, remove, clear, count, total } = useCart()
   const navigate = useNavigate()
 
   return (
@@ -50,6 +50,7 @@ export default function CartPanel() {
                   <p className="truncate text-[9px] font-semibold text-ink">{it.name}</p>
                   <p className="truncate text-[8.5px] text-muted">{it.type}</p>
                   <p className="mt-0.5 whitespace-nowrap text-[10px] font-bold text-sea-600">{som(it.price)}</p>
+                  {problems.find((x) => x.it.id === it.id) && <p role="alert" className="text-[8.5px] font-semibold text-sale">{problems.find((x) => x.it.id === it.id).problem.text}</p>}
                 </div>
                 <QtyStepper value={it.qty} onChange={(q) => setQty(it.id, q)} />
                 <button onClick={() => remove(it.id)} className="text-ink-2 hover:text-sale" aria-label="O‘chirish">
@@ -68,7 +69,7 @@ export default function CartPanel() {
           <span className="text-[10px] font-bold text-ink">Jami summa</span>
           <span className="text-[14px] font-bold text-ink">{som(total)}</span>
         </div>
-        <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} className="mt-2.5 flex h-[32px] w-full items-center justify-center gap-2 rounded-lg bg-sea text-[11px] font-semibold text-white transition hover:bg-sea-600 disabled:opacity-50" disabled={!items.length}>
+        <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} className="mt-2.5 flex h-[32px] w-full items-center justify-center gap-2 rounded-lg bg-sea text-[11px] font-semibold text-white transition hover:bg-sea-600 disabled:opacity-50" disabled={!items.length || problems.length > 0}>
           Rasmiylashtirish <ArrowRight className="size-4" />
         </button>
       </div>

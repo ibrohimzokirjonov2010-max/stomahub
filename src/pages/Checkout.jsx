@@ -1,4 +1,5 @@
-import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
+import { cartProblems } from '../lib/purchaseGuard'
+import { isRestricted, RestrictedNotice, BlockNotice, useDoctorVerified } from '../restricted.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -67,6 +68,9 @@ export default function Checkout() {
   const items = buyNow ? [buyNow] : cart.items
   const doctorOk = useDoctorVerified()
   const rxBlocked = !doctorOk && items.some(isRestricted)
+  // O‘z mahsuloti / ombordan ko‘p miqdor — oxirgi bosqichgacha kutmasdan ko‘rsatiladi
+  const guardUid = currentUid() || ''
+  const otherProblems = (buyNow ? cartProblems(items, { uid: guardUid, verified: doctorOk }) : (cart.problems || [])).filter((x) => x.problem.code !== 'rx')
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
   const profile = useProfile()
   const [step, setStep] = useState(1)
@@ -177,6 +181,7 @@ export default function Checkout() {
     }
     // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
     if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`); return }
+    if (otherProblems.length) { setError(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
     if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return
     setError('')
@@ -247,6 +252,7 @@ export default function Checkout() {
             </p>
             <Stepper step={step} />
             {rxBlocked && <RestrictedNotice className="mt-3" />}
+            {otherProblems.map((x) => <BlockNotice key={x.it.id} className="mt-2" text={`${x.it.name}: ${x.problem.text}`} />)}
             {error && <p className="mt-3 rounded-xl bg-[#fff1f2] px-3 py-2 text-[12.5px] text-[#e11d48]">{error}</p>}
 
             <div className="buy-layout mt-4">

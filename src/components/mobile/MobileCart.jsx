@@ -15,7 +15,8 @@ export const ORIGIN = {
   jihoz: { label: 'Jihozlar', to: '/jihozlar' },
 }
 export default function MobileCart() {
-  const { items, setItems, setQty, remove } = useCart()
+  const { items, problems = [], setItems, setQty, remove } = useCart()
+  const problemOf = (id) => problems.find((x) => x.it.id === id)?.problem
   const navigate = useNavigate()
   const loc = useLocation()
   const origin = ORIGIN[loc.state?.from] || ORIGIN.market
@@ -97,6 +98,7 @@ export default function MobileCart() {
                       <p className="line-clamp-2 text-[13.5px] font-bold leading-snug text-[#0d2a4a]">{it.name}</p>
                       {it.type && <p className="truncate text-[12px] text-ink-2">{it.type}</p>}
                       {it.seller && <p className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] text-muted"><Store className="size-3.5 shrink-0" /> {it.seller}</p>}
+                      {problemOf(it.id) && <p role="alert" className="mt-0.5 text-[11.5px] font-semibold text-sale">{problemOf(it.id).text}</p>}
                     </div>
                     <button type="button" onClick={() => drop(it)} aria-label={`${it.name} — o‘chirish`} className="grid size-8 shrink-0 place-items-center rounded-full bg-[#f0f3f5] text-ink-2 active:scale-90">
                       <Trash2 className="size-4" />
@@ -111,7 +113,7 @@ export default function MobileCart() {
                         <Minus className="size-4" strokeWidth={2.2} />
                       </button>
                       <span className="min-w-6 text-center text-[13.5px] font-semibold tabular-nums text-[#0d2a4a]">{it.qty}</span>
-                      <button type="button" onClick={() => setQty(it.id, it.qty + 1)} disabled={it.qty >= 99} aria-label="Ko‘paytirish" className="grid size-9 place-items-center text-[#0d2a4a] active:scale-90 disabled:opacity-40">
+                      <button type="button" onClick={() => setQty(it.id, it.qty + 1)} disabled={it.qty >= Math.min(99, it.stock ?? 99)} aria-label="Ko‘paytirish" className="grid size-9 place-items-center text-[#0d2a4a] active:scale-90 disabled:opacity-40">
                         <Plus className="size-4" strokeWidth={2.2} />
                       </button>
                     </div>
@@ -125,6 +127,7 @@ export default function MobileCart() {
             ))}
           </ul>
 
+          {problems.length > 0 && <p role="alert" className="mt-3 rounded-2xl bg-[#fff8e6] p-3 text-[12.5px] font-medium text-[#7a5200]">Rasmiylashtirishdan oldin belgilangan mahsulotlarni tuzating yoki savatdan olib tashlang.</p>}
           <section className="mt-3 rounded-2xl bg-white p-3.5 shadow-[0_1px_6px_rgb(11_31_58/0.06)]">
             <p className="flex items-center gap-2 text-[13px] text-[#0d2a4a]"><Truck className="size-[18px] shrink-0 text-[#0b6d73]" /> Yetkazib berish: sotuvchi bilan kelishiladi</p>
           </section>
@@ -149,7 +152,7 @@ export default function MobileCart() {
             <p className="text-[12px] text-ink-2">Jami:</p>
             <p className="whitespace-nowrap text-[17px] font-extrabold leading-tight text-[#0b6d73]">{som(total)}</p>
           </div>
-          <button type="button" onClick={() => navigate('/buyurtma/rasmiylashtirish', { state: { from: loc.state?.from } })} className="flex h-12 w-[56%] items-center justify-center gap-2 rounded-xl bg-[#0b8a7a] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_122/0.3)] active:scale-[0.98]">
+          <button type="button" disabled={problems.length > 0} onClick={() => navigate('/buyurtma/rasmiylashtirish', { state: { from: loc.state?.from } })} className="flex h-12 w-[56%] items-center justify-center gap-2 rounded-xl bg-[#0b8a7a] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_122/0.3)] active:scale-[0.98] disabled:opacity-50">
             Rasmiylashtirish <ArrowRight className="size-[18px]" />
           </button>
         </div>

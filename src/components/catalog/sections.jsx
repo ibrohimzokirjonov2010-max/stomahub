@@ -29,7 +29,6 @@ import { ADS } from '../../elonlarData'
 import { products as uniforms } from '../../formaData'
 import { allAds, adsStore, useAds, PostAdSheet } from '../mobile/MobileElonlar'
 import { PostSheet } from '../mobile/MobileSurplus'
-import { addSurplusItem } from '../../surplusData'
 import { imgIcon } from '../tealIcons'
 
 /* ---- helpers ---- */
@@ -271,11 +270,11 @@ export function useSurplusSection() {
         { key: 'brand', label: 'Brend', options: opts(items.map((s) => s.brand)), match: (s, b) => s.brand === b },
       ],
       sorts: PRICE_SORTS(),
-      action: { label: 'E’lon berish', render: ({ close, done }) => <PostSheet onClose={close} onSubmit={(data) => { addSurplusItem(data); setRev((n) => n + 1); done() }} /> },
+      action: { label: 'E’lon berish', render: ({ close, done }) => <PostSheet onClose={close} onSubmit={() => { setRev((n) => n + 1); done() }} /> },
       text: (s) => `${s.name} ${s.brand} ${s.type} ${s.city}`,
       card: (s) => {
         const off = realDiscount('surplus', s)
-        return { id: s.id, href: `/ortiqcha/${s.id}`, image: s.image, fit: 'contain', kicker: s.brand, title: s.name, meta: [s.type, [s.city, s.expiry && `Muddati: ${s.expiry}`].filter(Boolean).join(' · ')], price: s.price, oldPrice: off ? s.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: s.condition, tone: 'info' } }
+        return { id: s.id, href: `/ortiqcha/${s.id}`, image: s.image, fit: 'contain', kicker: s.brand, title: s.name, meta: [s.type, [s.city, s.expiry && `Muddati: ${s.expiry}`].filter(Boolean).join(' · ')], price: s.price, oldPrice: off ? s.oldPrice : 0, badge: s._pending ? { text: 'Moderatsiyada', tone: 'info' } : off ? { text: `-${off}%`, tone: 'sale' } : { text: s.condition, tone: 'info' } }
       },
       slides: (list, scroll) => slidesFor({ title: 'Ortiqcha materialni', accent: 'foydaga aylantiring', text: 'Yopiq va yaroqli materiallar', items: list, image: (s) => s.image, href: (s) => `/ortiqcha/${s.id}`, scroll }),
     }
