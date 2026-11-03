@@ -510,7 +510,7 @@ export async function pushSeminar(record, promos, { isNew } = {}) {
   }
   await logActivity(uid, {
     icon: 'cal',
-    title: record.published ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi',
+    title: record.published ? 'Seminar moderatsiyaga yuborildi' : 'Qoralama saqlandi',
     text: record.title,
   })
 }

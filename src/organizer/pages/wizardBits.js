@@ -1,4 +1,5 @@
-import { programError } from '../../programDays'
+import { normalizeProgram, programError, splitRange } from '../../programDays'
+import { tashkentToday } from '../../tashkentDate'
 import { supabase } from '../../supabaseClient'
 export const TEAL = 'var(--color-org-teal)'
 export const TEAL_MOBILE = 'var(--color-org-teal)'
@@ -73,7 +74,47 @@ export { lines as listLines }
 
 // Har bir bosqich uchun tekshiruv: xato matni yoki '' qaytaradi
 // Bosqich xatosi: { field, msg } — field inline xato va scroll uchun
-export function stepError(id, f) {
+const toMin = (t) => { const m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : null }
+const addDays = (iso, n) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
+
+/** Dastur vaqtlari seminar soatlari ichida bo‘lishi kerak. */
+export function programHoursError(program, startTime, endTime) {
+  const a = toMin(startTime), b = toMin(endTime)
+  if (a == null || b == null) return ''
+  const days = normalizeProgram(program)
+  for (let d = 0; d < days.length; d++) {
+    for (let r = 0; r < days[d].items.length; r++) {
+      const [x, y] = splitRange(String(days[d].items[r].time || ''))
+      const xm = toMin(x), ym = toMin(y)
+      if ((xm != null && xm < a) || (ym != null && ym > b)) return `Dasturdagi ${d + 1}-kun, ${r + 1}-qator vaqti seminar soatlaridan (${startTime} – ${endTime}) tashqarida`
+    }
+  }
+  return ''
+}
+
+/** Ma’ruzachi tajribasi: 0–60 yil butun son. */
+export function yearsError(v) {
+  if (v === '' || v == null) return ''
+  const n = Number(v)
+  if (!Number.isInteger(n) || n < 0 || n > 60) return 'Ish tajribasi 0–60 yil oralig‘ida bo‘lsin'
+  return ''
+}
+
+/** Early bird: narx asosiydan past, muddat bugundan seminar boshlanishidan oldingi kungacha. */
+export function earlyBirdError(t, start, today = tashkentToday()) {
+  const ep = Number(t?.earlyPrice) || 0
+  const eu = String(t?.earlyUntil || '')
+  if (!ep && !eu) return ''
+  if (!ep || !eu) return 'Early bird narxi va muddati birga kiritilsin'
+  if (ep >= Number(t.price)) return 'Early bird narxi asosiy narxdan past bo‘lsin'
+  if (eu < today) return 'Early bird muddati o‘tgan sana bo‘lishi mumkin emas'
+  if (start && eu > addDays(start, -1)) return 'Early bird muddati seminar boshlanishidan oldin tugashi kerak'
+  return ''
+}
+
+// opts.origStart — tahrirlanayotgan seminarning saqlangan sanasi (o‘tgan sana bo‘lsa ham o‘zgarmasa ruxsat)
+export function stepError(id, f, opts = {}) {
+  const today = tashkentToday()
   if (id === 'info') {
     if (String(f.name || '').trim().length < 3) return { field: 'name', msg: 'Seminar nomini kiriting (kamida 3 belgi)' }
     if (String(f.about || '').trim().length < 10) return { field: 'about', msg: 'Qisqa tavsif kamida 10 belgi bo‘lsin' }
@@ -83,6 +124,7 @@ export function stepError(id, f) {
   }
   if (id === 'when') {
     if (!f.start) return { field: 'start', msg: 'Boshlanish sanasini kiriting' }
+    if (f.start < today && f.start !== opts.origStart) return { field: 'start', msg: 'Boshlanish sanasi o‘tgan kun bo‘lishi mumkin emas' }
     if (f.end && f.end < f.start) return { field: 'end', msg: 'Tugash sanasi boshlanishdan oldin bo‘lishi mumkin emas' }
     if ((!f.end || f.end === f.start) && f.endTime && f.startTime && f.endTime <= f.startTime) return { field: 'end', msg: 'Tugash vaqti boshlanishdan keyin bo‘lsin' }
     if (!String(f.place || '').trim()) return { field: 'place', msg: f.placeType === 'online' ? 'Webinar platformasi yoki havolasini kiriting' : 'Manzilni kiriting' }
@@ -91,6 +133,8 @@ export function stepError(id, f) {
   if (id === 'details') {
     const pErr = programError(f.program)
     if (pErr) return { field: 'details', msg: pErr }
+    const hErr = programHoursError(f.program, f.startTime, f.endTime)
+    if (hErr) return { field: 'details', msg: hErr }
     if (f.cmeHours !== '' && f.cmeHours != null && (Number(f.cmeHours) < 0 || Number(f.cmeHours) > 200)) return { field: 'details', msg: 'CME soatlari 0–200 oralig‘ida bo‘lsin' }
     if (f.cmePoints !== '' && f.cmePoints != null && (Number(f.cmePoints) < 0 || Number(f.cmePoints) > 100)) return { field: 'details', msg: 'CME ballari 0–100 oralig‘ida bo‘lsin' }
     if (f.practice?.on && !f.practice.kind) return { field: 'details', msg: 'Amaliy qism turini tanlang' }
@@ -100,13 +144,27 @@ export function stepError(id, f) {
   }
   if (id === 'tickets') {
     if (!(f.tickets || []).length) return { field: 'tickets', msg: 'Kamida bitta chipta turi qo‘shing' }
+    for (const t of f.tickets) {
+      if (!(Number(t.price) >= 0)) return { field: 'tickets', msg: `“${t.name}” narxi noto‘g‘ri` }
+      const e = earlyBirdError(t, f.start, today)
+      if (e) return { field: 'tickets', msg: `“${t.name}”: ${e}` }
+    }
+    return null
+  }
+  if (id === 'speakers') {
+    const list = (f.speakers || []).filter((s) => String(s?.name || '').trim())
+    if (!list.length) return { field: 'speakers', msg: 'Kamida bitta ma’ruzachi qo‘shing' }
+    for (const s of list) {
+      const e = yearsError(s.years)
+      if (e) return { field: 'speakers', msg: `${s.name}: ${e}` }
+    }
     return null
   }
   return null
 }
 
-export function validateStep(id, f) {
-  return stepError(id, f)?.msg || ''
+export function validateStep(id, f, opts) {
+  return stepError(id, f, opts)?.msg || ''
 }
 
 export const EMPTY_DETAILS = {

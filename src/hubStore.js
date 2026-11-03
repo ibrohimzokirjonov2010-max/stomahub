@@ -283,7 +283,7 @@ export function saveSeminar(form, { publish, id } = {}) {
     promos,
     activity: pushActivity(s.activity, {
       icon: 'cal',
-      title: publish ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi',
+      title: publish ? 'Seminar moderatsiyaga yuborildi' : 'Qoralama saqlandi',
       text: name,
     }),
   }))

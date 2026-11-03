@@ -6,7 +6,8 @@ import {
   Calendar, ChevronDown, ChevronRight, Clock, Copy, FileText, LayoutGrid, MapPin, Monitor, Percent, Tag, Ticket, Upload, User, Users, Wallet, X,
 } from 'lucide-react'
 import { ToothIcon } from '../../components/icons'
-import { EMPTY_DETAILS, FORMAT_OF, TEAL_MOBILE, TOPICS, placeTypeOf, pickExtras, uploadImage, uzDate, validateStep } from './wizardBits'
+import { EMPTY_DETAILS, FORMAT_OF, TEAL_MOBILE, TOPICS, earlyBirdError, placeTypeOf, pickExtras, uploadImage, uzDate, validateStep, yearsError } from './wizardBits'
+import { tashkentToday } from '../../tashkentDate'
 import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
 import WizardDetails from './WizardDetails'
 import { SpeakerExtraFields, speakerPayload } from './WizardModals'
@@ -190,7 +191,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     const f = fullForm()
     const checks = STEP_IDS[step] === 'info' ? ['info', 'when'] : [STEP_IDS[step]]
     for (const c of checks) {
-      const err = validateStep(c, f)
+      const err = validateStep(c, f, { origStart: base?.start || '' })
       if (err) { notify(err); setStepErr(err); return }
     }
     setStep(to)
@@ -200,14 +201,14 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
   const publish = (asDraft) => {
     const f = fullForm()
     if (!asDraft) {
-      for (const c of ['info', 'when', 'details', 'tickets']) {
-        const err = validateStep(c, f)
-        if (err) { notify(err); setStep(c === 'details' ? 1 : c === 'tickets' ? 2 : 0); setStepErr(err); window.scrollTo(0, 0); return }
+      for (const c of ['info', 'when', 'details', 'tickets', 'speakers']) {
+        const err = validateStep(c, f, { origStart: base?.start || '' })
+        if (err) { notify(err); setStep(c === 'details' ? 1 : c === 'tickets' ? 2 : c === 'speakers' ? 3 : 0); setStepErr(err); window.scrollTo(0, 0); return }
       }
     }
     const res = saveSeminar(f, { publish: !asDraft, id: editing || undefined })
     if (!res.ok) { notify(res.error); return }
-    notify(asDraft ? 'Qoralama saqlandi' : 'Seminar e’lon qilindi')
+    notify(asDraft ? 'Qoralama saqlandi' : (editing ? 'O‘zgarishlar saqlandi' : 'Seminar moderatsiyaga yuborildi — tasdiqlangach katalogda ko‘rinadi'))
     navigate('/tashkilotchi/seminarlar')
   }
 
@@ -266,7 +267,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
           <div className="grid grid-cols-2 gap-2">
             <div className="block">
               <Lab>Sana</Lab>
-              <DatePick label="Sana" value={form.date} onChange={(v) => set({ date: v })} color={GREEN} />
+              <DatePick label="Sana" value={form.date} min={tashkentToday()} onChange={(v) => set({ date: v })} color={GREEN} />
             </div>
             <label className="block">
               <Lab>Boshlanish vaqti</Lab>
@@ -383,7 +384,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         </div>
       )}
 
-      <Sheet open={sheet === 'ticket'} onClose={() => setSheet(null)} icon={Ticket} title="Chipta turi qo‘shish" sub="Seminar uchun chipta turini yarating." onSave={() => { if (!ticket.name.trim() || String(ticket.price).trim() === '' || !(Number(ticket.price) >= 0) || !Number(ticket.seats)) { notify('Nom, narx (bepul uchun 0) va joylar kerak'); return } if (!!Number(ticket.earlyPrice) !== !!ticket.earlyUntil) { notify('Early bird narxi va muddati birga kiritilsin'); return } if (Number(ticket.earlyPrice) && Number(ticket.earlyPrice) >= Number(ticket.price)) { notify('Early bird narxi asosiy narxdan past bo‘lsin'); return } setTickets((list) => [...list, { id: `t-${Date.now()}`, name: ticket.name.trim(), price: Number(ticket.price), seats: Number(ticket.seats), perks: [ticket.note].filter(Boolean), active: true, icon: 'gem', note: ticket.note, earlyPrice: Number(ticket.earlyPrice) || 0, earlyUntil: ticket.earlyUntil || '' }]); setTicket({ name: '', price: '', seats: '', note: '', earlyPrice: '', earlyUntil: '' }); setSheet(null); notify('Chipta turi saqlandi') }}>
+      <Sheet open={sheet === 'ticket'} onClose={() => setSheet(null)} icon={Ticket} title="Chipta turi qo‘shish" sub="Seminar uchun chipta turini yarating." onSave={() => { if (!ticket.name.trim() || String(ticket.price).trim() === '' || !(Number(ticket.price) >= 0) || !Number(ticket.seats)) { notify('Nom, narx (bepul uchun 0) va joylar kerak'); return } { const eb = earlyBirdError(ticket, form.date); if (eb) { notify(eb); return } } setTickets((list) => [...list, { id: `t-${Date.now()}`, name: ticket.name.trim(), price: Number(ticket.price), seats: Number(ticket.seats), perks: [ticket.note].filter(Boolean), active: true, icon: 'gem', note: ticket.note, earlyPrice: Number(ticket.earlyPrice) || 0, earlyUntil: ticket.earlyUntil || '' }]); setTicket({ name: '', price: '', seats: '', note: '', earlyPrice: '', earlyUntil: '' }); setSheet(null); notify('Chipta turi saqlandi') }}>
         <Field label="Chipta turi nomi" icon={Ticket} value={ticket.name} onChange={(v) => setTicket({ ...ticket, name: v })} />
         <Field label="Narxi" icon={Wallet} value={ticket.price === '' ? '' : Number(ticket.price).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} suffix="so‘m" onChange={(v) => setTicket({ ...ticket, price: v.replace(/\D/g, '') })} />
         <Field label="Maksimal soni" icon={Users} value={ticket.seats} onChange={(v) => setTicket({ ...ticket, seats: v.replace(/\D/g, '') })} />
@@ -393,7 +394,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
             <Lab>Qaysi sanagacha</Lab>
             <Shell icon={Calendar}>
               <span className="text-[13px]">{ticket.earlyUntil ? uzDate(ticket.earlyUntil, 'dot') : '—'}</span>
-              <input type="date" aria-label="Early bird muddati" value={ticket.earlyUntil} onChange={(e) => setTicket({ ...ticket, earlyUntil: e.target.value })} className="absolute inset-0 opacity-0" />
+              <input type="date" aria-label="Early bird muddati" min={tashkentToday()} max={form.date || undefined} value={ticket.earlyUntil} onChange={(e) => setTicket({ ...ticket, earlyUntil: e.target.value })} className="absolute inset-0 opacity-0" />
             </Shell>
           </label>
         </div>
@@ -405,7 +406,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         </label>
       </Sheet>
 
-      <Sheet open={sheet === 'speaker'} onClose={() => setSheet(null)} icon={User} title="Ma’ruzachi qo‘shish" sub="Seminarga ma’ruzachi ma’lumotlarini kiriting." onSave={() => { if (speaker.name.trim().length < 3) { notify('Ismni kiriting'); return } if (speaker.years && Number(speaker.years) > 60) { notify('Tajriba 0–60 yil oralig‘ida bo‘lsin'); return } setSpeakers((list) => [...list, speakerPayload({ ...speaker, id: `s-${Date.now()}`, role: speaker.role || 'Mutaxassis' })]); setSpeaker({ name: '', role: '', bio: '', avatar: '', years: '', clinic: '', certs: '', degree: '' }); setSheet(null); notify('Ma’ruzachi saqlandi') }}>
+      <Sheet open={sheet === 'speaker'} onClose={() => setSheet(null)} icon={User} title="Ma’ruzachi qo‘shish" sub="Seminarga ma’ruzachi ma’lumotlarini kiriting." onSave={() => { if (speaker.name.trim().length < 3) { notify('Ismni kiriting'); return } { const ye = yearsError(speaker.years); if (ye) { notify(ye); return } } setSpeakers((list) => [...list, speakerPayload({ ...speaker, id: `s-${Date.now()}`, role: speaker.role || 'Mutaxassis' })]); setSpeaker({ name: '', role: '', bio: '', avatar: '', years: '', clinic: '', certs: '', degree: '' }); setSheet(null); notify('Ma’ruzachi saqlandi') }}>
         <div>
           <Lab>Rasm</Lab>
           <div className="flex items-center gap-3">

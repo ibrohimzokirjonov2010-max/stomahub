@@ -17,6 +17,7 @@ import WizardDetails from './WizardDetails'
 import { PromoModal, SpeakerModal, TicketModal } from './WizardModals'
 import WizardMobile from './WizardMobile'
 import DatePick from './DatePick'
+import { tashkentToday } from '../../tashkentDate'
 import { CertDesignCanvas, layoutOf } from './certLayout'
 import { CertUpload, ContactField, FaqField, GalleryField, PosterField, VenueNotesField, cmeText, useCertBackground } from './WizardExtras'
 
@@ -212,10 +213,11 @@ export default function Wizard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReview, form, hub.seminars, editing, orgName])
+  const origStart = () => (editing ? getHub().seminars.find((x) => x.id === editing)?.start || '' : '')
   const persist = (publish) => {
     if (publish) {
       for (const st of STEPS) {
-        const e = stepError(st.id, form)
+        const e = stepError(st.id, form, { origStart: origStart() })
         if (e) { fail(STEPS.indexOf(st), e); return }
       }
     }
@@ -226,7 +228,7 @@ export default function Wizard() {
       return
     }
     setFormError('')
-    notify(publish ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi')
+    notify(publish ? (editing ? 'O‘zgarishlar saqlandi' : 'Seminar moderatsiyaga yuborildi — tasdiqlangach katalogda ko‘rinadi') : 'Qoralama saqlandi')
     navigate('/tashkilotchi/seminarlar')
   }
 
@@ -261,7 +263,7 @@ export default function Wizard() {
     const i = Math.max(0, Math.min(STEPS.length - 1, index))
     if (!force && i > active) {
       for (let k = active; k < i; k += 1) {
-        const e = stepError(STEPS[k].id, form)
+        const e = stepError(STEPS[k].id, form, { origStart: origStart() })
         if (e) { fail(k, e); return }
       }
       setDone((d) => { const n = new Set(d); for (let k = active; k < i; k += 1) n.add(STEPS[k].id); return n })
@@ -288,7 +290,7 @@ export default function Wizard() {
   // Maydon to‘g‘rilansa — xato yo‘qoladi
   useEffect(() => {
     if (!err) return
-    const e = stepError(STEPS[active].id, form)
+    const e = stepError(STEPS[active].id, form, { origStart: origStart() })
     if (!e || e.field !== err.field) { setErr(null); setFormError('') }
   }, [form])
 
@@ -418,7 +420,7 @@ export default function Wizard() {
             <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-2">
               <div className="min-w-0 flex-1 basis-[220px]" data-field="start">
                 <Lab req>Boshlanish sanasi va vaqti</Lab>
-                <div className={`flex gap-1.5 ${errOf('start') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Boshlanish sanasi" invalid={!!errOf('start')} value={form.start} onChange={(v) => setDates({ start: v, ...(!form.end || form.end < v || !form.multi ? { end: v } : {}) })} /><TimeBox value={form.startTime} onChange={(v) => set({ startTime: v })} /></div>
+                <div className={`flex gap-1.5 ${errOf('start') ? 'rounded-xl ring-2 ring-[#e11d48]/40' : ''}`}><DateBox label="Boshlanish sanasi" min={editing ? undefined : tashkentToday()} invalid={!!errOf('start')} value={form.start} onChange={(v) => setDates({ start: v, ...(!form.end || form.end < v || !form.multi ? { end: v } : {}) })} /><TimeBox value={form.startTime} onChange={(v) => set({ startTime: v })} /></div>
                 {errOf('start') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('start')}</p>}
               </div>
               <div className="min-w-0 flex-1 basis-[220px]" data-field="end">
@@ -736,7 +738,7 @@ export default function Wizard() {
         </aside>
       </div>
 
-      <TicketModal open={modal === 'ticket'} onClose={() => setModal(null)} onSave={(t) => { set({ tickets: [...form.tickets, t] }); setModal(null); notify('Chipta turi qo‘shildi') }} />
+      <TicketModal start={form.start} open={modal === 'ticket'} onClose={() => setModal(null)} onSave={(t) => { set({ tickets: [...form.tickets, t] }); setModal(null); notify('Chipta turi qo‘shildi') }} />
       <SpeakerModal open={modal === 'speaker'} onClose={() => setModal(null)} photo="" onSave={(s) => { set({ speakers: [...form.speakers, s] }); setModal(null); notify('Ma’ruzachi qo‘shildi') }} />
       <PromoModal open={modal === 'promo'} onClose={() => setModal(null)} onSave={(p) => { set({ promos: [...form.promos, p] }); setModal(null); notify('Promo-kod qo‘shildi') }} />
     </div>
