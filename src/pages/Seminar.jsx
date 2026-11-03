@@ -175,8 +175,9 @@ export function SeminarView({ d, similar = null, preview = false }) {
   const days = (v.programDays || []).filter((day) => day.items?.length)
   const gallery = v.gallery.slice(1)
   const faqs = v.faq
+  const hasPoster = !!v.hero && !PLACEHOLDERS.has(v.hero)
   const tabs = [
-    ['about', 'Seminar haqida', !!v.about],
+    ['about', 'Seminar haqida', !!v.about || (hasPoster && (v.audience.length > 0 || v.learn.length > 0))],
     ['program', 'Dastur', days.length > 0],
     ['learn', 'Natijalar', v.learn.length > 0],
     ['practice', 'Amaliyot formati', practiceTiles.length > 0],
@@ -208,7 +209,13 @@ export function SeminarView({ d, similar = null, preview = false }) {
       </nav>
 
       <div className="grid gap-3 @[900px]:grid-cols-[minmax(0,1fr)_260px]">
-        {/* Hero */}
+        {/* Hero: yuklangan poster bo‘lsa — poster, aks holda matnli blok */}
+        {hasPoster ? (
+          <section className="min-w-0 overflow-hidden rounded-2xl bg-white p-2 shadow-card">
+            <h1 className="sr-only">{v.title}</h1>
+            <img src={v.hero} alt={v.title} className="block max-h-[78vh] w-full rounded-xl bg-white object-contain" />
+          </section>
+        ) : (
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e6f6f5] via-[#eef8f8] to-[#d9efee] p-4 shadow-card @[640px]:p-5">
           <div className="relative grid gap-4">
             <div className="min-w-0">
@@ -229,6 +236,7 @@ export function SeminarView({ d, similar = null, preview = false }) {
             </div>
           </div>
         </section>
+        )}
 
         {/* Narx kartasi (desktop) */}
         <aside id="sem-buy" className={`${preview ? '' : 'hidden'} min-w-0 @[900px]:block`}>
@@ -259,12 +267,17 @@ export function SeminarView({ d, similar = null, preview = false }) {
       </div>
 
       <div className="mt-3 grid gap-3 @[760px]:grid-cols-2">
-        {v.hero && !PLACEHOLDERS.has(v.hero) && (
-          <section className="overflow-hidden rounded-2xl bg-white p-3 shadow-card @[760px]:col-span-2">
-            <img src={v.hero} alt={v.title} className="mx-auto block max-h-[80vh] w-full max-w-[720px] rounded-xl object-contain" />
-          </section>
+        {(v.about || (hasPoster && (v.audience.length > 0 || v.learn.length > 0))) && (
+          <Card id="about" icon={BookOpen} title="Seminar haqida" className="@[760px]:col-span-2">
+            {v.about && <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">{v.about}</p>}
+            {hasPoster && (v.audience.length > 0 || v.learn.length > 0) && (
+              <div className={`grid gap-2 @[480px]:grid-cols-2 ${v.about ? 'mt-3' : ''}`}>
+                {v.audience.length > 0 && <div className="flex items-start gap-2 rounded-xl bg-[#f3faf9] p-2.5"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white text-sea"><Users className="size-4" /></span><span className="min-w-0"><b className="block text-[12px]">Kim uchun?</b><span className="block text-[11.5px] leading-snug text-ink-2">{v.audience.join(', ')}</span></span></div>}
+                {v.learn.length > 0 && <div className="flex items-start gap-2 rounded-xl bg-[#f3faf9] p-2.5"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white text-sea"><Target className="size-4" /></span><span className="min-w-0"><b className="block text-[12px]">Natija</b><span className="block text-[11.5px] leading-snug text-ink-2">{v.learn.join('; ')}</span></span></div>}
+              </div>
+            )}
+          </Card>
         )}
-        {v.about && <Card id="about" icon={BookOpen} title="Seminar haqida" className="@[760px]:col-span-2"><p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">{v.about}</p></Card>}
         {v.learn.length > 0 && <Card id="learn" icon={Target} title="Kurs yakunida nimalarni bajara olasiz?"><Checks items={v.learn} /></Card>}
         {practiceTiles.length > 0 && (
           <Card id="practice" icon={Settings2} title="Amaliyot formati">
