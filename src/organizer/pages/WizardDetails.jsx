@@ -136,13 +136,17 @@ function ProgramEditor({ form, set }) {
               </div>
             )}
             <div className="space-y-1.5">
-              {day.items.map((r, i) => (
-                <div key={i} className="flex gap-1.5">
-                  <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} aria-invalid={!!bad(d, i, 'time')} className={`${box} w-[120px] shrink-0${bad(d, i, 'time')}`} />
-                  <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} aria-invalid={!!bad(d, i, 'title')} className={`${box} min-w-0 flex-1${bad(d, i, 'title')}`} />
-                  <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4">
+                {day.items.map((r, i) => (
+                  <div key={i} className="relative rounded-xl border border-[#e3eeec] bg-white p-1.5">
+                    <div className="flex gap-1">
+                      <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} aria-invalid={!!bad(d, i, 'time')} className={`${box} min-w-0 flex-1${bad(d, i, 'time')}`} />
+                      <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
+                    </div>
+                    <input aria-label="Mavzu" placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} aria-invalid={!!bad(d, i, 'title')} className={`${box} mt-1 w-full min-w-0${bad(d, i, 'title')}`} />
+                  </div>
+                ))}
+              </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <button type="button" onClick={() => addRow(d)} className={btn} style={{ color: TEAL }}><Plus className="size-4" /> Qator qo‘shish</button>
                 {d === days.length - 1 && <button type="button" onClick={addDay} className={btn} style={{ color: TEAL }}><Plus className="size-4" /> Dastur qo‘shish <span className="font-normal text-[#7e9398]">(yangi kun)</span></button>}
