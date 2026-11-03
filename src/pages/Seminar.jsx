@@ -4,12 +4,13 @@ import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
 import {
   ChevronRight, ChevronDown, CalendarDays, MapPin, Users, Award, Hand, Video, MessagesSquare, BookOpen, UsersRound,
   Play, Check, ArrowRight, CalendarPlus, Phone, Send, ShieldCheck, RotateCcw, FileText, Building2, Star,
-  BadgeCheck, Syringe, HelpCircle, Car, X, Image as ImageIcon,
+  BadgeCheck, Syringe, HelpCircle, Car, X, Image as ImageIcon, Target, Box, Package, Settings2, UserRound, Layers, CreditCard, GraduationCap, Info,
 } from 'lucide-react'
 import { ToothIcon } from '../components/icons'
 import { buildSeminarPage } from '../seminarsData'
 import { publicRecord, publicRecords, useHub } from '../hubStore'
 import { som } from '../marketData'
+import { dateRangeLabel } from '../programDays'
 
 const MONTHS = { YAN: 'Yanvar', FEV: 'Fevral', MAR: 'Mart', APR: 'Aprel', MAY: 'May', IYN: 'Iyun', IYL: 'Iyul', AVG: 'Avgust', SEN: 'Sentabr', OKT: 'Oktabr', NOY: 'Noyabr', DEK: 'Dekabr' }
 
@@ -126,260 +127,265 @@ export default function Seminar() {
   return <SeminarView d={d} similar={realSimilar} />
 }
 
+const BREAK_RE = /tushlik|breyk|break|qahva|kofe|coffee/i
+const KIND_TILE = { model: ['Modelda amaliyot', 'Klinik sharoitga yaqin maxsus modellarda'], fantom: ['Fantomda amaliyot', 'Fantom modellarda mashq'], bemor: ['Jonli bemorda amaliyot', 'Nazorat ostida bemorda ishlash'] }
+const MATERIAL_TILE = { tashkilotchi: 'Materiallarni tashkilotchi beradi', ishtirokchi: 'Materiallarni ishtirokchi olib keladi', aralash: 'Materiallar qisman tashkilotchidan' }
+const splitList = (x) => (Array.isArray(x) ? x : String(x || '').split(/[\n;,]+/)).map((t) => String(t).trim()).filter(Boolean)
+
+function Card({ id, icon: Icon, title, children, className = '' }) {
+  return (
+    <section id={id ? `sem-${id}` : undefined} className={`scroll-mt-28 rounded-2xl border border-[#e3efed] bg-white p-4 shadow-card ${className}`}>
+      <h2 className="flex items-center gap-2 text-[15.5px] font-bold text-ink">{Icon && <Icon className="size-5 shrink-0 text-sea" />}{title}</h2>
+      <div className="mt-3">{children}</div>
+    </section>
+  )
+}
+function Checks({ items }) {
+  return <ul className="space-y-1.5">{items.map((t, i) => <li key={`${i}-${t}`} className="flex items-start gap-2 text-[12.5px] leading-snug text-ink"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> <span className="min-w-0">{t}</span></li>)}</ul>
+}
+
 /** Seminar sahifasi ko‘rinishi. `preview` — tashkilotchi ko‘rib chiqishi: harakat tugmalari o‘chirilgan. */
 export function SeminarView({ d, similar = null, preview = false }) {
-  const [tab, setTab] = useState('about')
   const [faq, setFaq] = useState(0)
   const [shot, setShot] = useState(null)
   const [note, setNote] = useState(null)
   const [corp, setCorp] = useState(false)
-  const [profile, setProfile] = useState(false)
   const v = detail(d)
   if (similar) v.similar = similar
   if (preview) v.similar = []
   const cancelled = !!d.cancelled || !!v.regClosed
   const left = v.seats - v.taken
   const regTo = `/seminarlar/${d.id}/royxat`
-
-  const go = (key) => {
-    setTab(key)
+  const dateLabel = (d.startIso && dateRangeLabel(d.startIso, d.endIso)) || v.dayShort
+  const sp = d.organizer ? (d.speakersAll || [])[0] : null
+  const spCerts = splitList(sp?.certs)
+  const others = v.speakers
+  const pr = d.practiceRaw
+  const tiles = [
+    pr && KIND_TILE[pr.kind] && [Box, ...KIND_TILE[pr.kind]],
+    pr && Number(pr.perPerson) > 0 && [Syringe, `Har bir ishtirokchiga ${Number(pr.perPerson)} ta ${pr.unit === 'tish' ? 'tish' : 'implant'}`, 'Amaliyot davomida shaxsan'],
+    pr && MATERIAL_TILE[pr.materials] && [Package, MATERIAL_TILE[pr.materials], ''],
+    v.liveSurgery && [Video, 'Jonli jarrohlik', v.liveSurgery],
+    v.cmeLine && [Award, 'Sertifikat', v.cmeLine],
+  ].filter(Boolean)
+  const practiceTiles = tiles.length ? tiles : (v.practice ? [[Hand, 'Amaliy qism', v.practice]] : [])
+  const days = (v.programDays || []).filter((day) => day.items?.length)
+  const dayDesc = (day) => day.items.filter(([, t]) => !BREAK_RE.test(t)).slice(0, 3).map(([, t]) => t).join(', ')
+  const gallery = v.gallery.slice(1)
+  const faqs = v.faq
+  const tabs = [
+    ['about', 'Seminar haqida', !!v.about],
+    ['program', 'Dastur', days.length > 0],
+    ['learn', 'Natijalar', v.learn.length > 0],
+    ['practice', 'Amaliyot formati', practiceTiles.length > 0],
+    ['speaker', 'Spiker', !d.noSpeaker],
+    ['price', 'Narxga nimalar kiradi?', v.includes.length > 0],
+    ['pay', 'To‘lov va qaytarish', true],
+    ['gallery', 'Galereya', gallery.length > 0],
+    ['place', 'Manzil', !!(v.venue.name || v.venue.address)],
+    ['faq', 'Savol-javob', faqs.length > 0],
+  ].filter((t) => t[2])
+  const go = (e, key) => {
+    e.preventDefault()
     document.getElementById(`sem-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+  const RegButton = ({ className = '' }) => (preview
+    ? <button type="button" disabled title="Ko‘rib chiqish rejimi" className={`flex cursor-not-allowed items-center justify-center gap-1.5 rounded-xl bg-sea font-semibold text-white opacity-60 ${className}`}>Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></button>
+    : cancelled
+      ? <span className={`flex items-center justify-center rounded-xl bg-[#fde8e8] font-semibold text-[#dc2626] ${className}`}>Ro‘yxat yopiq</span>
+      : <Link to={regTo} className={`flex items-center justify-center gap-1.5 rounded-xl bg-sea font-semibold text-white ${className}`}>Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></Link>)
 
   return (
-    <div className="sem-page pb-8 pt-3" onClickCapture={preview ? (e) => { if (e.target.closest('a')) e.preventDefault() } : undefined}>
-      <div className="min-w-0 space-y-3">
-        <nav className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
-          <Link to="/seminarlar" className="hover:text-sea">Seminarlar</Link>
-          <ChevronRight className="size-3" />
-          <Link to="/seminarlar" className="hover:text-sea">{v.kicker}</Link>
-          <ChevronRight className="size-3" />
-          <span className="font-medium text-ink">{v.title}</span>
-        </nav>
+    <div className="sem-v2 @container pb-24 pt-3 @[900px]:pb-8" onClickCapture={preview ? (e) => { const a = e.target.closest('a'); if (a && !a.getAttribute('href')?.startsWith('#')) e.preventDefault() } : undefined}>
+      <nav className="mb-3 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted">
+        <Link to="/seminarlar" className="hover:text-sea">Seminarlar</Link>
+        <ChevronRight className="size-3" />
+        <Link to="/seminarlar" className="hover:text-sea">{v.kicker}</Link>
+        <ChevronRight className="size-3" />
+        <span className="min-w-0 truncate font-medium text-ink">{v.title}</span>
+      </nav>
 
-        <section className="relative overflow-hidden rounded-2xl bg-[#eaf6f7] p-4 shadow-card">
-          <img src={v.hero} alt="" className="absolute inset-y-0 right-0 h-full w-[58%] object-cover" />
-          <span className="absolute inset-y-0 right-0 w-[58%]" style={{ background: 'linear-gradient(90deg, #eaf6f7 0%, rgb(234 246 247 / 0.65) 35%, rgb(234 246 247 / 0) 70%)' }} />
-          <div className="relative max-w-[62%]">
-            <span className="rounded-md bg-sea px-2 py-0.5 text-[11px] font-semibold text-white">{v.kicker}</span>
-            <h1 className="mt-2 text-[28px] font-extrabold leading-[1.1] tracking-tight text-ink">{v.title}</h1>
-            <p className="mt-2 text-[12.5px] text-ink-2">{v.lead}</p>
-          </div>
-          {v.handsOn && <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-sea shadow"><Hand className="size-3.5" /> Amaliy mashg‘ulot</span>}
-          <div className="sem-facts relative mt-4">
-            <Fact icon={CalendarDays} title={v.dayTitle} text={v.dayText} />
-            <Fact icon={MapPin} title={v.city} text={v.venueShort} />
-            <Fact icon={Users} title={d.format.startsWith('Online') ? 'Onlayn' : d.format.startsWith('Offline +') ? 'Gibrid' : 'Oflayn'} text={d.format.startsWith('Online') ? 'Onlayn qatnashish' : d.format.startsWith('Offline +') ? 'Zalda yoki onlayn' : 'Zalda qatnashish'} />
-            {(!v.organizer || v.cmeLine) && <Fact icon={Award} title="CME" text={v.organizer ? v.cmeLine : 'Sertifikat beriladi'} />}
+      <div className="grid gap-3 @[900px]:grid-cols-[minmax(0,1fr)_260px]">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e6f6f5] via-[#eef8f8] to-[#d9efee] p-4 shadow-card @[640px]:p-5">
+          {v.hero && <img src={v.hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.16] @[640px]:left-auto @[640px]:w-[48%] @[640px]:opacity-100" />}
+          {v.hero && <span className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] @[640px]:block" style={{ background: 'linear-gradient(90deg, #e9f7f6 0%, rgb(233 247 246 / 0.55) 30%, rgb(233 247 246 / 0) 65%)' }} />}
+          <div className="relative grid gap-4 @[640px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+            <div className="min-w-0">
+              <span className="inline-block rounded-md bg-sea px-2 py-0.5 text-[11px] font-semibold text-white">{v.kicker}</span>
+              <h1 className="mt-2 text-[24px] font-extrabold leading-[1.12] tracking-tight text-ink @[640px]:text-[28px]">{v.title}</h1>
+              {v.lead && <p className="mt-2 text-[13px] leading-snug text-ink-2">{v.lead}</p>}
+              {(v.audience.length > 0 || v.learn.length > 0) && (
+                <div className="mt-3 grid gap-2 @[480px]:grid-cols-2">
+                  {v.audience.length > 0 && <div className="flex items-start gap-2 rounded-xl bg-white/85 p-2.5 backdrop-blur"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Users className="size-4" /></span><span className="min-w-0"><b className="block text-[12px]">Kim uchun?</b><span className="block text-[11.5px] leading-snug text-ink-2">{v.audience.join(', ')}</span></span></div>}
+                  {v.learn.length > 0 && <div className="flex items-start gap-2 rounded-xl bg-white/85 p-2.5 backdrop-blur"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Target className="size-4" /></span><span className="min-w-0"><b className="block text-[12px]">Natija</b><span className="line-clamp-3 block text-[11.5px] leading-snug text-ink-2">{v.learn.slice(0, 2).join('; ')}</span></span></div>}
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-ink"><CalendarDays className="size-4 text-sea" /> {dateLabel}</span>
+                {(v.venueShort || v.city) && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-ink"><MapPin className="size-4 shrink-0 text-sea" /> <span className="min-w-0"><span className="block leading-tight">{v.venueShort || v.city}</span>{v.venueShort && v.city && v.city !== v.venueShort && <span className="block text-[11px] font-medium text-muted">{v.city}</span>}</span></span>}
+                {v.handsOn && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-sea"><Hand className="size-4" /> Amaliy mashg‘ulot</span>}
+              </div>
+            </div>
+            {days.length > 0 && (
+              <div className="flex min-w-0 flex-col justify-center gap-2 @[640px]:items-end">
+                {days.slice(0, 4).map((day, i) => (
+                  <div key={i} className="w-full max-w-[260px] rounded-xl bg-sea/90 px-3 py-2 text-white shadow-lg backdrop-blur">
+                    <b className="block text-[13.5px]">{day.label || `${i + 1}-kun`}{day.title ? ` — ${day.title}` : ''}</b>
+                    {dayDesc(day) && <span className="line-clamp-2 block text-[11.5px] leading-snug text-white/90">{dayDesc(day)}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
-        {!v.organizer && <div className="sem-feats">
-          {FEATS.map(([Icon, a, b]) => (
-            <div key={a} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-card">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Icon className="size-4" /></span>
-              <span className="text-[11.5px] font-semibold leading-tight text-ink">{a}<br /><span className="font-medium text-ink-2">{b}</span></span>
-            </div>
-          ))}
-        </div>}
-
-        {v.organizer ? (v.gallery.length > 1 && (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {v.gallery.slice(1, 9).map((src, i) => (
-              <button key={src} type="button" onClick={() => setShot(i + 1)} className="aspect-[4/3] overflow-hidden rounded-2xl" aria-label={`Rasm ${i + 2}`}>
-                <img src={src} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
+        {/* Narx kartasi (desktop) */}
+        <aside id="sem-buy" className={`${preview ? '' : 'hidden'} min-w-0 @[900px]:block`}>
+          <div className="sticky top-[54px] space-y-3">
+            <section className="rounded-2xl border border-[#e3efed] bg-white p-4 shadow-card">
+              {v.oldPrice > v.price && <p className="text-[12px] text-muted line-through">{som(v.oldPrice)}</p>}
+              <div className="flex items-start justify-between gap-2">
+                <b className="text-[24px] leading-tight text-ink">{som(v.price)}</b>
+                {v.off && <span className="rounded-md bg-[#fde8e8] px-1.5 py-0.5 text-[11.5px] font-bold text-[#dc2626]">{v.off}</span>}
+              </div>
+              {v.earlyUntil && <p className="mt-1 text-[11.5px] font-semibold text-sea">Early bird narxi {v.earlyUntil.split('-').reverse().join('.')} gacha</p>}
+              <ul className="mt-3 space-y-2 border-t border-line pt-3 text-[12.5px] text-ink">
+                <li className="flex items-center gap-2"><CalendarDays className="size-4 text-sea" /> Sana: <b className="font-semibold">{dateLabel}</b></li>
+                <li className="flex items-center gap-2"><Users className="size-4 text-sea" /> {v.seats} ta joydan {left} tasi qoldi</li>
+              </ul>
+              <RegButton className="mt-3 h-11 w-full text-[13.5px]" />
+              <button type="button" disabled={preview} onClick={() => downloadIcs(v)} className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sea text-[12.5px] font-semibold text-sea disabled:cursor-not-allowed disabled:opacity-60"><CalendarPlus className="size-4" /> Kalendarga qo‘shish</button>
+            </section>
           </div>
-        )) : (
-        <div className="sem-gallery">
-          <button type="button" onClick={() => setShot(0)} className="relative row-span-2 overflow-hidden rounded-2xl" aria-label="Seminar videosi">
-            <img src={v.gallery[0]} alt="" className="h-full w-full object-cover" />
-            <span className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow"><Play className="ml-0.5 size-5 fill-ink" /></span>
-            <span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-3 py-2 text-[11.5px] font-semibold text-white">
-              <span className="inline-flex items-center gap-1"><Play className="size-3 fill-white" /> Seminar videosi</span>
-              <span>02:15</span>
-            </span>
-          </button>
-          {v.gallery.slice(1, 5).map((src, i) => (
-            <button key={`${i}-${src}`} type="button" onClick={() => setShot(i + 1)} className="relative overflow-hidden rounded-2xl" aria-label={`Rasm ${i + 2}`}>
-              <img src={src} alt="" className="h-full w-full object-cover" />
-              {i === 3 && v.more > 0 && <span className="absolute inset-0 grid place-items-center bg-[#0b1f3a]/50 text-[20px] font-bold text-white">+{v.more}</span>}
-            </button>
-          ))}
-        </div>
+        </aside>
+      </div>
+
+      {/* Bo‘limlar */}
+      <div className="sticky top-[46px] z-10 mt-3 flex gap-1 overflow-x-auto rounded-xl border border-[#e3efed] bg-white px-1 shadow-card no-scrollbar">
+        {tabs.map(([key, label]) => (
+          <a key={key} href={`#sem-${key}`} onClick={(e) => go(e, key)} className="flex h-10 shrink-0 items-center px-2.5 text-[12.5px] font-semibold text-ink-2 hover:text-sea">{label}</a>
+        ))}
+      </div>
+
+      <div className="mt-3 grid gap-3 @[760px]:grid-cols-2">
+        {v.about && <Card id="about" icon={BookOpen} title="Seminar haqida" className="@[760px]:col-span-2"><p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">{v.about}</p></Card>}
+        {v.learn.length > 0 && <Card id="learn" icon={Target} title="Kurs yakunida nimalarni bajara olasiz?"><Checks items={v.learn} /></Card>}
+        {practiceTiles.length > 0 && (
+          <Card id="practice" icon={Settings2} title="Amaliyot formati">
+            <div className="grid gap-2 @[480px]:grid-cols-2">
+              {practiceTiles.map(([Icon, t, s]) => (
+                <div key={t} className="flex items-start gap-2 rounded-xl bg-[#f2f9f8] p-2.5">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-sea"><Icon className="size-[18px]" /></span>
+                  <span className="min-w-0"><b className="block text-[12.5px] leading-snug">{t}</b>{s && <span className="block text-[11.5px] leading-snug text-ink-2">{s}</span>}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
         )}
 
         {!d.noSpeaker && (
-        <section className="sem-speaker rounded-2xl bg-white p-3 shadow-card">
-          <div className="relative overflow-hidden rounded-xl bg-[#eef6f8]">
-            {v.speaker.avatar ? <img src={v.speaker.avatar} alt="" className="h-full min-h-[150px] w-full object-cover" /> : <span className="grid h-full min-h-[150px] w-full place-items-center text-[40px] font-bold text-sea">{(v.speaker.name || '?').slice(0, 1)}</span>}
-            <span className="absolute bottom-2 left-2 rounded-md bg-white px-2 py-0.5 text-[10.5px] font-semibold text-sea shadow">Asosiy spiker</span>
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-[17px] font-bold text-ink">{v.speaker.name}</h2>
-            <p className="text-[12px] text-muted">{v.speaker.role}</p>
-            <ul className="mt-2 space-y-1.5">
-              {v.speaker.lines.map((line, i) => {
-                const Icon = [BadgeCheck, Syringe, Award, ToothIcon][i % 4]
-                return <li key={line} className="flex items-center gap-2 text-[12px] text-ink-2"><Icon className="size-4 shrink-0 text-sea" /> {line}</li>
-              })}
-            </ul>
-          </div>
-          <div className="flex min-w-0 flex-col justify-between gap-3 border-line sm:border-l sm:pl-3">
-            {v.speaker.bio ? <p className="text-[12px] leading-relaxed text-ink-2">{v.speaker.bio}</p> : <span />}
-            <button type="button" onClick={() => setProfile(true)} className="inline-flex h-9 items-center justify-center gap-1 self-end rounded-xl border border-sea px-3 text-[12px] font-semibold text-sea">Batafsil profil <ArrowRight className="size-3.5" /></button>
-          </div>
-        </section>
+          <Card id="speaker" icon={UserRound} title={`Spiker — ${v.speaker.name}`} className="@[760px]:col-span-2">
+            <div className="grid gap-4 @[640px]:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="flex min-w-0 gap-3">
+                {v.speaker.avatar ? <img src={v.speaker.avatar} alt="" className="size-24 shrink-0 rounded-xl object-cover" /> : <span className="grid size-24 shrink-0 place-items-center rounded-xl bg-sea-50 text-[32px] font-bold text-sea">{(v.speaker.name || '?').slice(0, 1)}</span>}
+                <div className="min-w-0 space-y-1.5">
+                  {v.speaker.role && <span className="inline-block rounded-md bg-sea-50 px-2 py-0.5 text-[11.5px] font-semibold text-sea">{v.speaker.role}</span>}
+                  {sp?.years && <p className="flex items-center gap-1.5 text-[12px] text-ink-2"><BadgeCheck className="size-4 shrink-0 text-sea" /> Tajriba: {sp.years} yil</p>}
+                  {sp?.clinic && <p className="flex items-center gap-1.5 text-[12px] text-ink-2"><Building2 className="size-4 shrink-0 text-sea" /> Klinika: {sp.clinic}</p>}
+                  {sp?.degree && <p className="flex items-center gap-1.5 text-[12px] text-ink-2"><GraduationCap className="size-4 shrink-0 text-sea" /> {sp.degree}</p>}
+                  {!d.organizer && v.speaker.lines.map((l) => <p key={l} className="flex items-center gap-1.5 text-[12px] text-ink-2"><BadgeCheck className="size-4 shrink-0 text-sea" /> {l}</p>)}
+                </div>
+              </div>
+              {v.speaker.bio && <div className="min-w-0"><b className="text-[13px]">Bio</b><p className="mt-1 whitespace-pre-line text-[12px] leading-relaxed text-ink-2">{v.speaker.bio}</p></div>}
+              {spCerts.length > 0 && <div className="min-w-0"><b className="flex items-center gap-1.5 text-[13px]"><Award className="size-4 text-sea" /> Sertifikatlar va malaka oshirish</b><div className="mt-1.5"><Checks items={spCerts} /></div></div>}
+            </div>
+            {others.length > 0 && (
+              <div className="mt-3 grid gap-2 border-t border-line pt-3 @[640px]:grid-cols-2">
+                {others.map((o) => (
+                  <div key={o.name} className="flex items-start gap-2 rounded-xl border border-line p-2">
+                    {o.avatar ? <img src={o.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover" /> : <span className="grid size-11 shrink-0 place-items-center rounded-full bg-sea-50 text-[15px] font-bold text-sea">{o.name.slice(0, 1)}</span>}
+                    <span className="min-w-0"><b className="block text-[12.5px]">{o.name}</b>{o.role && <span className="block text-[11.5px] text-muted">{o.role}</span>}{o.bio && <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-2">{o.bio}</span>}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         )}
 
-        {v.speakers.length > 0 && (
-          <section className="rounded-2xl bg-white p-3 shadow-card">
-            <h2 className="text-[15px] font-bold">Boshqa ma’ruzachilar</h2>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {v.speakers.map((sp) => (
-                <div key={sp.name} className="flex items-start gap-2 rounded-xl border border-line p-2">
-                  {sp.avatar ? <img src={sp.avatar} alt="" className="size-12 shrink-0 rounded-full object-cover" /> : <span className="grid size-12 shrink-0 place-items-center rounded-full bg-sea-50 text-[16px] font-bold text-sea">{sp.name.slice(0, 1)}</span>}
-                  <span className="min-w-0">
-                    <b className="block text-[12.5px]">{sp.name}</b>
-                    {sp.role && <span className="block text-[11.5px] text-muted">{sp.role}</span>}
-                    {sp.bio && <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-2">{sp.bio}</span>}
-                  </span>
+        {v.includes.length > 0 && <Card id="price" icon={Layers} title="Narxga nimalar kiradi?"><Checks items={v.includes} /></Card>}
+        <Card id="pay" icon={CreditCard} title="To‘lov va qaytarish shartlari">
+          <dl className="space-y-2.5 text-[12px]">
+            <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-2"><dt className="flex items-center gap-1.5 font-semibold text-ink"><ShieldCheck className="size-4 text-sea" /> To‘lov</dt><dd className="text-ink-2">{NOTES.pay[1]}</dd></div>
+            {(v.refundPolicy || !v.organizer) && <div className="grid grid-cols-[130px_minmax(0,1fr)] gap-2"><dt className="flex items-center gap-1.5 font-semibold text-ink"><RotateCcw className="size-4 text-sea" /> Qaytarish</dt><dd className="whitespace-pre-line text-ink-2">{v.refundPolicy || NOTES.refund[1]}</dd></div>}
+          </dl>
+          <button type="button" onClick={() => setCorp(true)} disabled={preview} className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-sea disabled:opacity-60"><Building2 className="size-4" /> Korporativ ariza <ChevronRight className="size-3.5" /></button>
+        </Card>
+
+        {days.length > 0 && (
+          <Card id="program" icon={CalendarDays} title={`Dastur (${days.length} kun)`} className="@[760px]:col-span-2">
+            <div className={`grid gap-3 ${days.length > 1 ? '@[560px]:grid-cols-2' : ''}`}>
+              {days.map((day, di) => (
+                <div key={di} className="min-w-0 overflow-hidden rounded-xl border border-[#d8ecea]">
+                  <b className="block bg-sea px-3 py-2 text-[12.5px] text-white">{day.label || `${di + 1}-kun`}{day.title ? ` — ${day.title}` : ''}{day.date ? ` (${day.date})` : ''}</b>
+                  <ul className="divide-y divide-[#eef4f3]">
+                    {day.items.map(([time, title, sub], i) => {
+                      const brk = BREAK_RE.test(title)
+                      return (
+                        <li key={`${time}-${i}`} className={`flex items-start gap-2 px-3 py-1.5 ${brk ? 'bg-[#eaf6f5]' : ''}`}>
+                          <span className="w-[84px] shrink-0 whitespace-nowrap text-[11.5px] font-semibold tabular-nums text-ink-2">{time}</span>
+                          <span className={`min-w-0 flex-1 text-[12px] leading-snug ${brk ? 'font-bold text-sea' : 'text-ink'}`} lang="uz" style={{ overflowWrap: 'break-word', hyphens: 'auto' }}>{title}{sub && <span className="block text-[11px] text-muted">{sub}</span>}</span>
+                          {!brk && day.title ? <span className="shrink-0 rounded-md bg-sea-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-sea">{day.title}</span> : null}
+                        </li>
+                      )
+                    })}
+                  </ul>
                 </div>
               ))}
             </div>
-          </section>
+          </Card>
+        )}
+        {gallery.length > 0 && (
+          <Card id="gallery" icon={ImageIcon} title="Galereya">
+            <div className="grid grid-cols-2 gap-2">
+              {gallery.slice(0, 4).map((src, i) => (
+                <button key={src} type="button" onClick={() => setShot(i + 1)} className="aspect-[4/3] overflow-hidden rounded-xl" aria-label={`Rasm ${i + 2}`}><img src={src} alt="" className="h-full w-full object-cover" /></button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setShot(1)} className="mx-auto mt-3 flex h-9 items-center gap-1.5 rounded-xl border border-sea px-4 text-[12.5px] font-semibold text-sea">Barcha fotosuratlar ({gallery.length}) <ArrowRight className="size-3.5" /></button>
+          </Card>
         )}
 
-        <div className="sticky top-[46px] z-10 flex gap-1 overflow-x-auto rounded-xl bg-white px-1 shadow-card no-scrollbar">
-          {[
-            ['about', 'Seminar haqida'], v.schedule.length && ['program', 'Dastur'], v.learn.length && ['learn', 'Nimalarni o‘rganasiz?'], (!v.organizer || v.audience.length) && ['who', 'Kimlar uchun?'],
-            v.includes.length && ['price', 'Narxga nimalar kiradi?'], ['place', 'Manzil'], ['reviews', 'Sharhlar'], v.faq.length && ['faq', 'Savol-javob'],
-          ].filter(Boolean).map(([key, label]) => (
-            <button key={key} type="button" onClick={() => go(key)} className={`h-9 shrink-0 px-2.5 text-[12px] font-semibold ${tab === key ? 'text-sea' : 'text-ink-2'}`} style={{ boxShadow: tab === key ? 'inset 0 -2px 0 #0b8a95' : 'none' }}>{label}</button>
-          ))}
-        </div>
-
-        <div className="sem-split">
-          <section id="sem-about" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-            <h2 className="text-[15px] font-bold">Seminar haqida</h2>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">{v.about}</p>
-            {!v.organizer && <div className="sem-cards mt-3">
-              {ABOUT_CARDS.map(([Icon, t, s]) => (
-                <div key={t} className="flex items-start gap-2">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Icon className="size-4" /></span>
-                  <span className="min-w-0"><b className="block text-[12px]">{t}</b><span className="block text-[11px] text-muted">{s}</span></span>
-                </div>
-              ))}
-            </div>}
-          </section>
-          {v.learn.length > 0 && <section id="sem-learn" className="scroll-mt-24 rounded-2xl bg-[#eef8f7] p-4">
-            <h2 className="text-[15px] font-bold">Nimalarni o‘rganasiz?</h2>
-            <ul className="mt-2 space-y-2">
-              {v.learn.map((t) => <li key={t} className="flex items-start gap-2 text-[12.5px] text-ink"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> {t}</li>)}
-            </ul>
-          </section>}
-        </div>
-
-        <div className="sem-split">
-          {v.schedule.length > 0 && <section id="sem-program" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[15px] font-bold">Dastur</h2>
-              <span className="inline-flex items-center gap-1 rounded-lg bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea"><CalendarDays className="size-3.5" /> {v.dayShort}</span>
+        {(v.venue.name || v.venue.address) && (
+          <Card id="place" icon={MapPin} title="Manzil">
+            <div className="grid gap-3 @[480px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              {v.venue.image ? <img src={v.venue.image} alt="" className="h-[130px] w-full rounded-xl object-cover" /> : <span className="grid h-[130px] place-items-center rounded-xl bg-[#eef5f4] text-sea"><MapPin className="size-8" /></span>}
+              <div className="min-w-0">
+                <b className="flex items-start gap-1.5 text-[13px]"><Building2 className="mt-0.5 size-4 shrink-0 text-sea" /> {v.venue.name}</b>
+                {v.venue.address && <p className="mt-1 break-words text-[11.5px] text-muted">{v.venue.address}</p>}
+                {v.venue.lines.length > 0 && <ul className="mt-1.5 space-y-1">{v.venue.lines.map(([Icon, t]) => <li key={t} className="flex items-start gap-1.5 text-[11.5px] text-ink-2"><Icon className="mt-0.5 size-3.5 shrink-0 text-sea" /> {t}</li>)}</ul>}
+                {!v.venue.online && <a href={v.venue.map} target="_blank" rel="noreferrer" className="mt-2 inline-flex h-8 items-center gap-1 rounded-xl border border-sea px-3 text-[12px] font-semibold text-sea">Xaritada ochish <ArrowRight className="size-3.5" /></a>}
+              </div>
             </div>
-            {v.programDays.map((day, di) => (
-              <div key={di} className="mt-3">
-                {v.programDays.length > 1 && (
-                  <h3 className="mb-2 flex flex-wrap items-baseline gap-x-2 text-[13px] font-bold text-ink">
-                    <span className="rounded-md bg-sea px-1.5 py-0.5 text-[11px] text-white">{day.label}</span>
-                    {day.title && <span>{day.title}</span>}
-                    {day.date && <span className="text-[11.5px] font-medium text-muted">{day.date}</span>}
-                  </h3>
-                )}
-                <ol className="border-l-2 border-sea-100 pl-4">
-                  {day.items.map(([time, title, sub], i) => (
-                    <li key={`${time}-${i}`} className="relative pb-3 last:pb-0">
-                      <span className="absolute -left-[23px] top-1 size-3 rounded-full border-2 border-white bg-sea" />
-                      <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-3">
-                        <span className="h-fit rounded-md bg-[#f3f6fa] px-2 py-0.5 text-[11px] font-semibold text-ink-2">{time}</span>
-                        <span><b className="block text-[12.5px]">{title}</b>{sub && <span className="text-[11.5px] text-muted">{sub}</span>}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+          </Card>
+        )}
+        <Card id="reviews" icon={MessagesSquare} title="Sharhlar">
+          <p className="flex items-center gap-2 rounded-xl bg-[#eef8f7] px-3 py-3 text-[12px] text-ink-2"><Info className="size-4 shrink-0 text-sea" /> Kurs tugagach ishtirokchilar sharhlari shu yerda chiqadi.</p>
+        </Card>
+
+        {faqs.length > 0 && (
+          <Card id="faq" icon={HelpCircle} title="Savol-javob">
+            {faqs.map(([q, a], i) => (
+              <div key={q} className="border-b border-line last:border-0">
+                <button type="button" onClick={() => setFaq(faq === i ? -1 : i)} className="flex w-full items-center justify-between gap-2 py-2.5 text-left text-[12.5px] font-medium" aria-expanded={faq === i}>
+                  {q} <ChevronDown className={`size-4 shrink-0 text-muted transition ${faq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {faq === i && <p className="whitespace-pre-line pb-2.5 text-[12px] leading-relaxed text-ink-2">{a}</p>}
               </div>
             ))}
-          </section>}
-          <section id="sem-place" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-            <h2 className="text-[15px] font-bold">Manzil</h2>
-            {v.venue.image ? (
-              <div className="relative mt-2 overflow-hidden rounded-xl">
-                <img src={v.venue.image} alt="" className="h-[150px] w-full object-cover" />
-                {!v.venue.online && <a href={v.venue.map} target="_blank" rel="noreferrer" className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-[11.5px] font-semibold text-sea shadow"><MapPin className="size-3.5" /> Xaritada ochish</a>}
-              </div>
-            ) : !v.venue.online && <a href={v.venue.map} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 rounded-lg bg-sea-50 px-2.5 py-1 text-[11.5px] font-semibold text-sea"><MapPin className="size-3.5" /> Xaritada ochish</a>}
-            <b className="mt-2 block text-[13px]">{v.venue.name}</b>
-            <p className="text-[12px] text-muted">{v.venue.address}</p>
-            <ul className="mt-2 space-y-1.5">
-              {v.venue.lines.map(([Icon, t]) => <li key={t} className="flex items-center gap-2 text-[12px] text-ink-2"><Icon className="size-4 text-sea" /> {t}</li>)}
-            </ul>
-          </section>
-        </div>
-
-        {(v.practice || v.liveSurgery || v.cmeLine) && <section id="sem-practice" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-          <h2 className="text-[15px] font-bold">Amaliyot va sertifikat</h2>
-          <ul className="mt-2 space-y-1.5 text-[12.5px] text-ink">
-            {v.practice && <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> {v.practice}</li>}
-            {v.liveSurgery && <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> Jonli jarrohlik: {v.liveSurgery}</li>}
-            {v.cmeLine && <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-sea" /> Sertifikat: {v.cmeLine}</li>}
-          </ul>
-        </section>}
-
-        {(!v.organizer || v.audience.length > 0) && <section id="sem-who" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-          <h2 className="text-[15px] font-bold">Kimlar uchun?</h2>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(v.organizer ? v.audience : ['Stomatolog-jarrohlar', 'Ortoped stomatologlar', 'Implantologiyani boshlayotganlar', 'Rezident va ordinatorlar', 'Klinika rahbarlari']).map((t) => (
-              <span key={t} className="rounded-full bg-[#f3f6fa] px-3 py-1 text-[12px] font-medium text-ink-2">{t}</span>
-            ))}
-          </div>
-        </section>}
-
-        <section id="sem-reviews" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-          <h2 className="text-[15px] font-bold">Ishtirokchilar sharhlari</h2>
-          <div className="sem-reviews mt-3">
-            <p className="text-[12px] text-muted">Hali sharhlar yo‘q</p>
-          </div>
-        </section>
-      </div>
-
-      <aside className="min-w-0 space-y-3">
-        <section id="sem-price" className="scroll-mt-24 rounded-2xl bg-white p-4 shadow-card">
-          <div className="flex gap-2">
-            <span className="rounded-lg bg-[#fde8e8] px-2.5 py-1 text-[12px] font-bold text-[#dc2626]">{v.regClosed ? 'Yakunlangan' : cancelled ? 'Bekor qilingan' : 'Ro‘yxatdan o‘tish'}</span>
-            <span className="rounded-lg border border-[#fbd5d5] px-2.5 py-1 text-[12px] font-semibold text-[#dc2626]">{left} ta o‘rin qoldi</span>
-          </div>
-          {v.oldPrice > v.price && <p className="mt-3 text-[12px] text-muted line-through">{som(v.oldPrice)}</p>}
-          <div className="flex items-center justify-between gap-2">
-            <b className="text-[24px] leading-tight">{som(v.price)}</b>
-            {v.off && <span className="rounded-md bg-[#fde8e8] px-1.5 py-0.5 text-[12px] font-bold text-[#dc2626]">{v.off}</span>}
-          </div>
-          {v.earlyUntil && <p className="mt-1 text-[11.5px] font-semibold text-sea">Early bird narxi {v.earlyUntil.split('-').reverse().join('.')} gacha amal qiladi</p>}
-          {v.includes.length > 0 && <p className="mt-3 text-[12px] font-semibold text-ink">Narxga nimalar kiradi?</p>}
-          <ul className="mt-1.5 space-y-1.5">
-            {v.includes.map((t) => <li key={t} className="flex items-center gap-2 text-[12.5px] text-ink"><Check className="size-4 text-sea" /> {t}</li>)}
-          </ul>
-          <div className="mt-3 flex justify-between text-[11.5px] text-muted"><span>Band joylar</span><span>{v.taken}/{v.seats}</span></div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#e7eef5]"><span className="block h-full rounded-full bg-sea" style={{ width: `${Math.max(4, (v.taken / v.seats) * 100)}%` }} /></div>
-          <p className="mt-2 text-[13px] font-bold text-sea">{left} ta o‘rin qoldi</p>
-          {preview
-            ? <button type="button" disabled title="Ko‘rib chiqish rejimi" className="mt-3 flex h-11 w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-xl bg-sea text-[13.5px] font-semibold text-white opacity-60">Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></button>
-            : cancelled
-            ? <span className="mt-3 flex h-11 items-center justify-center rounded-xl bg-[#fde8e8] text-[13.5px] font-semibold text-[#dc2626]">Ro‘yxat yopiq</span>
-            : <Link to={regTo} className="mt-3 flex h-11 items-center justify-center gap-1.5 rounded-xl bg-sea text-[13.5px] font-semibold text-white">Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></Link>}
-          <button type="button" disabled={preview} onClick={() => downloadIcs(v)} className="mt-2 flex disabled:cursor-not-allowed disabled:opacity-60 h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sea text-[12.5px] font-semibold text-sea"><CalendarPlus className="size-4" /> Kalendarga qo‘shish</button>
-        </section>
-
-        <section className="rounded-2xl bg-white p-3 shadow-card">
+          </Card>
+        )}
+        <section className="rounded-2xl border border-[#e3efed] bg-white p-4 shadow-card">
           <div className="flex items-start gap-2">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sea-50 text-sea"><Phone className="size-4" /></span>
             <span>
@@ -392,71 +398,32 @@ export function SeminarView({ d, similar = null, preview = false }) {
             </span>
           </div>
         </section>
+        {v.similar.length > 0 && (
+          <section className="rounded-2xl border border-[#e3efed] bg-white p-4 shadow-card">
+            <div className="mb-2 flex items-center justify-between"><b className="text-[13px]">O‘xshash seminarlar</b><Link to="/seminarlar" className="text-[11.5px] font-semibold text-sea">Barchasi</Link></div>
+            <ul className="space-y-2">
+              {v.similar.map((s) => (
+                <li key={s.title}><Link to={s.to} className="flex items-center gap-2 rounded-lg p-1 hover:bg-[#f4f8fb]"><img src={s.image} alt="" className="h-12 w-14 shrink-0 rounded-lg object-cover" /><span className="min-w-0 flex-1"><b className="block text-[12px] leading-snug">{s.title}</b><span className="block text-[10.5px] text-muted">{s.date}</span><b className="block text-[12px] text-sea">{som(s.price)}</b></span><ChevronRight className="size-4 shrink-0 text-muted" /></Link></li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
 
-        <section className="rounded-2xl bg-white p-2 shadow-card">
-          {[
-            [ShieldCheck, 'To‘lov xavfsiz', () => setNote('pay')],
-            (!v.organizer || v.refundPolicy) && [RotateCcw, 'Qaytarish shartlari', () => setNote('refund')],
-            !v.organizer && [FileText, 'Rasmiy taklifnoma', () => setNote('invite')],
-            [Building2, 'Korporativ ariza', () => setCorp(true)],
-          ].filter(Boolean).map(([Icon, label, onClick]) => (
-            <button key={label} type="button" onClick={onClick} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12.5px] font-medium hover:bg-[#f4f8fb]">
-              <Icon className="size-4 text-sea" /> <span className="flex-1">{label}</span> <ChevronRight className="size-3.5 text-muted" />
-            </button>
-          ))}
-        </section>
-
-        {v.similar.length > 0 && <section className="rounded-2xl bg-white p-3 shadow-card">
-          <div className="mb-2 flex items-center justify-between">
-            <b className="text-[13px]">O‘xshash seminarlar</b>
-            <Link to="/seminarlar" className="text-[11.5px] font-semibold text-sea">Barchasi</Link>
+      {/* Mobil: pastki narx paneli (iOS safe-area) */}
+      {!preview && <div className="app-action-bar fixed inset-x-0 bottom-0 z-30 border-t border-[#e3efed] bg-white/95 px-3 pt-2 backdrop-blur @[900px]:hidden">
+        <div className="mx-auto flex max-w-[640px] items-center gap-3">
+          <div className="min-w-0 flex-1">
+            {v.oldPrice > v.price && <span className="block text-[11px] text-muted line-through">{som(v.oldPrice)}</span>}
+            <b className="block text-[17px] leading-tight text-ink">{som(v.price)}</b>
+            <span className="block truncate text-[11px] text-muted">{dateLabel} · {left} ta joy qoldi</span>
           </div>
-          <ul className="space-y-2">
-            {v.similar.map((s) => (
-              <li key={s.title}>
-                <Link to={s.to} className="flex items-center gap-2 rounded-lg p-1 hover:bg-[#f4f8fb]">
-                  <img src={s.image} alt="" className="h-12 w-14 shrink-0 rounded-lg object-cover" />
-                  <span className="min-w-0 flex-1">
-                    <b className="block text-[12px] leading-snug">{s.title}</b>
-                    <span className="block text-[10.5px] text-muted">{s.date}</span>
-                    <b className="block text-[12px] text-sea">{som(s.price)}</b>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>}
-
-        {v.faq.length > 0 && <section id="sem-faq" className="scroll-mt-24 rounded-2xl bg-white p-3 shadow-card">
-          <div className="mb-1 flex items-center justify-between">
-            <b className="text-[13px]">Tez-tez so‘raladigan savollar</b>
-          </div>
-          {v.faq.map(([q, a], i) => (
-            <div key={q} className="border-b border-line last:border-0">
-              <button type="button" onClick={() => setFaq(faq === i ? -1 : i)} className="flex w-full items-center justify-between gap-2 py-2.5 text-left text-[12.5px] font-medium" aria-expanded={faq === i}>
-                {q} <ChevronDown className={`size-4 shrink-0 text-muted transition ${faq === i ? 'rotate-180' : ''}`} />
-              </button>
-              {faq === i && <p className="pb-2.5 text-[12px] leading-relaxed text-ink-2">{a}</p>}
-            </div>
-          ))}
-        </section>}
-      </aside>
+          <RegButton className="h-11 shrink-0 px-4 text-[13.5px]" />
+        </div>
+      </div>}
 
       {shot !== null && <Lightbox trailer={!v.organizer} images={v.gallery} index={shot} onIndex={setShot} onClose={() => setShot(null)} />}
       {note && <Dialog title={NOTES[note][0]} onClose={() => setNote(null)}><p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-2">{note === 'refund' && v.refundPolicy ? v.refundPolicy : NOTES[note][1]}</p></Dialog>}
-      {profile && (
-        <Dialog title={v.speaker.name} onClose={() => setProfile(false)}>
-          <div className="flex gap-3">
-            {v.speaker.avatar && <img src={v.speaker.avatar} alt="" className="size-20 rounded-xl object-cover" />}
-            <div>
-              <p className="text-[12px] text-muted">{v.speaker.role}</p>
-              <ul className="mt-1 space-y-1">{v.speaker.lines.map((l) => <li key={l} className="flex gap-1.5 text-[12.5px]"><Check className="mt-0.5 size-3.5 text-sea" />{l}</li>)}</ul>
-            </div>
-          </div>
-          <p className="mt-3 text-[12.5px] leading-relaxed text-ink-2">{v.speaker.bio}</p>
-        </Dialog>
-      )}
       {corp && <Corporate title={v.title} onClose={() => setCorp(false)} />}
     </div>
   )
