@@ -96,6 +96,8 @@ export default function WizardDetails({ form, set, compact = false }) {
 }
 
 // Mavzu: matnga qarab o‘sadigan textarea (yuklanganda ham, qiymat o‘zgarganda ham)
+const maskTime = (v) => { let d = String(v || '').replace(/\D/g, ''); if (d && d[0] > '2') d = '0' + d; d = d.slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}:${d.slice(2)}` : d }
+const finishTime = (v) => { const d = String(v || '').replace(/\D/g, ''); if (!d) return ''; const x = d.length <= 2 ? d.padStart(2, '0') + '00' : (d.length === 3 ? d + '0' : d); const h = +x.slice(0, 2), m = +x.slice(2, 4); return h < 24 && m < 60 ? `${x.slice(0, 2)}:${x.slice(2, 4)}` : maskTime(v) }
 function TopicArea({ value, onChange, invalid }) {
   const ref = useRef(null)
   const fit = () => { const el = ref.current; if (!el) return; el.style.height = '0px'; el.style.height = `${Math.max(el.scrollHeight + 2, 56)}px` }
@@ -162,7 +164,7 @@ function ProgramEditor({ form, set }) {
                     const raw = String(r.time || '').split(/\s*[–—-]\s*/)
                     const tv = (k, v) => (v || raw[k] || '')
                     const setT = (k, v) => { const p = [tv(0, ts), tv(1, te)]; p[k] = v; setRow(d, i, { time: p[0] || p[1] ? `${p[0]}–${p[1]}`.replace(/–$/, '') : '' }) }
-                    const fixT = (k) => { const v = splitRange(tv(k, k ? te : ts))[0]; if (v) setT(k, v) }
+                    const fixT = (k) => { const v = finishTime(tv(k, k ? te : ts)); setT(k, v) }
                     const e = err && err.day === d && err.row === i ? err.missing : ''
                     const red = ' border-[#e11d48] ring-2 ring-[#e11d48]/40'
                     const tcls = (on) => `h-9 w-full min-w-[90px] rounded-lg border border-[#e3eeec] bg-white px-2 text-[13px] font-semibold tabular-nums text-[#143044] outline-none placeholder:font-normal placeholder:text-[#9aafb4] focus:border-org-teal${on ? red : ''}`
@@ -175,9 +177,9 @@ function ProgramEditor({ form, set }) {
                         </label>
                         <div className="grid grid-cols-2 gap-1.5">
                           <label className="block min-w-0"><span className="mb-0.5 block text-[11px] font-semibold text-[#5e787e]">Boshlanishi</span>
-                            <input aria-label="Boshlanishi" inputMode="numeric" placeholder="11:00" value={tv(0, ts)} onChange={(ev) => setT(0, ev.target.value)} onBlur={() => fixT(0)} aria-invalid={e === 'time' || e === 'order'} className={tcls(e === 'time' || e === 'order')} /></label>
+                            <input aria-label="Boshlanishi" inputMode="numeric" placeholder="11:00" value={tv(0, ts)} maxLength={5} onChange={(ev) => setT(0, maskTime(ev.target.value))} onBlur={() => fixT(0)} aria-invalid={e === 'time' || e === 'order'} className={tcls(e === 'time' || e === 'order')} /></label>
                           <label className="block min-w-0"><span className="mb-0.5 block text-[11px] font-semibold text-[#5e787e]">Tugashi</span>
-                            <input aria-label="Tugashi" inputMode="numeric" placeholder="11:30" value={tv(1, te)} onChange={(ev) => setT(1, ev.target.value)} onBlur={() => fixT(1)} aria-invalid={e === 'end' || e === 'order'} className={tcls(e === 'end' || e === 'order')} /></label>
+                            <input aria-label="Tugashi" inputMode="numeric" placeholder="11:30" value={tv(1, te)} maxLength={5} onChange={(ev) => setT(1, maskTime(ev.target.value))} onBlur={() => fixT(1)} aria-invalid={e === 'end' || e === 'order'} className={tcls(e === 'end' || e === 'order')} /></label>
                         </div>
                         {e === 'order' && <p className="text-[11px] font-medium text-[#e11d48]">Tugash vaqti boshlanishdan keyin bo‘lsin</p>}
                       </div>
