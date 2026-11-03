@@ -111,7 +111,7 @@ export function useMarketSection() {
       sorts: PRICE_SORTS(),
       text: (p) => `${p.name} ${p.brand} ${p.category} ${p.seller}`,
       card: (p) => ({
-        id: p.id, href: `/product/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
+        id: p.id, href: `/product/${p.id}`, image: p.image, kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
         badge: p.stock <= 0 ? { text: 'Tugagan', tone: 'info' } : null, rating: p.reviews > 0 ? { value: p.rating, count: p.reviews } : null,
         cart: p.stock > 0 ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
       }),
