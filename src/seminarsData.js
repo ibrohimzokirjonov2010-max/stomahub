@@ -1,4 +1,5 @@
 import { som } from './marketData'
+import { joinAddress, splitAddress } from './seminarAddress'
 import { normalizeProgram } from './programDays'
 
 const UZ_MON = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
@@ -167,13 +168,16 @@ export function buildSeminarPage(s) {
       ? programDaysOf(s.program).flatMap((d) => d.items)
       : scheduleFor(s),
     programDays: s.organizer ? programDaysOf(s.program) : null,
-    gear: ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
+    gear: s.organizer ? (s.bring || []) : ['Shaxsiy lupa (ixtiyoriy)', 'Jarrohlik kostyumi va ruboq', 'Shaxsiy asboblar (ixtiyoriy)', 'Barcha asosiy materiallar tashkilotchilar tomonidan taqdim etiladi'],
     venue: s.organizer
-      ? { name: s.place, address: [s.address, s.city].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).join(', '), image: s.placeImg || '', notes: s.venueNotes || [], online: !!s.online, map: `https://maps.google.com/?q=${encodeURIComponent([s.address || s.place, s.city].filter(Boolean).join(' '))}` }
+      ? (() => {
+          const { text, mapUrl } = splitAddress(s.address)
+          return { name: s.place, address: joinAddress([text, s.city]), image: s.placeImg || '', notes: s.venueNotes || [], online: !!s.online, map: mapUrl || `https://maps.google.com/?q=${encodeURIComponent([text || s.place, s.city].filter(Boolean).join(' '))}` }
+        })()
       : { name: s.place, address: `${s.city}`, image: pic('hotel'), notes: [], map: `https://maps.google.com/?q=${encodeURIComponent((s.place || '') + ' ' + (s.city || ''))}` },
     seatsBanner: s.left,
     plans: s.organizer && Array.isArray(s.tickets) && s.tickets.length
-      ? s.tickets.filter((t) => t.price).map((t) => ({
+      ? s.tickets.map((t) => ({
           id: t.id,
           name: t.name,
           price: Number(t.price) || 0,
@@ -270,3 +274,7 @@ export function seminarView(record) {
 }
 
 export { som }
+
+/** Seminar narxi: 0 so‘m bo‘lsa "Bepul". */
+export const seminarPrice = (n) => (Number(n) > 0 ? som(n) : 'Bepul')
+

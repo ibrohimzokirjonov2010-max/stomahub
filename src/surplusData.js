@@ -1,4 +1,5 @@
-import { profileStore } from './profileStore'
+import { UZ_CITIES } from './lib/uzRegions'
+import { tashkentToday } from './tashkentDate'
 const img = (n) => `/images/surplus/${n}.jpg`
 
 export const surplusChips = [
@@ -12,7 +13,7 @@ export const surplusChips = [
   { key: 'other', label: 'Boshqa' },
 ]
 
-export const cities = ['Toshkent', 'Samarqand', 'Buxoro', 'Namangan', 'Andijon']
+export const cities = UZ_CITIES
 export const conditions = ['Yopiq', 'Ochilgan']
 
 const catName = Object.fromEntries(surplusChips.map((c) => [c.key, c.label]))
@@ -40,69 +41,20 @@ export const surplusItems = raw.map(([id, name, type, brand, cat, expiry, city, 
   order: i,
 }))
 
-export function addSurplusItem({ name, type, brand, cat, expiry, city, price, oldPrice, condition, image, qty }) {
-  const item = {
-    id: `elon-${Date.now()}`,
-    name, type, brand, cat, expiry, city, price, condition, qty,
-    oldPrice: oldPrice > price ? oldPrice : null,
-    rating: 5, reviews: 0,
-    seller: { name: (profileStore.get()?.name || 'Shifokor'), avatar: (profileStore.get()?.avatar || img('seller')) },
-    discount: oldPrice > price ? `-${Math.round((1 - price / oldPrice) * 100)}%` : null,
-    image: image || surplusItems.find((p) => p.cat === cat)?.image || img('i1'),
-    order: -Date.now(),
-  }
-  surplusItems.unshift(item)
-  return item
-}
-
-export const surplusDetail = {
-  id: 'filtek-z350-xt',
-  cat: 'komp',
-  name: 'Filtek Z350 XT A2',
-  brand: '3M',
-  category: 'Kompozit',
-  condition: 'Yopiq',
-  state: 'Yangi',
-  expiry: '10/2028',
-  rating: 0,
-  reviews: 0,
-  views: 0,
-  price: 850000,
-  oldPrice: 1200000,
-  short: 'Sifatli universal kompozit. Rang: A2. Yopiq, ishlatilmagan. Klinikamizda ortib qolgan, arzon narxda sotaman.',
-  description: '3M Filtek Z350 XT – estetik restavratsiyalar uchun universal nanogibrid kompozit. Rang: A2. 3 dona, barchasi yopiq va ishlatilmagan. Yaroqlilik muddati: 10/2028. Klinikamizda ortib qolgan, shuning uchun arzonroq narxda sotaman.',
-  facts: [
-    ['qty', 'Miqdor', '3 dona'],
-    ['vol', 'Hajm', '4 g (1 dona)'],
-    ['city', 'Shahar', 'Toshkent'],
-    ['place', 'Joylashuv', 'Klinika'],
-  ],
-  specs: [
-    ['Brend', '3M'],
-    ['Mahsulot nomi', 'Filtek Z350 XT'],
-    ['Turi', 'Universal kompozit'],
-    ['Rang', 'A2'],
-    ['Hajm', '4 g (1 dona)'],
-    ['Miqdor', '3 dona'],
-    ['Holati', 'Yopiq, yangi'],
-    ['Yaroqlilik muddati', '10/2028'],
-    ['Lot raqami', 'N892745'],
-    ['Ishlab chiqarilgan mamlakat', 'AQSh'],
-  ],
-  images: [img('main'), img('t2'), img('t3'), img('t4'), img('t5')],
-  thumbs: [img('t1'), img('t2'), img('t3'), img('t4'), img('t5')],
-  seller: {
-    name: 'Shifokor',
-    avatar: img('seller'),
-    rating: 0,
-    reviews: 0,
-    deals: 0,
-    city: 'Toshkent',
-    place: 'Klinika',
-    reply: '5 daqiqa ichida',
-    telegram: 'https://t.me/',
-    phone: '',
-  },
+/**
+ * Ortiqcha material e’lonini tekshiradi. Xatolar obyektini qaytaradi (bo‘sh — hammasi joyida).
+ * expiry: "YYYY-MM" (input type=month). Server (0048 trigger) ham shu qoidalarni tekshiradi.
+ */
+export function validateSurplus({ name, price, oldPrice, expiry, image, city }) {
+  const errs = {}
+  if (!String(name || '').trim()) errs.name = 'Nomini kiriting'
+  if (!(Number(price) > 0)) errs.price = 'Narxni kiriting'
+  else if (Number(oldPrice) > 0 && Number(price) >= Number(oldPrice)) errs.price = 'Narx asl narxdan past bo‘lishi kerak'
+  if (!expiry) errs.expiry = 'Yaroqlilik muddatini tanlang'
+  else if (expiry < tashkentToday().slice(0, 7)) errs.expiry = 'Yaroqlilik muddati o‘tgan mahsulotni joylab bo‘lmaydi'
+  if (!image) errs.image = 'Kamida bitta rasm yuklang'
+  if (!city) errs.city = 'Shaharni tanlang'
+  return errs
 }
 
 export const similarSurplus = []
@@ -119,21 +71,19 @@ function fromItem(item) {
     category: catName[item.cat] || 'Material',
     condition: item.condition || 'Yopiq',
     state,
-    expiry: item.expiry || '12/2028',
-    rating: item.rating ?? 4.8,
-    reviews: item.reviews ?? 8,
-    views: 96 + (item.reviews || 8) * 18,
+    expiry: item.expiry || '—',
+    rating: 0,
+    reviews: 0,
+    views: 0,
+    pending: !!item._pending,
     price: item.price,
     oldPrice: item.oldPrice || null,
-    short: opened
-      ? `${item.brand} ${item.name}. Qadoq ochilgan, mahsulot yaroqli. ${item.city} shahrida, klinikada ortib qolgan.`
-      : `${item.brand} ${item.name}. Yopiq, ishlatilmagan. ${item.city}dagi klinikada ortib qolgan, arzon narxda sotiladi.`,
-    description: `${item.brand} ${item.name}${item.type ? ` — ${item.type}` : ''}. Mahsulot ${opened ? 'ochilgan, lekin klinikada yaroqli holatda saqlangan' : 'zavod qadog‘ida, ochilmagan va ishlatilmagan'}. Yaroqlilik muddati: ${item.expiry}. ${item.city} shahridagi stomatologiya klinikasida ortiqcha qolgani uchun bozor narxidan pastroq taklif etiladi.`,
+    short: item.note || `${item.brand} ${item.name}. ${opened ? 'Qadoq ochilgan' : 'Yopiq, ishlatilmagan'}.`,
+    description: item.note || `${item.brand} ${item.name}${item.type ? ` — ${item.type}` : ''}. Holati: ${opened ? 'ochilgan' : 'yopiq'}. Yaroqlilik muddati: ${item.expiry || '—'}.`,
     facts: [
-      ['qty', 'Miqdor', item.qty > 1 ? `${item.qty} dona` : '1 to‘plam'],
+      ['qty', 'Miqdor', `${item.qty || 1} dona`],
       ['vol', 'Hajm', vol],
-      ['city', 'Shahar', item.city],
-      ['place', 'Joylashuv', 'Klinika'],
+      ['city', 'Shahar', item.city || '—'],
     ],
     specs: [
       ['Brend', item.brand],
@@ -144,33 +94,31 @@ function fromItem(item) {
       ['Shahar', item.city],
       ['Ishlab chiqarilgan mamlakat', country[item.brand] || '—'],
     ],
-    images: [item.image, item.image, item.image, item.image, item.image],
-    thumbs: [item.image, item.image, item.image, item.image, item.image],
+    images: (item.images?.length ? item.images : [item.image]).filter(Boolean),
+    thumbs: (item.images?.length ? item.images : [item.image]).filter(Boolean),
     seller: {
       name: item.seller?.name || 'Shifokor',
-      avatar: item.seller?.avatar || img('u1'),
-      rating: item.rating ?? 4.8,
-      reviews: (item.reviews || 8) + 16,
-      deals: 18 + (item.reviews || 8),
-      city: item.city,
-      place: 'Klinika',
-      reply: '10 daqiqa ichida',
-      telegram: 'https://t.me/',
-      phone: '',
+      avatar: item.seller?.avatar || '',
+      rating: 0,
+      reviews: 0,
+      deals: 0,
+      city: item.city || '',
+      place: '',
+      reply: '',
+      telegram: '',
+      phone: item.phone || '',
     },
   }
 }
 
 export function getSurplusDetail(id) {
   if (!id) return null
-  if (id === surplusDetail.id && surplusItems.some((p) => p.id === id)) return surplusDetail
   const item = surplusItems.find((p) => p.id === id) || similarSurplus.find((p) => p.id === id)
   return item ? fromItem(item) : null
 }
 
 export function similarFor(id) {
   if (!surplusItems.length) return []
-  if (!id || id === surplusDetail.id) return similarSurplus
   return surplusItems
     .filter((p) => p.id !== id)
     .slice(0, 5)

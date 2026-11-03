@@ -3,6 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
 import { normCategory } from './config/productCatalog'
+import { applyDiscount } from './lib/discounts'
 
 // ---- marketplace feed (active seller products) -------------------------------------
 let marketState = { status: 'idle', error: '' }
@@ -27,6 +28,7 @@ export const toMarketProduct = (row) => ({
   rx: !!row.rx_only,
   cat: CAT_KEY[normCategory(row.category)] || 'asb',
   category: normCategory(row.category),
+  rawCategory: row.category || '',
   price: Number(row.price) || 0,
   stock: Number(row.stock) || 0,
   image: row.image_url || (Array.isArray(row.images) ? row.images[0] : '') || '/images/market/p1.jpg',
@@ -42,7 +44,7 @@ export const toMarketProduct = (row) => ({
   deliveryInfo: row.delivery_info || '',
   reorder: row.reorder && typeof row.reorder === 'object' && row.reorder.enabled ? { enabled: true, intervalDays: Number(row.reorder.interval_days) || 30 } : null,
   variantType: row.variant_type || '',
-  uom: row.uom || 'dona',
+  uom: row.uom || row.unit || 'dona',
   minQty: Math.max(1, Number(row.min_qty) || 1),
   priceTiers: Array.isArray(row.price_tiers) ? row.price_tiers.filter((t) => Number(t?.min_qty) > 1 && Number(t?.price) > 0) : [],
   regCertNo: row.reg_cert_no || '',
@@ -75,7 +77,9 @@ export async function loadMarketProducts() {
   if (err) {
     marketState = { status: 'error', error: friendlySupabaseError(err) }
   } else {
-    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct))
+    // Faol sotuvchi chegirmalari (0048 market_discounts). RPC hali yo‘q bo‘lsa — chegirmasiz narx.
+    const disc = await supabase.rpc('market_discounts').then((r) => (r.error ? [] : r.data || []), () => [])
+    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct).map((p) => applyDiscount(p, disc)))
     marketState = { status: 'ready', error: '' }
   }
   emit()

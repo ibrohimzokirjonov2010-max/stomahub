@@ -59,9 +59,9 @@ export default function MahsulotDetail() {
             <div className="order-3 min-w-0 md:order-none">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0"><h1 className="text-[22px] font-extrabold leading-tight md:text-[24px]">{p.name}</h1>{subtitle && <div className="mt-0.5 text-[15px] text-[#0F766E] md:text-[16px]">{subtitle}</div>}</div>
-                <span className="shrink-0 max-md:hidden"><ProductBadge status={p.status} /></span>
+                <span className="shrink-0 max-md:hidden"><ProductBadge status={p.status} stock={p.stock} /></span>
               </div>
-              <div className="mt-2 flex items-center justify-between md:hidden"><span className="text-[22px] font-extrabold text-[#0F766E]">{som(p.price)}</span><ProductBadge status={p.status} /></div>
+              <div className="mt-2 flex items-center justify-between md:hidden"><span className="text-[22px] font-extrabold text-[#0F766E]">{som(p.price)}</span><ProductBadge status={p.status} stock={p.stock} /></div>
               {p.status === 'rejected' && p.reject_reason && <div className="mt-2 rounded-lg bg-[#EEF2F3] px-3 py-2 text-[13px]">Rad etish sababi: {p.reject_reason}</div>}
               {p.status === 'review' && <div className="mt-2 rounded-lg bg-[#F0FDFA] px-3 py-2 text-[12.5px] text-[#115E59]">Mahsulot moderator tekshiruvida. Tasdiqlangandan so‘ng xaridorlarga ko‘rinadi.</div>}
               <div className="mt-4 grid grid-cols-3 gap-y-4 border-t border-[#EEF3F4] pt-4 text-[13px] max-md:hidden">

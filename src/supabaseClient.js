@@ -1,3 +1,4 @@
+import { knownDbError } from './lib/friendlyError'
 import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL
@@ -21,5 +22,8 @@ export function friendlySupabaseError(error) {
   }
   if (/JWT|apikey|Invalid API key/i.test(msg)) return 'Supabase kaliti noto‘g‘ri yoki muddati tugagan.'
   if (/Failed to fetch|NetworkError|network/i.test(msg)) return 'Tarmoq xatosi. Ulanishni tekshirib, qayta urinib ko‘ring.'
+  const known = knownDbError(msg)
+  if (known) return known
+  if (/violates|constraint|syntax|relation|column|function|PGRST|plpgsql/i.test(msg)) return 'Saqlab bo‘lmadi. Maydonlarni tekshirib, qayta urinib ko‘ring.'
   return msg || 'Noma’lum xatolik'
 }

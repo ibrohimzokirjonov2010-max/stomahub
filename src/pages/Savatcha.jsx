@@ -7,7 +7,8 @@ import ShopLayout from '../components/market/ShopLayout'
 
 /** Desktop cart page (Savatcha). Checkout only via "Rasmiylashtirish" → /buyurtma. */
 export default function Savatcha() {
-  const { items, setQty, remove, clear, count, total } = useCart()
+  const { items, problems = [], setQty, remove, clear, count, total } = useCart()
+  const problemOf = (id) => problems.find((x) => x.it.id === id)?.problem
   const navigate = useNavigate()
   const from = useLocation().state?.from || 'market'
   return (
@@ -38,7 +39,8 @@ export default function Savatcha() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13.5px] font-semibold text-ink">{it.name}</p>
                     {it.type && <p className="truncate text-[12px] text-muted">{it.type}</p>}
-                    <p className="mt-1 text-[12px] text-ink-2">{som(it.price)} / dona</p>
+                    <p className="mt-1 text-[12px] text-ink-2">{som(it.price)} / {it.uom || 'dona'}</p>
+                    {problemOf(it.id) && <p role="alert" className="mt-1 text-[12px] font-semibold text-sale">{problemOf(it.id).text}</p>}
                   </div>
                   <QtyStepper size="lg" value={it.qty} onChange={(q) => setQty(it.id, q)} />
                   <p className="w-[110px] shrink-0 text-right text-[14px] font-bold text-ink">{som(it.price * it.qty)}</p>
@@ -57,7 +59,8 @@ export default function Savatcha() {
               <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
                 <span className="text-[14px] font-bold text-ink">Jami</span><span className="text-[20px] font-bold text-ink">{som(total)}</span>
               </div>
-              <button type="button" data-testid="cart-checkout" onClick={() => navigate('/buyurtma', { state: { from } })} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-sea text-[14px] font-semibold text-white hover:bg-sea-600">
+              {problems.length > 0 && <p role="alert" className="mt-3 rounded-lg bg-[#fff8e6] p-2.5 text-[12px] font-medium text-[#7a5200]">Rasmiylashtirishdan oldin belgilangan mahsulotlarni tuzating yoki savatdan olib tashlang.</p>}
+              <button type="button" data-testid="cart-checkout" disabled={problems.length > 0} onClick={() => navigate('/buyurtma', { state: { from } })} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-sea text-[14px] font-semibold text-white hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-50">
                 Rasmiylashtirish <ArrowRight className="size-4" />
               </button>
               <Link to="/marketplace" className="mt-2 grid h-10 place-items-center rounded-lg border border-sea-100 bg-sea-50 text-[13px] font-semibold text-sea">Xaridni davom ettirish</Link>

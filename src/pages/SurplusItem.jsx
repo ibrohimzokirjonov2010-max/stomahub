@@ -103,9 +103,7 @@ export default function SurplusItem() {
             <span className="rounded-md bg-[#e8f0fd] px-2.5 py-1 text-[10px] font-semibold text-blue">Yaroqlilik: {d.expiry}</span>
           </div>
           <div className="mt-2.5 flex items-center gap-1.5 text-[9.5px] text-muted">
-            <Star className="size-3 fill-star text-star" />
-            <span className="font-semibold text-ink">{d.rating}</span> ({d.reviews} ta sharh)
-            <span className="mx-1 h-3 w-px bg-line" /> {d.views} marta ko‘rilgan
+            {d.pending ? <span className="rounded-md bg-[#fff8e6] px-2 py-0.5 font-semibold text-[#7a5200]">Moderatsiyada — tasdiqlangach boshqalarga ko‘rinadi</span> : d.reviews > 0 ? <><Star className="size-3 fill-star text-star" /><span className="font-semibold text-ink">{d.rating}</span> ({d.reviews} ta sharh)</> : 'Hali baho yo‘q'}
           </div>
           <p className="mt-2.5 text-[9.5px] leading-[1.65] text-ink-2">{d.short}</p>
           <div className="mt-3.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -188,18 +186,16 @@ export default function SurplusItem() {
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-[8.5px] text-muted">
-                  <Star className="size-[10px] fill-star text-star" />
-                  <span className="font-semibold text-ink">{s.rating}</span> ({s.reviews} ta sharh)
-                  <span className="mx-1 h-2.5 w-px bg-line" /> {s.deals} ta bitim
+                  {s.reviews > 0 ? <><Star className="size-[10px] fill-star text-star" /><span className="font-semibold text-ink">{s.rating}</span> ({s.reviews} ta sharh)</> : 'Hali baho yo‘q'}
                   <ChevronRight className="ml-auto size-3.5 text-ink-2" />
                 </div>
                 <div className="mt-1.5 flex gap-4 text-[8.5px] text-ink-2">
                   <span className="flex items-center gap-1"><MapPin className="size-[10px]" />{s.city}</span>
-                  <span className="flex items-center gap-1"><Building2 className="size-[10px]" />{s.place}</span>
+                  {s.place && <span className="flex items-center gap-1"><Building2 className="size-[10px]" />{s.place}</span>}
                 </div>
-                <p className="mt-1.5 flex items-center gap-1 text-[8.5px] text-ink-2">
+                {s.reply && <p className="mt-1.5 flex items-center gap-1 text-[8.5px] text-ink-2">
                   <Clock className="size-[10px]" /> Javob vaqti: {s.reply}
-                </p>
+                </p>}
               </div>
             </a>
           </div>

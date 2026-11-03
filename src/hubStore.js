@@ -8,7 +8,7 @@ import { tashkentToday } from './tashkentDate'
 import { isPast, isTestSeminar } from './organizer/reconcile'
 import { dayCount } from './programDays'
 import {
-  checkPromoRemote, pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
+  checkPromoRemote, pullHub, pushCancel, pushCert, pushCertRows, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
   pushSettingsBundle, pushSpeaker, pushTickets, pushWithdraw, remoteRegister, subscribeHub,
 } from './hubRemote'
@@ -283,7 +283,7 @@ export function saveSeminar(form, { publish, id } = {}) {
     promos,
     activity: pushActivity(s.activity, {
       icon: 'cal',
-      title: publish ? 'Seminar e’lon qilindi' : 'Qoralama saqlandi',
+      title: publish ? 'Seminar moderatsiyaga yuborildi' : 'Qoralama saqlandi',
       text: name,
     }),
   }))
@@ -478,8 +478,16 @@ export function checkInPayload(seminarId, raw) {
   const text = String(raw || '').trim()
   if (text.length < 2) return { ok: false, error: 'Ism yoki kod kiriting' }
   const mine = state.participants.filter((p) => !seminarId || p.seminarId === seminarId)
+  const sem = seminarId ? state.seminars.find((s) => s.id === seminarId) : null
+  if (sem?.start) {
+    const today = tashkentToday()
+    const end = sem.end && sem.end > sem.start ? sem.end : sem.start
+    if (today < sem.start) return { ok: false, error: `Check-in seminar kuni (${sem.start}) ochiladi` }
+    if (today > end) return { ok: false, error: 'Seminar yakunlangan — check-in yopilgan' }
+  }
   const hit = matchPerson(mine, text)
   if (hit) {
+    if (hit.pay === 'cancel') return { ok: false, error: `${hit.name}: ro‘yxatdan o‘tish bekor qilingan` }
     if (hit.arrived) return { ok: true, person: hit, already: true }
     return { ok: true, person: checkIn(hit.id) }
   }
@@ -498,14 +506,29 @@ export function checkInQuery(seminarId, query) {
 }
 
 // 0045: ommaviy sahifalar uchun — avval mahalliy (tashkilotchi o‘z kodlari / demo), keyin server check_promo
-export async function checkPromo(code, seminarId, amount) {
+export async function checkPromo(code, seminarId, amount, ticketId = '') {
   const c = String(code || '').trim().toUpperCase()
   if (!c) return { ok: false, error: 'Promokodni kiriting' }
+  if (!(Number(amount) > 0)) return { ok: false, error: 'Bepul chiptaga promokod qo‘llanmaydi' }
   const local = quotePromo(c, seminarId, amount)
   if (local.ok || !supabase) return local
-  const res = await checkPromoRemote(c, seminarId, amount)
+  const res = await checkPromoRemote(c, seminarId, amount, ticketId)
   if (!res) return local
-  return res.ok ? { ok: true, discount: Number(res.discount) || 0 } : { ok: false, error: res.error || 'Promokod topilmadi yoki muddati o‘tgan' }
+  if (!res.ok) return { ok: false, error: res.error || 'Promokod topilmadi yoki muddati o‘tgan' }
+  const discount = Number(res.discount) || 0
+  // 0060 dan oldingi server summa chegirmani narx bilan cheklab yuborardi — mijoz tomonida ham rad etamiz
+  if (res.kind === 'summa' && Number(res.value) > Number(amount)) return { ok: false, error: 'Promokod chegirmasi chipta narxidan katta' }
+  if (res.kind === 'foiz' && (Number(res.value) <= 0 || Number(res.value) > 100)) return { ok: false, error: 'Promokod noto‘g‘ri sozlangan' }
+  return { ok: true, discount: Math.min(discount, Number(amount)), kind: res.kind, value: Number(res.value) || 0 }
+}
+
+/** Promokod qiymati qoidalari (tashkilotchi formasi va mijoz tekshiruvi uchun bir xil). */
+export function promoValueError(kind, value, maxPrice = 0) {
+  const v = Number(value)
+  if (!(v > 0)) return kind === 'summa' ? 'Chegirma summasi 0 dan katta bo‘lsin' : 'Chegirma foizi 1–100 oralig‘ida bo‘lsin'
+  if (kind !== 'summa' && v > 100) return 'Chegirma foizi 100% dan oshmasin'
+  if (kind === 'summa' && maxPrice > 0 && v > maxPrice) return `Chegirma chipta narxidan (${maxPrice.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m) katta bo‘lmasin`
+  return ''
 }
 
 export function quotePromo(code, seminarId, amount) {
@@ -521,8 +544,10 @@ export function quotePromo(code, seminarId, amount) {
     return { ok: false, error: 'Promokod limiti tugagan' }
   }
   if (Number(p.limit) && Number(p.used) >= Number(p.limit)) return { ok: false, error: 'Promokod limiti tugagan' }
-  const discount = p.kind === 'summa' ? Math.min(amount, Number(p.value) || 0) : Math.round((amount * (Number(p.value) || 0)) / 100)
-  return { ok: true, discount, promo: p }
+  const bad = promoValueError(p.kind, p.value, Number(amount) || 0)
+  if (bad) return { ok: false, error: p.kind === 'summa' ? 'Promokod chegirmasi chipta narxidan katta' : 'Promokod noto‘g‘ri sozlangan' }
+  const discount = p.kind === 'summa' ? Number(p.value) : Math.round((amount * (Number(p.value) || 0)) / 100)
+  return { ok: true, discount, promo: p, kind: p.kind, value: Number(p.value) || 0 }
 }
 
 function touchSeminar(list, seminar) {
@@ -534,8 +559,9 @@ function touchSeminar(list, seminar) {
     checked: seminar.checked,
     seats: seminar.seats,
     tickets: (item.tickets || []).map((ticket) => {
-      const sold = ticket.name === seminar.ticketName ? (ticket.sold || 0) + 1 : ticket.sold
-      return ticket.name === seminar.ticketName ? { ...ticket, sold, left: Math.max(0, (ticket.seats || ticket.total || 0) - sold) } : ticket
+      const hit = seminar.ticketId ? String(ticket.id) === String(seminar.ticketId) : ticket.name === seminar.ticketName
+      const sold = hit ? (ticket.sold || 0) + 1 : ticket.sold
+      return hit ? { ...ticket, sold, left: Math.max(0, (ticket.seats || ticket.total || 0) - sold) } : ticket
     }),
   } : item))
 }
@@ -559,13 +585,13 @@ export async function registerSale(input) {
     ...s,
     participants: person ? [person, ...s.participants.filter((item) => item.id !== person.id)] : s.participants,
     payments: payment ? [payment, ...s.payments.filter((item) => item.id !== payment.id)] : s.payments,
-    seminars: touchSeminar(s.seminars, { ...res.seminar, ticketName: person?.ticket }),
-    catalog: touchSeminar(s.catalog || [], { ...res.seminar, ticketName: person?.ticket }),
+    seminars: touchSeminar(s.seminars, { ...res.seminar, ticketName: person?.ticket, ticketId: input.ticketId }),
+    catalog: touchSeminar(s.catalog || [], { ...res.seminar, ticketName: person?.ticket, ticketId: input.ticketId }),
     promos: res.promoId ? s.promos.map((item) => (String(item.id) === String(res.promoId) ? { ...item, used: (item.used || 0) + 1 } : item)) : s.promos,
-    activity: pushActivity(s.activity, { icon: 'pay', title: 'To‘lov qabul qilindi', text: `${person?.name || ''} — ${(res.paid || 0).toLocaleString('ru-RU')} so‘m` }),
+    activity: pushActivity(s.activity, { icon: 'pay', title: res.pending ? 'Yangi ro‘yxat (to‘lov kutilmoqda)' : 'Ro‘yxatdan o‘tdi', text: `${person?.name || ''} — ${(res.paid || 0).toLocaleString('ru-RU')} so‘m` }),
   }))
   scheduleRefresh()
-  return { ok: true, paid: res.paid, discount: res.discount, person, payment, pending: res.pending }
+  return { ok: true, paid: res.paid, gross: res.gross, discount: res.discount, person, payment, pending: res.pending }
 }
 
 export function refundPayment(id) {
@@ -627,9 +653,27 @@ export function addRequisite(item) {
   remote(() => pushRequisite(item))
 }
 
+/** Kelganligi tasdiqlangan (check-in) ishtirokchilar uchun sertifikat yozuvlarini yaratadi. */
+export function generateCerts() {
+  const have = new Set(state.certs.map((c) => `${c.seminarId}|${String(c.name || '').trim().toLowerCase()}`))
+  const rows = []
+  for (const p of state.participants) {
+    if (!p.arrived || p.pay === 'cancel') continue
+    const key = `${p.seminarId}|${String(p.name || '').trim().toLowerCase()}`
+    if (have.has(key)) continue
+    have.add(key)
+    const sem = state.seminars.find((s) => s.id === p.seminarId)
+    rows.push({ id: `cert-${p.id}`, name: p.name, clinic: p.clinic || '', seminar: sem?.title || '', seminarId: p.seminarId, avatar: p.avatar || '', state: 'none', code: '', date: '' })
+  }
+  if (!rows.length) return 0
+  patch((s) => ({ ...s, certs: [...s.certs, ...rows] }))
+  remote(() => pushCertRows(rows))
+  return rows.length
+}
+
 export function issueCert(id) {
   const code = `STH-2026-${String(id).padStart(4, '0')}`
-  const date = uzLong(new Date().toISOString().slice(0, 10))
+  const date = uzLong(tashkentToday())
   patch((s) => ({
     ...s,
     certs: s.certs.map((c) => (c.id === id ? { ...c, state: 'done', code, date } : c)),
@@ -720,10 +764,16 @@ export function moneyOf(s = state) {
   }
 }
 
-function spanHours(a = '10:00', b = '18:00') {
+function daysBetween(a, b) {
+  if (!a) return 1
+  const d = Math.round((new Date(`${b || a}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000) + 1
+  return Number.isFinite(d) && d > 0 ? d : 1
+}
+
+function spanHours(a = '10:00', b = '18:00', days = 1) {
   const toMin = (t) => { const [h, m] = String(t || '').split(':').map(Number); return (h || 0) * 60 + (m || 0) }
-  const diff = toMin(b) - toMin(a)
-  return diff > 0 ? `${Math.round(diff / 6) / 10} soat` : ''
+  const diff = (toMin(b) - toMin(a)) * Math.max(1, days)
+  return diff > 0 ? `${Math.round(diff / 6) / 10} soat${days > 1 ? ` (${days} kun)` : ''}` : ''
 }
 
 const listOf = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x || '').trim()).filter(Boolean)
@@ -739,7 +789,8 @@ export function currentPrice(t, today = tashkentToday()) {
 export function toPublic(s) {
   const [y, m, d] = (s.start || isoFromLabel(s.date)).split('-').map(Number)
   const date = new Date(y, (m || 1) - 1, d || 1)
-  const active = (s.tickets || []).filter((t) => t.active !== false && t.price)
+  // Bepul (0 so‘m) chiptalar ham haqiqiy chipta — eng arzon real narx ko‘rsatiladi ("Bepul" agar 0)
+  const active = (s.tickets || []).filter((t) => t.active !== false && t.name)
   const price = active.length ? Math.min(...active.map((t) => currentPrice(t))) : 0
   const seats = (s.tickets || []).reduce((n, t) => n + (Number(t.seats || t.total) || 0), 0) || s.seats || 30
   const sold = s.sold || 0
@@ -749,6 +800,8 @@ export function toPublic(s) {
   return {
     id: s.id,
     cat,
+    startIso: s.start || '',
+    endIso: s.end && s.end > s.start ? s.end : (s.start || ''),
     day: String(d || 1).padStart(2, '0'),
     mon: MON_CODE[(m || 1) - 1],
     weekday: WEEK[date.getDay()],
@@ -760,7 +813,10 @@ export function toPublic(s) {
     city: fixCaps(s.city),
     place: fixCaps(s.place || s.city),
     time: `${s.startTime || '10:00'} – ${s.endTime || '18:00'}`,
-    hours: Number(s.form?.hours) ? `${Number(s.form.hours)} soat` : spanHours(s.startTime, s.endTime),
+    // Ko‘p kunlik seminar: kunlik soat × kunlar soni (oldin doim bir kun hisoblanardi)
+    hours: Number(s.form?.hours) ? `${Number(s.form.hours)} soat` : spanHours(s.startTime, s.endTime, daysBetween(s.start, s.end)),
+    dayCount: daysBetween(s.start, s.end),
+    bring: listOf(s.form?.bring ? String(s.form.bring).split(/[\n,;]+/) : []),
     noSpeaker: !(s.speakers || []).some((sp) => sp?.name),
     speaker: {
       name: s.speakers?.[0]?.name || s.speaker,
@@ -772,7 +828,9 @@ export function toPublic(s) {
     left: Math.max(0, seats - sold),
     seats,
     price,
-    tickets: (s.tickets || []).filter((t) => t.active !== false && t.price).map((t) => ({
+    hasTickets: active.length > 0,
+    organizerId: s.organizerId || s.organizer_id || '',
+    tickets: active.map((t) => ({
       id: t.id, name: t.name, price: currentPrice(t), basePrice: Number(t.price) || 0, earlyPrice: Number(t.earlyPrice) || 0, earlyUntil: t.earlyUntil || '', earlyActive: earlyActive(t), seats: Number(t.seats || t.total) || 0, left: t.left, perks: t.perks || [],
     })),
     format: online ? 'Online' : hybrid ? 'Offline + jonli efir' : 'Offline',

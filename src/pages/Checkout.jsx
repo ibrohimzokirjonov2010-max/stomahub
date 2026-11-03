@@ -1,4 +1,5 @@
-import { isRestricted, RestrictedNotice, useDoctorVerified } from '../restricted.jsx'
+import { cartProblems } from '../lib/purchaseGuard'
+import { isRestricted, RestrictedNotice, BlockNotice, useDoctorVerified } from '../restricted.jsx'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -13,19 +14,12 @@ import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
 import { currentUid } from '../recordSync'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../payments/paymentService'
-import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
+import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, earliestDeliveryISO, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
+import { CHECKOUT_CITIES } from '../lib/uzRegions'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG } from '../components/PhoneInput'
 
 
-const CITIES = {
-  Toshkent: ['Yunusobod tumani', 'Chilonzor tumani', 'Mirzo Ulug‘bek tumani', 'Yakkasaroy tumani', 'Mirobod tumani', 'Shayxontohur tumani', 'Sergeli tumani', 'Uchtepa tumani', 'Yashnobod tumani', 'Bektemir tumani', 'Olmazor tumani'],
-  Samarqand: ['Markaz', 'Siab tumani', 'Temiryo‘l tumani'],
-  Buxoro: ['Markaz', 'Kogon tumani'],
-  Andijon: ['Markaz', 'Asaka tumani'],
-  "Farg‘ona": ['Markaz', 'Qo‘qon shahri'],
-  Namangan: ['Markaz', 'Chortoq tumani'],
-  Nukus: ['Markaz'],
-}
+const CITIES = CHECKOUT_CITIES
 
 const ALL_METHODS = [
   { id: 'click', title: 'Click', text: 'Click ilovasi yoki karta orqali', hint: 'Escrow' },
@@ -78,18 +72,21 @@ export default function Checkout() {
   const items = buyNow ? [buyNow] : cart.items
   const doctorOk = useDoctorVerified()
   const rxBlocked = !doctorOk && items.some(isRestricted)
+  // O‘z mahsuloti / ombordan ko‘p miqdor — oxirgi bosqichgacha kutmasdan ko‘rsatiladi
+  const guardUid = currentUid() || ''
+  const otherProblems = (buyNow ? cartProblems(items, { uid: guardUid, verified: doctorOk }) : (cart.problems || [])).filter((x) => x.problem.code !== 'rx')
   const total = items.reduce((s, it) => s + it.qty * it.price, 0)
   const profile = useProfile()
   const [step, setStep] = useState(1)
   const [method, setMethod] = useState(DEFAULT_PAYMENT)
+  const [draft] = useState(() => readDraft())
   const [shipMode, setShipMode] = useState(() => draft?.shipMode || 'courier')
   // Mehmon kirishga yuborilganda kiritgan ma’lumotlari saqlanadi va qaytgach tiklanadi (faqat shu tab, chiqishda o‘chadi)
-  const [draft] = useState(() => readDraft())
   const [form, setForm] = useState(() => draft?.form || {
     name: '',
     phone: '',
-    city: 'Toshkent',
-    district: CITIES.Toshkent?.[0] || '',
+    city: '',
+    district: '',
     address: '',
     note: '',
     saved: '',
@@ -126,7 +123,7 @@ export default function Checkout() {
       ...current,
       name: profile.name || '',
       phone: profile.phone || '',
-      city: CITIES[addr?.city || profile.city] ? (addr?.city || profile.city) : (current.city || 'Toshkent'),
+      city: CITIES[addr?.city || profile.city] ? (addr?.city || profile.city) : (current.city || ''),
       district: addr?.district || profile.district || '',
       address: addr?.address || '',
       saved: addr?.id || '',
@@ -169,7 +166,7 @@ export default function Checkout() {
         setError('Ism, telefon, shahar, tuman va aniq manzil majburiy.')
         return
       }
-      if (!delivery.date || delivery.date < todayISO() || !windowsFor(delivery.date).includes(delivery.slot)) {
+      if (!delivery.date || delivery.date < earliestDeliveryISO(form.city, shipMode !== 'courier') || !windowsFor(delivery.date).includes(delivery.slot)) {
         setError('Yetkazish sanasi va vaqtini tanlang (o‘tgan vaqt tanlab bo‘lmaydi).')
         return
       }
@@ -190,6 +187,7 @@ export default function Checkout() {
     }
     // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
     if (!currentUid()) { saveDraft({ form, shipMode, delivery }); navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`, { state: loc.state }); return }
+    if (otherProblems.length) { setError(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
     if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return
     setError('')
@@ -260,6 +258,7 @@ export default function Checkout() {
             </p>
             <Stepper step={step} />
             {rxBlocked && <RestrictedNotice className="mt-3" />}
+            {otherProblems.map((x) => <BlockNotice key={x.it.id} className="mt-2" text={`${x.it.name}: ${x.problem.text}`} />)}
             {error && <p className="mt-3 rounded-xl bg-[#fff1f2] px-3 py-2 text-[12.5px] text-[#e11d48]">{error}</p>}
 
             <div className="buy-layout mt-4">
@@ -322,6 +321,7 @@ export default function Checkout() {
                         onBack={() => { setError(''); setStep(2) }}
                         onEdit={(n) => { setError(''); setStep(n) }}
                         onConfirm={confirm}
+                        agreeErr={!agree && error.startsWith('Oferta')}
                       />
                     )}
                   </>
@@ -421,11 +421,13 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
               const list = CITIES[city] || []
               setForm((f) => ({ ...f, city, district: list.includes(f.district) ? f.district : (list[0] || ''), saved: '' }))
             }}>
+              {!form.city && <option value="">Shaharni tanlang</option>}
               {Object.keys(CITIES).map((c) => <option key={c}>{c}</option>)}
             </Select>
           </Field>
           <Field label="Tuman" required>
             <Select value={form.district} onChange={(district) => patch('district', district)}>
+              {!form.district && <option value="">{form.city ? 'Tumanni tanlang' : 'Avval shaharni tanlang'}</option>}
               {districts.map((d) => <option key={d}>{d}</option>)}
             </Select>
           </Field>
@@ -470,7 +472,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
         </div>
       </section>
 
-      <DeliveryWhen delivery={delivery} setDelivery={setDelivery} pickup={shipMode !== 'courier'} />
+      <DeliveryWhen delivery={delivery} setDelivery={setDelivery} pickup={shipMode !== 'courier'} minDate={earliestDeliveryISO(form.city, shipMode !== 'courier')} />
 
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <h2 className="text-[16px] font-bold">Qo‘shimcha ma’lumot</h2>
@@ -554,7 +556,7 @@ function StepPay({ methods: METHODS, method, setMethod, code, setCode, promoMsg,
   )
 }
 
-function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree, setAgree, onBack, onEdit, onConfirm }) {
+function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree, setAgree, onBack, onEdit, onConfirm, agreeErr }) {
   return (
     <div className="space-y-4">
       <div className="buy-review">
@@ -608,11 +610,12 @@ function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree,
         </div>
       </div>
 
-      <label className="flex items-start gap-2 rounded-2xl bg-[#eefbf6] px-3 py-3 text-[12.5px]">
-        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-[#0b8a95]" />
+      <label className={`flex items-start gap-2 rounded-2xl px-3 py-3 text-[12.5px] ${agreeErr ? 'bg-[#fff1f2] ring-1 ring-[#e11d48]' : 'bg-[#eefbf6]'}`}>
+        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} aria-invalid={agreeErr || undefined} className="mt-0.5 accent-[#0b8a95]" />
         <span>
           <b>Men oferta shartlari bilan tanishib chiqdim va roziman</b>
           <span className="mt-0.5 block text-muted">Buyurtma berish orqali siz StomaHub’ning foydalanish shartlari va maxfiylik siyosatiga rozilik bildirasiz.</span>
+          {agreeErr && <span role="alert" className="mt-1 block font-semibold text-[#e11d48]">Davom etish uchun oferta shartlariga rozilik belgisini qo‘ying.</span>}
         </span>
       </label>
 
@@ -699,7 +702,7 @@ function Done({ placed, origin }) {
       <div className="mt-4 space-y-1 text-[13px]">
         <Row k="To‘lov usuli" v={placed.method.title} />
         <Row k="Usul" v={placed.shipMode === 'courier' ? 'Kuryer orqali' : 'Olib ketish'} />
-        <Row k="Manzil" v={`${placed.form.city}, ${placed.form.address}`} />
+        <Row k="Manzil" v={[placed.form.city, placed.form.district, placed.form.address].filter(Boolean).join(', ')} />
         {placed.delivery && <Row k={placed.shipMode === 'courier' ? 'Yetkazish' : 'Olib ketish'} v={`${fmtDeliveryDate(placed.delivery.date)}, ${placed.delivery.slot}`} />}
         <Row k="Jami" v={som(placed.grand)} />
       </div>
@@ -916,10 +919,13 @@ function downloadInvoice(snap) {
   URL.revokeObjectURL(url)
 }
 
-function DeliveryWhen({ delivery, setDelivery, pickup }) {
+function DeliveryWhen({ delivery, setDelivery, pickup, minDate }) {
+  useEffect(() => {
+    if (delivery.date < minDate) setDelivery({ date: minDate, slot: windowsFor(minDate)[0] || '' })
+  }, [minDate]) // eslint-disable-line react-hooks/exhaustive-deps
   const slots = windowsFor(delivery.date)
   const setDate = (date) => {
-    if (!date || date < todayISO()) date = todayISO()
+    if (!date || date < minDate) date = minDate
     const open = windowsFor(date)
     setDelivery((d) => ({ date, slot: open.includes(d.slot) ? d.slot : (open[0] || '') }))
   }
@@ -929,7 +935,7 @@ function DeliveryWhen({ delivery, setDelivery, pickup }) {
       <p className="mt-0.5 text-[12px] text-muted">Qulay kun va vaqt oralig‘ini tanlang (Toshkent vaqti). Sotuvchi tasdiqlaganda aniqlashtiriladi.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-[220px_1fr]">
         <Field label="Sana" required>
-          <input type="date" min={todayISO()} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className={`${input} px-3`} />
+          <input type="date" min={minDate} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className={`${input} px-3`} />
         </Field>
         <div className="text-[12.5px] font-semibold">
           <span>Vaqt oralig‘i <span className="text-[#e11d48]">*</span></span>

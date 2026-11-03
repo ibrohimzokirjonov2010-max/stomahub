@@ -2,7 +2,9 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, LayoutGrid, ChevronDown, Heart, MapPin, X, Check, Camera, ImagePlus } from 'lucide-react'
 import { ensureLogin } from '../../loginPrompt'
-import { surplusChips, surplusItems, cities, addSurplusItem } from '../../surplusData'
+import { surplusChips, surplusItems, cities, validateSurplus } from '../../surplusData'
+import { postSurplus } from '../../surplusApi'
+import { friendlyError } from '../../lib/friendlyError'
 import { som } from '../../marketData'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -133,12 +135,11 @@ export default function MobileSurplus() {
       {sheet === 'post' && (
         <PostSheet
           onClose={() => setSheet(null)}
-          onSubmit={(data) => {
-            addSurplusItem(data)
+          onSubmit={() => {
             setVersion((v) => v + 1)
             setCat('all'); setQ(''); setFilter(EMPTY); setSort('new')
             setSheet(null)
-            setToast('E’loningiz joylandi')
+            setToast('E’loningiz moderatsiyaga yuborildi. Tasdiqlangach hamkasblarga ko‘rinadi')
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
         />
@@ -172,6 +173,7 @@ function SurplusCard({ p, liked, onLike }) {
         <span className={`rounded-md px-1.5 py-[3px] text-[9.5px] font-medium leading-none ${p.condition === 'Ochilgan' ? 'bg-[#ecebff] text-[#5b54d6]' : 'bg-[#e5f6ec] text-ok'}`}>
           {p.condition === 'Ochilgan' ? 'Ochilgan' : 'Yangi'}
         </span>
+        {p._pending && <span className="rounded-md bg-[#fff8e6] px-1.5 py-[3px] text-[9.5px] font-semibold leading-none text-[#7a5200]">Moderatsiyada</span>}
         <span className="rounded-md bg-[#f0f2f6] px-1.5 py-[3px] text-[9.5px] leading-none text-ink-2">Yaroqlilik: {expiryLabel(p.expiry)}</span>
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-x-1.5 pt-2">
@@ -266,32 +268,28 @@ const field = 'h-11 w-full rounded-xl border border-line bg-white px-3 text-[13.
 
 export function PostSheet({ onClose, onSubmit }) {
   const fileRef = useRef(null)
-  const [f, setF] = useState({ name: '', brand: '', cat: 'komp', type: '', price: '', oldPrice: '', city: 'Toshkent', condition: 'Yopiq', expiry: '', qty: 1, image: '' })
+  const [f, setF] = useState({ name: '', brand: '', cat: 'komp', type: '', price: '', oldPrice: '', city: '', condition: 'Yopiq', expiry: '', qty: 1, image: '' })
+  const [file, setFile] = useState(null)
   const [tried, setTried] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [saveErr, setSaveErr] = useState('')
   const patch = (p) => setF((x) => ({ ...x, ...p }))
   const num = (v) => Number(String(v).replace(/\D/g, '')) || 0
   const money = (v) => (num(v) ? num(v).toLocaleString('ru-RU') : '')
-  const errors = { name: !f.name.trim(), price: !num(f.price), expiry: !f.expiry }
-  const invalid = Object.values(errors).some(Boolean)
+  const errors = validateSurplus({ name: f.name, price: num(f.price), oldPrice: num(f.oldPrice), expiry: f.expiry, image: file || f.image, city: f.city })
+  const invalid = Object.keys(errors).length > 0
   const err = (k) => (tried && errors[k] ? 'border-sale' : '')
 
-  const submit = () => {
+  const submit = async () => {
     setTried(true)
-    if (invalid) return
-    const [y, m] = f.expiry.split('-')
-    onSubmit({
-      name: f.name.trim(),
-      brand: f.brand.trim() || 'Boshqa',
-      cat: f.cat,
-      type: f.type.trim(),
-      price: num(f.price),
-      oldPrice: num(f.oldPrice),
-      city: f.city,
-      condition: f.condition,
-      expiry: `${m}/${y}`,
-      qty: f.qty,
-      image: f.image,
-    })
+    if (invalid || busy) return
+    setBusy(true); setSaveErr('')
+    try {
+      const item = await postSurplus({ ...f, price: num(f.price), oldPrice: num(f.oldPrice) }, file)
+      onSubmit(item)
+    } catch (e) {
+      setSaveErr(friendlyError(e, 'E’lonni saqlab bo‘lmadi. Qayta urinib ko‘ring.'))
+    } finally { setBusy(false) }
   }
 
   return (
@@ -301,7 +299,7 @@ export function PostSheet({ onClose, onSubmit }) {
       footer={
         <>
           <button type="button" onClick={onClose} className="h-12 rounded-xl border border-line px-4 text-[13.5px] font-semibold text-ink">Bekor qilish</button>
-          <button type="button" onClick={submit} className="h-12 flex-1 rounded-xl bg-sea text-[14px] font-semibold text-white">E’lonni joylash</button>
+          <button type="button" onClick={submit} disabled={busy} className="h-12 flex-1 rounded-xl bg-sea text-[14px] font-semibold text-white disabled:opacity-60">{busy ? 'Yuborilmoqda…' : 'Moderatsiyaga yuborish'}</button>
         </>
       }
     >
@@ -309,7 +307,7 @@ export function PostSheet({ onClose, onSubmit }) {
 
       <button type="button" onClick={() => fileRef.current?.click()} className="mt-3 flex h-[104px] w-full items-center justify-center overflow-hidden rounded-2xl border border-dashed border-sea/50 bg-sea-50/60 text-sea">
         {f.image ? (
-          <img src={f.image} alt="" className="size-full object-contain" />
+          <img src={f.image} alt="Yuklangan mahsulot rasmi" className="size-full object-contain" />
         ) : (
           <span className="flex flex-col items-center gap-1 text-[12.5px] font-semibold">
             <ImagePlus className="size-6" strokeWidth={1.7} /> Rasm qo‘shish
@@ -317,14 +315,15 @@ export function PostSheet({ onClose, onSubmit }) {
           </span>
         )}
       </button>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) patch({ image: URL.createObjectURL(file) }) }} />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { setFile(file); patch({ image: URL.createObjectURL(file) }) } }} />
+      {tried && errors.image && <p className="mt-1 text-[11px] text-sale">{errors.image}</p>}
       {f.image && (
         <button type="button" onClick={() => fileRef.current?.click()} className="mt-1.5 flex items-center gap-1 text-[12px] font-semibold text-sea"><Camera className="size-3.5" /> Rasmni almashtirish</button>
       )}
 
       <p className="mt-4 text-[13px] font-semibold text-ink">Mahsulot nomi *</p>
       <input value={f.name} onChange={(e) => patch({ name: e.target.value })} placeholder="Masalan: Filtek Z350 XT A2" className={`mt-1.5 ${field} ${err('name')}`} />
-      {tried && errors.name && <p className="mt-1 text-[11px] text-sale">Nomini kiriting</p>}
+      {tried && errors.name && <p className="mt-1 text-[11px] text-sale">{errors.name}</p>}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div>
@@ -354,7 +353,7 @@ export function PostSheet({ onClose, onSubmit }) {
           <input inputMode="numeric" value={money(f.oldPrice)} onChange={(e) => patch({ oldPrice: e.target.value })} placeholder="1 200 000" className={`mt-1 ${field}`} />
         </div>
       </div>
-      {tried && errors.price && <p className="mt-1 text-[11px] text-sale">Narxni kiriting</p>}
+      {tried && errors.price && <p className="mt-1 text-[11px] text-sale">{errors.price}</p>}
 
       <p className="mt-4 text-[13px] font-semibold text-ink">Holati</p>
       <div className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-page p-1">
@@ -366,7 +365,7 @@ export function PostSheet({ onClose, onSubmit }) {
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div>
           <p className="text-[12px] font-semibold text-ink">Yaroqlilik muddati *</p>
-          <input type="month" value={f.expiry} onChange={(e) => patch({ expiry: e.target.value })} className={`mt-1 ${field} ${err('expiry')}`} />
+          <input type="month" min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit' }).format(new Date())} value={f.expiry} onChange={(e) => patch({ expiry: e.target.value })} className={`mt-1 ${field} ${err('expiry')}`} />
         </div>
         <div>
           <p className="text-[12px] text-ink-2">Miqdori</p>
@@ -377,7 +376,7 @@ export function PostSheet({ onClose, onSubmit }) {
           </div>
         </div>
       </div>
-      {tried && errors.expiry && <p className="mt-1 text-[11px] text-sale">Yaroqlilik muddatini tanlang</p>}
+      {tried && errors.expiry && <p className="mt-1 text-[11px] text-sale">{errors.expiry}</p>}
 
       <p className="mt-4 text-[13px] font-semibold text-ink">Shahar</p>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -386,6 +385,8 @@ export function PostSheet({ onClose, onSubmit }) {
         ))}
       </div>
 
+      {tried && errors.city && <p className="mt-1 text-[11px] text-sale">{errors.city}</p>}
+      {saveErr && <p role="alert" className="mt-3 rounded-xl bg-[#fff1f2] px-3 py-2 text-[12px] text-sale">{saveErr}</p>}
       <p className="mt-4 text-[11px] leading-snug text-muted">
 E’lon moderatsiyadan so‘ng hamkasblarga ko‘rinadi. Faqat yaroqli va original mahsulotlarni joylang.
       </p>

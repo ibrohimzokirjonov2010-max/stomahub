@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { som } from '../data'
 import { useOrg } from '../Shell'
-import { upsertPromo, useHub } from '../../hubStore'
+import { promoValueError, upsertPromo, useHub } from '../../hubStore'
 
 const APOST = '\u2018'
 const SO = `so${APOST}m`
@@ -210,9 +210,8 @@ function validate(form) {
   const e = {}
   if (form.name.trim().length < 2) e.name = 'Promo-kod nomini kiriting'
   if (!/^[A-Z0-9]{4,16}$/.test(form.code.trim().toUpperCase())) e.code = '4–16 ta lotin harf yoki raqam'
-  const value = Number(form.value)
-  if (!value || value <= 0) e.value = 'Chegirma miqdorini kiriting'
-  if (form.kind === 'foiz' && value > 100) e.value = 'Foiz 100 dan oshmasin'
+  const ve = promoValueError(form.kind, form.value)
+  if (ve) e.value = ve
   if (form.limited && !Number(form.limit)) e.limit = 'Limitni kiriting'
   if (!form.from || !form.to) e.date = 'Muddatni tanlang'
   else if (form.from > form.to) e.date = 'Tugash sanasi boshlanishidan keyin bo‘lsin'

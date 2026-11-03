@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import MobileMenu, { MenuButton } from './MobileMenu'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, Bell, Check, Minus, Plus, ShoppingBag } from 'lucide-react'
+import { Search, ShoppingCart, Bell, Check, Minus, Plus, ShoppingBag, AlertTriangle } from 'lucide-react'
 import { useCart } from '../../cart'
 
 export function BrandLogo({ className = 'h-8', to = '/' }) {
@@ -80,7 +80,7 @@ export function CountBadge({ children }) {
   )
 }
 
-export function MobileToast({ text, onClose, action, bottom = 76 }) {
+export function MobileToast({ text, onClose, action, bottom = 76, warn = false }) {
   useEffect(() => {
     if (!text) return
     const t = setTimeout(onClose, 2200)
@@ -89,7 +89,7 @@ export function MobileToast({ text, onClose, action, bottom = 76 }) {
   if (!text) return null
   return (
     <div role="status" style={{ bottom }} className="fixed inset-x-4 z-50 flex items-center gap-2 rounded-xl bg-ink px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg">
-      <Check className="size-4 shrink-0 text-[#5fe0c8]" /> <span className="min-w-0 flex-1 truncate">{text}</span>
+      {warn ? <AlertTriangle className="size-4 shrink-0 text-amber-300" aria-hidden="true" /> : <Check className="size-4 shrink-0 text-[#5fe0c8]" aria-hidden="true" />} <span className="min-w-0 flex-1 truncate">{text}</span>
       {action}
     </div>
   )

@@ -5,7 +5,7 @@ import {
   Coins, CreditCard, Crown, Download, FileBadge, FileText, Hash, Info, LoaderCircle, MapPin, ShieldCheck, ShoppingCart, Tag,
   Ticket, UserRound, Users, Video, X,
 } from 'lucide-react'
-import { seminarView, som } from '../../seminarsData'
+import { seminarView, seminarPrice, som } from '../../seminarsData'
 import { checkPromo, publicRecord, useHub } from '../../hubStore'
 import { cardBrand, cvvRequired, validateCard } from '../../cardCheck'
 import { useCountdown } from '../../payBits'
@@ -16,6 +16,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { downloadIcs } from './MobileSeminar'
 import { register, useSeminarStore } from './seminarStore'
+import { useSession } from '../../sessionStore'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Farg‘ona', 'Qarshi', 'Nukus', 'Urganch', 'Termiz']
@@ -43,7 +44,24 @@ export default function MobileSeminarReg() {
   if (!seminar) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar topilmadi</div>
   if (seminar.cancelled) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar bekor qilingan</div>
   if (rec.regClosed || rec.past) return <div className="px-4 py-16 text-center"><p className="text-[15px] font-bold">Seminar yakunlangan</p><p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p></div>
-  return <RegView key={id} id={id} seminar={seminar} />
+  return <RegGate id={id} seminar={seminar} />
+}
+
+function RegGate({ id, seminar }) {
+  const session = useSession()
+  const navigate = useNavigate()
+  const uid = session.user?.id || session.profile?.id || ''
+  // Tashkilotchi o‘z seminariga ro‘yxatdan o‘ta olmaydi (do‘kondagi kabi). Server ham tekshiradi (0060).
+  if (uid && seminar.organizerId && uid === seminar.organizerId) {
+    return (
+      <div className="px-4 py-16 text-center">
+        <p className="text-[15px] font-bold text-[#0d2a4a]">Bu sizning seminaringiz</p>
+        <p className="mt-1 text-[13px] text-muted">O‘z seminaringizga ro‘yxatdan o‘ta olmaysiz. Ishtirokchilarni tashkilotchi kabinetida ko‘rasiz.</p>
+        <button type="button" onClick={() => navigate(`/seminarlar/${id}`)} className="mt-3 text-[14px] font-semibold text-sea">Seminar sahifasiga qaytish</button>
+      </div>
+    )
+  }
+  return <RegView key={id} id={id} seminar={seminar} profile={session.profile} />
 }
 
 function info(s) {
@@ -59,23 +77,39 @@ function info(s) {
     when: `${d}-${month} ${year}, ${start}`,
     whenFull: `${days}-${month} ${year}, ${s.time}`,
     place: s.online ? 'Online (Zoom)' : `${s.city}, ${s.venue.name}`,
-    address: s.online ? 'Havola email orqali yuboriladi' : `${s.city === 'Toshkent' ? 'Toshkent shahri' : s.city}${s.venue.address !== s.city ? `, ${s.venue.address.replace(/^Toshkent sh\.,\s*/, '')}` : ''}`,
+    address: s.online ? 'Havola email orqali yuboriladi' : (s.venue.address || s.city || ''),
     formats: { offline, online },
     base,
-    vip: Math.round((s.price * 0.47) / 100000) * 100000,
   }
 }
 
-function RegView({ id, seminar }) {
+function RegView({ id, seminar, profile }) {
   const s = seminar
   const m = info(s)
   const navigate = useNavigate()
   const store = useSeminarStore()
   const reg = store.registered[s.id]
   const [step, setStep] = useState(reg?.order ? 3 : 1)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', city: s.online ? 'Toshkent' : s.city, clinic: '', spec: 'Implantolog', years: '3', diploma: '' })
+  // Profil ma’lumotlari bilan to‘ldiriladi; soxta standart qiymatlar (Toshkent / Implantolog / 3 yil) yo‘q
+  const fromProfile = (p) => ({
+    name: String(p?.full_name || p?.name || '').trim(),
+    phone: extractUzLocalDigits(String(p?.phone || '')),
+    email: String(p?.email || '').trim(),
+    city: String(p?.city || '').trim(),
+    clinic: String(p?.clinic || '').trim(),
+    spec: String(p?.specialty || '').trim(),
+  })
+  const [form, setForm] = useState(() => ({ name: '', phone: '', email: '', city: '', clinic: '', spec: '', years: '', diploma: '', ...fromProfile(profile) }))
+  useEffect(() => {
+    if (!profile) return
+    const p = fromProfile(profile)
+    setForm((f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v || p[k] || ''])))
+  }, [profile]) // eslint-disable-line react-hooks/exhaustive-deps
   const [format, setFormat] = useState(m.formats.offline ? 'offline' : 'online')
-  const [ticket, setTicket] = useState('standart')
+  // Chiptalar — faqat tashkilotchi bazada yaratgan haqiqiy chiptalar (bepul ham)
+  const plans = (s.organizer ? s.plans || [] : []).filter((p) => p.id)
+  const firstOpen = plans.find((p) => p.left == null || p.left > 0 || !p.seats) || plans[0]
+  const [ticket, setTicket] = useState(firstOpen?.id || '')
   const [cert, setCert] = useState(true)
   const [agree, setAgree] = useState(true)
   const [tried, setTried] = useState(false)
@@ -94,13 +128,11 @@ function RegView({ id, seminar }) {
 
   useEffect(() => { window.scrollTo(0, 0) }, [step])
 
-  const orgStd = s.organizer ? s.plans?.find((p) => /standart/i.test(p.name)) || s.plans?.[0] : null
-  const orgVip = s.organizer ? s.plans?.find((p) => /vip/i.test(p.name)) : null
-  const price = orgStd ? orgStd.price : m.base[format]
-  const vip = ticket === 'vip' ? (orgVip ? Math.max(0, orgVip.price - price) : (orgStd ? 0 : m.vip)) : 0
-  const subtotal = price + vip
-  const discount = applied?.discount || 0
-  const total = subtotal - discount
+  const plan = plans.find((p) => p.id === ticket) || null
+  const price = plan ? Number(plan.price) || 0 : 0
+  const subtotal = price
+  const discount = applied ? Math.min(applied.discount || 0, subtotal) : 0
+  const total = Math.max(0, subtotal - discount)
   const monthly = Math.ceil(total / months / 1000) * 1000
   const payNow = total
 
@@ -110,6 +142,7 @@ function RegView({ id, seminar }) {
     phone: phone.length !== 9 && PHONE_INCOMPLETE_MSG,
     email: !EMAIL.test(form.email.trim()) && 'Email noto‘g‘ri',
     agree: !agree && 'Shartlarga rozilik bering',
+    ticket: !plan && (plans.length ? 'Chipta turini tanlang' : 'Bu seminar uchun chiptalar hali qo‘shilmagan'),
   }
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
@@ -132,9 +165,9 @@ function RegView({ id, seminar }) {
   const brand = cardBrand(cardDigits)
 
   const applyPromo = async () => {
-    const q = await checkPromo(promo, s.id, subtotal)
+    const q = await checkPromo(promo, s.id, subtotal, plan?.id)
     if (!q.ok) { setPromoErr(q.error); setApplied(null); return }
-    setApplied({ code: promo.trim().toUpperCase(), discount: q.discount })
+    setApplied({ code: promo.trim().toUpperCase(), discount: q.discount, kind: q.kind, value: q.value, ticket: plan?.id })
     setPromoErr('')
     setToast(`Promokod qo‘llandi: −${q.discount.toLocaleString('ru-RU')} so‘m`)
   }
@@ -149,13 +182,13 @@ function RegView({ id, seminar }) {
     try {
       res = await register(s.id, {
       order: `SEM-${2041 + count}`,
-      plan: `${ticket === 'vip' ? 'VIP' : 'Standart'} · ${format === 'online' ? 'Onlayn' : 'Oflayn'}`,
-      ticket, ticketName: ticket === 'vip' ? 'VIP' : 'Standart', format, cert, method: total > 0 ? 'cash' : 'free',
+      plan: `${plan?.name || ''}${m.formats.offline && m.formats.online ? ` · ${format === 'online' ? 'Onlayn' : 'Oflayn'}` : ''}`,
+      ticket, ticketId: plan?.id || '', ticketName: plan?.name || '', format, cert, method: total > 0 ? 'cash' : 'free',
       methodLabel: total > 0 ? 'Naqd' : 'Bepul',
       months: 0,
       name: form.name.trim(), phone, email: form.email.trim(),
       city: form.city, clinic: form.clinic, spec: form.spec,
-      gross: subtotal, price: total, paid: payNow, promo: applied?.code || '',
+      gross: subtotal, discount, price: total, paid: payNow, promo: applied?.code || '',
       title: s.title,
       at: at.toISOString(),
     })
@@ -167,7 +200,7 @@ function RegView({ id, seminar }) {
     if (!res?.ok) { setPaying(false); setPromoErr(res?.error || 'To‘lov amalga oshmadi'); return }
     setPaying(false)
     setStep(3)
-  }, [store.registered, s.id, ticket, format, cert, method, months, form, phone, total, payNow, applied])
+  }, [store.registered, s.id, ticket, plan, format, cert, method, months, form, phone, total, payNow, applied, subtotal, discount, m])
 
   const back = () => {
     if (step === 2) setStep(1)
@@ -217,13 +250,13 @@ function RegView({ id, seminar }) {
                 <input type="email" inputMode="email" autoComplete="email" value={form.email} onChange={set('email')} placeholder="example@mail.com" className={input} />
               </Field>
               <Field label="Shahar">
-                <Select value={form.city} options={CITIES} onChange={set('city')} label="Shahar" />
+                <Select value={form.city} options={CITIES.includes(form.city) || !form.city ? CITIES : [form.city, ...CITIES]} onChange={set('city')} label="Shahar" />
               </Field>
               <Field label="Klinika nomi">
                 <input value={form.clinic} onChange={set('clinic')} placeholder="Dent Smile Clinic" className={input} />
               </Field>
               <Field label="Mutaxassisligi">
-                <Select value={form.spec} options={SPECS} onChange={set('spec')} label="Mutaxassisligi" />
+                <Select value={form.spec} options={SPECS.includes(form.spec) || !form.spec ? SPECS : [form.spec, ...SPECS]} onChange={set('spec')} label="Mutaxassisligi" />
               </Field>
               <Field label="Ish tajribasi (yil)">
                 <Select value={form.years} options={YEARS} onChange={set('years')} label="Ish tajribasi" />
@@ -240,10 +273,18 @@ function RegView({ id, seminar }) {
             </div>
 
             <Section icon={Ticket} title="Chipta turi" />
-            <div className="grid grid-cols-2 gap-2.5">
-              <Option tall on={ticket === 'standart'} onClick={() => setTicket('standart')} icon={Tag} title="Standart" text={format === 'online' ? 'Jonli efir, yozuvlar 3 oy, materiallar' : 'Seminarga kirish, materiallar, kofe-breyk'} price={som(price)} />
-              <Option tall on={ticket === 'vip'} onClick={() => setTicket('vip')} icon={Crown} title="VIP" text={format === 'online' ? 'Jonli efir, yozuvlar 12 oy, shaxsiy savol-javob, sertifikat' : 'Seminarga kirish, premium o‘rin, maxsus materiallar, sertifikat, tushlik'} price={som(price + m.vip)} />
+            <div data-f="ticket" className="grid grid-cols-2 gap-2.5">
+              {plans.map((p) => {
+                const soldOut = p.seats > 0 && p.left != null && p.left <= 0
+                return (
+                  <Option key={p.id} tall on={ticket === p.id} disabled={soldOut} onClick={() => { setTicket(p.id); setApplied(null); setPromo('') }} icon={Number(p.price) > 0 ? Tag : Crown} title={p.name}
+                    text={soldOut ? 'Joylar tugagan' : (p.perks || []).slice(0, 3).join(', ') || (p.earlyUntil ? `Early bird ${p.earlyUntil.split("-").reverse().join(".")} gacha` : (p.seats ? `${p.left ?? p.seats} ta joy qoldi` : ''))}
+                    price={Number(p.price) > 0 ? som(p.price) : 'Bepul'} />
+                )
+              })}
             </div>
+            {tried && errors.ticket && <p className="mt-1 text-[11px] text-sale">{errors.ticket}</p>}
+            {!plans.length && <p className="text-[12px] text-muted">Tashkilotchi hali chipta qo‘shmagan — ro‘yxatdan o‘tish keyinroq ochiladi.</p>}
 
             <Section icon={FileText} title="Qo‘shimcha imkoniyatlar" />
             <CheckRow on={cert} onChange={setCert} title="Sertifikat kerak" text="Seminar yakunida elektron sertifikat beriladi" />
@@ -269,7 +310,7 @@ function RegView({ id, seminar }) {
               {applied ? (
                 <div className="flex h-11 items-center gap-2 rounded-xl border border-[#bfe3dd] bg-[#eef8f6] px-3">
                   <Check className="size-4 text-[#0b6d73]" />
-                  <span className="flex-1 text-[13px] font-semibold text-[#0b6d73]">{applied.code} · −{applied.pct}%</span>
+                  <span className="flex-1 text-[13px] font-semibold text-[#0b6d73]">{applied.code} · {applied.kind === 'foiz' && applied.value ? `−${applied.value}% (−${som(discount)})` : `−${som(discount)}`}</span>
                   <button type="button" onClick={() => { setApplied(null); setPromo('') }} aria-label="Promokodni olib tashlash" className="grid size-7 place-items-center rounded-full text-ink-2"><X className="size-4" /></button>
                 </div>
               ) : (
@@ -286,8 +327,8 @@ function RegView({ id, seminar }) {
             <div className={`${card} mt-3 px-3.5 pb-3.5`}>
               <Section icon={FileText} title="Buyurtma xulosasi" first />
               <div className="space-y-2.5 text-[13px]">
-                <SumRow k={`Seminar narxi${format === 'online' ? ' (onlayn)' : ''}`} v={som(price)} />
-                {vip > 0 && <SumRow k="VIP paket" v={som(vip)} />}
+                <SumRow k={`Chipta: ${plan?.name || '—'}${format === 'online' && m.formats.offline ? ' (onlayn)' : ''}`} v={price > 0 ? som(price) : 'Bepul'} />
+                {plan?.oldPrice > price && <SumRow k="Early bird chegirmasi" v={`−${som(plan.oldPrice - price)}`} green />}
                 <SumRow k={`Chegirma (promokod)`} v={discount ? `−${som(discount)}` : som(0)} green />
                 {method === 'split' && <SumRow k={`Bo‘lib to‘lash (${months} oy)`} v={`${som(monthly)} / oy`} />}
               </div>
@@ -312,8 +353,8 @@ function RegView({ id, seminar }) {
         </div>
         {step === 1 ? (
           <button type="button" onClick={toPay} className="flex h-[52px] w-[58%] flex-col items-center justify-center rounded-xl bg-[#0b6d73] text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.98]">
-            <span className="flex items-center gap-1.5 text-[14px] font-semibold">To‘lovga o‘tish <ArrowRight className="size-4" /></span>
-            <span className="text-[10.5px] text-white/80">2-bosqich: to‘lov</span>
+            <span className="flex items-center gap-1.5 text-[14px] font-semibold">{total > 0 ? 'To‘lovga o‘tish' : 'Ro‘yxatdan o‘tish'} <ArrowRight className="size-4" /></span>
+            <span className="text-[10.5px] text-white/80">{total > 0 ? '2-bosqich: to‘lov' : 'Bepul chipta'}</span>
           </button>
         ) : (
           <button type="button" onClick={pay} className="flex h-[52px] w-[58%] items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] px-2 text-[13.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)] active:scale-[0.98]">
@@ -392,7 +433,7 @@ function SeminarCard({ s, m }) {
           <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-2"><MapPin className="size-3.5 shrink-0" /> <span className="truncate">{m.place}</span></p>
         </div>
         <div className="mt-1 text-right">
-          <p className="text-[14.5px] font-extrabold leading-none text-[#0b6d73]">{som(s.price)}</p>
+          <p className="text-[14.5px] font-extrabold leading-none text-[#0b6d73]">{seminarPrice(s.price)}</p>
           <p className="text-[9.5px] text-muted">Boshlang‘ich narx</p>
         </div>
       </div>
@@ -425,10 +466,11 @@ function Select({ value, options, onChange, label }) {
   return (
     <>
       <span className="mt-0.5 flex h-8 items-center justify-between rounded-lg bg-white px-2 text-[13px] text-ink">
-        <span className="truncate">{value}</span>
+        <span className="truncate">{value || <span className="text-[#a3b3b9]">Tanlang</span>}</span>
         <ChevronDown className="size-4 shrink-0 text-ink-2" />
       </span>
       <select value={value} onChange={onChange} aria-label={label} className="absolute inset-0 size-full cursor-pointer opacity-0">
+        {!value && <option value="" disabled>Tanlang</option>}
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
     </>
@@ -539,10 +581,18 @@ function Done({ s, m, reg }) {
 
       <div className="px-3.5">
         <ol className="mt-3 grid grid-cols-3">
-          {[['Ma’lumotlar', 'Shaxsiy ma’lumotlar kiritildi'], ['To‘lov', reg.pending ? 'To‘lov kutilmoqda' : (Number(reg.price) > 0 ? 'To‘lov qabul qilindi' : 'Bepul chipta')], [reg.pending ? 'Ariza qabul qilindi' : 'Tasdiqlandi', reg.pending ? 'Tashkilotchi to‘lovni tasdiqlagach chipta faollashadi' : 'Siz seminarga ro‘yxatdan o‘tdingiz']].map(([t, d], i) => (
+          {[
+            ['Ma’lumotlar', 'Shaxsiy ma’lumotlar kiritildi', true],
+            reg.method === 'free' || !(Number(reg.gross ?? reg.price) > 0)
+              ? ['To‘lov', 'Bepul chipta — to‘lov shart emas', true]
+              : reg.pending
+                ? ['To‘lov', 'Naqd / o‘tkazma — tashkilotchi qabul qilishi kutilmoqda', false]
+                : ['To‘lov', 'To‘lov tashkilotchi tomonidan tasdiqlandi', true],
+            reg.pending ? ['Ro‘yxatga olindi', 'To‘lov tasdiqlangach chipta faollashadi', false] : ['Tasdiqlandi', 'Siz seminarga ro‘yxatdan o‘tdingiz', true],
+          ].map(([t, d, ok], i) => (
             <li key={t} className="min-w-0">
               <div className="flex items-center">
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#0b6d73] text-white"><Check className="size-4" strokeWidth={3} /></span>
+                <span className={`grid size-8 shrink-0 place-items-center rounded-full ${ok ? 'bg-[#0b6d73] text-white' : 'bg-[#fff3d6] text-[#b7791f] ring-1 ring-[#f5d48a]'}`}>{ok ? <Check className="size-4" strokeWidth={3} /> : <span className="text-[13px] font-bold">{i + 1}</span>}</span>
                 {i < 2 && <span className="mx-1.5 h-px flex-1 bg-[#0b6d73]/50" />}
               </div>
               <p className="mt-1 text-[12px] font-semibold text-[#0d2a4a]">{t}</p>
@@ -598,7 +648,9 @@ function Done({ s, m, reg }) {
             <OrderRow icon={CreditCard} k="To‘lov usuli" v={methodLabel} />
             <OrderRow icon={Ticket} k="Chipta turi" v={reg.plan} />
             {reg.months ? <OrderRow icon={CalendarCheck} k="To‘langan (1-oy)" v={som(reg.paid)} /> : null}
-            <OrderRow icon={Coins} k="Seminar narxi" v={som(reg.price)} bold />
+            {Number(reg.discount) > 0 && <OrderRow icon={Tag} k={`Chegirma${reg.promo ? ` (${reg.promo})` : ''}`} v={`−${som(reg.discount)}`} />}
+            <OrderRow icon={Coins} k={reg.pending ? 'To‘lanadigan summa' : 'Chipta narxi'} v={Number(reg.price) > 0 ? som(reg.price) : 'Bepul'} bold />
+            <OrderRow icon={CreditCard} k="To‘lov holati" v={reg.pending ? 'Kutilmoqda' : Number(reg.price) > 0 ? 'To‘langan' : 'Bepul'} />
           </div>
         </div>
 

@@ -1,4 +1,6 @@
-import { isRestricted, RestrictedNotice, useDoctorVerified } from '../../restricted.jsx'
+import { RestrictedNotice, BlockNotice, useDoctorVerified } from '../../restricted.jsx'
+import { purchaseBlock } from '../../lib/purchaseGuard'
+import { useSession } from '../../sessionStore'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { VARIANT_TYPE_LABEL } from '../../config/productCatalog'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -36,7 +38,9 @@ function ProductGate({ id }) {
 function ProductView({ id }) {
   const p = productById(id)
   const verified = useDoctorVerified()
-  const rxBlocked = isRestricted(p) && !verified
+  const uid = useSession()?.user?.id || ''
+  const block = purchaseBlock(p, { uid, verified })
+  const rxBlocked = block?.code === 'rx'
   const seller = { name: p.seller || 'Sotuvchi', logo: (p.seller || 'S').slice(0, 2).toUpperCase(), about: 'StomaHub sotuvchisi', city: '' }
   const navigate = useNavigate()
   const { add, items, setQty: setCartQty, remove } = useCart()
@@ -61,13 +65,15 @@ function ProductView({ id }) {
   const cartId = variant ? `${p.id}-${variant}` : p.id
   const inCart = items.find((it) => it.id === cartId)?.qty || 0
   const qty = inCart || pick
+  const maxQty = Math.max(minQty, Math.min(99, Number.isFinite(Number(v.stock)) && p.variants ? Number(v.stock) : Number(p.stock) || 0))
   const changeQty = (next) => {
-    if (!inCart) return setPick(Math.min(Math.max(99, minQty), Math.max(minQty, next)))
+    if (next > maxQty) setToast(`Omborda faqat ${maxQty} ${p.uom || 'dona'} bor`)
+    if (!inCart) return setPick(Math.min(maxQty, Math.max(minQty, next)))
     if (next < 1) {
       remove(cartId)
       setPick(1)
       setToast(`${p.name} savatdan olib tashlandi`)
-    } else setCartQty(cartId, Math.min(99, next))
+    } else setCartQty(cartId, Math.min(maxQty, next))
   }
   const off = v.oldPrice && v.oldPrice > v.price ? Math.round((1 - v.price / v.oldPrice) * 100) : 0
   const thumbs = p.images
@@ -82,8 +88,8 @@ function ProductView({ id }) {
   }
 
   const addToCart = () => {
-    add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0], minQty: p.minQty, priceTiers: variant ? [] : p.priceTiers, uom: p.uom }, qty)
-    setToast(`${qty} ta ${p.name} savatga qo‘shildi`)
+    const ok = add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0], minQty: p.minQty, priceTiers: variant ? [] : p.priceTiers, uom: p.uom, stock: p.variants ? v.stock : p.stock }, qty)
+    if (ok) setToast(`${qty} ta ${p.name} savatga qo‘shildi`)
   }
 
   return (
@@ -120,7 +126,7 @@ function ProductView({ id }) {
         <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto px-3.5">
           {thumbs.map((t, i) => (
             <button key={`${i}-${t}`} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[60px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-[#f3f6f9] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
-              <img src={t} alt="" className="size-full object-cover" />
+              <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-cover" />
             </button>
           ))}
         </div>
@@ -134,9 +140,9 @@ function ProductView({ id }) {
         </div>
         <h1 className="mt-1.5 text-[21px] font-bold leading-tight text-ink">{p.name}</h1>
         <div className="mt-1.5 flex items-center gap-2 text-[12.5px] text-muted">
-          {p.stock > 0 ? `Omborda ${p.stock} dona` : 'Tugagan'}
+          {p.stock > 0 ? `Omborda ${p.stock} ${p.uom || 'dona'}` : 'Tugagan'}
           <span className="mx-1 h-3 w-px bg-line" />
-          <MessageSquareText className="size-4" /> {p.reviews || 0} ta sharh
+          <MessageSquareText className="size-4" /> {Number(p.rating) > 0 ? `${p.rating} · ${p.reviews || 0} ta sharh` : 'Hali baho yo‘q'}
         </div>
 
         {/* Narx */}
@@ -195,9 +201,10 @@ function ProductView({ id }) {
           </button>
         )}
 
-        <h2 className="mt-3 text-[16px] font-bold text-ink">Xususiyatlari</h2>
+        {/* Bitta "Xususiyatlari" bo‘limi: jadval (techSpecs) bo‘lsa pastda chiqadi, ro‘yxat takrorlanmaydi */}
+        {!p.techSpecs?.length && (p.highlights || p.features)?.length > 0 && <h2 className="mt-3 text-[16px] font-bold text-ink">Xususiyatlari</h2>}
         <ul className="mt-1.5 space-y-1">
-          {(p.highlights || p.features).map((f) => (
+          {(p.techSpecs?.length ? [] : (p.highlights || p.features || [])).map((f) => (
             <li key={f} className="flex gap-2 text-[12.5px] leading-[1.45] text-ink-2">
               <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-sea" /> {f}
             </li>
@@ -213,7 +220,7 @@ function ProductView({ id }) {
         )}
         {[
           ['Klinik qo‘llanish', p.clinicalUse, null],
-          ['Texnik xususiyatlar', '', p.techSpecs],
+          ['Xususiyatlari', '', p.techSpecs],
           ['Sertifikat', '', p.certificate],
           ['Yetkazib berish', p.deliveryInfo, null],
           ['Qayta buyurtma', p.reorder?.enabled ? `Har ${p.reorder.intervalDays} kunda qayta buyurtma qilish tavsiya etiladi.` : '', null],
@@ -267,8 +274,8 @@ function ProductView({ id }) {
                 </p>
               )}
             </div>
-            {rxBlocked ? <RestrictedNotice className="flex-1 !p-2" /> : <button type="button" onClick={addToCart} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
-              <ShoppingCart className="size-[19px]" /> Savatga qo‘shish
+            {rxBlocked ? <RestrictedNotice className="flex-1 !p-2" /> : block?.code === 'own' ? <BlockNotice className="flex-1 !p-2" text={block.text} /> : <button type="button" onClick={addToCart} disabled={maxQty < 1 || (!p.variants && p.stock < 1)} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:opacity-50">
+              <ShoppingCart className="size-[19px]" /> {(!p.variants && p.stock < 1) ? 'Tugagan' : 'Savatga qo‘shish'}
             </button>}
           </>
         )}
@@ -277,6 +284,7 @@ function ProductView({ id }) {
       {chat && <SellerChat seller={seller} product={p} onClose={() => setChat(false)} onSent={() => { setChat(false); setToast('Xabar sotuvchiga yuborildi') }} />}
 
       <MobileToast
+        warn={/^Omborda faqat/.test(toast)}
         text={toast}
         onClose={closeToast}
         bottom={140}
@@ -295,7 +303,7 @@ export function SellerChat({ seller, product, onClose, onSent, quick = SHOP_QUIC
       <div role="dialog" aria-modal="true" aria-label="Sotuvchiga yozish" onClick={(e) => e.stopPropagation()} className="rounded-t-3xl bg-white px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3">
         <div className="flex items-center gap-3">
           {seller.avatar ? (
-            <img src={seller.avatar} alt="" className="size-10 rounded-full object-cover" />
+            <img src={seller.avatar} alt={seller.name || 'Sotuvchi'} className="size-10 rounded-full object-cover" />
           ) : (
             <span className="grid size-10 place-items-center rounded-full bg-[#0f2b5b] text-[11px] font-bold text-white">{seller.logo}</span>
           )}

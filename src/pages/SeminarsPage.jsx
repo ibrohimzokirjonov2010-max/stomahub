@@ -11,6 +11,7 @@ import { currentUid } from '../recordSync'
 import { useSession } from '../sessionStore'
 import HubNotice from '../components/HubNotice'
 import { som } from '../marketData'
+import { seminarPrice } from '../seminarsData'
 
 const UZ = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
 const monthLabel = (key) => {
@@ -235,7 +236,7 @@ function SeminarRow({ item: s, liked, onLike }) {
       </div>
       <div className="text-right">
         <div className="flex items-center justify-end gap-1">
-          <p className="whitespace-nowrap text-[13px] font-extrabold text-ink">{som(s.price)}</p>
+          <p className="whitespace-nowrap text-[13px] font-extrabold text-ink">{seminarPrice(s.price)}</p>
           <button onClick={onLike} aria-label="Saqlash" className="grid size-6 place-items-center rounded-full text-ink-2 hover:bg-page">
             <Heart className={`size-3.5 ${liked ? 'fill-sale text-sale' : ''}`} />
           </button>

@@ -7,10 +7,12 @@ import { variantLabel } from './constants'
 export default function StockModal({ product, onClose }) {
   const [stock, setStock] = useState('')
   const [vars, setVars] = useState([])
-  const { busy, error, go } = useAsync()
+  const { busy, error, setError, go } = useAsync()
   useEffect(() => { if (product) { setStock(String(product.stock)); setVars((product.variants || []).map((v) => ({ ...v, stock: String(v.stock ?? 0) }))) } }, [product])
   if (!product) return null
   async function save() {
+    const okNum = (x) => /^\d+$/.test(String(x ?? '').replace(/\s/g, ''))
+    if (vars.length ? vars.some((x) => !okNum(x.stock)) : !okNum(stock)) return setError('Qoldiq 0 yoki undan katta butun son bo‘lishi kerak (manfiy qiymat mumkin emas)')
     const patch = vars.length ? { variants: vars.map((v) => ({ ...v, stock: Math.max(0, Number(v.stock) || 0) })) } : { stock: Math.max(0, Number(stock) || 0) }
     const r = await go(() => updateRow('seller_products', product.id, patch))
     if (r?.ok) { logActivity('Stok yangilandi', product.name); toast('Stok yangilandi'); onClose() }
@@ -26,7 +28,7 @@ export default function StockModal({ product, onClose }) {
             </div>
           ))}
         </div>
-      ) : <Field label="Ombordagi soni (dona)"><Input inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} autoFocus /></Field>}
+      ) : <Field label={`Ombordagi soni (${product.uom || product.unit || 'dona'})`}><Input inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} autoFocus /></Field>}
       <div className="mt-3"><Err>{error}</Err></div>
       <div className="mt-5 grid grid-cols-2 gap-3"><Btn variant="outline" onClick={onClose}>Bekor qilish</Btn><Btn disabled={busy} onClick={save}>Saqlash</Btn></div>
     </Modal>

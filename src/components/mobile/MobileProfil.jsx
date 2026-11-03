@@ -174,8 +174,8 @@ export default function MobileProfil() {
           </div>
         </section>
 
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {stats.map((s) => (
+        <div className={`mt-3 grid ${myCourseCount > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
+          {stats.filter((s) => s.id !== 'courses' || s.value > 0).map((s) => (
             <button key={s.id} type="button" onClick={s.go || (() => setSheet(s.id))} className={`${card} flex min-w-0 flex-col items-center px-0.5 pb-2.5 pt-3 active:scale-[0.98]`}>
               <span className="grid size-9 place-items-center rounded-full bg-[#e3f5f3] text-sea"><s.icon className="size-[18px]" /></span>
               <span className={`mt-1.5 whitespace-nowrap font-bold tracking-tight ${navy} ${s.id === 'bonus' ? 'text-[11.5px] leading-[21px]' : 'text-[14px]'}`}>{s.value}</span>
@@ -193,7 +193,7 @@ export default function MobileProfil() {
           <ChevronRight className="size-5 shrink-0 text-sea" />
         </button>
 
-        {groups.map((rows, i) => (
+        {groups.map((rows) => rows.filter((r) => r.id !== 'courses' || myCourseCount > 0)).map((rows, i) => (
           <ul key={i} className={`${card} mt-3 px-3`}>
             {rows.map((r) => (
               <li key={r.id} className="border-b border-[#eef2f4] last:border-0">

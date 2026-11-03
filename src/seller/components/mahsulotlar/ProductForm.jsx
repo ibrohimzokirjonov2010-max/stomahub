@@ -1,3 +1,4 @@
+import { tashkentToday } from '../../../tashkentDate'
 import { useEffect, useRef, useState } from 'react'
 import { CloudUpload, Plus, X, Trash2, Info, Send, Camera, Save, FileText } from 'lucide-react'
 import Modal from '../shell/Modal'
@@ -97,15 +98,29 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   }
 
   async function submit(asDraft) {
-    if (!v.name.trim()) return setError('Mahsulot nomini kiriting')
+    // Barcha xatolarni bir vaqtda ko‘rsatamiz (bittalab emas)
+    const errs = []
+    const isNum = (x) => String(x ?? '').trim() === '' || /^\d+([.,]\d+)?$/.test(String(x).replace(/\s/g, ''))
+    const isInt = (x) => String(x ?? '').trim() === '' || /^-?\d+$/.test(String(x).replace(/\s/g, ''))
+    if (!v.name.trim()) errs.push('Mahsulot nomini kiriting')
+    if (!isNum(v.price)) errs.push('Narx faqat raqamlardan iborat bo‘lishi kerak')
+    if (!isInt(v.stock) || (!hasVariants && toNum(v.stock) < 0) || /^-/.test(String(v.stock).trim())) errs.push('Qoldiq 0 yoki undan katta butun son bo‘lishi kerak')
+    if (hasVariants && v.variants.some((x) => /^-/.test(String(x.stock).trim()) || !isInt(x.stock))) errs.push('Variant qoldig‘i 0 yoki undan katta butun son bo‘lishi kerak')
+    if (hasVariants && v.variants.some((x) => !isNum(x.price))) errs.push('Variant narxi faqat raqam bo‘lishi kerak')
+    if (!isInt(v.min_qty) || toNum(v.min_qty) < 0) errs.push('Minimal buyurtma musbat butun son bo‘lishi kerak')
+    if (v.expires_on && v.expires_on < tashkentToday()) errs.push('Yaroqlilik muddati o‘tgan sana bo‘lishi mumkin emas')
     if (!asDraft) {
-      if (!v.category) return setError('Kategoriyani tanlang')
-      if (toNum(v.price) <= 0 && !hasVariants) return setError('Narxni kiriting')
-      if (!v.sku.trim() && !mobile) return setError('SKU ni kiriting')
-      if (hasVariants && v.variants.some((x) => !variantLabel(x, v.variant_type))) return setError('Har bir variant uchun qiymat kiriting')
+      if (!v.category) errs.push('Kategoriyani tanlang')
+      if (toNum(v.price) <= 0 && !hasVariants) errs.push('Narxni kiriting')
+      if (!v.sku.trim() && !mobile) errs.push('SKU ni kiriting')
+      if (!v.images.length) errs.push('Kamida bitta mahsulot rasmini yuklang')
+      if (hasVariants && v.variants.some((x) => !variantLabel(x, v.variant_type))) errs.push('Har bir variant uchun qiymat kiriting')
+      const stockTotal = hasVariants ? Number(sumStock(v.variants)) : toNum(v.stock)
+      if (toNum(v.min_qty) > 1 && toNum(v.min_qty) > stockTotal) errs.push(`Minimal buyurtma (${toNum(v.min_qty)}) qoldiqdan (${stockTotal}) oshmasligi kerak`)
       const bad = v.price_tiers.find((t) => toNum(t.min_qty) > 1 && toNum(t.price) >= toNum(v.price) && toNum(v.price) > 0)
-      if (bad) return setError('Ulgurji narx oddiy narxdan past bo‘lishi kerak')
+      if (bad) errs.push('Ulgurji narx oddiy narxdan past bo‘lishi kerak')
     }
+    if (errs.length) return setError(errs.join(' · '))
     const row = toRow(v)
     if (product && !row.category) row.category = product.category // never wipe an existing category
     const save = (r) => (product ? updateRow('seller_products', product.id, r) : insertRow('seller_products', r))

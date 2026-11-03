@@ -1,3 +1,6 @@
+import { promoValueError } from '../../hubStore'
+import { earlyBirdError } from './wizardBits'
+import { tashkentToday } from '../../tashkentDate'
 import { useEffect, useState } from 'react'
 import {
   Award, Crown, Gift, Star, Ticket, Users, X, ChevronDown,
@@ -86,7 +89,7 @@ function SocialGlyph({ kind }) {
   )
 }
 
-export function TicketModal({ open, onClose, onSave }) {
+export function TicketModal({ open, onClose, onSave, start }) {
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [seats, setSeats] = useState('')
@@ -106,7 +109,8 @@ export function TicketModal({ open, onClose, onSave }) {
     if (!name.trim() || String(price).trim() === '' || !(Number(price) >= 0) || !Number(seats)) { setErr('Nom, narx (bepul uchun 0) va joylar sonini kiriting'); return }
     if (early || earlyUntil) {
       if (!Number(early) || !earlyUntil) { setErr('Early bird uchun narx va muddatni birga kiriting'); return }
-      if (Number(early) >= Number(price)) { setErr('Early bird narxi asosiy narxdan arzon bo‘lishi kerak'); return }
+      const eb = earlyBirdError({ price, earlyPrice: early, earlyUntil }, start)
+      if (eb) { setErr(eb); return }
     }
     const perks = note.split('\n').map((l) => l.replace(/^[•\-\s]+/, '').trim()).filter(Boolean)
     onSave({ id: `t${Date.now()}`, name: name.trim(), price: Number(price), seats: Number(seats), perks, active, color, icon, basic: false, earlyPrice: Number(early) || 0, earlyUntil: early ? earlyUntil : '' })
@@ -139,7 +143,7 @@ export function TicketModal({ open, onClose, onSave }) {
           </label>
           <label className="block">
             <Lab>Qaysi sanagacha</Lab>
-            <input type="date" className={box} value={earlyUntil} onChange={(e) => setEarlyUntil(e.target.value)} />
+            <input type="date" className={box} min={tashkentToday()} max={start || undefined} value={earlyUntil} onChange={(e) => setEarlyUntil(e.target.value)} />
           </label>
           <p className="col-span-2 text-[11px] leading-snug text-[#6e868c]">Belgilangan sanadan keyin narx avtomatik asosiy narxga o‘tadi.</p>
         </div>
@@ -300,7 +304,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
   )
 }
 
-export function PromoModal({ open, onClose, onSave }) {
+export function PromoModal({ open, onClose, onSave, maxPrice = 0 }) {
   const [f, setF] = useState({ code: '', kind: 'foiz', value: '', from: '', to: '', limit: '', active: true })
   const [err, setErr] = useState('')
   useEffect(() => {
@@ -311,6 +315,7 @@ export function PromoModal({ open, onClose, onSave }) {
   if (!open) return null
   const save = () => {
     if (!/^[A-Za-z0-9]{3,16}$/.test(f.code.trim()) || !Number(f.value)) { setErr('Kod va chegirma miqdorini kiriting'); return }
+    { const ve = promoValueError(f.kind, f.value, maxPrice); if (ve) { setErr(ve); return } }
     onSave({
       id: `p${Date.now()}`,
       code: f.code.trim().toUpperCase(),

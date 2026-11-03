@@ -365,7 +365,7 @@ function Desktop() {
   )
 }
 
-function Status({ ok }) {
+function Status({ ok, future }) {
   if (ok) {
     return (
       <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-[#16a34a]">
@@ -379,7 +379,7 @@ function Status({ ok }) {
   return (
     <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-[#9aa6aa]">
       <span className="size-[18px] rounded-full border-2 border-[#d5dee0]" />
-      Kelmadi
+      {future ? 'Kutilmoqda' : 'Kelmadi'}
     </span>
   )
 }
@@ -402,6 +402,7 @@ function Mobile() {
       ticket: p.ticket,
       time: String(p.registered || '').split(', ')[1] || p.registered,
       ok: !!p.arrived,
+      future: (() => { const s = hub.seminars.find((x) => x.id === p.seminarId); const end = s?.end && s.end > s.start ? s.end : s?.start; return !end || end >= tashkentToday() })(),
       avatar: p.avatar,
     }))
   const hello = hub.settings?.name || 'Tashkilotchi'
@@ -460,7 +461,7 @@ function Mobile() {
           <span className="grid size-9 place-items-center rounded-xl bg-[#e7f7f4] text-[var(--color-org-teal)]">
             <Users className="size-[18px]" strokeWidth={1.8} />
           </span>
-          <p className="mt-2 text-[12px] text-[#6e868c]">Bugungi check-in</p>
+          <p className="mt-2 text-[12px] text-[#6e868c]">Check-in qilinganlar</p>
           <p className="mt-0.5 text-[18px] font-bold leading-none tracking-tight text-[#143044]">{arrived} kishi</p>
           <p className="mt-1 text-[11.5px] text-[#8aa0a4]">Jami: {hub.participants.length} ishtirokchi</p>
         </article>
@@ -525,7 +526,7 @@ function Mobile() {
               <p className="text-[12.5px] font-medium leading-tight text-[#1c4a5a]">{r.ticket}</p>
               <p className="mt-0.5 text-[11px] text-[#8aa0a4]">{r.time}</p>
             </div>
-            <Status ok={r.ok} />
+            <Status ok={r.ok} future={r.future} />
           </li>
         ))}
         {rows.length === 0 && <li className="px-3 py-8 text-center text-[13px] text-[#7e9398]">{q ? 'Ro‘yxat topilmadi' : 'Hali ishtirokchi yo‘q'}</li>}

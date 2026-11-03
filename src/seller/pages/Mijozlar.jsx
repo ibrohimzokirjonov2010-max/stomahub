@@ -1,3 +1,4 @@
+import { normalizeDistrict, TASHKENT_DISTRICTS } from '../../lib/uzRegions'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, Eye, SlidersHorizontal, ChevronRight, Phone, MapPin, ShoppingCart, CalendarDays, Users, Pencil, Ban, Trash2, Download, EyeOff } from 'lucide-react'
@@ -11,6 +12,8 @@ import Confirm from '../components/shell/Confirm'
 import CustomerForm from '../components/mijozlar/CustomerForm'
 import { KIND, REGIONS, statsOf, tagsOf, initials, isMarket } from '../components/mijozlar/constants'
 
+// Mijoz manzili: Toshkent tumanlari "… tumani", boshqalar shahar nomi bilan ("Shayxontohur shahri" emas)
+export const placeLabel = (c) => { const city = (c?.city || '').trim(); if (!city) return c?.region || '—'; const d = normalizeDistrict(city); if (/tumani$/.test(d) && TASHKENT_DISTRICTS.includes(d)) return `Toshkent, ${d}`; return /shahri|viloyati|tumani/i.test(city) || city === 'Toshkent viloyati' ? city : `${city} shahri` }
 export const masked = (p) => (p ? p.replace(/^(\+998)\s?(\d{2}).*$/, '$1 $2 *** ** **') : '—')
 export const SourceBadge = ({ c }) => (isMarket(c)
   ? <span title="Sizdan marketplace orqali xarid qilgan — avtomatik qo‘shildi" className="inline-flex shrink-0 items-center rounded-md bg-[#E0F2FE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0369A1]">Marketplace</span>
@@ -117,8 +120,8 @@ export default function Mijozlar() {
               <div className="min-w-0 flex-1 text-[12px] text-[#5C6E80]">
                 <div className="flex items-center gap-1.5"><span className="truncate text-[14.5px] font-bold text-[#10283F]">{c.contact_person || c.name}</span><SourceBadge c={c} /></div>
                 {c.contact_person && <div className="truncate">{c.name}</div>}
-                <div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{masked(c.phone)}</div>
-                <div className="flex items-center gap-1.5 truncate"><MapPin className="size-3.5 text-[#0F766E]" />{c.city ? `${c.city} shahri` : '—'}</div>
+                <div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{c.phone || '—'}</div>
+                <div className="flex items-center gap-1.5 truncate"><MapPin className="size-3.5 text-[#0F766E]" />{placeLabel(c)}</div>
               </div>
               <div className="w-[106px] shrink-0 space-y-1.5 border-l border-[#EEF3F4] pl-3 text-[11.5px] text-[#5C6E80]">
                 <div className="flex items-center gap-1.5"><ShoppingCart className="size-4 text-[#0F766E]" /><span className="whitespace-nowrap">{c.st.count} ta buyurtma</span></div>

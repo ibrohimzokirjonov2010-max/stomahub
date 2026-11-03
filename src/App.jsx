@@ -1,7 +1,9 @@
 import { LoginRedirector, RequireAuth } from './requireAuth'
 import { lazy, Suspense } from 'react'
 import FlashToast from './components/FlashToast'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { roleForPath, setIntendedRole } from './sessionStore'
 import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
 import { CartProvider } from './cart'
@@ -132,12 +134,20 @@ import MobileKuzatish from './components/mobile/MobileKuzatish'
 import MobileSeminarlarim from './components/mobile/MobileSeminarlarim'
 import MobileKurslarim from './components/mobile/MobileKurslarim'
 
+// stomahub-auth-role har doim ochiq turgan kabinetni aks ettiradi (QA: /sotuvchi da 'organizer' qolib ketardi)
+function CabinetRole() {
+  const { pathname } = useLocation()
+  useEffect(() => { const r = roleForPath(pathname); if (r) setIntendedRole(r) }, [pathname])
+  return null
+}
+
 export default function App() {
   useCatalogVersion()
   return (
     <CartProvider>
       <BrowserRouter>
         <RouteTitle />
+        <CabinetRole />
         <RxPrompt />
         <MobileChrome />
         <IntakeDialog />
