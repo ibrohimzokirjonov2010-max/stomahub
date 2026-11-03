@@ -626,6 +626,16 @@ export async function pushRequisite(item) {
   if (error) throw error
 }
 
+export async function pushCertRows(rows) {
+  if (!rows.length) return
+  const uid = await requireUid()
+  const { error } = await supabase.from('certificates').upsert(rows.map((r) => ({
+    id: String(r.id), organizer_id: uid, seminar_id: r.seminarId || null, name: r.name || '', clinic: r.clinic || '',
+    seminar_title: r.seminar || '', state: 'none', code: '', date_label: '', avatar: r.avatar || '', sort_at: Date.now(),
+  })), { onConflict: 'id', ignoreDuplicates: true })
+  if (error) throw error
+}
+
 export async function pushCert(id, code, date) {
   const { error } = await supabase.from('certificates').update({
     state: 'done', code, date_label: date,

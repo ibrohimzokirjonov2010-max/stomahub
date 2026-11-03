@@ -4,7 +4,7 @@ import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, Download,
   Filter, Mail, MapPin, MessageSquare, Pencil, QrCode, Search, Send, Shield, Users,
 } from 'lucide-react'
-import { downloadText, issueCert, newestSeminar, useHub } from '../../hubStore'
+import { downloadText, generateCerts, issueCert, newestSeminar, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Avatar, Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
@@ -107,7 +107,7 @@ export default function Certificates() {
   const issue = (c) => {
     issueCert(c.id)
     setSelected(c.id)
-    notify('Sertifikat berildi')
+    notify('Sertifikat berildi. Avtomatik yuborish ulanmagan — yuklab olib ishtirokchiga ulashing')
   }
 
   const toggle = (id) => {
@@ -140,8 +140,8 @@ export default function Certificates() {
   })
 
   const sendMobile = (id) => {
-    issueCert(id)
-    notify('Sertifikat yuborildi')
+    const code = issueCert(id)
+    notify(`Sertifikat berildi · ${code}. Avtomatik yuborish ulanmagan — yuklab olib ishtirokchiga ulashing`)
   }
 
   return (
@@ -177,13 +177,14 @@ export default function Certificates() {
           cme={certCme}
           preview={preview}
           setPreview={setPreview}
+          onGenerate={() => { const n = generateCerts(); notify(n ? `${n} ta ishtirokchi uchun sertifikat yaratildi` : 'Yangi sertifikat yo‘q: kirishi tasdiqlangan barcha ishtirokchilarda sertifikat bor') }}
           onTpl={() => setTpl(true)}
           onNote={() => setNote(true)}
           design={certSem?.certDesign && certBg ? { ...certSem.certDesign, bg: certBg } : null}
           onDownload={() => { if (cert && certSem?.certDesign && certBg) { printDesignCert(certSem.certDesign, { name: cert.name, course: cert.seminar || cert.course || 'Seminar', date: cert.date || '', cme: certCme || '' }, certBg); notify('Sertifikat tayyorlandi'); return } if (cert) downloadText(`${cert.code || 'sertifikat'}.txt`, `${cert.name}\n${cert.seminar || cert.course || 'Seminar'}\n${cert.code || 'berilmagan'}\n${cert.date || ''}${certCme ? `\n${certCme}` : ''}`); notify('Sertifikat yuklab olindi') }}
-          onMail={() => notify('Email yuborildi')}
+          onMail={() => notify('Email orqali yuborish hali ulanmagan — sertifikatni yuklab olib yuboring')}
           onQr={() => setQr(cert)}
-          onResend={() => notify('Sertifikat qayta yuborildi')}
+          onResend={() => notify('Avtomatik yuborish ulanmagan — sertifikatni yuklab olib qayta yuboring')}
           onIssue={issue}
           onReset={() => { setQ(''); setState('all'); setTicket('all'); setTab('all') }}
           seminar={newestSeminar(hub.seminars)}
@@ -197,8 +198,11 @@ export default function Certificates() {
           tab={mTab}
           setTab={setMTab}
           onSendAll={() => {
-            mobile.filter((r) => r.state === 'wait').forEach((r) => issueCert(r.id))
-            notify('Sertifikatlar yuborildi')
+            const made = generateCerts()
+            const waiting = mobile.filter((r) => r.state === 'wait')
+            waiting.forEach((r) => issueCert(r.id))
+            if (!made && !waiting.length) { notify('Berilmagan sertifikat yo‘q. Sertifikat faqat kirishi tasdiqlangan ishtirokchilarga yaratiladi'); return }
+            notify(`${waiting.length} ta sertifikat berildi${made ? `, ${made} ta yangi yaratildi — ularni ham berish uchun yana bosing` : ''}. Avtomatik yuborish ulanmagan`)
           }}
           onSend={sendMobile}
           onQr={(row) => setQr({ name: row.name, code: `STH-2026-${String(row.id).padStart(4, '0')}` })}
@@ -311,6 +315,7 @@ function Desktop(p) {
           ))}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          <button type="button" onClick={p.onGenerate} className="h-9 rounded-xl bg-[var(--color-org-teal)] px-3 text-[12.5px] font-semibold text-white">Kelganlarga yaratish</button>
           <button type="button" onClick={p.onTpl} className="h-9 rounded-xl border border-[#b7e4dc] bg-white px-3 text-[12.5px] font-semibold text-[var(--color-org-teal)] hover:bg-[#f4fbfa]">
             Sertifikat shablonini sozlash
           </button>
@@ -591,10 +596,10 @@ function Mobile(p) {
       <div className="mt-2 flex items-center justify-between gap-2 px-3.5">
         <h2 className="text-[18px] font-bold leading-none">Sertifikatlar</h2>
         <button type="button" onClick={p.onSendAll} className="inline-flex h-8 items-center gap-1 rounded-xl bg-[var(--color-org-teal)] px-2.5 text-[12px] font-semibold text-white">
-          <Send className="size-3.5" /> Hammaga yuborish
+          <Send className="size-3.5" /> Hammaga berish
         </button>
       </div>
-      <p className="mt-0.5 px-3.5 text-[12px] text-[#8aa0a4]">Ishtirokchilarga sertifikat berish va yuborish</p>
+      <p className="mt-0.5 px-3.5 text-[12px] text-[#8aa0a4]">Kirishi tasdiqlangan ishtirokchilarga sertifikat berish</p>
 
       <div className="mx-3.5 mt-2 grid grid-cols-[92px_minmax(0,1fr)] items-start gap-2 rounded-2xl bg-[#e7f6f3] p-2">
         <CertFrame width={92} qr name="Ism familiya" course={sem?.title || 'Seminar nomi'} date={sem?.date || '—'} cme={cmeLabel(sem)} />

@@ -8,7 +8,7 @@ import { tashkentToday } from './tashkentDate'
 import { isPast, isTestSeminar } from './organizer/reconcile'
 import { dayCount } from './programDays'
 import {
-  checkPromoRemote, pullHub, pushCancel, pushCert, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
+  checkPromoRemote, pullHub, pushCancel, pushCert, pushCertRows, pushDeleteSeminar, pushVisibility, pushCheckIn, pushConfirm, pushConfirmPayment, pushDuplicate, pushMessage,
   pushParticipant, pushPromo, pushRefund, pushRemoveParticipant, pushRequisite, pushSeminar,
   pushSettingsBundle, pushSpeaker, pushTickets, pushWithdraw, remoteRegister, subscribeHub,
 } from './hubRemote'
@@ -640,6 +640,24 @@ export async function withdraw(amount, requisite) {
 export function addRequisite(item) {
   patch((s) => ({ ...s, requisites: [...s.requisites, item] }))
   remote(() => pushRequisite(item))
+}
+
+/** Kelganligi tasdiqlangan (check-in) ishtirokchilar uchun sertifikat yozuvlarini yaratadi. */
+export function generateCerts() {
+  const have = new Set(state.certs.map((c) => `${c.seminarId}|${String(c.name || '').trim().toLowerCase()}`))
+  const rows = []
+  for (const p of state.participants) {
+    if (!p.arrived || p.pay === 'cancel') continue
+    const key = `${p.seminarId}|${String(p.name || '').trim().toLowerCase()}`
+    if (have.has(key)) continue
+    have.add(key)
+    const sem = state.seminars.find((s) => s.id === p.seminarId)
+    rows.push({ id: `cert-${p.id}`, name: p.name, clinic: p.clinic || '', seminar: sem?.title || '', seminarId: p.seminarId, avatar: p.avatar || '', state: 'none', code: '', date: '' })
+  }
+  if (!rows.length) return 0
+  patch((s) => ({ ...s, certs: [...s.certs, ...rows] }))
+  remote(() => pushCertRows(rows))
+  return rows.length
 }
 
 export function issueCert(id) {
