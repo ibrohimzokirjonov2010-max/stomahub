@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { TEAL, box } from './wizardBits'
-import { normalizeProgram, dayCount, addDaysIso, withDayDates, parseDateLoose, programErrorAt } from '../../programDays'
+import { normalizeProgram, dayCount, addDaysIso, withDayDates, parseDateLoose, programErrorAt, splitRange, joinRange } from '../../programDays'
 
 const PRACTICE_KINDS = [['model', 'Model'], ['fantom', 'Fantom'], ['bemor', 'Jonli bemor']]
 const MATERIALS = [['tashkilotchi', 'Tashkilotchi beradi'], ['ishtirokchi', 'Ishtirokchi olib keladi'], ['aralash', 'Qisman tashkilotchidan']]
@@ -142,7 +142,11 @@ function ProgramEditor({ form, set }) {
                 {day.items.map((r, i) => (
                   <div key={i} className="flex min-w-0 flex-col rounded-xl border border-[#e3eeec] bg-white p-1.5">
                     <div className="flex gap-1">
-                      <input aria-label="Vaqt" placeholder="10:00 – 11:30" value={r.time || ''} onChange={(e) => setRow(d, i, { time: e.target.value })} aria-invalid={!!bad(d, i, 'time')} className={`${box} min-w-0 flex-1${bad(d, i, 'time')}`} />
+                      <div className="flex min-w-0 flex-1 items-center gap-1">
+                        <input type="time" aria-label="Boshlanish vaqti" value={splitRange(r.time)[0]} onChange={(e) => setRow(d, i, { time: joinRange(e.target.value, splitRange(r.time)[1]) })} aria-invalid={!!bad(d, i, 'time')} className={`h-9 w-full min-w-0 rounded-lg border border-[#e3eeec] bg-white px-1 text-[12.5px] text-[#143044] outline-none focus:border-org-teal${bad(d, i, 'time')}`} />
+                        <span className="text-[#7e9398]">–</span>
+                        <input type="time" aria-label="Tugash vaqti" value={splitRange(r.time)[1]} onChange={(e) => setRow(d, i, { time: joinRange(splitRange(r.time)[0], e.target.value) })} className={`h-9 w-full min-w-0 rounded-lg border border-[#e3eeec] bg-white px-1 text-[12.5px] text-[#143044] outline-none focus:border-org-teal`} />
+                      </div>
                       <button type="button" aria-label="Qatorni o‘chirish" onClick={() => delRow(d, i)} className="grid size-8 shrink-0 place-items-center self-start rounded-lg text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
                     </div>
                     <textarea aria-label="Mavzu" rows={2} ref={grow} onInput={(e) => grow(e.currentTarget)} placeholder="Mavzu" value={r.title || ''} onChange={(e) => setRow(d, i, { title: e.target.value })} aria-invalid={!!bad(d, i, 'title')} className={`${box} mt-1 block h-auto min-h-[52px] w-full min-w-0 resize-none overflow-hidden py-2 leading-snug [field-sizing:content]${bad(d, i, 'title')}`} />

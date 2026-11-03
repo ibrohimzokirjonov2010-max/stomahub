@@ -150,3 +150,11 @@ export function dateRangeLabel(start, end) {
   if (am !== bm) return `${one(ay, am, ad)} – ${one(by, bm, bd)} ${by}`
   return `${ad}–${bd}-${UZ_MONTHS[am - 1]} ${ay}`
 }
+
+// '10:00–10:30' ↔ ['10:00', '10:30'] (type=time uchun HH:MM)
+const hhmm = (t) => { const m = String(t || '').trim().match(/^(\d{1,2})[:.](\d{2})$/); return m ? `${m[1].padStart(2, '0')}:${m[2]}` : '' }
+export function splitRange(time) {
+  const [a = '', b = ''] = String(time || '').split(/\s*[–—-]\s*/)
+  return [hhmm(a), hhmm(b)]
+}
+export const joinRange = (start, end) => (start && end ? `${start}–${end}` : start || (end ? `–${end}` : ''))
