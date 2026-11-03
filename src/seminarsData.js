@@ -156,6 +156,7 @@ export function buildSeminarPage(s) {
     perks: s.organizer ? organizerPerks(s) : [['Amaliy mashg‘ulot', 'Kichik guruhlarda ishlash'], ['Sertifikat', `CME ${s.cme || 6} ball`], ['Materiallar', 'Tashkilotchi taqdim etadi'], ['Networking', 'Hamkasblar bilan tanishish']],
     audience: s.organizer ? (s.audience || []) : null,
     practice: s.organizer ? practiceText(s.practice) : '',
+    practiceRaw: s.organizer && s.practice?.on ? s.practice : null,
     refundPolicy: s.organizer ? (s.refundPolicy || '') : '',
     liveSurgery: s.organizer && s.liveSurgery ? (s.liveSurgery.text || 'Jonli jarrohlik namoyishi') : '',
     cmeLine: s.organizer && (s.cmeHours || s.cmePoints) ? [s.cmeHours ? `${s.cmeHours} soat` : '', s.cmePoints ? `${s.cmePoints} CME ball` : ''].filter(Boolean).join(' · ') : '',
