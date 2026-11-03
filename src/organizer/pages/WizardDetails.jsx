@@ -128,11 +128,10 @@ function ProgramEditor({ form, set }) {
         {days.map((day, d) => (
           <div key={d} className={multi ? 'min-w-0 overflow-hidden rounded-xl border border-[#e3eeec] bg-[#fbfdfd] p-2.5' : ''}>
             {multi && (
-              <div className="mb-2 flex min-w-0 items-center gap-1.5">
+              <div className="mb-2 flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="rounded-lg px-2 py-1 text-[12px] font-bold text-white" style={{ background: TEAL }}>{d + 1}-kun</span>
-                <input aria-label={`${d + 1}-kun nomi`} placeholder="Kun nomi (masalan: Nazariy qism)" value={day.title} onChange={(e) => patchDay(d, { title: e.target.value })} className={`${box} min-w-0 flex-1`} />
-                <input type="date" aria-label={`${d + 1}-kun sanasi`} value={day.date} onChange={(e) => patchDay(d, { date: e.target.value })} className={`${box} w-[138px] min-w-0 shrink`} />
-                <button type="button" aria-label={`${d + 1}-kunni o‘chirish`} onClick={() => delDay(d)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button>
+                <input aria-label={`${d + 1}-kun nomi`} placeholder="Kun nomi (masalan: Nazariy qism)" value={day.title} onChange={(e) => patchDay(d, { title: e.target.value })} className={`${box} min-w-[140px] flex-1 basis-[180px]`} />
+                <div className="flex shrink-0 items-center gap-1.5"><div className="w-[160px]"><input type="date" aria-label={`${d + 1}-kun sanasi`} value={day.date} onChange={(e) => patchDay(d, { date: e.target.value })} className={box} /></div><button type="button" aria-label={`${d + 1}-kunni o‘chirish`} onClick={() => delDay(d)} className="grid size-10 shrink-0 place-items-center rounded-xl text-[#e11d48] hover:bg-[#fff5f7]"><Trash2 className="size-4" /></button></div>
               </div>
             )}
             <div className="space-y-1.5">
