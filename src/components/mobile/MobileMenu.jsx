@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   X, Home, CalendarDays, ShoppingBag, Recycle, Shirt, GraduationCap, BookOpen, Wrench,
   Megaphone, Briefcase, Stethoscope, User, Store, Presentation, LogOut, LogIn, ChevronRight,
+  LayoutGrid, Tag, BadgePercent, Award, Radio, Newspaper, Users, Handshake,
 } from 'lucide-react'
 import { MenuIcons as M, SectionIcons } from '../tealIcons'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
@@ -13,14 +14,22 @@ const ITEMS = [
   { to: '/', label: 'Bosh sahifa', icon: Home },
   { to: '/seminarlar', label: 'Seminarlar', icon: CalendarDays },
   { to: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
+  { to: '/kategoriyalar', label: 'Kategoriyalar', icon: LayoutGrid },
+  { to: '/brendlar', label: 'Brendlar', icon: Tag },
+  { to: '/aksiyalar', label: 'Aksiyalar', icon: BadgePercent },
   { to: '/ortiqcha', label: 'Ortiqcha materiallar', icon: Recycle },
   { to: '/forma', label: 'Forma', icon: SectionIcons.forma },
   { to: '/jihozlar', label: 'Jihozlar', icon: SectionIcons.jihozlar },
   { to: '/talim', label: 'Ta’lim / Kurslar', icon: M.talim },
   { to: '/kitoblar', label: 'Kitoblar', icon: BookOpen },
+  { to: '/sertifikatlar', label: 'Sertifikatlar', icon: Award },
   { to: '/ustalar', label: 'Ustalar', icon: Wrench },
   { to: '/elonlar', label: 'E’lonlar', icon: Megaphone },
   { to: '/ishlar', label: 'Vakansiyalar', icon: M.vakansiyalar },
+  { to: '/xizmatlar', label: 'Xizmatlar va hamkorlar', icon: Handshake },
+  { to: '/community', label: 'Hamjamiyat', icon: Users },
+  { to: '/kanallar', label: 'Foydali kanallar', icon: Radio },
+  { to: '/yangiliklar', label: 'Yangiliklar', icon: Newspaper },
   { to: '/klinika', label: 'Klinika CRM', icon: M.klinika },
   { to: '/profil', label: 'Profil', icon: User },
 ]
