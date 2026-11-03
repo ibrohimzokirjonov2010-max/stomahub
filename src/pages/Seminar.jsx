@@ -11,6 +11,9 @@ import { buildSeminarPage } from '../seminarsData'
 import { publicRecord, publicRecords, useHub } from '../hubStore'
 import { som } from '../marketData'
 import { dateRangeLabel } from '../programDays'
+import { IMG } from '../organizer/data'
+
+const PLACEHOLDERS = new Set(Object.values(IMG))
 
 const MONTHS = { YAN: 'Yanvar', FEV: 'Fevral', MAR: 'Mart', APR: 'Aprel', MAY: 'May', IYN: 'Iyun', IYL: 'Iyul', AVG: 'Avgust', SEN: 'Sentabr', OKT: 'Oktabr', NOY: 'Noyabr', DEK: 'Dekabr' }
 
@@ -207,7 +210,7 @@ export function SeminarView({ d, similar = null, preview = false }) {
       <div className="grid gap-3 @[900px]:grid-cols-[minmax(0,1fr)_260px]">
         {/* Hero */}
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#e6f6f5] via-[#eef8f8] to-[#d9efee] p-4 shadow-card @[640px]:p-5">
-          <div className="relative grid gap-4 @[640px]:grid-cols-[minmax(0,1fr)_auto] @[640px]:items-center">
+          <div className="relative grid gap-4">
             <div className="min-w-0">
               <span className="inline-block rounded-md bg-sea px-2 py-0.5 text-[11px] font-semibold text-white">{v.kicker}</span>
               <h1 className="mt-2 text-[24px] font-extrabold leading-[1.12] tracking-tight text-ink @[640px]:text-[28px]">{v.title}</h1>
@@ -224,11 +227,6 @@ export function SeminarView({ d, similar = null, preview = false }) {
                 {v.handsOn && <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-[12.5px] font-semibold text-sea"><Hand className="size-4" /> Amaliy mashg‘ulot</span>}
               </div>
             </div>
-            {v.hero && (
-              <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-xl bg-white/70 p-1.5 shadow-sm @[640px]:w-[clamp(180px,30cqw,320px)] @[640px]:max-w-[320px]">
-                <img src={v.hero} alt={v.title} className="block max-h-[200px] w-full rounded-lg object-contain @[640px]:max-h-[240px]" />
-              </div>
-            )}
           </div>
         </section>
 
@@ -261,6 +259,11 @@ export function SeminarView({ d, similar = null, preview = false }) {
       </div>
 
       <div className="mt-3 grid gap-3 @[760px]:grid-cols-2">
+        {v.hero && !PLACEHOLDERS.has(v.hero) && (
+          <section className="overflow-hidden rounded-2xl bg-white p-3 shadow-card @[760px]:col-span-2">
+            <img src={v.hero} alt={v.title} className="mx-auto block max-h-[80vh] w-full max-w-[720px] rounded-xl object-contain" />
+          </section>
+        )}
         {v.about && <Card id="about" icon={BookOpen} title="Seminar haqida" className="@[760px]:col-span-2"><p className="whitespace-pre-line text-[12.5px] leading-relaxed text-ink-2">{v.about}</p></Card>}
         {v.learn.length > 0 && <Card id="learn" icon={Target} title="Kurs yakunida nimalarni bajara olasiz?"><Checks items={v.learn} /></Card>}
         {practiceTiles.length > 0 && (
