@@ -20,7 +20,7 @@ test('day shape kept, empty input', () => {
 test('clean drops empty rows/days, validation', () => {
   assert.deepEqual(cleanProgram([{ title: '', items: [{ time: '', title: '' }] }, { title: 'X', items: [] }]), [{ title: 'X', date: '', items: [] }])
   assert.ok(programError([{ items: [{ time: '10:00', title: '' }] }]))
-  assert.equal(programError([{ items: [{ time: '10:00', title: 'A' }] }]), '')
+  assert.equal(programError([{ items: [{ time: '10:00–11:00', title: 'A' }] }]), '')
   assert.equal(programRows([{ items: [{ time: 'a', title: 'b' }] }, { items: [{ time: 'c', title: 'd' }] }]).length, 2)
 })
 test('dayCount', () => {
@@ -44,17 +44,17 @@ test('legacy single-field rows split into time + title', () => {
     ['13:00', 'Amaliyot'],
     ['14:00–15:00', 'Savol-javob'],
   ])
-  assert.equal(programError(d), '')
+  assert.equal(programError(d.map((x) => ({ ...x, items: x.items.filter((r) => r.time.includes('–')) }))), '')
 })
 test('empty rows and empty extra days are ignored by validation', () => {
-  const p = [{ title: '', date: '', items: [{ time: '10:00', title: 'A' }, { time: '', title: '' }] }, { title: '', date: '', items: [{ time: ' ', title: '' }] }]
+  const p = [{ title: '', date: '', items: [{ time: '10:00–10:30', title: 'A' }, { time: '', title: '' }] }, { title: '', date: '', items: [{ time: ' ', title: '' }] }]
   assert.equal(programError(p), '')
 })
 test('half-filled row is reported with its position', async () => {
   const { programErrorAt } = await import('../src/programDays.js')
-  const p = [{ title: '', date: '', items: [{ time: '10:00', title: 'A' }] }, { title: '', date: '', items: [{ time: '', title: 'A' }, { time: '11:00', title: '' }] }]
+  const p = [{ title: '', date: '', items: [{ time: '10:00–10:30', title: 'A' }] }, { title: '', date: '', items: [{ time: '', title: 'A' }, { time: '11:00', title: '' }] }]
   assert.deepEqual(programErrorAt(p), { day: 1, row: 0, missing: 'time' })
-  assert.match(programError(p), /2-kun, 1-qatorda vaqt/)
+  assert.match(programError(p), /2-kun, 1-qatorda boshlanish vaqti/)
 })
 
 test('legacy rows keep full time range; range split/join', async () => {
@@ -66,4 +66,19 @@ test('legacy rows keep full time range; range split/join', async () => {
   assert.deepEqual(splitRange('10:00'), ['10:00', ''])
   assert.equal(joinRange('10:00', '10:30'), '10:00–10:30')
   assert.equal(joinRange('10:00', ''), '10:00')
+})
+
+test('both times required and end after start', async () => {
+  const { programErrorAt } = await import('../src/programDays.js')
+  assert.equal(programErrorAt([{ items: [{ time: '11:00', title: '3D rentgen' }] }]).missing, 'end')
+  assert.equal(programErrorAt([{ items: [{ time: '11:30–11:00', title: '3D rentgen' }] }]).missing, 'order')
+  assert.equal(programErrorAt([{ items: [{ time: '11:00–11:00', title: 'X' }] }]).missing, 'order')
+  assert.match(programError([{ items: [{ time: '11:30–11:00', title: 'X' }] }]), /tugash vaqti boshlanishdan keyin/)
+  assert.equal(programErrorAt([{ items: [{ time: '11:00–11:30', title: '3D rentgen' }] }]), null)
+})
+
+test('regression: an already-split range is not cut to the start time', () => {
+  const d = normalizeProgram([{ time: '10:00–10:30', title: 'A' }, { time: '10:00 - 10:30', title: 'B' }, ['11:00–11:30', 'C']])
+  assert.deepEqual(d[0].items.map((r) => r.time), ['10:00–10:30', '10:00 - 10:30', '11:00–11:30'])
+  assert.deepEqual(cleanProgram(d)[0].items.map((r) => r.time), ['10:00–10:30', '10:00 - 10:30', '11:00–11:30'])
 })

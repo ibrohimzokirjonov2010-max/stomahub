@@ -291,7 +291,7 @@ export default function Wizard() {
 
   return (
     <div className="text-[#143044]">
-      <div className="xl:grid xl:grid-cols-[150px_minmax(0,1fr)_292px] xl:items-start xl:gap-x-3 xl:gap-y-3">
+      <div className="xl:grid xl:grid-cols-[150px_minmax(0,1fr)_292px] xl:grid-rows-[auto_1fr] xl:items-start xl:gap-x-3 xl:gap-y-3">
         <div className="min-w-0 xl:col-start-2">
           <Link to="/tashkilotchi/seminarlar" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-[#5e787e] hover:text-[var(--color-org-teal)]">
             <ChevronLeft className="size-4" /> Mening seminarlarim
@@ -655,7 +655,7 @@ export default function Wizard() {
           </div>
         </div>
 
-        <aside className="mt-3 xl:sticky xl:top-0 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:self-start">
+        <aside className="mt-3 xl:sticky xl:top-2 xl:col-start-3 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:max-h-[calc(100vh-96px)] xl:self-start xl:overflow-y-auto xl:overscroll-contain">
           <div className="rounded-2xl border border-[#e6f1ef] bg-white p-2.5 shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
             <div className="mb-1.5 flex items-center justify-between">
               <p className="text-[13px] font-bold">Oldindan ko‘rish</p>
@@ -783,7 +783,7 @@ function PreviewProgram({ program }) {
         <div key={d.label} className="mt-1">
           {days.length > 1 && <p className="text-[11px] font-bold" style={{ color: TEAL }}>{d.label}{d.title ? ` · ${d.title}` : ''}{d.date ? <span className="font-normal text-[#7e9398]"> · {d.date}</span> : null}</p>}
           <ul className="space-y-0.5">
-            {d.items.map(([t, x], i) => <li key={i} className="flex gap-1.5 text-[10.5px] text-[#5e787e]"><span className="w-[70px] shrink-0 font-semibold">{t}</span><span className="min-w-0">{x}</span></li>)}
+            {d.items.map(([t, x], i) => <li key={i} className="flex gap-1.5 text-[10.5px] text-[#5e787e]"><span className="w-[72px] shrink-0 whitespace-nowrap font-semibold tabular-nums">{t}</span><span className="min-w-0">{x}</span></li>)}
           </ul>
         </div>
       ))}
