@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom'
+import { Route, Navigate, useParams } from 'react-router-dom'
 import SellerGate from './SellerGate'
 import SellerLayout from './SellerLayout'
 import VerifyGate, { VerifyPanel } from './VerifyGate'
@@ -19,6 +19,13 @@ import AnalitikaMahsulot from './pages/AnalitikaMahsulot'
 import AnalitikaHisobot from './pages/AnalitikaHisobot'
 import Hamyon from './pages/Hamyon'
 import Sozlamalar from './pages/Sozlamalar'
+import Marketing from './pages/marketing/Marketing'
+import Promokodlar from './pages/marketing/Promokodlar'
+import MarketingAksiyalar from './pages/marketing/Aksiyalar'
+import TelegramXabar from './pages/marketing/TelegramXabar'
+
+// /sotuvchi/marketing/{chegirmalar,reklama}/:id -> mavjud detal sahifalari (eski URL'lar ham ishlaydi)
+function ToDetail({ base }) { const { id } = useParams(); return <Navigate to={`/sotuvchi/${base}/${id}`} replace /> }
 
 // Usage inside <Routes>: {sellerRoutes}
 // Unverified (registered) sellers: only Sozlamalar renders; every other section shows VerifyGate.
@@ -36,6 +43,14 @@ export const sellerRoutes = (
     <Route path="chegirmalar" element={<VerifyGate section="Chegirmalar"><Chegirmalar /></VerifyGate>} />
     <Route path="reklama" element={<VerifyGate section="Reklama"><Reklama /></VerifyGate>} />
     <Route path="reklama/:id" element={<VerifyGate section="Reklama"><ReklamaDetail /></VerifyGate>} />
+    <Route path="marketing" element={<VerifyGate section="Marketing"><Marketing /></VerifyGate>} />
+    <Route path="marketing/chegirmalar" element={<VerifyGate section="Chegirmalar"><Chegirmalar /></VerifyGate>} />
+    <Route path="marketing/chegirmalar/:id" element={<ToDetail base="chegirmalar" />} />
+    <Route path="marketing/reklama" element={<VerifyGate section="Reklama"><Reklama /></VerifyGate>} />
+    <Route path="marketing/reklama/:id" element={<ToDetail base="reklama" />} />
+    <Route path="marketing/promokodlar" element={<VerifyGate section="Promokodlar"><Promokodlar /></VerifyGate>} />
+    <Route path="marketing/aksiyalar" element={<VerifyGate section="Aksiyalar"><MarketingAksiyalar /></VerifyGate>} />
+    <Route path="marketing/telegram" element={<VerifyGate section="Telegram xabar"><TelegramXabar /></VerifyGate>} />
     <Route path="analitika" element={<VerifyGate section="Analitika"><Analitika /></VerifyGate>} />
     <Route path="analitika/mahsulot/:id" element={<VerifyGate section="Analitika"><AnalitikaMahsulot /></VerifyGate>} />
     <Route path="analitika/hisobot" element={<VerifyGate section="Analitika"><AnalitikaHisobot /></VerifyGate>} />

@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, ChevronDown, Search, Store, House, Package, FileText, UserRound, Ellipsis, LogOut, Lock, ShieldCheck } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { canUseSeller, signOut, useSession } from '../sessionStore'
-import { SELLER_NAV } from './nav'
+import { SELLER_NAV, isUnder } from './nav'
 import Logo from './components/shell/Logo'
 import Modal from './components/shell/Modal'
 import QuickActions from './components/bosh-sahifa/QuickActions'
@@ -43,13 +43,10 @@ export default function SellerLayout() {
       {/* desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[232px] flex-col border-r border-[#E6EEF0] bg-white md:flex">
         <div className="px-6 pb-7 pt-6"><Logo /></div>
-        <nav className="flex flex-col gap-1.5 px-3.5">
-          {SELLER_NAV.map(({ to, label, icon: Icon, end }) => (
-            <NavLink key={to} to={to} end={end}
-              className={({ isActive }) => `flex h-[46px] items-center gap-3.5 rounded-xl px-3.5 text-[15px] font-medium transition-colors ${isActive ? 'bg-[#F0FDFA] text-[#0F766E] shadow-[inset_0_0_0_1px_#CCFBF1]' : 'text-[#1F2A3C] hover:bg-[#F0FDFA] hover:text-[#0F766E]'}`}>
-              <Icon className="size-[21px]" strokeWidth={1.9} />{label}{locked(to) && <Lock className="ml-auto size-4 text-[#8A98A8]" aria-label="Qulflangan" />}
-            </NavLink>
-          ))}
+        <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3.5 pb-6">
+          {SELLER_NAV.map((item) => item.children
+            ? <NavGroup key={item.to} item={item} pathname={pathname} locked={locked} />
+            : <SideLink key={item.to} {...item} locked={locked(item.to)} />)}
         </nav>
       </aside>
 
@@ -100,11 +97,17 @@ export default function SellerLayout() {
       </nav>
 
       <Modal open={more} onClose={() => setMore(false)} title="Bo‘limlar">
-        <div className="grid grid-cols-2 gap-2.5">
-          {SELLER_NAV.slice(4).map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className="flex items-center gap-3 rounded-xl bg-[#F0FDFA] px-3.5 py-3 text-[14px] font-semibold text-[#10283F]">
-              <Icon className="size-5 text-[#0F766E]" />{label}{locked(to) && <Lock className="ml-auto size-4 text-[#8A98A8]" />}
-            </NavLink>
+        <div className="max-h-[70vh] space-y-4 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+          <div className="grid grid-cols-2 gap-2.5">
+            {SELLER_NAV.slice(4).filter((x) => !x.children).map(({ to, label, icon: Icon }) => <MoreLink key={to} to={to} label={label} Icon={Icon} locked={locked(to)} />)}
+          </div>
+          {SELLER_NAV.filter((x) => x.children).map((g) => (
+            <div key={g.to} data-testid="more-marketing">
+              <NavLink to={g.to} end className="mb-2 flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide text-[#5C6E80]"><g.icon className="size-4 text-[#0F766E]" />{g.label}</NavLink>
+              <div className="grid grid-cols-2 gap-2.5">
+                {g.children.map(({ to, label, icon: Icon }) => <MoreLink key={to} to={to} label={label} Icon={Icon} locked={locked(to)} />)}
+              </div>
+            </div>
           ))}
         </div>
       </Modal>
@@ -113,6 +116,50 @@ export default function SellerLayout() {
       <OrderDrawer orderId={orderId} onClose={() => setOrderId(null)} />
       <Toaster />
     </div>
+  )
+}
+
+const sideCls = (on) => `flex h-[46px] items-center gap-3.5 rounded-xl px-3.5 text-[15px] font-medium transition-colors ${on ? 'bg-[#F0FDFA] text-[#0F766E] shadow-[inset_0_0_0_1px_#CCFBF1]' : 'text-[#1F2A3C] hover:bg-[#F0FDFA] hover:text-[#0F766E]'}`
+function SideLink({ to, label, icon: Icon, end, locked }) {
+  return (
+    <NavLink to={to} end={end} className={({ isActive }) => sideCls(isActive)}>
+      <Icon className="size-[21px]" strokeWidth={1.9} />{label}{locked && <Lock className="ml-auto size-4 text-[#8A98A8]" aria-label="Qulflangan" />}
+    </NavLink>
+  )
+}
+function NavGroup({ item, pathname, locked }) {
+  const active = isUnder(pathname, item)
+  const [open, setOpen] = useState(active)
+  useEffect(() => { if (active) setOpen(true) }, [active])
+  const Icon = item.icon
+  return (
+    <div data-testid="nav-marketing">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={`${sideCls(active && !open)} w-full`}>
+        <Icon className="size-[21px]" strokeWidth={1.9} />{item.label}
+        <ChevronDown className={`ml-auto size-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="ml-[22px] mt-1 flex flex-col gap-1 border-l border-[#E6EEF0] pl-2.5">
+          <NavLink to={item.to} end className={({ isActive }) => `flex h-9 items-center rounded-lg px-2.5 text-[14px] ${isActive ? 'bg-[#F0FDFA] font-semibold text-[#0F766E]' : 'text-[#3D4E5F] hover:bg-[#F0FDFA]'}`}>Umumiy ko‘rinish</NavLink>
+          {item.children.map((c) => {
+            const on = isUnder(pathname, c)
+            const CI = c.icon
+            return (
+              <NavLink key={c.to} to={c.to} className={`flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[14px] ${on ? 'bg-[#F0FDFA] font-semibold text-[#0F766E]' : 'text-[#3D4E5F] hover:bg-[#F0FDFA]'}`}>
+                <CI className="size-4" strokeWidth={1.9} />{c.label}{locked(c.to) && <Lock className="ml-auto size-3.5 text-[#8A98A8]" />}
+              </NavLink>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+function MoreLink({ to, label, Icon, locked }) {
+  return (
+    <NavLink to={to} className="flex items-center gap-3 rounded-xl bg-[#F0FDFA] px-3.5 py-3 text-[14px] font-semibold text-[#10283F]">
+      <Icon className="size-5 shrink-0 text-[#0F766E]" /><span className="min-w-0 leading-tight">{label}</span>{locked && <Lock className="ml-auto size-4 shrink-0 text-[#8A98A8]" />}
+    </NavLink>
   )
 }
 
@@ -165,7 +212,8 @@ const SEARCH = {
 function SearchBox() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const section = pathname.split('/')[2] || ''
+  const parts = pathname.split('/')
+  const section = (parts[2] === 'marketing' ? parts[3] : parts[2]) || ''
   const target = SEARCH[section] ? section : 'buyurtmalar'
   const [q, setQ] = useState('')
   useEffect(() => setQ(''), [section])
