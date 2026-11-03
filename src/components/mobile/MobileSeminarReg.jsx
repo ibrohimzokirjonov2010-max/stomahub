@@ -278,7 +278,7 @@ function RegView({ id, seminar, profile }) {
                 const soldOut = p.seats > 0 && p.left != null && p.left <= 0
                 return (
                   <Option key={p.id} tall on={ticket === p.id} disabled={soldOut} onClick={() => { setTicket(p.id); setApplied(null); setPromo('') }} icon={Number(p.price) > 0 ? Tag : Crown} title={p.name}
-                    text={soldOut ? 'Joylar tugagan' : (p.perks || []).slice(0, 3).join(', ') || (p.earlyUntil ? `Early bird ${p.earlyUntil} gacha` : (p.seats ? `${p.left ?? p.seats} ta joy qoldi` : ''))}
+                    text={soldOut ? 'Joylar tugagan' : (p.perks || []).slice(0, 3).join(', ') || (p.earlyUntil ? `Early bird ${p.earlyUntil.split("-").reverse().join(".")} gacha` : (p.seats ? `${p.left ?? p.seats} ta joy qoldi` : ''))}
                     price={Number(p.price) > 0 ? som(p.price) : 'Bepul'} />
                 )
               })}
