@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { DOCTORS, SPECS, CITIES } from '../../mutaxassislarData'
 import { MobileToast } from './parts'
+import { ensureLogin } from '../../loginPrompt'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
@@ -19,6 +20,7 @@ const favs = new Set()
 export function useFav() {
   const [, bump] = useState(0)
   const toggle = (id) => {
+    if (!ensureLogin()) return false
     if (favs.has(id)) favs.delete(id)
     else favs.add(id)
     bump((n) => n + 1)

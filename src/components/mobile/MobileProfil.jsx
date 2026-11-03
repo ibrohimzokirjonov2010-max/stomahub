@@ -243,7 +243,7 @@ export default function MobileProfil() {
           footer={
             <>
               <button type="button" onClick={close} className="h-12 flex-1 rounded-xl border border-line text-[14px] font-semibold text-ink">Bekor qilish</button>
-              <button type="button" onClick={() => { close(); signOut(); profileStore.update({ loggedOut: true }); window.scrollTo(0, 0) }} className="h-12 flex-1 rounded-xl bg-sale text-[14px] font-semibold text-white">Chiqish</button>
+              <button type="button" onClick={async () => { close(); await signOut(); window.scrollTo(0, 0); navigate('/kirish', { replace: true }) }} className="h-12 flex-1 rounded-xl bg-sale text-[14px] font-semibold text-white">Chiqish</button>
             </>
           }
         >

@@ -1,3 +1,4 @@
+import { LoginRedirector, RequireAuth } from './requireAuth'
 import { lazy, Suspense } from 'react'
 import FlashToast from './components/FlashToast'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -141,6 +142,7 @@ export default function App() {
         <MobileChrome />
         <IntakeDialog />
         <FlashToast />
+        <LoginRedirector />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/kirish" element={<Login />} />
@@ -190,7 +192,7 @@ export default function App() {
             <Route path="tasdiqlash" element={<OrgVerifyPage />} />
             <Route path="yordam" element={<HelpPage />} />
           </Route>
-          <Route path="/seminarlar/:id/royxat" element={<Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive>} />
+          <Route path="/seminarlar/:id/royxat" element={<RequireAuth><Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive></RequireAuth>} />
           <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminarV2 />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />
           <Route path="/talim" element={<EducationCatalog />} />
@@ -223,7 +225,7 @@ export default function App() {
           <Route path="/ombor/yangi" element={<CrmGate><Responsive mobile={<MobileOmborNew />}><Navigate to="/ombor" replace /></Responsive></CrmGate>} />
           <Route path="/savatcha" element={<Responsive mobile={<MobileCart />}><Savatcha /></Responsive>} />
           <Route path="/buyurtma" element={<Responsive mobile={<MobileCart />}><Checkout /></Responsive>} />
-          <Route path="/buyurtma/rasmiylashtirish" element={<Responsive mobile={<MobileCheckout />}><Navigate to="/buyurtma" replace /></Responsive>} />
+          <Route path="/buyurtma/rasmiylashtirish" element={<RequireAuth><Responsive mobile={<MobileCheckout />}><Navigate to="/buyurtma" replace /></Responsive></RequireAuth>} />
           <Route path="/mutaxassislar" element={<DoctorsCatalog />} />
           <Route path="/mutaxassislar/:id" element={<Responsive mobile={<MobileMutaxassis />}><ShopLayout active="mutaxassislar" search="plain"><div className="mx-auto max-w-[560px] py-4 [transform:translateZ(0)]"><MobileMutaxassis /></div></ShopLayout></Responsive>} />
           <Route path="/elonlar" element={<ElonlarCatalog />} />
@@ -232,16 +234,16 @@ export default function App() {
           <Route path="/community/:id" element={<Responsive mobile={<MobilePost />}><Navigate to="/community" replace /></Responsive>} />
           <Route path="/sertifikatlar" element={<Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive>} />
           <Route path="/klinika" element={<CrmGate><Klinika /></CrmGate>} />
-          <Route path="/profil" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
-          <Route path="/sozlamalar" element={<Responsive mobile={<MobileProfil />}><Profil /></Responsive>} />
-          <Route path="/profil/shifokor" element={<ShifokorTasdiq />} />
-          <Route path="/profil/manzillar" element={<Responsive mobile={<MobileManzillar />}><Profil section="addresses" /></Responsive>} />
-          <Route path="/profil/tolov-usullari" element={<Responsive mobile={<MobileTolovUsullari />}><Profil section="payments" /></Responsive>} />
-          <Route path="/profil/sevimlilar" element={<Responsive mobile={<MobileSevimlilar />}><Profil section="saved" /></Responsive>} />
-          <Route path="/profil/buyurtmalar" element={<Responsive mobile={<MobileBuyurtmalar />}><Profil section="orders" /></Responsive>} />
-          <Route path="/profil/kurslar" element={<Responsive mobile={<MobileKurslarim />}><Profil section="courses" /></Responsive>} />
-          <Route path="/profil/seminarlar" element={<Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive>} />
-          <Route path="/buyurtma/kuzatish/:id" element={<Responsive mobile={<MobileKuzatish />}><ShopLayout active="market" placeholder="Material, brend yoki kategoriya bo‘yicha qidiring..."><OrderTracking /></ShopLayout></Responsive>} />
+          <Route path="/profil" element={<RequireAuth><Responsive mobile={<MobileProfil />}><Profil /></Responsive></RequireAuth>} />
+          <Route path="/sozlamalar" element={<RequireAuth><Responsive mobile={<MobileProfil />}><Profil /></Responsive></RequireAuth>} />
+          <Route path="/profil/shifokor" element={<RequireAuth><ShifokorTasdiq /></RequireAuth>} />
+          <Route path="/profil/manzillar" element={<RequireAuth><Responsive mobile={<MobileManzillar />}><Profil section="addresses" /></Responsive></RequireAuth>} />
+          <Route path="/profil/tolov-usullari" element={<RequireAuth><Responsive mobile={<MobileTolovUsullari />}><Profil section="payments" /></Responsive></RequireAuth>} />
+          <Route path="/profil/sevimlilar" element={<RequireAuth><Responsive mobile={<MobileSevimlilar />}><Profil section="saved" /></Responsive></RequireAuth>} />
+          <Route path="/profil/buyurtmalar" element={<RequireAuth><Responsive mobile={<MobileBuyurtmalar />}><Profil section="orders" /></Responsive></RequireAuth>} />
+          <Route path="/profil/kurslar" element={<RequireAuth><Responsive mobile={<MobileKurslarim />}><Profil section="courses" /></Responsive></RequireAuth>} />
+          <Route path="/profil/seminarlar" element={<RequireAuth><Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive></RequireAuth>} />
+          <Route path="/buyurtma/kuzatish/:id" element={<RequireAuth><Responsive mobile={<MobileKuzatish />}><ShopLayout active="market" placeholder="Material, brend yoki kategoriya bo‘yicha qidiring..."><OrderTracking /></ShopLayout></Responsive></RequireAuth>} />
           <Route path="/xizmatlar" element={<CrmGate><Xizmatlar /></CrmGate>} />
           <Route path="/davolash-rejalari" element={<CrmGate><Rejalar /></CrmGate>} />
           <Route path="/davolash-rejalari/:id" element={<CrmGate><Reja /></CrmGate>} />

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, LogOut, X } from 'lucide-react'
+import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, LogIn, LogOut, X } from 'lucide-react'
 import { Logo } from './icons'
 import { useCart } from '../cart'
-import { profileStore, useProfile } from '../profileStore'
+import { useProfile } from '../profileStore'
 import { fetchNotifications } from '../buyerApi'
 import { pickDisplayName, signOut, useSession } from '../sessionStore'
 import { initialsOf, looksLikeDemoName } from '../demoPurge'
@@ -15,7 +15,8 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const { items, count } = useCart()
   const profile = useProfile()
   const session = useSession()
-  const authed = session.status === 'authed' || profile.accountLive
+  // Chiqqandan keyin eski profil keshi “kirgan” deb ko‘rsatmasin: faqat sessiya yuklanayotganda keshga ishonamiz
+  const authed = session.status === 'authed' || (session.status === 'loading' && profile.accountLive)
   const remoteName = session.profile?.full_name || session.profile?.name || ''
   const localName = profile.accountLive ? (profile.name || '') : ''
   const rawName = authed ? (localName || remoteName || '') : ''
@@ -131,6 +132,11 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
         )}
 
         <div className="ml-1 hidden h-8 w-px bg-line sm:block" />
+        {!authed && session.status !== 'loading' ? (
+          <button type="button" onClick={() => navigate(`/kirish?next=${encodeURIComponent(pathname)}`)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white hover:opacity-90">
+            <LogIn className="size-3.5" /> Kirish
+          </button>
+        ) : (
         <button type="button" onClick={() => navigate(authed ? '/profil' : '/kirish')} className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-1.5 hover:bg-page">
           {showInitials ? (
             <span className="grid size-[26px] place-items-center rounded-full bg-sea-50 text-[10px] font-bold text-sea">{initialsOf(who)}</span>
@@ -148,12 +154,12 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
           </span>
           <ChevronDown className="hidden size-4 text-ink-2 xl:block" />
         </button>
+        )}
         {authed && (
           <button
             type="button"
             onClick={async () => {
               await signOut()
-              profileStore.update({ loggedOut: true, accountLive: false })
               navigate('/kirish')
             }}
             className="hidden h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-semibold text-[#d14343] hover:bg-[#fff5f5] sm:inline-flex"

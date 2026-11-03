@@ -3,6 +3,7 @@ import { withGeo, parseGeo } from './components/MapPicker'
 import { cancelMyOrder, fetchMyOrders } from './buyerApi'
 import { supabase } from './supabaseClient'
 import { currentUid, isDemoUser, onAccount, uploadAvatar } from './recordSync'
+import { askLogin } from './loginPrompt'
 import { looksLikeDemoName } from './demoPurge'
 
 const KEY = 'stomahub-profile'
@@ -89,10 +90,15 @@ function write(next, opts = {}) {
   state = { ...state, ...next }
   const cache = { ...state }
   delete cache.syncError
-  try {
-    localStorage.setItem(KEY, JSON.stringify(cache))
-  } catch {
-    localStorage.setItem(KEY, JSON.stringify({ ...cache, avatar: '' }))
+  // Mehmon/chiqqan holat brauzerga yozilmaydi — faqat kirgan hisob egasiga bog‘langan kesh
+  if (state.ownerUid && !state.loggedOut) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(cache))
+    } catch {
+      try { localStorage.setItem(KEY, JSON.stringify({ ...cache, avatar: '' })) } catch { /* ignore */ }
+    }
+  } else {
+    try { localStorage.removeItem(KEY) } catch { /* ignore */ }
   }
   listeners.forEach((l) => l())
   if (!opts.remote && state.accountLive) schedulePush()
@@ -538,6 +544,8 @@ export const profileStore = {
     await refreshOrders()
   },
   toggleFav: (key, id) => {
+    // Sevimlilar hisobga bog‘lanadi: mehmon avval kiradi
+    if (!currentUid() && !isDemoUser()) { askLogin(); return false }
     const sid = String(id)
     const list = (state[key] || []).map(String)
     write({ [key]: list.includes(sid) ? list.filter((x) => x !== sid) : [...list, sid] })
@@ -571,3 +579,5 @@ export function clearLocalUserData() {
   state = { ...DEFAULT, accountLive: false, loggedOut: true }
   listeners.forEach((l) => l())
 }
+
+if (typeof window !== 'undefined') window.addEventListener('stomahub-signed-out', () => clearLocalUserData())

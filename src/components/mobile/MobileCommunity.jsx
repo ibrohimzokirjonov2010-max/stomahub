@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { ensureLogin } from '../../loginPrompt'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, SlidersHorizontal, Image as ImageIcon, Video, Plus, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal,
@@ -130,6 +131,7 @@ export default function MobileCommunity() {
   const [sort, setSort] = useState('new')
   const [onlySaved, setOnlySaved] = useState(false)
   const [sheet, setSheet] = useState(null)
+  const composeIfAuthed = (kind) => { if (ensureLogin()) setSheet(kind) }
   const [menu, setMenu] = useState(null)
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState('')
@@ -174,10 +176,10 @@ export default function MobileCommunity() {
 
         <div className="mt-3 flex items-center gap-1.5 rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
           <img src={me.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover" />
-          <button type="button" onClick={() => setSheet('compose')} className="ml-0.5 h-11 min-w-0 flex-1 truncate rounded-xl bg-[#f2f6f9] px-3 text-left text-[12.5px] text-muted">Nima haqida o‘ylayapsiz?</button>
-          <button type="button" onClick={() => setSheet('compose-img')} aria-label="Rasm qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><ImageIcon className="size-[21px]" strokeWidth={1.7} /></button>
+          <button type="button" onClick={() => composeIfAuthed('compose')} className="ml-0.5 h-11 min-w-0 flex-1 truncate rounded-xl bg-[#f2f6f9] px-3 text-left text-[12.5px] text-muted">Nima haqida o‘ylayapsiz?</button>
+          <button type="button" onClick={() => composeIfAuthed('compose-img')} aria-label="Rasm qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><ImageIcon className="size-[21px]" strokeWidth={1.7} /></button>
           <button type="button" onClick={() => say('Video yuklash tez orada qo‘shiladi')} aria-label="Video qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><Video className="size-[21px]" strokeWidth={1.7} /></button>
-          <button type="button" onClick={() => setSheet('compose')} aria-label="Post yozish" className="grid size-9 shrink-0 place-items-center rounded-full bg-sea text-white"><Plus className="size-5" /></button>
+          <button type="button" onClick={() => composeIfAuthed('compose')} aria-label="Post yozish" className="grid size-9 shrink-0 place-items-center rounded-full bg-sea text-white"><Plus className="size-5" /></button>
         </div>
       </div>
 
@@ -233,7 +235,7 @@ export default function MobileCommunity() {
         )}
       </div>
 
-      <button type="button" onClick={() => setSheet('compose')} className="fixed bottom-[76px] right-3.5 z-30 flex h-12 items-center gap-2 rounded-full bg-sea px-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgb(11_138_149/0.4)] active:scale-95">
+      <button type="button" onClick={() => composeIfAuthed('compose')} className="fixed bottom-[76px] right-3.5 z-30 flex h-12 items-center gap-2 rounded-full bg-sea px-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgb(11_138_149/0.4)] active:scale-95">
         <PenLine className="size-[18px]" /> Yangi post
       </button>
 

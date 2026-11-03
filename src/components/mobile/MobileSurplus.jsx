@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, LayoutGrid, ChevronDown, Heart, MapPin, X, Check, Camera, ImagePlus } from 'lucide-react'
+import { ensureLogin } from '../../loginPrompt'
 import { surplusChips, surplusItems, cities, addSurplusItem } from '../../surplusData'
 import { som } from '../../marketData'
 import { MobileTopBar, MobileToast } from './parts'
@@ -64,7 +65,7 @@ export default function MobileSurplus() {
 
         <div className="mt-3 flex items-center justify-between gap-3">
           <h1 className="min-w-0 truncate text-[22px] font-extrabold leading-tight tracking-tight text-ink">Ortiqcha material</h1>
-          <button type="button" onClick={() => setSheet('post')} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-sea px-4 text-[13px] font-semibold text-white shadow-[0_6px_16px_-6px_rgb(11_138_149/0.7)] active:scale-[0.97]">
+          <button type="button" onClick={() => { if (ensureLogin()) setSheet('post') }} className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-sea px-4 text-[13px] font-semibold text-white shadow-[0_6px_16px_-6px_rgb(11_138_149/0.7)] active:scale-[0.97]">
             <Plus className="size-[18px]" strokeWidth={2.4} /> E’lon berish
           </button>
         </div>

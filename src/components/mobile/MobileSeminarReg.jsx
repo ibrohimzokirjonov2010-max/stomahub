@@ -287,7 +287,7 @@ function RegView({ id, seminar }) {
               <Section icon={FileText} title="Buyurtma xulosasi" first />
               <div className="space-y-2.5 text-[13px]">
                 <SumRow k={`Seminar narxi${format === 'online' ? ' (onlayn)' : ''}`} v={som(price)} />
-                <SumRow k="VIP paket" v={som(vip)} />
+                {vip > 0 && <SumRow k="VIP paket" v={som(vip)} />}
                 <SumRow k={`Chegirma (promokod)`} v={discount ? `−${som(discount)}` : som(0)} green />
                 {method === 'split' && <SumRow k={`Bo‘lib to‘lash (${months} oy)`} v={`${som(monthly)} / oy`} />}
               </div>
@@ -539,7 +539,7 @@ function Done({ s, m, reg }) {
 
       <div className="px-3.5">
         <ol className="mt-3 grid grid-cols-3">
-          {[['Ma’lumotlar', 'Shaxsiy ma’lumotlar kiritildi'], ['To‘lov', 'To‘lov amalga oshirildi'], ['Tasdiqlandi', 'Siz seminarga ro‘yxatdan o‘tdingiz']].map(([t, d], i) => (
+          {[['Ma’lumotlar', 'Shaxsiy ma’lumotlar kiritildi'], ['To‘lov', reg.pending ? 'To‘lov kutilmoqda' : (Number(reg.price) > 0 ? 'To‘lov qabul qilindi' : 'Bepul chipta')], [reg.pending ? 'Ariza qabul qilindi' : 'Tasdiqlandi', reg.pending ? 'Tashkilotchi to‘lovni tasdiqlagach chipta faollashadi' : 'Siz seminarga ro‘yxatdan o‘tdingiz']].map(([t, d], i) => (
             <li key={t} className="min-w-0">
               <div className="flex items-center">
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#0b6d73] text-white"><Check className="size-4" strokeWidth={3} /></span>
