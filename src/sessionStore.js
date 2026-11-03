@@ -86,12 +86,30 @@ export async function refreshSession() {
   return state
 }
 
-export async function signOut() {
-  if (!supabase) return
-  await supabase.auth.signOut()
-  try { localStorage.removeItem('stomahub-profile') } catch { /* ignore */ }
+// Chiqishda saqlanib qoladigan, shaxsiy bo‘lmagan kalitlar (UI sozlamalari, mehmon savati, reklama sessiyasi)
+const KEEP_ON_SIGNOUT = new Set(['stomahub:guest-cart', 'stomahub:dismissed-notes', 'sh_ad_sid'])
+
+/** Umumiy kompyuterda keyingi odam ko‘rmasligi uchun barcha foydalanuvchiga oid kesh/qoralamalarni o‘chiradi. */
+export function clearUserStorage() {
+  try {
+    const keys = []
+    for (let i = 0; i < localStorage.length; i += 1) keys.push(localStorage.key(i))
+    keys.forEach((key) => {
+      if (!key || KEEP_ON_SIGNOUT.has(key)) return
+      if (/^stomahub[-:_]/i.test(key) || /^sb-.*-auth-token/.test(key)) localStorage.removeItem(key)
+    })
+  } catch { /* ignore private mode */ }
   try { sessionStorage.clear() } catch { /* ignore */ }
+}
+
+export async function signOut() {
+  if (supabase) {
+    try { await supabase.auth.signOut() } catch { /* tarmoq xatosi bo‘lsa ham lokal ma’lumot tozalanadi */ }
+  }
+  clearUserStorage()
   commit({ status: 'anon', user: null, profile: null, error: '' })
+  // profileStore / seminarStore xotiradagi holatini ham tozalaydi (import aylanmasisiz)
+  try { window.dispatchEvent(new Event('stomahub-signed-out')) } catch { /* SSR */ }
 }
 
 function cleanRole(role) {

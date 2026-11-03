@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../../cart'
 import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, ShoppingCart, Check, X, LayoutGrid, Tag } from 'lucide-react'
 import { useMobile } from '../../useMobile'
+import { ensureLogin } from '../../loginPrompt'
 import { BottomSheet } from '../mobile/MobileSeminars'
 import { MobileTopBar, MobileToast } from '../mobile/parts'
 import MobileTabBar from '../mobile/MobileTabBar'
@@ -21,7 +22,7 @@ export function CatalogHeader({ title, subtitle, desktop, action, onAction }) {
       {subtitle && <p className={`${desktop ? 'text-[14px]' : 'text-[12px]'} text-ink-2`}>{subtitle}</p>}
      </div>
       {action && (
-        <button type="button" onClick={onAction} className={`flex shrink-0 items-center gap-1 rounded-xl bg-sea font-semibold text-white active:scale-[0.97] ${desktop ? 'h-11 px-4 text-[14px]' : 'h-9 px-3 text-[12px]'}`}>
+        <button type="button" onClick={() => { if (ensureLogin()) onAction?.() }} className={`flex shrink-0 items-center gap-1 rounded-xl bg-sea font-semibold text-white active:scale-[0.97] ${desktop ? 'h-11 px-4 text-[14px]' : 'h-9 px-3 text-[12px]'}`}>
           <Plus className="size-4" strokeWidth={2.4} /> {action}
         </button>
       )}

@@ -38,6 +38,17 @@ const ORIGIN = {
 const input = 'h-11 w-full rounded-xl border border-[#e6ebf2] bg-white text-[13px] text-ink outline-none focus:border-sea'
 
 const PLACED_KEY = 'stomahub:checkout-placed'
+const DRAFT_KEY = 'stomahub:checkout-draft'
+function readDraft() {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null')
+    sessionStorage.removeItem(DRAFT_KEY)
+    return raw && Date.now() - raw.at < 60 * 60 * 1000 ? raw : null
+  } catch { return null }
+}
+function saveDraft(data) {
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, at: Date.now() })) } catch { /* ignore */ }
+}
 function readPlaced(key) {
   try {
     const raw = JSON.parse(sessionStorage.getItem(PLACED_KEY) || 'null')
@@ -68,8 +79,10 @@ export default function Checkout() {
   const profile = useProfile()
   const [step, setStep] = useState(1)
   const [method, setMethod] = useState(DEFAULT_PAYMENT)
-  const [shipMode, setShipMode] = useState('courier')
-  const [form, setForm] = useState({
+  const [draft] = useState(() => readDraft())
+  const [shipMode, setShipMode] = useState(() => draft?.shipMode || 'courier')
+  // Mehmon kirishga yuborilganda kiritgan ma’lumotlari saqlanadi va qaytgach tiklanadi (faqat shu tab, chiqishda o‘chadi)
+  const [form, setForm] = useState(() => draft?.form || {
     name: '',
     phone: '',
     city: '',
@@ -84,7 +97,7 @@ export default function Checkout() {
   const [promoMsg, setPromoMsg] = useState('')
   const [invoice, setInvoice] = useState(false)
   const [inv, setInv] = useState({ stir: '', company: '' })
-  const [delivery, setDelivery] = useState(defaultDelivery)
+  const [delivery, setDelivery] = useState(() => (draft?.delivery?.date >= todayISO() ? draft.delivery : defaultDelivery()))
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState('')
   const [payOpen, setPayOpen] = useState(false)
@@ -104,7 +117,7 @@ export default function Checkout() {
   }))
 
   useEffect(() => {
-    if (!profile.accountLive) return
+    if (!profile.accountLive || draft) return
     const addr = profile.addresses.find((row) => row.id === profile.defaultAddr) || profile.addresses[0]
     setForm((current) => ({
       ...current,
@@ -145,7 +158,7 @@ export default function Checkout() {
 
   const next = () => {
     // Mehmon: savat saqlanadi, avval kirish kerak (forma behuda to‘ldirilmasin)
-    if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`); return }
+    if (!currentUid()) { saveDraft({ form, shipMode, delivery }); navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`, { state: loc.state }); return }
     if (step === 1) {
       const phone = form.phone.replace(/\D/g, '')
       const needAddress = shipMode === 'courier' && !form.address.trim()
@@ -173,7 +186,7 @@ export default function Checkout() {
       return
     }
     // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
-    if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`); return }
+    if (!currentUid()) { saveDraft({ form, shipMode, delivery }); navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`, { state: loc.state }); return }
     if (otherProblems.length) { setError(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
     if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return

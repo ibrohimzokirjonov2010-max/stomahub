@@ -1,27 +1,22 @@
 import { useSyncExternalStore } from 'react'
 import { registerSale } from '../../hubStore'
 import { bindBlob, touchBlob } from '../../recordSync'
+import { ensureLogin } from '../../loginPrompt'
 
 const KEY = 'stomahub-seminars'
 const SEED_SAVED = []
 export const SHOWCASE_SAVED = SEED_SAVED
 const listeners = new Set()
 
-function read() {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY))
-    return { saved: Array.isArray(v?.saved) ? v.saved : [], registered: v?.registered || {} }
-  } catch {
-    return { saved: [], registered: {} }
-  }
-}
+// Ro‘yxatdan o‘tish ma’lumotlari (ism, telefon, email) brauzerga yozilmaydi: manba — hisobga bog‘langan server blob.
+// Eski versiyalar qoldirgan keshni o‘chiramiz.
+try { localStorage.removeItem(KEY) } catch { /* ignore */ }
 
 const DEMO_SEMINARS = { saved: SEED_SAVED, registered: {} }
 let state = { saved: [], registered: {} }
 
 function write(next) {
   state = next
-  localStorage.setItem(KEY, JSON.stringify(next))
   listeners.forEach((l) => l())
   touchBlob('saved_seminars')
 }
@@ -35,7 +30,6 @@ bindBlob('saved_seminars', {
       saved: Array.isArray(payload.saved) ? payload.saved : [],
       registered: payload.registered && typeof payload.registered === 'object' ? payload.registered : {},
     }
-    localStorage.setItem(KEY, JSON.stringify(state))
     listeners.forEach((l) => l())
   },
 })
@@ -46,6 +40,7 @@ const subscribe = (l) => {
 }
 
 export function toggleSaved(id) {
+  if (!ensureLogin()) return false
   const on = state.saved.includes(id)
   write({ ...state, saved: on ? state.saved.filter((x) => x !== id) : [...state.saved, id] })
   return !on
@@ -90,6 +85,10 @@ export async function register(id, info) {
 }
 
 if (typeof window !== 'undefined') {
+  window.addEventListener('stomahub-signed-out', () => {
+    state = { saved: [], registered: {} }
+    listeners.forEach((l) => l())
+  })
   window.addEventListener('stomahub-registrations', (event) => {
     const rows = Array.isArray(event.detail) ? event.detail : []
     if (!rows.length) return

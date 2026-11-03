@@ -148,7 +148,7 @@ function Board({ initial }) {
     }
   }, [toast])
 
-  const live = session.status === 'authed' || profile.accountLive
+  const live = session.status === 'authed' || (session.status === 'loading' && profile.accountLive)
   const name = pickDisplayName(profile.name, session.profile?.full_name, session.profile?.name)
   const avatar = profile.avatar || session.profile?.avatar_url || ''
   const role = profile.role || session.profile?.specialty || ''

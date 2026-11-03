@@ -572,6 +572,9 @@ export async function registerSale(input) {
   if (sem?.status === 'bekor') return { ok: false, error: 'Seminar bekor qilingan' }
   if (sem?.regClosed || sem?.past) return { ok: false, error: 'Seminar yakunlangan — ro‘yxat yopiq' }
   if (!supabase) return { ok: false, error: state.error || 'Supabase sozlanmagan' }
+  // Ro‘yxat faqat kirgan foydalanuvchi uchun (server ham 0070 bilan talab qiladi)
+  const { data: auth } = await supabase.auth.getSession()
+  if (!auth?.session?.user) return { ok: false, error: 'Seminarga yozilish uchun hisobingizga kiring', needLogin: true }
   const res = await remoteRegister(input)
   if (!res.ok) return res
   const person = res.person

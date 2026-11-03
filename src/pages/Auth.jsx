@@ -8,7 +8,7 @@ import { flashToast } from '../components/FlashToast'
 import { ensureProfile, intendedRole, setIntendedRole, useSession } from '../sessionStore'
 import PhoneInput, { extractUzLocalDigits, toE164 } from '../components/PhoneInput'
 
-const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Sotuvchi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
+const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
 
 const COPY = {
   uz: {
@@ -439,14 +439,19 @@ function Auth({ mode }) {
     }
     const phoneDigits = extractUzLocalDigits(phone)
     const e164Reg = toE164(phone)
-    if (name.trim().length < 3) return setErr(t.errName)
-    if (!e164Reg) return setErr(t.errPhone)
+    // Barcha xatolarni birdaniga ko‘rsatamiz (bittadan emas)
     const emailIssue = emailProblem(email)
-    if (emailIssue) { setEmailErr(emailIssue); return setErr(emailIssue) }
-    if (!spec) return setErr(t.errSpec)
-    if (pass.length < 6) return setErr(t.errPass)
-    if (pass !== pass2) return setErr(t.errMatch)
-    if (!terms) return setErr(t.errTerms)
+    const problems = [
+      name.trim().length < 3 && t.errName,
+      !e164Reg && t.errPhone,
+      emailIssue,
+      !spec && t.errSpec,
+      pass.length < 6 && t.errPass,
+      pass.length >= 6 && pass !== pass2 && t.errMatch,
+      !terms && t.errTerms,
+    ].filter(Boolean)
+    setEmailErr(emailIssue || '')
+    if (problems.length) return setErr(problems)
     if (!supabase) return setErr(t.errSupabase)
     setBusy(true)
     setPhoneTaken(false)
@@ -549,7 +554,7 @@ function Auth({ mode }) {
               <p className="mt-2 max-w-[360px] text-[14.5px] leading-relaxed text-[#5c6e80]">{isLogin ? t.loginLead : t.regLead}</p>
             </div>
             <form onSubmit={submit} className={`mt-5 ${isLogin ? 'space-y-5' : 'space-y-4'}`}>
-              {!isLogin && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} />}
+              {!isLogin && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} autoComplete="name" />}
               {isLogin ? (
                 <LoginIdField label={t.id} value={id} onChange={setId} placeholder={t.idPh} />
               ) : (
@@ -566,7 +571,7 @@ function Auth({ mode }) {
                     />
                   </label>
                   <div>
-                    <Field label={t.email} icon={Mail} value={email} onChange={(v) => { setEmail(v); if (emailErr) setEmailErr(emailProblem(v)) }} onBlur={() => email && setEmailErr(emailProblem(email))} placeholder={t.emailPh} type="email" invalid={!!emailErr} />
+                    <Field label={t.email} icon={Mail} value={email} onChange={(v) => { setEmail(v); if (emailErr) setEmailErr(emailProblem(v)) }} onBlur={() => email && setEmailErr(emailProblem(email))} placeholder={t.emailPh} type="email" autoComplete="email" invalid={!!emailErr} />
                     {emailErr && <p role="alert" className="mt-1 text-[12px] font-medium text-[#d14343]">{emailErr}</p>}
                   </div>
                 </div>
@@ -582,6 +587,7 @@ function Auth({ mode }) {
                     </select>
                     <ChevronDown className="pointer-events-none size-4 text-[#5c6e80]" />
                   </span>
+                  <span className="mt-1 block text-[12px] text-[#5c6e80]">Mahsulot sotmoqchimisiz? <Link to="/sotuvchi-bolish" className="font-semibold text-[#0F766E]">Sotuvchi sifatida ariza bering</Link></span>
                 </label>
               )}
               {isLogin ? (
@@ -598,11 +604,11 @@ function Auth({ mode }) {
                 <div className="grid gap-4 lg:grid-cols-2">
                   <label className="block">
                     <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.pass}</span>
-                    <span className="mt-1.5 block"><Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} /></span>
+                    <span className="mt-1.5 block"><Pass value={pass} onChange={setPass} placeholder={t.passPh} show={show} onToggle={() => setShow((v) => !v)} autoComplete="new-password" /></span>
                   </label>
                   <label className="block">
                     <span className="text-[13.5px] font-semibold text-[#0f2438]">{t.pass2}</span>
-                    <span className="mt-1.5 block"><Pass value={pass2} onChange={setPass2} placeholder={t.pass2Ph} show={show2} onToggle={() => setShow2((v) => !v)} /></span>
+                    <span className="mt-1.5 block"><Pass value={pass2} onChange={setPass2} placeholder={t.pass2Ph} show={show2} onToggle={() => setShow2((v) => !v)} autoComplete="new-password" /></span>
                   </label>
                 </div>
               )}
@@ -613,7 +619,7 @@ function Auth({ mode }) {
                 </label>
               )}
               {otpSent && isLogin && <Field label={t.code} icon={Lock} value={otp} onChange={setOtp} placeholder={t.codePh} />}
-              {err && <p className="text-[13px] font-medium text-[#d14343]">{err}{phoneTaken && !isLogin && <> <Link to="/kirish" className="font-semibold text-[#0F766E] underline">{t.loginLink}</Link></>}</p>}
+              {Array.isArray(err) ? (err.length > 0 && <ul role="alert" className="list-disc space-y-0.5 pl-5 text-[13px] font-medium text-[#d14343]">{err.map((m) => <li key={m}>{m}</li>)}</ul>) : err && <p role="alert" className="text-[13px] font-medium text-[#d14343]">{err}{phoneTaken && !isLogin && <> <Link to="/kirish" className="font-semibold text-[#0F766E] underline">{t.loginLink}</Link></>}</p>}
               {info && <p className="text-[13px] font-medium text-[#0F766E]">{info}</p>}
               <button type="submit" disabled={busy} className={`flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#0F766E] font-semibold text-white hover:bg-[#0b5f59] disabled:opacity-60 ${isLogin ? 'h-14 text-[17px]' : 'h-[52px] text-[16px]'}`}>
                 {isLogin ? <LogIn className="size-5" /> : <UserPlus className="size-5" />}
@@ -683,44 +689,35 @@ export function AuthAside({ t }) {
 }
 
 function LoginIdField({ label, value, onChange, placeholder }) {
-  const emailMode = /[a-zA-Z@]/.test(value || '')
-  if (emailMode) {
-    return (
-      <label className="block">
-        <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
-        <span className="mt-1.5 flex h-14 items-center gap-2.5 rounded-xl border border-[#e3eaee] bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E]">
-          <UserRound className="size-[19px] shrink-0 text-[#7d8f99]" />
-          <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} autoComplete="username" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
-        </span>
-      </label>
-    )
-  }
+  // Bitta matn maydoni: telefon ham, email ham yoziladi (type="tel" email yozishni qiyinlashtirardi)
   return (
     <label className="block">
       <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
-      <PhoneInput value={value} onChange={onChange} valueMode="display" showIcon className="mt-1.5 h-14" placeholder={placeholder} aria-label={label} />
-      <button type="button" className="mt-1.5 text-[12px] font-semibold text-[#0F766E]" onClick={() => onChange('@')}>Email bilan kirish</button>
-    </label>
-  )
-}
-
-function Field({ label, icon: Icon, value, onChange, onBlur, placeholder, type = 'text', invalid = false, big = false }) {
-  return (
-    <label className="block">
-      <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
-      <span className={`mt-1.5 flex items-center gap-2.5 rounded-xl border bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${big ? 'h-14' : 'h-12'} ${invalid ? 'border-[#d14343]' : 'border-[#e3eaee]'}`}>
-        <Icon className="size-[19px] shrink-0 text-[#7d8f99]" />
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} aria-invalid={invalid || undefined} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
+      <span className="mt-1.5 flex h-14 items-center gap-2.5 rounded-xl border border-[#e3eaee] bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E]">
+        <UserRound className="size-[19px] shrink-0 text-[#7d8f99]" />
+        <input type="text" inputMode="email" name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
       </span>
     </label>
   )
 }
 
-function Pass({ value, onChange, placeholder, show, onToggle, big = false }) {
+function Field({ label, icon: Icon, value, onChange, onBlur, placeholder, type = 'text', invalid = false, big = false, autoComplete }) {
+  return (
+    <label className="block">
+      <span className="text-[13.5px] font-semibold text-[#0f2438]">{label}</span>
+      <span className={`mt-1.5 flex items-center gap-2.5 rounded-xl border bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${big ? 'h-14' : 'h-12'} ${invalid ? 'border-[#d14343]' : 'border-[#e3eaee]'}`}>
+        <Icon className="size-[19px] shrink-0 text-[#7d8f99]" />
+        <input type={type} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} onBlur={onBlur} aria-invalid={invalid || undefined} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
+      </span>
+    </label>
+  )
+}
+
+function Pass({ value, onChange, placeholder, show, onToggle, big = false, autoComplete = 'current-password' }) {
   return (
     <span className={`flex items-center gap-2.5 rounded-xl border border-[#e3eaee] bg-[#f7f9fa] px-3.5 focus-within:border-[#0F766E] ${big ? 'h-14' : 'h-12'}`}>
       <Lock className="size-[19px] shrink-0 text-[#7d8f99]" />
-      <input type={show ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
+      <input type={show ? 'text' : 'password'} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9aa9b1]" />
       <button type="button" onClick={onToggle} aria-label={show ? 'Yashirish' : 'Ko‘rsatish'} className="text-[#5c6e80]">
         {show ? <Eye className="size-[19px]" /> : <EyeOff className="size-[19px]" />}
       </button>

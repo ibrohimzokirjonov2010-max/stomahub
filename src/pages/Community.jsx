@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ensureLogin } from '../loginPrompt'
 import {
   Plus, BadgeCheck, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, HelpCircle,
   MessagesSquare, FileText, Bold, Italic, Link2, X, ShieldCheck, Send, Search, Flame,
@@ -72,6 +73,7 @@ function Board({ query }) {
   const [openId, setOpenId] = useState(null)
   const [hidden, setHidden] = useState(() => new Set())
   const [composer, setComposer] = useState(null)
+  const openComposer = (kind) => { if (ensureLogin()) setComposer(kind) }
   const [toast, setToast] = useState('')
   const [promo, setPromo] = useState(false)
   const leaders = []
@@ -148,7 +150,7 @@ function Board({ query }) {
           <h1 className="text-[26px] font-extrabold tracking-tight text-ink">Hamjamiyat</h1>
           <p className="text-[13px] text-muted">Stomatologlar uchun professional bilim, tajriba va muhokama maydoni.</p>
         </div>
-        <button type="button" onClick={() => setComposer('keys')} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">
+        <button type="button" onClick={() => openComposer('keys')} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">
           <Plus className="size-4" /> Post yozish
         </button>
       </div>
@@ -158,7 +160,7 @@ function Board({ query }) {
           <button key={k.id} type="button" onClick={() => setTab(k.id)} className="flex min-w-0 items-center gap-2.5 rounded-2xl border bg-white px-3 py-3 text-left shadow-card" style={{ borderColor: tab === k.id ? '#0b8a95' : '#eef2f6' }}>
             <KindIcon id={k.id} bg={k.bg} color={k.color} />
             <span className="min-w-0 flex-1">
-              <b className="flex items-center gap-1 text-[13px]">{k.title} {k.id === 'keys' && <span role="button" aria-label="Klinik keys yozish" onClick={(e) => { e.stopPropagation(); setComposer('keys') }}><Plus className="size-3.5 text-sea" /></span>}</b>
+              <b className="flex items-center gap-1 text-[13px]">{k.title} {k.id === 'keys' && <span role="button" aria-label="Klinik keys yozish" onClick={(e) => { e.stopPropagation(); openComposer('keys') }}><Plus className="size-3.5 text-sea" /></span>}</b>
               <span className="block truncate text-[11px] text-muted">{k.text}</span>
             </span>
           </button>
@@ -278,7 +280,7 @@ function Board({ query }) {
             <div className="p-3">
               <b className="text-[14px]">Klinik holatingizni ulashing</b>
               <p className="mt-1 text-[12px] text-white/80">Hamkasblaringizdan fikr oling, tajriba almashing</p>
-              <button type="button" onClick={() => setComposer('keys')} className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl bg-sea text-[12.5px] font-semibold"><Plus className="size-4" /> Post yozish</button>
+              <button type="button" onClick={() => openComposer('keys')} className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl bg-sea text-[12.5px] font-semibold"><Plus className="size-4" /> Post yozish</button>
             </div>
           </section>}
 
