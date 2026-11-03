@@ -376,7 +376,7 @@ function Steps({ step }) {
 function SeminarCard({ s, m }) {
   return (
     <div className={`${card} mt-2 flex gap-3 p-2.5`}>
-      <div className="relative w-[40%] shrink-0 self-stretch overflow-hidden rounded-xl bg-[#f1f5f7]"><img src={s.image} alt="" className="absolute inset-0 h-full w-full object-contain" /></div>
+      <div className="relative w-[40%] shrink-0 self-stretch overflow-hidden rounded-xl bg-[#f1f5f7]"><img src={s.image} alt="" className="absolute inset-0 h-full w-full object-cover" /></div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1">
           <span className="rounded-full bg-[#e3f4f1] px-2 py-0.5 text-[9.5px] font-medium text-[#0b6d73]">{s.catName}</span>

@@ -1,3 +1,4 @@
+import MobileNavDrawer from './MobileNavDrawer'
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -42,12 +43,6 @@ const OTHERS = [
   { name: 'Aksiyalar', note: 'Chegirmalar va takliflar', to: '/aksiyalar', icon: BadgePercent },
 ]
 
-const MENU = [
-  ['Do‘kon', [['Marketplace', '/marketplace', Store], ['Kategoriyalar', '/kategoriyalar', LayoutGrid], ['Brendlar', '/brendlar', Tag], ['Aksiyalar', '/aksiyalar', BadgePercent], ['Forma', '/forma', Shirt], ['Jihozlar', '/jihozlar', Armchair], ['Ortiqcha materiallar', '/ortiqcha', Package]]],
-  ['Ta’lim', [['Seminarlar', '/seminarlar', CalendarDays], ['Kitoblar', '/kitoblar', BookOpen], ['Sertifikatlar', '/sertifikatlar', Award]]],
-  ['Hamjamiyat va ish', [['Hamjamiyat', '/community', Users], ['Mutaxassislar', '/mutaxassislar', Stethoscope], ['Ish o‘rinlari', '/ishlar', Briefcase], ['Ustalar', '/ustalar', Wrench], ['E’lonlar', '/elonlar', Megaphone], ['Yangiliklar', '/yangiliklar', Newspaper]]],
-  ['Klinika', [['Mening klinikam', '/klinika', Store], ['Bemorlar', '/bemorlar', UserRound], ['Uchrashuvlar', '/uchrashuvlar', CalendarClock], ['To‘lovlar', '/tolovlar', Wallet], ['Ombor', '/ombor', Warehouse]]],
-]
 
 export default function MobileKategoriyalar() {
   useCatalogVersion()
@@ -208,29 +203,7 @@ export function HubTopBar({ onBell, onBack }) {
 }
 
 export function MenuDrawer({ onClose }) {
-  const { pathname } = useLocation()
-  return (
-    <div className="fixed inset-0 z-[60] bg-ink/45" onClick={onClose}>
-      <nav aria-label="Asosiy menyu" onClick={(e) => e.stopPropagation()} className="flex h-full w-[82%] max-w-[320px] flex-col overflow-y-auto bg-white px-4 pb-6 pt-4">
-        <div className="flex items-center justify-between">
-          <BrandLogo to={null} className="h-7" />
-          <button type="button" onClick={onClose} aria-label="Yopish" className="grid size-9 place-items-center rounded-full bg-page text-ink"><X className="size-4" /></button>
-        </div>
-        {MENU.map(([title, links]) => (
-          <div key={title} className="mt-5">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{title}</p>
-            <div className="mt-1.5 flex flex-col">
-              {links.map(([label, to, Icon]) => (
-                <Link key={to} to={to} onClick={onClose} className={`flex h-11 items-center gap-3 rounded-xl px-2 text-[14px] font-medium ${to === pathname ? 'bg-sea-50 text-sea' : 'text-ink'}`}>
-                  <Icon className="size-[19px] text-sea" strokeWidth={1.8} /> {label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-    </div>
-  )
+  return <MobileNavDrawer open onClose={onClose} />
 }
 
 function ImplantIcon(props) {
