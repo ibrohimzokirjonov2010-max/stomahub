@@ -124,7 +124,7 @@ function Page({ id }) {
   return (
     <div className="min-h-dvh bg-[#F0FDFA] pb-[calc(150px+env(safe-area-inset-bottom))] text-[15px] text-[#134e4a]">
       {/* Yuqori panel */}
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-white/95 px-2 pb-1.5 pt-[calc(6px+env(safe-area-inset-top))] backdrop-blur">
+      <header className="sticky top-[0px] z-20 flex items-center justify-between bg-white/95 px-2 pb-1.5 pt-[calc(6px+var(--safe-top))] backdrop-blur">
         <button type="button" aria-label="Orqaga" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/seminarlar'))} className="grid size-11 place-items-center rounded-full text-[#115E59]"><ChevronLeft className="size-6" /></button>
         <p className="text-[16px] font-bold text-[#115E59]">Seminar</p>
         <div className="flex">
@@ -181,7 +181,7 @@ function Page({ id }) {
       )}
 
       {/* Bo‘limlar */}
-      <nav ref={tabsRef} aria-label="Bo‘limlar" className="no-scrollbar sticky top-[calc(56px+env(safe-area-inset-top))] z-10 mt-3 flex gap-2 overflow-x-auto bg-[#F0FDFA]/95 px-3 py-2 backdrop-blur">
+      <nav ref={tabsRef} aria-label="Bo‘limlar" className="no-scrollbar sticky top-[calc(56px+var(--safe-top))] z-10 mt-3 flex gap-2 overflow-x-auto bg-[#F0FDFA]/95 px-3 py-2 backdrop-blur">
         {tabs.map(([k, label, Icon]) => (
           <button key={k} data-tab={k} type="button" onClick={() => goTo(k)} className={`flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold ring-1 ${tab === k ? 'bg-[#0F766E] text-white ring-[#0F766E]' : 'bg-white text-[#115E59] ring-[#CCFBF1]'}`}>
             <Icon className="size-4" /> {label}
