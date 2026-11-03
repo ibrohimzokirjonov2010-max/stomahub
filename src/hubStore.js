@@ -478,8 +478,16 @@ export function checkInPayload(seminarId, raw) {
   const text = String(raw || '').trim()
   if (text.length < 2) return { ok: false, error: 'Ism yoki kod kiriting' }
   const mine = state.participants.filter((p) => !seminarId || p.seminarId === seminarId)
+  const sem = seminarId ? state.seminars.find((s) => s.id === seminarId) : null
+  if (sem?.start) {
+    const today = tashkentToday()
+    const end = sem.end && sem.end > sem.start ? sem.end : sem.start
+    if (today < sem.start) return { ok: false, error: `Check-in seminar kuni (${sem.start}) ochiladi` }
+    if (today > end) return { ok: false, error: 'Seminar yakunlangan — check-in yopilgan' }
+  }
   const hit = matchPerson(mine, text)
   if (hit) {
+    if (hit.pay === 'cancel') return { ok: false, error: `${hit.name}: ro‘yxatdan o‘tish bekor qilingan` }
     if (hit.arrived) return { ok: true, person: hit, already: true }
     return { ok: true, person: checkIn(hit.id) }
   }
