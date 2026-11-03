@@ -1,3 +1,4 @@
+import { promoValueError } from '../../hubStore'
 import { earlyBirdError } from './wizardBits'
 import { tashkentToday } from '../../tashkentDate'
 import { useEffect, useState } from 'react'
@@ -303,7 +304,7 @@ export function SpeakerModal({ open, onClose, onSave, photo }) {
   )
 }
 
-export function PromoModal({ open, onClose, onSave }) {
+export function PromoModal({ open, onClose, onSave, maxPrice = 0 }) {
   const [f, setF] = useState({ code: '', kind: 'foiz', value: '', from: '', to: '', limit: '', active: true })
   const [err, setErr] = useState('')
   useEffect(() => {
@@ -314,6 +315,7 @@ export function PromoModal({ open, onClose, onSave }) {
   if (!open) return null
   const save = () => {
     if (!/^[A-Za-z0-9]{3,16}$/.test(f.code.trim()) || !Number(f.value)) { setErr('Kod va chegirma miqdorini kiriting'); return }
+    { const ve = promoValueError(f.kind, f.value, maxPrice); if (ve) { setErr(ve); return } }
     onSave({
       id: `p${Date.now()}`,
       code: f.code.trim().toUpperCase(),

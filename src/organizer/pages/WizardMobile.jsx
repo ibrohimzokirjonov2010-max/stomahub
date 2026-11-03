@@ -8,6 +8,7 @@ import {
 import { ToothIcon } from '../../components/icons'
 import { EMPTY_DETAILS, FORMAT_OF, TEAL_MOBILE, TOPICS, earlyBirdError, placeTypeOf, pickExtras, uploadImage, uzDate, validateStep, yearsError } from './wizardBits'
 import { tashkentToday } from '../../tashkentDate'
+import { promoValueError } from '../../hubStore'
 import { getHub, saveSeminar, seminarFormCopy, useHub } from '../../hubStore'
 import WizardDetails from './WizardDetails'
 import { SpeakerExtraFields, speakerPayload } from './WizardModals'
@@ -436,7 +437,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
         </label>
       </Sheet>
 
-      <Sheet open={sheet === 'promo'} onClose={() => setSheet(null)} icon={Percent} title="Promo-kod qo‘shish" sub="Chipta sotuvini rag‘batlantirish uchun promo-kod yarating." onSave={() => { if (promo.code.trim().length < 3 || !Number(promo.sum)) { notify('Kod va chegirma summasini kiriting'); return } setPromos((list) => [...list, { id: `p-${Date.now()}`, code: promo.code.trim().toUpperCase(), off: promo.sum, kind: 'summa', note: promo.note, on: true, limit: Number(promo.uses) || 20, to: promo.until }]); setSheet(null); notify('Promo-kod saqlandi') }}>
+      <Sheet open={sheet === 'promo'} onClose={() => setSheet(null)} icon={Percent} title="Promo-kod qo‘shish" sub="Chipta sotuvini rag‘batlantirish uchun promo-kod yarating." onSave={() => { if (promo.code.trim().length < 3 || !Number(promo.sum)) { notify('Kod va chegirma summasini kiriting'); return } { const ve = promoValueError('summa', promo.sum, Math.max(0, ...tickets.map((t) => Number(t.price) || 0))); if (ve) { notify(ve); return } } setPromos((list) => [...list, { id: `p-${Date.now()}`, code: promo.code.trim().toUpperCase(), off: promo.sum, kind: 'summa', note: promo.note, on: true, limit: Number(promo.uses) || 20, to: promo.until }]); setSheet(null); notify('Promo-kod saqlandi') }}>
         <Field label="Promo-kod" icon={Tag} value={promo.code} onChange={(v) => setPromo({ ...promo, code: v.toUpperCase() })} />
         <Field label="Chegirma summasi" icon={Wallet} suffix="so‘m" value={Number(promo.sum || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} onChange={(v) => setPromo({ ...promo, sum: v.replace(/\D/g, '') })} />
         <Field label="Maksimal ishlatish soni" icon={Users} value={promo.uses} onChange={(v) => setPromo({ ...promo, uses: v.replace(/\D/g, '') })} />
