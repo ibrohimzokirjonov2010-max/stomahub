@@ -9,7 +9,7 @@ import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
 import ProductThumb from '../components/bosh-sahifa/ProductThumb'
 import { OrderBadge } from './Buyurtmalar'
-import { O_LABEL, O_NEXT, O_FLOW, DELIVERY, showPhone, phoneOf } from '../components/buyurtmalar/constants'
+import { O_LABEL, O_NEXT, O_FLOW, DELIVERY, showPhone, phoneOf, isLate } from '../components/buyurtmalar/constants'
 
 const PAY_METHOD = { cash: 'Naqd', card: 'Karta', click: 'Click', payme: 'Payme', uzcard: 'Uzcard', humo: 'Humo' }
 const REASONS = ['Mahsulot omborda qolmagan', 'Xaridor bekor qilishni so‘radi', 'Xaridor bilan bog‘lanib bo‘lmadi', 'Manzil noto‘g‘ri', 'Boshqa sabab']
@@ -66,7 +66,7 @@ export default function BuyurtmaDetail() {
   const deliv = DELIVERY.find((d) => d[0] === o.delivery_method)?.[1] || 'Kuryer orqali yetkazish'
 
   const stepper = (mobile) => {
-    const steps = mobile ? [['yangi', 'Yangi', FileText], ['tasdiqlandi', 'Tasdiqlangan', BadgeCheck], ['tayyorlanmoqda', 'Tayyorlanmoqda', Box], ['yetkazilmoqda', 'Yetkazilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
+    const steps = mobile ? [['yangi', 'Yangi', FileText], ['tasdiqlandi', 'Tasdiq­langan', BadgeCheck], ['tayyorlanmoqda', 'Tayyor­lanmoqda', Box], ['yetkazilmoqda', 'Yetka­zilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
     return (
       <div className="flex">
         {steps.map(([s, l, I], i) => {
@@ -75,16 +75,17 @@ export default function BuyurtmaDetail() {
           const lineDone = !cancelled && i < steps.length - 1 && O_FLOW.indexOf(steps[i + 1][0]) <= idx
           return (
             <Step key={s} tap={mobile && isNext} onTap={() => setConfirm(true)} label={l}>
-              {i < steps.length - 1 && <span className={`absolute top-[11px] left-1/2 w-full md:top-[9px] ${lineDone ? 'h-[3px] bg-[#0F766E]' : 'border-t-2 border-dashed border-[#CFDADD]'} ${mobile ? 'top-[16px]' : ''}`} />}
-              <span className={`relative grid place-items-center rounded-full ${mobile ? 'size-9' : 'size-5'} ${done ? 'bg-[#0F766E] text-white' : mobile && isNext ? 'bg-white text-[#0F766E] ring-2 ring-[#0F766E] ring-offset-2 animate-pulse' : 'bg-[#E6EEF0] text-[#5C6E80]'}`}>{mobile ? <I className="size-4" /> : <Check className="size-3" strokeWidth={3} />}</span>
-              <div className={`mt-1.5 ${mobile ? 'min-w-0 break-words px-0.5 text-[10.5px] leading-tight' : 'text-[12px]'} ${done ? 'font-semibold text-[#10283F]' : 'text-[#3D4E5F]'} ${mobile && done && s !== 'yangi' ? '!text-[#0F766E]' : ''}`}>{l}</div>
-              <div className={`${mobile ? 'text-[10px]' : 'text-[11px]'} leading-tight text-[#5C6E80]`}>{hist[s] ? <>{dmy(hist[s])}<br />{hm(hist[s])}</> : mobile && isNext ? <span className="mt-0.5 inline-block rounded-full bg-[#0F766E] px-1.5 py-px text-[10px] font-semibold text-white">Bosing</span> : mobile ? '—' : ''}</div>
+              {i < steps.length - 1 && <span className={`absolute top-[11px] left-1/2 w-full md:top-[9px] ${lineDone ? 'h-[3px] bg-[#0F766E]' : 'border-t-2 border-dashed border-[#CFDADD]'} ${mobile ? 'top-[15px]' : ''}`} />}
+              <span className={`relative grid place-items-center rounded-full ${mobile ? 'size-8' : 'size-5'} ${done ? 'bg-[#0F766E] text-white' : mobile && isNext ? 'bg-white text-[#0F766E] ring-2 ring-[#0F766E] ring-offset-2 animate-pulse' : 'bg-[#E6EEF0] text-[#5C6E80]'}`}>{mobile ? <I className="size-4" /> : <Check className="size-3" strokeWidth={3} />}</span>
+              <div className={`mt-1.5 ${mobile ? 'w-full min-w-0 hyphens-manual break-words px-px text-[9.5px] leading-[1.15] min-[400px]:text-[10.5px]' : 'text-[12px]'} ${done ? 'font-semibold text-[#10283F]' : 'text-[#3D4E5F]'} ${mobile && done && s !== 'yangi' ? '!text-[#0F766E]' : ''}`}>{l}</div>
+              <div className={`${mobile ? 'text-[10px]' : 'text-[11px]'} leading-tight text-[#5C6E80]`}>{hist[s] ? <>{dmy(hist[s])}<br />{hm(hist[s])}</> : mobile && isNext ? <span className="mt-0.5 inline-block rounded-full bg-[#F0FDFA] px-1.5 py-px text-[9px] font-semibold text-[#0F766E] ring-1 ring-[#CCFBF1]">Keyingi</span> : mobile ? '—' : ''}</div>
             </Step>
           )
         })}
       </div>
     )
   }
+  const stepperHint = next && !cancelled ? <p className="mt-2 text-center text-[11px] text-[#5C6E80]">Keyingi bosqichga o‘tkazish uchun belgilangan doirachani yoki pastdagi tugmani bosing.</p> : null
   const cancelModal = (
     <Modal open={cancel} onClose={() => setCancel(false)} title="Buyurtmani bekor qilish" subtitle={`${o.code} — mahsulotlar qoldiqqa qaytariladi.`} width="max-w-[480px]">
       <div className="space-y-2">{REASONS.map((r) => <label key={r} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[#E6EEF0] px-3 py-2.5 text-[14px] has-[:checked]:border-[#0F766E] has-[:checked]:bg-[#F0FDFA]"><input type="radio" name="reason" checked={reason === r} onChange={() => setReason(r)} className="accent-[#0F766E]" />{r}</label>)}</div>
@@ -141,7 +142,7 @@ export default function BuyurtmaDetail() {
                     <div className="flex gap-2"><UserRound className="size-4 text-[#0F766E]" /><div>Mas’ul shaxs<div className="text-[13.5px] text-[#10283F]">{o.contact_person || o.customer_name || '—'}</div></div></div>
                     <div className="flex gap-2"><Phone className="size-4 text-[#0F766E]" /><div>Telefon<div className="text-[13.5px] text-[#10283F]">{phoneOf(o)}</div></div></div>
                   </div>
-                  <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[#5C6E80]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div className="flex-1">Manzil<div className="text-[12.5px] text-[#3D4E5F]">{addrText(o.address) || '—'}</div><MapPreview lat={o.lat ?? parseGeo(o.address).lat} lng={o.lng ?? parseGeo(o.address).lng} /></div>{o.address && <a href={mapUrl(o.address, o)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-[#DCE5E7] px-3 py-2 text-[12px] font-semibold text-[#0F766E]"><Navigation className="size-3.5" />Xaritada ko‘rish</a>}</div>
+                  <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[#5C6E80]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div className="flex-1">Manzil<div className="text-[12.5px] text-[#3D4E5F]">{addrText(o.address) || '—'}</div><MapPreview lat={o.lat ?? parseGeo(o.address).lat} lng={o.lng ?? parseGeo(o.address).lng} /></div>{o.address && (o.lat ?? parseGeo(o.address).lat) == null && <a href={mapUrl(o.address, o)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg border border-[#DCE5E7] px-3 py-2 text-[12px] font-semibold text-[#0F766E]"><Navigation className="size-3.5" />Xaritada ko‘rish</a>}</div>
                 </div>
               </div>
             </div>
@@ -196,7 +197,7 @@ export default function BuyurtmaDetail() {
         </div>
         <Err>{a.error}</Err>
         <div className="space-y-3">
-          <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge order={o} status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : stepper(true)}</div>
+          <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge order={o} status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : <>{isLate(o) && <div className="mb-2 flex items-center gap-2 rounded-lg bg-[#FDE8EC] px-3 py-2 text-[12.5px] font-semibold text-[#BE123C]">Muddati o‘tgan — yetkazish sanasi {dmy(o.delivery_date)} edi</div>}{stepper(true)}{stepperHint}</>}</div>
           <div className={`${card} p-3`}>
             <div className="flex items-center justify-between"><h3 className="flex items-center gap-2 text-[15px] font-bold"><span className="grid size-8 place-items-center rounded-full bg-[#E3F4F2] text-[#0F766E]"><UserRound className="size-4" /></span>Mijoz ma’lumotlari</h3>{o.customer_id && <Link to={`/sotuvchi/mijozlar/${o.customer_id}`} className="text-[12.5px] text-[#0F766E]">Mijoz profilini ko‘rish ›</Link>}</div>
             <div className="mt-2 flex items-center gap-3"><span className="grid size-12 place-items-center rounded-full bg-[#E3F4F2] font-semibold text-[#0F766E]">{(o.customer_name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span><div className="text-[12.5px] text-[#5C6E80]"><div className="text-[14.5px] font-semibold text-[#10283F]">{o.customer_name || '—'}</div><div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{phoneOf(o)}</div><div className="flex items-center gap-1.5"><MapPin className="size-3.5 text-[#0F766E]" />{o.city || o.region || '—'}</div></div></div>
@@ -208,7 +209,7 @@ export default function BuyurtmaDetail() {
           </div>
           <div className={`${card} p-3`}>
             <h3 className="flex items-center gap-2 text-[15px] font-bold"><MapPin className="size-5 text-[#0F766E]" />Yetkazib berish manzili</h3>
-            <div className="mt-2 flex gap-2"><div className="flex flex-1 gap-2 rounded-lg border border-[#CCFBF1] bg-[#F0FDFA] p-2.5 text-[12px] text-[#3D4E5F]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div>{addrText(o.address) || '—'}<div className="text-[#5C6E80]">{deliv}</div><MapPreview lat={o.lat ?? parseGeo(o.address).lat} lng={o.lng ?? parseGeo(o.address).lng} /></div></div>{o.address && <a href={mapUrl(o.address, o)} target="_blank" rel="noreferrer" className="flex w-[118px] items-center justify-center gap-1 rounded-lg bg-[#F3F7F7] text-[12px] text-[#0F766E]"><MapPin className="size-4" />Xaritada ko‘rish</a>}</div>
+            <div className="mt-2"><div className="flex gap-2 rounded-lg border border-[#CCFBF1] bg-[#F0FDFA] p-2.5 text-[12px] text-[#3D4E5F]"><MapPin className="size-4 shrink-0 text-[#0F766E]" /><div>{addrText(o.address) || '—'}<div className="text-[#5C6E80]">{deliv}</div><MapPreview lat={o.lat ?? parseGeo(o.address).lat} lng={o.lng ?? parseGeo(o.address).lng} />{o.address && (o.lat ?? parseGeo(o.address).lat) == null && <a href={mapUrl(o.address, o)} target="_blank" rel="noreferrer" className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-semibold text-[#0F766E] hover:underline"><Navigation className="size-3.5" />Xaritada ochish</a>}</div></div></div>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             <div className={`${card} p-3 text-[12px] text-[#5C6E80]`}><h3 className="mb-1.5 flex items-center gap-1.5 text-[14px] font-bold text-[#10283F]"><Banknote className="size-5 text-[#0F766E]" />To‘lov ma’lumotlari</h3><b className="text-[13px] text-[#10283F]">Naqd pul</b><br />Buyurtma mijozga yetkazilganda naqd pulda to‘lanadi.</div>

@@ -5,7 +5,7 @@ import { Plus, Filter, Eye, CalendarDays, SlidersHorizontal, ChevronRight, UserR
 import { useSellerData, setOrderStatus, netOf, csvDownload } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { useMobile } from '../../useMobile'
-import { card, PageHead, Btn, Select, SearchInput, Tabs, Chips, Badge, Checkbox, Pager, usePaged, Menu, Fab, Th, Td, toast, inputCls } from '../components/ui'
+import { card, PageHead, Btn, Select, SearchInput, Tabs, Chips, Badge, OverdueBadge, Checkbox, Pager, usePaged, Menu, Fab, Th, Td, toast, inputCls } from '../components/ui'
 import { xlsxBlob, oneCBlob, download } from '../lib/exportOrders'
 import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
@@ -15,7 +15,7 @@ import { O_LABEL, O_NEXT, O_TONE, phoneOf, isLate } from '../components/buyurtma
 
 export const OrderBadge = ({ status, className = '', icon, order }) => {
   const I = { yangi: FileText, tasdiqlandi: CircleCheck, tayyorlanmoqda: Box, yetkazilmoqda: Truck, yetkazildi: CircleCheck, bekor_qilindi: CircleX }[status]
-  return <><Badge tone={O_TONE[status]} className={`min-w-[86px] ${className}`}>{icon && I && <I className="size-3.5" />}{O_LABEL[status] || status}</Badge>{isLate(order) && <Badge tone="off" className="ml-1 whitespace-nowrap" title="Yetkazish sanasi o‘tib ketdi">Kechikmoqda</Badge>}</>
+  return <><Badge tone={O_TONE[status]} className={`min-w-[86px] ${className}`}>{icon && I && <I className="size-3.5" />}{O_LABEL[status] || status}</Badge>{isLate(order) && <OverdueBadge className="ml-1" />}</>
 }
 const total = (o) => netOf(o) + Number(o.delivery_fee || 0)
 const city = (o) => o.city || o.region || (o.address || '').split(',')[0] || ''

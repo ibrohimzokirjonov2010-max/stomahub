@@ -105,6 +105,7 @@ export const pendingCounts = () => rpc('admin_pending_counts')
 export const licenseQueue = (tab = 'pending') => rpc('admin_license_queue', { p_tab: tab })
 export const reviewLicense = (id, approve, reason = '') => rpc('admin_review_license', { p_id: id, p_approve: approve, p_reason: reason })
 export const listContent = (a) => rpc('admin_content_list', { p_kind: a.kind, p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 20 })
+export const communityOpenReports = () => rpc('admin_community_open_reports')
 export const moderateContent = (kind, id, action, reason = '') => rpc('admin_content_moderate', { p_kind: kind, p_id: String(id), p_action: action, p_reason: reason })
 
 export const getSettings = () => rpc('admin_settings_get')

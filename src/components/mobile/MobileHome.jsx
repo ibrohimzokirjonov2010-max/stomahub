@@ -5,7 +5,7 @@ import {
   Search, ShoppingCart, SlidersHorizontal, CalendarDays, Package, Shirt, GraduationCap, BookOpen, Wrench,
   FlaskConical, ArrowRight, ChevronRight, MapPin, Clock, FileText, Heart, Star, MoreVertical, X,
 } from 'lucide-react'
-import { useCart } from '../../cart'
+import { useCart, isOwnProduct } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { marketProducts, som } from '../../marketData'
 import { seminarPrice } from '../../seminarsData'
@@ -19,6 +19,7 @@ import { MobileTopBar, MobileToast } from './parts'
 import { initialsOf, looksLikeDemoName } from '../../demoPurge'
 import { pickDisplayName, useSession } from '../../sessionStore'
 import { SectionIcons, MenuIcons } from '../tealIcons'
+import UserAvatar, { realAvatar } from '../UserAvatar'
 
 const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: SectionIcons.seminarlar, color: '#14a39a', bg: '#e3f6f3' },
@@ -56,7 +57,13 @@ export default function MobileHome() {
   })()
   const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()
-  const todaySeminars = publicRecords(hub).filter((x) => !x.past && !x.cancelled && x.startIso && x.startIso <= tashkentToday() && x.endIso >= tashkentToday()).slice(0, 2).map((raw) => {
+  const live = publicRecords(hub).filter((x) => !x.past && !x.cancelled && x.startIso)
+  const todayIso = tashkentToday()
+  const todayList = live.filter((x) => x.startIso <= todayIso && (x.endIso || x.startIso) >= todayIso)
+  // Bugun seminar bo‘lmasa — eng yaqin kelgusi seminarlar ko‘rsatiladi
+  const showToday = todayList.length > 0
+  const pickList = showToday ? todayList : live.filter((x) => x.startIso > todayIso).sort((a, b) => a.startIso.localeCompare(b.startIso))
+  const todaySeminars = pickList.slice(0, 2).map((raw) => {
     const s = seminarCard(raw)
     return {
       id: s.id,
@@ -64,7 +71,7 @@ export default function MobileHome() {
       title: s.title,
       image: s.image || s.cover || '/images/hero-implant.jpg',
       speaker: s.speaker?.name || 'Spiker',
-      avatar: s.speaker?.avatar || '/images/avatar.jpg',
+      avatar: realAvatar(s.speaker?.avatar),
       city: s.city || 'Toshkent',
       hours: s.hours || s.duration || '',
       price: s.price || 0,
@@ -75,7 +82,7 @@ export default function MobileHome() {
     author: p.author || p.name,
     role: p.role || 'Stomatolog',
     time: p.time || '',
-    avatar: p.avatar || '/images/avatar.jpg',
+    avatar: realAvatar(p.avatar),
     text: p.body || p.text || p.title || '',
     image: (p.images && p.images[0]) || '/images/yangiliklar/yang-scanner.jpg',
   }))
@@ -118,7 +125,7 @@ export default function MobileHome() {
 
         {/* Salomlashish */}
         <div className="mt-3 flex items-center gap-3">
-          {profile.avatar ? (
+          {realAvatar(profile.avatar) ? (
             <img src={profile.avatar} alt="" className="size-12 rounded-full object-cover ring-2 ring-white" />
           ) : (
             <span className="grid size-12 place-items-center rounded-full bg-sea-50 text-[14px] font-bold text-sea ring-2 ring-white">{initialsOf(hello === helloName ? [helloName, session.profile?.last_name].filter(Boolean).join(' ') : hello)}</span>
@@ -178,9 +185,8 @@ export default function MobileHome() {
 
 
         {/* Bugungi seminarlar */}
-        <SectionHead title="Bugungi seminarlar" to="/seminarlar" />
+        {todaySeminars.length > 0 && <SectionHead title={showToday ? 'Bugungi seminarlar' : 'Yaqin seminarlar'} to="/seminarlar" />}
         <div className="space-y-2.5">
-          {!todaySeminars.length && <p className="py-6 text-center text-[12px] text-muted">Bugun seminar yo‘q</p>}
           {todaySeminars.map((s) => (
             <article key={s.id} className="flex gap-1.5 rounded-2xl bg-white p-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
               <Link to={`/seminarlar/${s.id}`} className="relative mr-0.5 h-[76px] w-[84px] shrink-0 overflow-hidden rounded-xl bg-page">
@@ -192,7 +198,7 @@ export default function MobileHome() {
                 <div className="mt-1.5 space-y-1 text-[8.5px] text-muted">
                   <p className="flex items-center gap-1 whitespace-nowrap">
                     <span className="flex min-w-0 items-center gap-0.5">
-                      <img src={s.avatar} alt="" className="size-3.5 shrink-0 rounded-full object-cover" />
+                      <UserAvatar src={s.avatar} name={s.speaker} className="size-3.5" textClass="text-[6px]" />
                       <span className="truncate">{s.speaker}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-px"><MapPin className="size-2.5" /> {s.city}</span>
@@ -246,21 +252,22 @@ export default function MobileHome() {
                   <p className="mt-1 whitespace-nowrap text-[15px] font-extrabold text-ink">{som(p.price)}</p>
                   {p.oldPrice ? <p className="text-[11px] text-muted line-through">{som(p.oldPrice)}</p> : null}
                 </div>
+{isOwnProduct(p) ? <span className="shrink-0 rounded-lg bg-[#eef4f4] px-2 py-1.5 text-[10.5px] font-semibold leading-tight text-sea">Sizning<br />mahsulotingiz</span> : (
                 <button type="button" onClick={() => addToCart(p)} aria-label="Savatga qo‘shish" className="grid size-10 shrink-0 place-items-center rounded-xl bg-sea text-white active:scale-95">
                   <ShoppingCart className="size-[18px]" />
                 </button>
+                )}
               </div>
             </article>
           ))}
         </div>
 
         {/* Hamjamiyat */}
-        <SectionHead title="Hamjamiyat" to="/community" />
+        {communityPosts.length > 0 && <SectionHead title="Hamjamiyat" to="/community" />}
         <div className="space-y-2.5">
-          {!communityPosts.length && <p className="py-6 text-center text-[12px] text-muted">Hamjamiyatda hali post yo‘q</p>}
           {communityPosts.map((p) => (
             <Link key={p.id} to="/community" className="flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-              <img src={p.avatar} alt="" className="size-10 shrink-0 rounded-full object-cover" />
+              <UserAvatar src={p.avatar} name={p.author} className="size-10" textClass="text-[12px]" />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-bold text-ink">{p.author}</p>
                 <p className="text-[11px] text-muted">{p.role} · {p.time}</p>

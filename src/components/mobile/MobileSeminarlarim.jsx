@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Poster from '../Poster'
+
 import { Link } from 'react-router-dom'
 import { CalendarCheck, CalendarDays, CircleCheck, Download, MapPin, QrCode, Ticket, UserRound, Video } from 'lucide-react'
 import { seminarView, som } from '../../seminarsData'
@@ -328,8 +330,8 @@ function SemCard({ s, past, inCal, onTicket, onCal, onCert }) {
   const outline = `${btn} border border-[#0b8a7a]/60 bg-white ${teal}`
   const media = (
     <span className="relative block h-[160px] w-[124px] shrink-0 overflow-hidden rounded-xl bg-[#eef4f4]">
-      <img src={s.image} alt="" loading="lazy" className={`size-full object-cover ${s.pos}`} />
-      <span className="absolute left-1.5 top-1.5 max-w-[calc(100%-12px)] truncate rounded-md bg-[#0b6d73] px-1.5 py-0.5 text-[10px] font-medium text-white">{s.cat}</span>
+      <Poster src={s.image} className="absolute inset-0 size-full" />
+      <span className="absolute left-1.5 top-1.5 line-clamp-2 max-w-[calc(100%-12px)] break-words rounded-md leading-tight bg-[#0b6d73] px-1.5 py-0.5 text-[10px] font-medium text-white">{s.cat}</span>
     </span>
   )
   return (

@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { computeStats, monthStats, popularProducts, useSellerData } from '../api'
+import { computeStats, periodStats, popularProducts, useSellerData, PERIODS } from '../api'
 import { useMobile } from '../../useMobile'
-import { monthTitle } from '../format'
 import { Greeting, StatCards, RecentOrders, LowStock, RecentReviews, SalesActivity, InfoCards } from '../components/bosh-sahifa/Desktop'
 import { Welcome, PeriodBar, MobileStats, MobileQuick, MobileOrders, Popular } from '../components/bosh-sahifa/Mobile'
 
@@ -13,7 +12,7 @@ export default function BoshSahifa() {
   const { shop, openQuick, openOrder } = useOutletContext()
   const data = useSellerData()
   const mobile = useMobile()
-  const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
+  const [period, setPeriod] = useState('30')
   const stats = useMemo(() => computeStats(data), [data])
   const lowStock = useMemo(() => data.products.filter((p) => p.status !== 'archived' && p.stock <= LOW_STOCK_LIMIT).sort((a, b) => a.stock - b.stock).slice(0, 5), [data.products])
 
@@ -26,8 +25,8 @@ export default function BoshSahifa() {
       <div>
         {banner}
         <Welcome shop={shop} />
-        <PeriodBar month={month} setMonth={setMonth} />
-        <MobileStats s={monthStats(data.orders, month)} period={monthTitle(month)} />
+        <PeriodBar period={period} setPeriod={setPeriod} />
+        <MobileStats s={periodStats(data.orders, period)} period={PERIODS.find((x) => x[0] === period)?.[1]} />
         <MobileQuick openQuick={openQuick} />
         <MobileOrders orders={data.orders.slice(0, 4)} onOpen={openOrder} />
         <Popular products={popularProducts(data.orders, data.products)} />

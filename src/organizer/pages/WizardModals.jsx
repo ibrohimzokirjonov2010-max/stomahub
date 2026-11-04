@@ -192,7 +192,7 @@ export function speakerPayload(f) {
   const links = (f.links || []).filter((l) => typeof l === 'string' && l.trim() && l.trim() !== 'https://')
   const meta = { kind: 'meta', years: String(f.years || '').trim(), clinic: String(f.clinic || '').trim(), certs: String(f.certs || '').trim(), degree: String(f.degree || '').trim() }
   return {
-    id: f.id || `s${Date.now()}`, name: f.name.trim(), role: f.role.trim(), city: (f.city || '').trim(), bio: f.bio || '', avatar: f.avatar || '/images/avatar.jpg',
+    id: f.id || `s${Date.now()}`, name: f.name.trim(), role: f.role.trim(), city: (f.city || '').trim(), bio: f.bio || '', avatar: f.avatar || '',
     links: [...links, meta], years: meta.years, clinic: meta.clinic, certs: meta.certs, degree: meta.degree,
   }
 }

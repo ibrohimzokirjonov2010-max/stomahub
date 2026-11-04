@@ -8,6 +8,7 @@ import {
 import { num, som } from '../data'
 import { useOrg } from '../Shell'
 import { cancelSeminar, deleteSeminar, duplicateSeminar, setSeminarVisible, useHub } from '../../hubStore'
+import UserAvatar from '../../components/UserAvatar'
 
 const REASONS = ['Sana o‘zgardi', 'Ma’ruzachi kelmaydi', 'Joy topilmadi', 'Ishtirokchilar yetarli emas', 'Boshqa sabab']
 
@@ -382,7 +383,7 @@ function DesktopPage({ m, tab, setTab, actions, menu, setMenu, menuRef, pct, lef
                   {m.speakers.map((s) => (
                     <li key={s.name} className="border-b border-[#f1f6f5] last:border-0">
                       <Link to="/tashkilotchi/maruzachilar" className="flex items-center gap-3 py-2.5">
-                        <img src={s.avatar} alt="" className="size-12 shrink-0 rounded-full object-cover object-top" />
+                        <UserAvatar src={s.avatar} name={s.name} className="size-12" />
                         <span className="min-w-0 flex-1">
                           <span className="block text-[14px] font-bold text-[#143044]">{s.name}</span>
                           <span className="block text-[12.5px] text-[#7e9398]">{s.specialty}</span>
@@ -521,7 +522,7 @@ function MobilePage({ m, tab, setTab, actions, msg, setMsg, notify }) {
             <div className="overflow-hidden rounded-2xl border border-[#e7f2f0] bg-white shadow-[0_1px_2px_rgb(16_40_40/0.04)]">
               {m.mobileSpeakers.map((s, i) => (
                 <Link key={s.name} to="/tashkilotchi/maruzachilar" className={cx('flex items-center gap-3 px-3 py-3', i > 0 && 'border-t border-[#f1f6f5]')}>
-                  <img src={s.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover object-top" />
+                  <UserAvatar src={s.avatar} name={s.name} className="size-11" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-bold text-[#143044]">{s.name}</span>
                     <span className="block text-[12.5px] text-[#7e9398]">{s.role}</span>

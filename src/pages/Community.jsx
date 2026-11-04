@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { useFeed, feed, validatePost, composeCaseBody, emptyNotes, IMAGE_TAGS } from '../communityFeed'
+import { PostImages, Lightbox, SolvedBadge, labelOf } from '../components/mobile/MobileCommunity'
 import { ensureLogin } from '../loginPrompt'
 import {
   Plus, BadgeCheck, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, HelpCircle,
@@ -11,6 +13,7 @@ import {
 } from '../communityData'
 import { useProfile } from '../profileStore'
 import { imgIcon } from '../components/tealIcons'
+import UserAvatar from '../components/UserAvatar'
 
 const CLINIC = [
   ['shikoyat', 'Shikoyat', 'Bemorning shikoyatlari va anamnezi...'],
@@ -30,11 +33,11 @@ const emptyForm = () => ({
   gender: 'Erkak',
   date: '',
   step: 'shikoyat',
-  notes: { shikoyat: '', tekshiruv: '', tashxis: '', reja: '', jarayon: '', natija: '' },
+  notes: emptyNotes(),
   images: [],
   tags: [],
   tag: '',
-  consent: true,
+  consent: false,
   face: true,
   nameHidden: true,
   science: false,
@@ -50,30 +53,54 @@ export default function Community() {
 }
 
 function viewerOf(profile) {
-  if (!profile?.accountLive) return { name: 'Mehmon', role: 'Stomatolog', place: 'Toshkent', avatar: '/images/avatar.jpg' }
+  if (!profile?.accountLive) return { name: 'Mehmon', role: 'Stomatolog', place: 'Toshkent', avatar: '' }
   return {
-    name: profile.name || 'Shifokor',
+    name: profile.name || 'Foydalanuvchi',
     role: profile.role || 'Stomatolog',
     place: profile.city || 'Toshkent',
-    avatar: profile.avatar || '/images/avatar.jpg',
+    avatar: profile.avatar || '',
   }
 }
 
+// Server turi 'case' — desktop UI ichida 'keys'.
+const toUi = (k) => (k === 'case' ? 'keys' : k)
+const toServer = (k) => (k === 'keys' ? 'case' : k)
+const TONE = { keys: 'keys', savol: 'savol', muhokama: 'talk', maslahat: 'talk', yangilik: 'paper' }
+
+function Face({ src, name, size = 'size-10' }) {
+  return <UserAvatar src={src} name={name} className={size} textClass="text-[12px]" />
+}
+
 function Board({ query }) {
-  const me = viewerOf(useProfile())
   const [topic, setTopic] = useState('all')
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('yangi')
-  const [posts, setPosts] = useState([])
+  const [solved, setSolved] = useState('all')
+  const [zoom, setZoom] = useState(null)
+  const store = useFeed()
+  const { liked, saved, hidden } = store
+  const posts = useMemo(() => store.posts.map((p, i) => {
+    const flat = (Array.isArray(p.comments) ? p.comments : []).flatMap((c) => [c, ...(c.replies || [])])
+    const kind = toUi(p.kind)
+    const tags = (p.tags || []).map((t) => (typeof t === 'string' ? { t, tone: t.startsWith('#') ? 'hash' : '' } : t))
+    return {
+      ...p,
+      rank: i + 1,
+      kind,
+      place: '',
+      likes: (p.likes || 0) + (liked.has(p.id) ? 1 : 0),
+      tags: tags.length ? tags : [{ t: KIND_LABEL[kind] || 'Post', tone: TONE[kind] || 'talk' }],
+      comments: flat.length,
+      thread: [...flat].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))),
+    }
+  }), [store.posts, liked])
   // Faqat haqiqiy postlar soni (bo‘lmasa son ko‘rsatilmaydi)
   const topicCount = useMemo(() => (posts || []).reduce((m, p) => { if (p?.topic) m[p.topic] = (m[p.topic] || 0) + 1; return m }, {}), [posts])
-  const [liked, setLiked] = useState(() => new Set())
-  const [saved, setSaved] = useState(() => new Set())
   const [followed, setFollowed] = useState(() => new Set())
   const [openId, setOpenId] = useState(null)
-  const [hidden, setHidden] = useState(() => new Set())
   const [composer, setComposer] = useState(null)
-  const openComposer = (kind) => { if (ensureLogin()) setComposer(kind) }
+  const [editing, setEditing] = useState(null)
+  const openComposer = (kind) => { if (ensureLogin()) { setEditing(null); setComposer(kind) } }
   const [toast, setToast] = useState('')
   const [promo, setPromo] = useState(false)
   const leaders = []
@@ -85,66 +112,68 @@ function Board({ query }) {
     const rows = posts.filter((p) => {
       if (hidden.has(p.id)) return false
       if (tab !== 'all' && p.kind !== tab) return false
+      if (tab === 'savol' && solved !== 'all' && (solved === 'yes') !== !!p.solved) return false
       if (topic !== 'all' && p.topic !== topic) return false
       if (text && !`${p.title} ${p.body} ${p.author}`.toLowerCase().includes(text)) return false
       return true
     })
     rows.sort((a, b) => (sort === 'mashhur' ? b.likes - a.likes : a.rank - b.rank))
     return rows
-  }, [posts, hidden, tab, topic, query, sort])
+  }, [posts, hidden, tab, solved, topic, query, sort])
 
   const ping = (text) => {
     setToast(text)
     window.setTimeout(() => setToast(''), 1800)
   }
 
-  const toggleLike = (id) => {
-    setLiked((s) => {
-      const n = new Set(s)
-      n.has(id) ? n.delete(id) : n.add(id)
-      return n
-    })
-    setPosts((rows) => rows.map((p) => (p.id === id ? { ...p, likes: p.likes + (liked.has(id) ? -1 : 1) } : p)))
-  }
+  const toggleLike = (id) => feed.toggleLike(id)
 
   const share = (p) => {
     const url = `${window.location.origin}/community#${p.id}`
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).catch(() => {})
-    setPosts((rows) => rows.map((row) => (row.id === p.id ? { ...row, shares: row.shares + 1 } : row)))
     ping('Havola nusxalandi')
   }
 
-  const publish = (form) => {
-    const notes = Object.values(form.notes).map((x) => x.trim()).filter(Boolean)
+  const publish = async (form) => {
+    const isCase = form.kind === 'keys'
     const post = {
-      id: `p-${Date.now()}`,
-      rank: 0,
-      kind: form.kind,
+      kind: toServer(form.kind),
       topic: catTopic[form.cat] || 'endo',
-      author: me.name,
-      role: me.role,
-      place: me.place,
-      time: 'Hozir',
-      avatar: me.avatar,
       title: form.title.trim(),
-      body: [form.body.trim(), ...notes].filter(Boolean).join(' '),
-      tags: [{ t: KIND_LABEL[form.kind] || 'Post', tone: form.kind === 'keys' ? 'keys' : 'talk' }, ...form.tags.map((t) => ({ t, tone: t.startsWith('#') ? 'hash' : '' }))],
+      body: isCase ? composeCaseBody(form.body, form.notes) : form.body.trim(),
+      tags: form.tags,
       images: form.images.map((img) => img.src),
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      thread: [],
+      labels: form.images.map((img) => (isCase ? img.tag || '' : '')),
+      consent: form.consent,
+      meta: { ...(editing?.meta || {}), cat: form.cat, age: form.age, gender: form.gender, ...(isCase ? { notes: form.notes, summary: form.body.trim() } : {}) },
     }
-    setPosts((rows) => [post, ...rows.map((p) => ({ ...p, rank: p.rank + 1 }))])
+    const res = editing ? await feed.update(editing.id, post) : await feed.add(post)
+    if (!res.ok) return res.error
     setTab('all')
     setComposer(null)
-    ping('Post joylandi')
+    setEditing(null)
+    ping(editing ? 'Post yangilandi' : 'Post joylandi')
+    return ''
+  }
+  const editPost = (p) => { setEditing(p); setComposer(p.kind) }
+  const removePost = async (p) => {
+    if (!window.confirm('Postni o‘chirasizmi?')) return
+    const res = await feed.remove(p.id)
+    ping(res.ok ? 'Post o‘chirildi' : res.error)
+  }
+  const reportPost = async (p) => {
+    if (!ensureLogin()) return
+    const reason = window.prompt('Shikoyat sababi', 'Nomaqbul kontent')
+    if (reason === null) return
+    const res = await feed.report(p.id, reason)
+    ping(res.ok ? 'Shikoyat yuborildi. Rahmat!' : res.error)
   }
 
   const savedCards = posts.filter((p) => saved.has(p.id)).map((p) => ({ id: p.id, title: p.title, meta: `${p.author} · ${p.time}`, image: p.images?.[0] }))
 
   return (
     <div className="pb-8 pt-3">
+      {zoom && <Lightbox images={zoom.images} labels={zoom.labels} index={zoom.i} onClose={() => setZoom(null)} />}
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-tight text-ink">Hamjamiyat</h1>
@@ -198,6 +227,13 @@ function Board({ query }) {
             </label>
           </div>
 
+          {tab === 'savol' && (
+            <div className="mb-2 flex gap-1.5">
+              {[['all', 'Hammasi'], ['yes', 'Hal qilindi'], ['no', 'Javob kutilmoqda']].map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={solved === k} onClick={() => setSolved(k)} className={`h-8 rounded-full px-3 text-[12px] font-semibold ${solved === k ? 'bg-[#e3f8ef] text-[#1f9d63] ring-1 ring-[#1f9d63]/40' : 'bg-white text-ink-2 shadow-card'}`}>{l}</button>
+              ))}
+            </div>
+          )}
           {list.length === 0 ? (
             <div className="rounded-2xl bg-white p-8 text-center text-[13px] text-muted shadow-card">Bu bo‘limda post yo‘q. Birinchi bo‘lib yozing.</div>
           ) : (
@@ -205,30 +241,31 @@ function Board({ query }) {
               {list.map((p) => (
                 <article key={p.id} id={p.id} className="rounded-2xl bg-white p-4 shadow-card">
                   <div className="flex items-start gap-2">
-                    <img src={p.avatar} alt="" className="size-10 shrink-0 rounded-full object-cover" />
+                    <Face src={p.avatar} name={p.author} />
                     <div className="min-w-0 flex-1">
                       <b className="inline-flex items-center gap-1 text-[13px]">{p.author} <BadgeCheck className="size-3.5 text-[#3b82f6]" /></b>
-                      <p className="text-[11px] text-muted">{p.role} · {p.place} <span className="px-1">·</span> {p.time}</p>
+                      <p className="text-[11px] text-muted">{p.role} <span className="px-1">·</span> {p.time}{p.edited ? ' · tahrirlangan' : ''}{p.hiddenByAdmin ? ' · admin yashirgan' : ''}</p>
                     </div>
                     <button type="button" onClick={() => setFollowed((s) => { const n = new Set(s); n.has(p.author) ? n.delete(p.author) : n.add(p.author); return n })} className="hidden h-8 items-center gap-1 rounded-lg border border-sea px-2.5 text-[12px] font-semibold text-sea sm:inline-flex">
                       <Plus className="size-3.5" /> {followed.has(p.author) ? 'Kuzatyapsiz' : 'Kuzatish'}
                     </button>
-                    <Menu onHide={() => setHidden((s) => new Set(s).add(p.id))} />
+                    <Menu mine={p.mine} onHide={() => feed.hide(p.id)} onEdit={() => editPost(p)} onDelete={() => removePost(p)} onReport={() => reportPost(p)} />
                   </div>
+                  {p.kind === 'savol' && p.solved && <div className="mt-2"><SolvedBadge /></div>}
                   <h2 className="mt-3 text-[15px] font-bold leading-snug">{p.title}</h2>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{p.body}</p>
+                  <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-ink-2">{p.body}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {p.tags.map((tag) => <Tag key={tag.t} tag={tag} />)}
                   </div>
-                  {p.images.length > 0 && <div className="mt-3"><Shots images={p.images} /></div>}
+                  {p.images.length > 0 && <div className="mt-3 max-w-[560px]"><PostImages p={p} onOpen={(i) => setZoom({ images: p.images, labels: p.images.map((_, k) => labelOf(p, k)), i })} /></div>}
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-[12.5px] text-ink-2">
                     <button type="button" onClick={() => toggleLike(p.id)} className={`inline-flex items-center gap-1 ${liked.has(p.id) ? 'text-[#e11d48]' : ''}`}><Heart className={`size-4 ${liked.has(p.id) ? 'fill-[#e11d48]' : ''}`} /> {p.likes}</button>
-                    <button type="button" onClick={() => setOpenId(openId === p.id ? null : p.id)} className="inline-flex items-center gap-1"><MessageCircle className="size-4" /> {p.comments + (p.extra || 0)}</button>
+                    <button type="button" onClick={() => setOpenId(openId === p.id ? null : p.id)} className="inline-flex items-center gap-1"><MessageCircle className="size-4" /> {p.comments}</button>
                     <span className="inline-flex items-center gap-1"><Share2 className="size-4" /> {p.shares}</span>
-                    <button type="button" onClick={() => setSaved((s) => { const n = new Set(s); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} className={`inline-flex items-center gap-1 ${saved.has(p.id) ? 'text-sea' : ''}`}><Bookmark className={`size-4 ${saved.has(p.id) ? 'fill-sea' : ''}`} /> Saqlash</button>
+                    <button type="button" onClick={() => feed.toggleSave(p.id)} className={`inline-flex items-center gap-1 ${saved.has(p.id) ? 'text-sea' : ''}`}><Bookmark className={`size-4 ${saved.has(p.id) ? 'fill-sea' : ''}`} /> Saqlash</button>
                     <button type="button" onClick={() => share(p)} className="ml-auto inline-flex items-center gap-1"><Share2 className="size-4" /> Ulashish</button>
                   </div>
-                  {openId === p.id && <Thread post={p} onAdd={(text) => setPosts((rows) => rows.map((row) => row.id === p.id ? { ...row, extra: (row.extra || 0) + 1, thread: [...(row.thread || []), { name: me.name, text }] } : row))} />}
+                  {openId === p.id && <Thread post={p} onBest={p.kind === 'savol' && p.mine ? async (c) => { const r = await feed.markBest(p.id, p.solvedId === c.id ? null : c.id); ping(r.ok ? (p.solvedId === c.id ? 'Belgi olib tashlandi' : 'Eng yaxshi javob belgilandi') : r.error) } : null} onAdd={async (text) => { if (!ensureLogin()) return; const r = await feed.comment(p.id, text); if (!r.ok) ping(r.error) }} onRemove={async (c) => { const r = await feed.removeComment(p.id, c.id); if (!r.ok) ping(r.error) }} />}
                 </article>
               ))}
             </div>
@@ -245,7 +282,7 @@ function Board({ query }) {
               {leaders.map((m, i) => (
                 <li key={m.name} className="flex items-center gap-2">
                   <span className="w-4 text-[12px] font-bold text-muted">{i + 1}</span>
-                  <img src={m.avatar} alt="" className="size-8 rounded-full object-cover" />
+                  <UserAvatar src={m.avatar} name={m.name} className="size-8" />
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-[12px]">{m.name}</b>
                     <span className="text-[11px] text-muted">{m.role}</span>
@@ -304,15 +341,20 @@ function Board({ query }) {
         </aside>
       </div>
 
-      {composer && <Composer initialKind={composer} onClose={() => setComposer(null)} onPublish={publish} />}
+      {composer && <Composer initialKind={composer} editing={editing} onClose={() => { setComposer(null); setEditing(null) }} onPublish={publish} />}
       {toast && <p className="fixed bottom-4 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-[12.5px] text-white">{toast}</p>}
     </div>
   )
 }
 
-function Composer({ initialKind, onClose, onPublish }) {
+function Composer({ initialKind, editing, onClose, onPublish }) {
   const me = viewerOf(useProfile())
-  const [form, setForm] = useState(() => ({ ...emptyForm(), kind: KINDS.some((k) => k.id === initialKind && k.id !== 'maqola') ? initialKind : 'keys' }))
+  const [form, setForm] = useState(() => {
+    const base = { ...emptyForm(), kind: KINDS.some((k) => k.id === initialKind && k.id !== 'maqola') ? initialKind : 'keys' }
+    if (!editing) return base
+    const tags = (editing.tags || []).map((t) => (typeof t === 'string' ? t : t.t)).filter((t) => String(t).startsWith('#'))
+    return { ...base, kind: editing.kind, title: editing.title, body: editing.meta?.summary ?? editing.body, notes: { ...base.notes, ...(editing.meta?.notes || {}) }, cat: editing.meta?.cat || base.cat, tags, consent: !!editing.consent, images: (editing.images || []).map((src, i) => ({ id: `e${i}`, src, tag: labelOf(editing, i) })) }
+  })
   const [error, setError] = useState('')
   const patch = (key, value) => setForm((f) => ({ ...f, [key]: value }))
   const kinds = KINDS.filter((k) => k.id !== 'maqola')
@@ -326,7 +368,8 @@ function Composer({ initialKind, onClose, onPublish }) {
         setError('Fayl 10 MB dan katta bo‘lmasin.')
         continue
       }
-      next.push({ id: `${file.name}-${file.size}-${next.length}`, src: URL.createObjectURL(file) })
+      if (!file.type.startsWith('image/')) { setError('Faqat rasm yuklash mumkin.'); continue }
+      next.push({ id: `${file.name}-${file.size}-${Date.now()}-${next.length}`, src: URL.createObjectURL(file), tag: '' })
     }
     if (next.length) setForm((f) => ({ ...f, images: [...f.images, ...next].slice(0, 8) }))
   }
@@ -342,16 +385,17 @@ function Composer({ initialKind, onClose, onPublish }) {
     setForm((f) => ({ ...f, tags: [...f.tags, tag], tag: '' }))
   }
 
-  const submit = () => {
-    if (!form.title.trim() || !form.body.trim() || !form.cat) {
-      setError('Sarlavha, mavzu va qisqacha tavsif majburiy.')
+  const [busy, setBusy] = useState(false)
+  const submit = async () => {
+    const why = validatePost({ title: form.title, body: form.kind === 'keys' ? composeCaseBody(form.body, form.notes) : form.body, kind: toServer(form.kind), images: form.images, consent: form.consent })
+    if (why) {
+      setError(why)
       return
     }
-    if (form.kind === 'keys' && !form.consent) {
-      setError('Klinik keys uchun bemor roziligi belgilanishi kerak.')
-      return
-    }
-    onPublish(form)
+    setBusy(true)
+    const err = await onPublish(form)
+    setBusy(false)
+    if (err) setError(err)
   }
 
   return (
@@ -445,12 +489,19 @@ function Composer({ initialKind, onClose, onPublish }) {
                   <label className="grid h-[74px] w-[92px] cursor-pointer place-items-center rounded-xl border border-dashed border-[#c9d5e2] text-center text-[10px] text-muted">
                     <Search className="size-4" />
                     Rasm, rentgen yoki fayl yuklash
-                    <span className="block">PNG, JPG, JPEG, DICOM, PDF · 10MB</span>
-                    <input type="file" accept="image/png,image/jpeg,application/pdf" multiple className="hidden" onChange={(e) => { addFiles([...e.target.files]); e.target.value = '' }} />
+                    <span className="block">PNG, JPG, WEBP · 10MB · klinik keysda Oldin/Keyin belgilang</span>
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addFiles([...e.target.files]); e.target.value = '' }} />
                   </label>
                   {form.images.map((img) => (
                     <span key={img.id} className="relative">
                       <img src={img.src} alt="" className="h-[74px] w-[74px] rounded-xl object-cover" />
+                      {form.kind === 'keys' && (
+                        <span className="mt-1 flex overflow-hidden rounded-lg text-[10px] font-semibold ring-1 ring-line">
+                          {IMAGE_TAGS.map(([t, l]) => (
+                            <button key={t || 'none'} type="button" aria-pressed={(img.tag || '') === t} onClick={() => setForm((f) => ({ ...f, images: f.images.map((x) => (x.id === img.id ? { ...x, tag: t } : x)) }))} className={`h-6 flex-1 ${(img.tag || '') === t ? (t === 'oldin' ? 'bg-[#c2410c] text-white' : t === 'keyin' ? 'bg-[#047857] text-white' : 'bg-ink-2 text-white') : 'bg-white text-ink-2'}`}>{t ? l : '—'}</button>
+                          ))}
+                        </span>
+                      )}
                       <button type="button" aria-label="Olib tashlash" onClick={() => setForm((f) => ({ ...f, images: f.images.filter((x) => x.id !== img.id) }))} className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-white shadow"><X className="size-3" /></button>
                     </span>
                   ))}
@@ -486,7 +537,7 @@ function Composer({ initialKind, onClose, onPublish }) {
               <section className="rounded-2xl border border-line bg-white p-3">
                 <b className="text-[12px] text-muted">Post ko‘rinishi (oldindan)</b>
                 <div className="mt-2 flex items-center gap-2">
-                  <img src={me.avatar} alt="" className="size-8 rounded-full object-cover" />
+                  <Face src={me.avatar} name={me.name} size="size-8" />
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-[12px]">{me.name}</b>
                     <span className="text-[10px] text-muted">{me.role} · {me.place}</span>
@@ -514,22 +565,28 @@ function Composer({ initialKind, onClose, onPublish }) {
         </div>
         <div className="flex justify-end gap-2 border-t border-line px-4 py-3">
           <button type="button" onClick={onClose} className="h-10 rounded-xl border border-[#d7e0ea] px-4 text-[13px] font-semibold">Bekor</button>
-          <button type="button" onClick={submit} className="inline-flex h-10 items-center gap-1 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white"><Send className="size-4" /> Post joylash</button>
+          <button type="button" disabled={busy} onClick={submit} className="inline-flex h-10 items-center gap-1 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white disabled:opacity-60"><Send className="size-4" /> {busy ? 'Saqlanmoqda…' : editing ? 'Saqlash' : 'Post joylash'}</button>
         </div>
       </div>
     </div>
   )
 }
 
-function Thread({ post, onAdd }) {
+function Thread({ post, onAdd, onRemove, onBest }) {
   const [text, setText] = useState('')
   return (
     <div className="mt-3 border-t border-line pt-3">
       <ul className="space-y-2">
         {(post.thread || []).map((c, i) => (
-          <li key={`${c.name}-${i}`} className="rounded-xl bg-[#f6f9fc] px-3 py-2 text-[12.5px]">
-            <b>{c.name}</b>
-            <p className="text-ink-2">{c.text}</p>
+          <li key={c.id || `${c.name}-${i}`} className={`flex gap-2 rounded-xl px-3 py-2 text-[12.5px] ${post.solvedId === c.id ? 'bg-[#effaf5] ring-1 ring-[#1f9d63]/30' : 'bg-[#f6f9fc]'}`}>
+            <Face src={c.avatar} name={c.name} size="size-7" />
+            <span className="min-w-0 flex-1">
+              <b>{c.name}</b> <span className="text-[11px] text-muted">{c.time}</span>
+              {post.solvedId === c.id && <span className="ml-1.5 rounded-full bg-[#1f9d63] px-1.5 py-0.5 text-[10px] font-bold text-white">✓ Eng yaxshi javob</span>}
+              <p className="whitespace-pre-line text-ink-2">{c.text}</p>
+              {onBest && !c.mine && !c.parentId && <button type="button" onClick={() => onBest(c)} className="mt-0.5 text-[11px] font-semibold text-[#1f9d63]">{post.solvedId === c.id ? 'Belgini olish' : 'Eng yaxshi javob deb belgilash'}</button>}
+            </span>
+            {c.mine && <button type="button" onClick={() => onRemove(c)} className="self-start text-[11px] text-muted">O‘chirish</button>}
           </li>
         ))}
       </ul>
@@ -574,13 +631,18 @@ function KindIcon({ id, bg, color }) {
   )
 }
 
-function Menu({ onHide }) {
+function Menu({ mine, onHide, onEdit, onDelete, onReport }) {
   const [open, setOpen] = useState(false)
+  const item = (label, fn, cls = '') => <button key={label} type="button" onClick={() => { setOpen(false); fn() }} className={`block w-full whitespace-nowrap px-3 py-2 text-left text-[12px] hover:bg-[#f3f6fa] ${cls}`}>{label}</button>
   return (
     <span className="relative">
       <button type="button" aria-label="Yana" onClick={() => setOpen((v) => !v)} className="grid size-8 place-items-center rounded-lg text-muted"><MoreHorizontal className="size-4" /></button>
       {open && (
-        <button type="button" onClick={() => { setOpen(false); onHide() }} className="absolute right-0 top-8 z-10 whitespace-nowrap rounded-lg bg-white px-3 py-2 text-[12px] shadow-card">Yashirish</button>
+        <span className="absolute right-0 top-8 z-10 block min-w-[150px] overflow-hidden rounded-lg bg-white py-1 shadow-card">
+          {mine
+            ? [item('Tahrirlash', onEdit), item('O‘chirish', onDelete, 'text-[#e11d48]')]
+            : [item('Yashirish', onHide), item('Shikoyat qilish', onReport, 'text-[#e11d48]')]}
+        </span>
       )}
     </span>
   )

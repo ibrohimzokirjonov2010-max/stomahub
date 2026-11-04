@@ -14,7 +14,7 @@ export const uzLong = (v) => {
 }
 
 // Yengil kalendar popover: dushanbadan boshlanadi, touch va #root zoom bilan ishlaydi (absolute joylashuv)
-export default function DatePick({ value, onChange, min = '', placeholder = 'Sanani tanlang', color = '#0f766e', invalid = false, className = '', label }) {
+export default function DatePick({ value, onChange, min = '', placeholder = 'Sanani tanlang', color = '#0f766e', invalid = false, className = '', label, soft = false }) {
   const [open, setOpen] = useState(false)
   const base = value || min || tashkentToday()
   const [view, setView] = useState(() => { const [y, m] = base.split('-').map(Number); return { y, m: m - 1 } })
@@ -34,7 +34,7 @@ export default function DatePick({ value, onChange, min = '', placeholder = 'San
   const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)]
   return (
     <div ref={ref} className={`relative min-w-[148px] flex-1 ${className}`}>
-      <button type="button" aria-label={label} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={`flex h-10 w-full items-center gap-1.5 rounded-xl border bg-white px-2.5 text-left ${invalid ? 'border-[#e11d48]' : open ? 'border-[var(--color-org-teal)]' : 'border-[#e3eeec]'}`}>
+      <button type="button" aria-label={label} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={`flex w-full items-center gap-1.5 border text-left ${soft ? 'h-12 rounded-2xl bg-[#f3fafa] px-3' : 'h-10 rounded-xl bg-white px-2.5'} ${invalid ? 'border-[#e11d48]' : open ? 'border-[var(--color-org-teal)]' : soft ? 'border-transparent' : 'border-[#e3eeec]'}`}>
         <Calendar className="size-4 shrink-0" style={{ color }} />
         <span className={`truncate text-[12.5px] ${value ? 'text-[#143044]' : 'text-[#9aafb4]'}`}>{value ? uzLong(value) : placeholder}</span>
       </button>

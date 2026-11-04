@@ -4,7 +4,7 @@ import {
   Search, X, ChevronRight, ChevronDown, Box, Scissors, Monitor, FlaskConical, Sparkles, SlidersHorizontal, ArrowUpDown,
   LayoutGrid, List, Heart, Star, ShoppingCart, Check,
 } from 'lucide-react'
-import { useCart } from '../../cart'
+import { useCart, isOwnProduct } from '../../cart'
 import { marketProducts, som } from '../../marketData'
 import { useMarket, matchKat, KAT_DEFS } from '../../buyerApi'
 import { profileStore, useProfile } from '../../profileStore'
@@ -213,7 +213,7 @@ export default function MobileMarketplace() {
                       <p className="whitespace-nowrap text-[15px] font-extrabold text-ink">{som(p.price)}</p>
                       {p.oldPrice && <p className="text-[11px] text-muted line-through">{som(p.oldPrice)}</p>}
                     </div>
-                    {!qtyOf(p.id) && (
+                    {isOwnProduct(p) ? <span className="shrink-0 rounded-lg bg-[#eef4f4] px-2 py-1.5 text-[10.5px] font-semibold leading-tight text-sea">Sizning<br />mahsulotingiz</span> : !qtyOf(p.id) && (
                       <button type="button" onClick={() => addToCart(p)} aria-label="Savatga qo‘shish" className="grid size-10 shrink-0 place-items-center rounded-xl bg-sea text-white active:scale-95">
                         <ShoppingCart className="size-[18px]" />
                       </button>

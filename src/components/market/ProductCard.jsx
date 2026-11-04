@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, ShoppingCart, Star, CircleCheck } from 'lucide-react'
-import { useCart } from '../../cart'
+import { useCart, isOwnProduct } from '../../cart'
 import { som } from '../../marketData'
 import { flushProfile, profileStore, useProfile } from '../../profileStore'
 
@@ -54,6 +54,7 @@ export function Rating({ rating, reviews }) {
 export function AddButton({ product, className = '' }) {
   const { add } = useCart()
   const [done, setDone] = useState(false)
+  if (isOwnProduct(product)) return <span title="Sizning mahsulotingiz" className={`shrink-0 rounded-md bg-[#eef4f4] px-1.5 py-1 text-[9px] font-semibold leading-none text-sea ${className}`}>Sizning mahsulotingiz</span>
   return (
     <button
       onClick={(e) => {

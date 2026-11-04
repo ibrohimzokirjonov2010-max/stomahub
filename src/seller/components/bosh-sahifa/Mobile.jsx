@@ -1,8 +1,10 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, ChevronDown, ChevronRight, ShoppingCart, Box, CreditCard, Coins, Plus, FileText, Tag, Megaphone, Package } from 'lucide-react'
-import { dmy, hm, monthTitle, som, MONTHS } from '../../format'
+import { dmy, hm, som } from '../../format'
 import ProductThumb from './ProductThumb'
+import { PERIODS } from '../../api'
+import { isLate } from '../buyurtmalar/constants'
+import { OverdueBadge } from '../ui'
 import Empty from '../shell/Empty'
 
 const MSTATUS = { yangi: 'Yangi', tasdiqlandi: 'Tasdiqlangan', tayyorlanmoqda: 'Tayyorlanmoqda', yetkazilmoqda: 'Yetkazilmoqda', yetkazildi: 'Yetkazildi', bekor_qilindi: 'Bekor qilindi' }
@@ -19,25 +21,17 @@ export function Welcome({ shop }) {
   )
 }
 
-export function PeriodBar({ month, setMonth }) {
-  const [open, setOpen] = useState(false)
-  const now = new Date()
-  const options = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), now.getMonth() - i, 1))
+export function PeriodBar({ period, setPeriod }) {
   return (
-    <div className="relative mt-4 flex items-center justify-between">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-2 text-[15px] font-semibold text-[#10283F]">
-        <CalendarDays className="size-5" />{month ? monthTitle(month) : 'Barcha davrlar'}<ChevronDown className="size-4" />
-      </button>
-      <button type="button" onClick={() => setMonth(null)} className={`flex h-[34px] items-center gap-2 rounded-lg border px-3 text-[13px] ${month ? 'border-[#C9D6DA] text-[#10283F]' : 'border-[#0F766E] bg-[#F0FDFA] text-[#0F766E]'}`}>
-        <CalendarDays className="size-4 text-[#0F766E]" />Barcha davrlar
-      </button>
-      {open && (
-        <div className="absolute left-0 top-9 z-20 max-h-64 w-48 overflow-y-auto rounded-xl border border-[#E6EEF0] bg-white py-1 shadow-lg">
-          {options.map((d) => (
-            <button key={d.toISOString()} type="button" onClick={() => { setMonth(d); setOpen(false) }} className="block w-full px-3 py-2 text-left text-[14px] hover:bg-[#F0FDFA]">{MONTHS[d.getMonth()][0].toUpperCase() + MONTHS[d.getMonth()].slice(1)} {d.getFullYear()}</button>
-          ))}
-        </div>
-      )}
+    <div className="mt-4 flex items-center justify-between gap-2">
+      <span className="flex items-center gap-2 text-[15px] font-semibold text-[#10283F]"><CalendarDays className="size-5" />Davr</span>
+      <label className="relative">
+        <span className="sr-only">Davrni tanlash</span>
+        <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-[36px] appearance-none rounded-lg border border-[#0F766E] bg-[#F0FDFA] pl-3 pr-8 text-[13.5px] font-semibold text-[#0F766E] outline-none">
+          {PERIODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-4 -translate-y-1/2 text-[#0F766E]" />
+      </label>
     </div>
   )
 }
@@ -108,7 +102,7 @@ export function MobileOrders({ orders, onOpen }) {
               <div className="text-[12px] text-[#6B7A88]">{dmy(o.created_at)} {hm(o.created_at)}</div>
               <div className="text-[12px] text-[#6B7A88]">{o.items.length} ta mahsulot</div><div className="whitespace-nowrap text-[13px] font-semibold text-[#10283F]">{som(o.subtotal)}</div>
             </div>
-            <span className="rounded-full bg-[#E3F4F2] px-3 py-1 text-[11.5px] font-medium text-[#115E59]">{MSTATUS[o.status]}</span>
+            <span className="flex flex-col items-end gap-1"><span className="rounded-full bg-[#E3F4F2] px-3 py-1 text-[11.5px] font-medium text-[#115E59]">{MSTATUS[o.status]}</span>{isLate(o) && <OverdueBadge className="!rounded-full !px-2 !py-0.5 !text-[10.5px]" />}</span>
             <ChevronRight className="size-4 text-[#3D4E5F]" />
           </button>
         ))}

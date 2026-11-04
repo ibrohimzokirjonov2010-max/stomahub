@@ -46,12 +46,12 @@ function Shell({ icon: Icon, children, chevron, tall }) {
   )
 }
 
-function Field({ label, icon, value, onChange, chevron, type = 'text', suffix }) {
+function Field({ label, icon, value, onChange, chevron, type = 'text', suffix, placeholder }) {
   return (
     <label className="block">
       <Lab>{label}</Lab>
       <Shell icon={icon} chevron={chevron}>
-        <input value={value} type={type} onChange={(e) => onChange?.(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[14.5px] text-[#1c2433] outline-none" />
+        <input value={value} type={type} placeholder={placeholder} onChange={(e) => onChange?.(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[14.5px] text-[#1c2433] outline-none placeholder:text-[#9aafb4]" />
         {suffix && <span className="ml-2 shrink-0 text-[14px] text-[#607078]">{suffix}</span>}
       </Shell>
     </label>
@@ -118,6 +118,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     name: '',
     topic: 'Implantologiya',
     date: '',
+    endDate: '',
     start: '09:00',
     end: '18:00',
     place: '',
@@ -154,6 +155,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
       name: src?.name ?? s.title,
       topic: s.topic || f.topic,
       date: src ? (src.start || '') : (s.start || ''),
+      endDate: (() => { const st = src ? src.start : s.start; const en = src ? src.end : s.end; return en && st && en > st ? en : '' })(),
       start: src?.startTime || s.startTime || f.start,
       end: src?.endTime || s.endTime || f.end,
       place: src ? (src.place || '') : (s.place || ''),
@@ -180,7 +182,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
     placeType: form.placeType, format: FORMAT_OF[form.placeType],
     category: base?.category || 'Tibbiy amaliy seminar', tags: base?.tags?.length ? base.tags : [form.topic],
     cover: form.cover, thumbs: [form.cover].filter(Boolean),
-    start: form.date, startTime: form.start, end: base?.end && base.end > form.date ? base.end : form.date, endTime: form.end,
+    start: form.date, startTime: form.start, end: form.endDate && form.endDate > form.date ? form.endDate : form.date, endTime: form.end,
     place: form.place, address: form.place, lat: form.lat ?? null, lng: form.lng ?? null,
     program: cleanProgram(form.program), learn: form.learn, audience: form.audience, includes: form.includes,
     cmeHours: form.cmeHours, cmePoints: form.cmePoints, practice: form.practice, refundPolicy: form.refundPolicy, liveSurgery: form.liveSurgery,
@@ -256,7 +258,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
 
       {step === 0 && (
         <div className="mt-3 space-y-2.5">
-          <Field label="Seminar nomi" icon={ToothIcon} value={form.name} onChange={(v) => set({ name: v })} />
+          <Field label="Seminar nomi" icon={ToothIcon} value={form.name} onChange={(v) => set({ name: v })} placeholder="Masalan: Implantologiya amaliy kursi" />
           <label className="block">
             <Lab>Yo‘nalish</Lab>
             <Shell icon={FileText} chevron="down">
@@ -266,23 +268,30 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
             </Shell>
           </label>
           <div className="grid grid-cols-2 gap-2">
-            <div className="block">
-              <Lab>Sana</Lab>
-              <DatePick label="Sana" value={form.date} min={tashkentToday()} onChange={(v) => set({ date: v })} color={GREEN} />
+            <div className="block min-w-0">
+              <Lab>Boshlanish sanasi</Lab>
+              <DatePick soft label="Boshlanish sanasi" value={form.date} min={tashkentToday()} onChange={(v) => set({ date: v, ...(form.endDate && form.endDate < v ? { endDate: '' } : {}) })} color={GREEN} className="!min-w-0" />
             </div>
+            <div className="block min-w-0">
+              <Lab>Tugash sanasi</Lab>
+              <DatePick soft label="Tugash sanasi" placeholder="Bir kunlik" value={form.endDate} min={form.date || tashkentToday()} onChange={(v) => set({ endDate: v })} color={GREEN} className="!min-w-0" />
+            </div>
+          </div>
+          {form.endDate && form.endDate > form.date && <button type="button" onClick={() => set({ endDate: '' })} className="-mt-1 text-[12px] font-semibold text-[#0f766e]">Bir kunlik seminar qilish</button>}
+          <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <Lab>Boshlanish vaqti</Lab>
               <Shell icon={Clock} chevron>
                 <input type="time" aria-label="Boshlanish vaqti" value={form.start} onChange={(e) => set({ start: e.target.value })} className="w-full bg-transparent text-[13px] outline-none" />
               </Shell>
             </label>
+            <label className="block">
+              <Lab>Tugash vaqti</Lab>
+              <Shell icon={Clock} chevron>
+                <input type="time" aria-label="Tugash vaqti" value={form.end} onChange={(e) => set({ end: e.target.value })} className="w-full bg-transparent text-[13px] outline-none" />
+              </Shell>
+            </label>
           </div>
-          <label className="block">
-            <Lab>Tugash vaqti</Lab>
-            <Shell icon={Clock} chevron>
-              <input type="time" aria-label="Tugash vaqti" value={form.end} onChange={(e) => set({ end: e.target.value })} className="w-full bg-transparent text-[13px] outline-none" />
-            </Shell>
-          </label>
           <label className="block">
             <Lab>Seminar haqida (qisqa tavsif)</Lab>
             <Shell icon={FileText} tall>
@@ -299,7 +308,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
               ))}
             </div>
           </div>
-          <Field label={form.placeType === 'online' ? 'Webinar platformasi yoki havolasi' : 'Joy nomi'} icon={form.placeType === 'online' ? Monitor : MapPin} value={form.place} onChange={(v) => set({ place: v })} />
+          <Field label={form.placeType === 'online' ? 'Webinar platformasi yoki havolasi' : 'Joy nomi'} icon={form.placeType === 'online' ? Monitor : MapPin} value={form.place} onChange={(v) => set({ place: v })} placeholder={form.placeType === 'online' ? 'Masalan: Zoom havolasi' : 'Masalan: Hilton Tashkent, konferens-zal'} />
           {form.placeType !== 'online' && <MapPicker lat={form.lat} lng={form.lng} onChange={({ lat, lng, geo }) => set({ lat, lng, ...(geo?.street ? { place: [geo.city, geo.district && geo.district !== 'Markaz' ? geo.district : '', geo.street].filter(Boolean).join(', ') } : {}) })} />}
           {form.placeType !== 'online' && <PlaceImgField form={form} set={set} notify={notify} />}
           <Field label="Minimal ishtirokchi soni" icon={Users} value={form.min} onChange={(v) => set({ min: v.replace(/\D/g, '') })} />
@@ -376,7 +385,7 @@ export default function WizardMobile({ sheet, setSheet, notify }) {
       {step === 7 && (
         <div className="mt-4">
           <p className="text-[15px] font-bold">{form.name}</p>
-          <p className="mt-1 text-[13px] text-[#607078]">{uzDate(form.date, 'words')} · {form.start} – {form.end}</p>
+          <p className="mt-1 text-[13px] text-[#607078]">{uzDate(form.date, 'words')}{form.endDate && form.endDate > form.date ? ` – ${uzDate(form.endDate, 'words')}` : ''} · {form.start} – {form.end}</p>
           <p className="text-[13px] text-[#607078]">{FORMAT_OF[form.placeType]} · {form.place}</p>
           <p className="text-[13px] text-[#607078]">{tickets.length} chipta · {speakers.length} ma’ruzachi · dastur: {programRows(form.program).filter((r) => r.title).length} qator</p>
           <Next err={stepErr} onClick={() => publish(false)}>E’lon qilish</Next>
