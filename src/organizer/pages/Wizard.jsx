@@ -377,7 +377,7 @@ export default function Wizard() {
               <div className="space-y-3">
                 <label className="block" data-field="name">
                   <Lab req>Seminar nomi</Lab>
-                  <input className={`${box} ${errOf('name') ? '!border-[#e11d48]' : ''}`} aria-invalid={!!errOf('name')} value={form.name} onChange={(e) => set({ name: e.target.value })} />
+                  <input className={`${box} ${errOf('name') ? '!border-[#e11d48]' : ''}`} aria-invalid={!!errOf('name')} placeholder="Masalan: Implantologiya amaliy kursi" value={form.name} onChange={(e) => set({ name: e.target.value })} />
                   {errOf('name') && <p role="alert" className="mt-1 text-[12px] font-medium text-[#e11d48]">{errOf('name')}</p>}
                 </label>
                 <label className="block" data-field="about">
@@ -463,7 +463,7 @@ export default function Wizard() {
                     <span className="flex gap-2">
                       <span className={`flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border ${errOf('place') ? 'border-[#e11d48]' : 'border-[#e3eeec]'} bg-white px-3 focus-within:border-[var(--color-org-teal)]`}>
                         <MapPin className="size-4 shrink-0" style={{ color: TEAL }} />
-                        <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" placeholder="Masalan: Hilton Tashkent City, konferens-zal" value={form.place} onChange={(e) => set({ place: e.target.value })} />
+                        <input className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" placeholder="Masalan: Hilton Tashkent, konferens-zal" value={form.place} onChange={(e) => set({ place: e.target.value })} />
                       </span>
                       <a className="inline-flex shrink-0 items-center gap-1 self-center text-[12.5px] font-semibold" style={{ color: TEAL }} href={`https://maps.google.com/?q=${encodeURIComponent(form.place || 'Tashkent')}`} target="_blank" rel="noreferrer">Xaritada ko‘rish</a>
                     </span>

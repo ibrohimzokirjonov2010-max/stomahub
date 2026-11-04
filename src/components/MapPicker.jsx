@@ -91,6 +91,8 @@ export default function MapPicker({ lat, lng, onChange, onBusy, height = 200 }) 
   const cb = useRef(onChange)
   cb.current = onChange
   const [busy, setBusyRaw] = useState('')
+  // Sahifani aylantirayotganda xarita barmoqni "ushlab qolmasin": bosilguncha faol emas
+  const [active, setActive] = useState(false)
   const busyCb = useRef(onBusy)
   busyCb.current = onBusy
   const setBusy = (v) => { setBusyRaw(v); busyCb.current?.(/aniqlanmoqda/.test(v)) }
@@ -108,7 +110,7 @@ export default function MapPicker({ lat, lng, onChange, onBusy, height = 200 }) 
     import('leaflet').then(({ default: L }) => {
       if (dead || !box.current || map.current) return
       const start = lat != null ? [lat, lng] : TASHKENT
-      const m = L.map(box.current, { zoomControl: true, attributionControl: true }).setView(start, lat != null ? 17 : 12)
+      const m = L.map(box.current, { zoomControl: true, attributionControl: true, dragging: false, touchZoom: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false }).setView(start, lat != null ? 17 : 12)
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(m)
       const icon = L.divIcon({ className: '', html: '<svg width="34" height="34" viewBox="0 0 24 24" fill="#0b6d73" stroke="#fff" stroke-width="1.5"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>', iconSize: [34, 34], iconAnchor: [17, 33] })
       const mk = L.marker(start, { draggable: true, icon }).addTo(m)
@@ -121,6 +123,12 @@ export default function MapPicker({ lat, lng, onChange, onBusy, height = 200 }) 
     }).catch(() => setBusy('Xaritani yuklab bo‘lmadi, internetni tekshiring'))
     return () => { dead = true; ro?.disconnect(); map.current?.remove(); map.current = null }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const m = map.current; if (!m) return
+    const hs = [m.dragging, m.touchZoom, m.scrollWheelZoom, m.doubleClickZoom]
+    hs.forEach((h) => h && (active ? h.enable() : h.disable()))
+  }, [active])
 
   const locate = () => {
     if (!navigator.geolocation) { setBusy('Qurilma joylashuvni qo‘llab-quvvatlamaydi'); return }
@@ -135,7 +143,14 @@ export default function MapPicker({ lat, lng, onChange, onBusy, height = 200 }) 
   return (
     <div className="mt-3">
       <div className="relative overflow-hidden rounded-xl border border-line" style={{ height }}>
-        <div ref={box} className="size-full" style={{ touchAction: 'none', overscrollBehavior: 'contain', WebkitUserSelect: 'none' }} />
+        <div ref={box} className="size-full" style={{ touchAction: active ? 'none' : 'pan-y', overscrollBehavior: 'contain', WebkitUserSelect: 'none' }} />
+        {!active ? (
+          <button type="button" onClick={() => setActive(true)} className="absolute inset-0 z-[450] flex items-center justify-center bg-[#0b2530]/15">
+            <span className="rounded-full bg-white/95 px-3.5 py-2 text-[12.5px] font-semibold text-[#0b6d73] shadow-card">Xaritani faollashtirish uchun bosing</span>
+          </button>
+        ) : (
+          <button type="button" onClick={() => setActive(false)} className="absolute left-2 top-2 z-[500] h-8 rounded-full bg-white px-3 text-[12px] font-semibold text-[#0b6d73] shadow-card">Tayyor</button>
+        )}
         <button type="button" onClick={locate} className="absolute bottom-2 right-2 z-[500] flex h-9 items-center gap-1.5 rounded-full bg-white px-3 text-[12.5px] font-semibold text-[#0b6d73] shadow-card">
           <LocateFixed className="size-4" /> Joylashuvim
         </button>
