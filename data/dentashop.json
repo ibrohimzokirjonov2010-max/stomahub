@@ -197,7 +197,7 @@
    "source_url": "https://dentashop.uz/product/%d0%bf%d0%b5%d1%87%d0%b8-%d0%b4%d0%bb%d1%8f-%d0%be%d0%b1%d0%b6%d0%b8%d0%b3%d0%b0-%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d0%ba%d0%b8/",
    "description": "ВАКУУМНАЯ ПЕЧЬ ДЛЯ ОБЖИГА КЕРАМИКИ FORMAT SD-100",
    "extra": {},
-   "image_local": null
+   "image_local": "img/dentashop/17.jpg"
   },
   {
    "name": "Фрезы.",
@@ -208,7 +208,7 @@
    "source_url": "https://dentashop.uz/product/%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d1%81%d1%82/",
    "description": "Твердосплавные зуботехнические фрезы — необходимый инструмент для всех зуботехнических работ.",
    "extra": {},
-   "image_local": null
+   "image_local": "img/dentashop/18.jpg"
   },
   {
    "name": "Фрезы.",
@@ -219,7 +219,7 @@
    "source_url": "https://dentashop.uz/product/%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d1%81%d1%82-51-%d0%ba%d0%be%d0%bf%d0%b8%d1%80%d0%be%d0%b2%d0%b0%d1%82%d1%8c/",
    "description": "Твердосплавные зуботехнические фрезы — необходимый инструмент для всех зуботехнических работ.",
    "extra": {},
-   "image_local": null
+   "image_local": "img/dentashop/19.jpg"
   },
   {
    "name": "Стеклянный тигель",
@@ -230,9 +230,9 @@
    "source_url": "https://dentashop.uz/product/%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d1%81%d1%82-50/",
    "description": "Стеклянный тигель предназначается для дозирования ков примпоненто изготовлении материалов для ортодонтических конструкций и препаратов. Объем в 5 мл является оптимальным для работы с небольшими объемами.",
    "extra": {},
-   "image_local": null
+   "image_local": "img/dentashop/20.jpg"
   }
  ],
  "slug": "dentashop",
- "logo_local": null
+ "logo_local": "img/dentashop/logo.png"
 }

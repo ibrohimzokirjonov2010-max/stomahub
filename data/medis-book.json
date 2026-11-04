@@ -1,0 +1,90 @@
+{
+ "slug": "medis-book",
+ "kind": "bookseller",
+ "name": "Medis Book",
+ "items": [
+  {
+   "kind": "book",
+   "name": "First Aid for the USMLE Step 1 2023 33rd Edition",
+   "price": 298000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://files.glotr.uz/company/000/035/164/products/2023/09/14/2023-09-14-16-54-19-154662-05ae08ccd78406a593404912f99fd5a7.webp?_=ozb9y",
+   "source_url": "https://id34167.gl.uz/proposal/book-first-aid-for-the-usmle-step-1-2023-33rd-edition-884346/",
+   "description": "Проверенный временем и самый популярный ресурс по подготовке к доске, как всегда переработанный с учетом новейшего плана тестирования Step 1...",
+   "extra": {},
+   "image_local": "img/medis-book/1.webp"
+  },
+  {
+   "kind": "book",
+   "name": "Атлас анатомии человека. Том 2",
+   "price": 95000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://files.glotr.uz/company/000/035/164/products/2023/09/15/2023-09-15-11-51-34-978402-9c0759fbbb7f7cfee85920e9e76a1d56.webp?_=ozb9y",
+   "source_url": "https://id34167.gl.uz/proposal/kniga-atlas-anatomii-cheloveka-tom-2-884454/",
+   "description": "Синельников: Атлас анатомии человека. Том 2Аннотация к книге \"Атлас анатомии человека. В 4-х томах. Том 2\"Перед Вами удивительная книга. По...",
+   "extra": {},
+   "image_local": "img/medis-book/2.webp"
+  },
+  {
+   "kind": "book",
+   "name": "АТЛАС АНАТОМИИ ЧЕЛОВЕКА том четвертый",
+   "price": 95000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://files.glotr.uz/company/000/035/164/products/2023/09/15/2023-09-15-13-00-19-810047-c765490ba281fdf55cb3485cb3d02c29.webp?_=ozb9y",
+   "source_url": "https://id34167.gl.uz/proposal/kniga-atlas-anatomii-cheloveka-tom-chetvertiy-884621/",
+   "description": "📔АТЛАС АНАТОМИИ ЧЕЛОВЕКА том четвертый✍️ Р.Д.Синельников💉2019г ⚠️ В четвертом томе подробно рассматриваются строение, топография, функции и возрастные особеннос...",
+   "extra": {},
+   "image_local": "img/medis-book/3.webp"
+  },
+  {
+   "kind": "book",
+   "name": "АТЛАС АНАТОМИИ ЧЕЛОВЕКА том третий",
+   "price": 95000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://files.glotr.uz/company/000/035/164/products/2023/09/15/2023-09-15-12-10-21-599745-f26e3384d5cdf3e7881effd4259c2010.webp?_=ozb9y",
+   "source_url": "https://id34167.gl.uz/proposal/kniga-atlas-anatomii-cheloveka-tom-tretiy-884602/",
+   "description": "📔АТЛАС АНАТОМИИ ЧЕЛОВЕКА том третий✍️ Р.Д.Синельников💉2019г⚠️ В третьем томе рассматриваются учение о сердечно сосудистой системе и лимфоидные органы. Подробно...",
+   "extra": {},
+   "image_local": "img/medis-book/4.webp"
+  },
+  {
+   "kind": "book",
+   "name": "Атлас анатомии человека. В 4-х томах. Том 1. Учение о костях, соединениях костей и мышцах",
+   "price": 95000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://files.glotr.uz/company/000/035/164/products/2023/09/14/2023-09-14-19-59-53-450463-088192171a01701c7361aa3e3ed1fed6.webp?_=ozb9y",
+   "source_url": "https://id34167.gl.uz/proposal/kniga-atlas-anatomii-cheloveka-v-4-x-tomax-tom-1-uchenie-o-kostyax-soedineniyax-kostey-i-mishtsax-884357/",
+   "description": "Синельников, Синельников, Синельников: Атлас анатомии человека. В 4-х томах. Том 1. Учение о костях, соединениях костей и мышцахАннотация к книге...",
+   "extra": {},
+   "image_local": "img/medis-book/5.webp"
+  },
+  {
+   "kind": "book",
+   "name": "Внутренние болезни. Система органов дыхания",
+   "price": 86400,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://files.glotr.uz/company/000/035/164/products/2023/09/15/2023-09-15-13-46-38-573444-1c8c815b2b0ae8a509b55db2c419142d.webp?_=ozb9y",
+   "source_url": "https://id34167.gl.uz/proposal/kniga-vnutrennie-bolezni-sistema-organov-dixaniya-884654/",
+   "description": "📔Внутренние болезни. Система органов дыхания✍️ Г.Е.Ройтберг, A.B.Струтынский💉4-e издание (2018). Твердая обложка⚠️Книга посвящена описанию этиологии, патогенеза...",
+   "extra": {},
+   "image_local": "img/medis-book/6.webp"
+  }
+ ],
+ "description": "Канал предоставляет будущим врачам литературу для всех мед ВУЗов. Книги премиального качества, своевременная и надежная доставка.",
+ "city": "Toshkent",
+ "address": "Ташкент, Чиланзарский район",
+ "phone": "+998 88 800 15 15; +998 97 462 99 77",
+ "website": "https://id34167.gl.uz/about-company/",
+ "telegram": null,
+ "logo_url": "https://files.glotr.uz/company/000/035/164/logo/2023-09-14-16-22-52-369219-3ce847a531d3f1ce23526e3f0811ed8c.webp",
+ "source_urls": [
+  "https://id34167.gl.uz/categories/"
+ ],
+ "logo_local": "img/medis-book/logo.webp"
+}

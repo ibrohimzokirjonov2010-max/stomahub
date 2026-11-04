@@ -81,8 +81,9 @@ export default function Namuna() {
               </div>
               <div className="flex flex-1 flex-col p-3">
                 <div className="line-clamp-2 text-[14px] font-medium text-[#0F172A]">{it.name}</div>
-                {it.kind === 'seminar' && it.extra?.start_date && <div className="mt-1 text-[12px] text-[#64748B]">{it.extra.start_date}{it.extra.place ? ` · ${it.extra.place}` : ''}</div>}
+                {it.kind === 'seminar' && (it.extra?.date_text || it.extra?.start_date) && <div className="mt-1 text-[12px] text-[#64748B]">{it.extra.date_text || it.extra.start_date}{(it.extra.location || it.extra.place) ? ` · ${it.extra.location || it.extra.place}` : ''}{it.extra.speaker ? ` · Ma’ruzachi: ${it.extra.speaker}` : ''}</div>}
                 <div className="mt-1 text-[15px] font-bold text-[#0F766E]">{it.price != null ? fmt(it.price) : (it.price_text || 'Narx ko‘rsatilmagan')}</div>
+                {it.price != null && it.price_text && <div className="text-[11px] text-slate-500">{it.price_text}</div>}
                 {it.description && <p className="mt-1 line-clamp-3 text-[12px] text-[#64748B]">{it.description}</p>}
                 <button type="button" disabled className="mt-auto pt-2">
                   <span className="block w-full cursor-not-allowed rounded-lg bg-[#E2E8F0] py-2 text-[13px] font-semibold text-[#94A3B8]">

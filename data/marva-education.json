@@ -1,0 +1,36 @@
+{
+ "slug": "marva-education",
+ "kind": "organizer",
+ "name": "Marva Education",
+ "items": [
+  {
+   "kind": "seminar",
+   "name": "START 1.0 — 14 ta dars (nazariya + amaliyot)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/TeQkxaLIHQp8RiJimQCHfLFWNOI5Vi4jctHgis3zJohbOSVXOyrzR8bX837iM4g2-j-Urce9YkBQYHhJ4ozb76vhy9g4b9dXaPoPCcmqxulMDzv2v5Lke8oKcZt43rIORyc81FNw83xTqf3cRTfe7qHDXo5F1cfQ2V_ve_Xy5VOAzCnAuB7_Untk5sRxwwVT_L_JFcKvHUmi0Fs1OoOJLwwR70lQ_NF9poq3Pp8LOLmaC2Otn-grLWFOPe4-pHcNvBhursU3BigbaCO7HzHoJFnSIyflfj3gChpZNSoL8HnxOQ_NrjWWjpX7h0h5n7gmCpinI1nItFQ1MNMldOJnrg.jpg",
+   "source_url": "https://t.me/marva_edu/1761",
+   "description": "🦷 START 1.0\n\n14 TA DARS | NAZARIYA + AMALIYOT\n\nStomatologiyani noldan boshlayotgan talabalar va yosh shifokorlar uchun amaliy kurs.\n\nTalablarga binoan yangi guruh yig‘ilyapti\n\n Murojaat uchun:\n☎️+998903313553\n📥@bkzdprvt",
+   "extra": {
+    "start_date": null,
+    "date_text": "Sana ko‘rsatilmagan — yangi guruh yig‘ilyapti",
+    "location": null,
+    "speaker": null
+   },
+   "sort_at": null,
+   "image_local": "img/marva-education/1.jpg"
+  }
+ ],
+ "telegram": "https://t.me/marva_edu",
+ "logo_url": "https://cdn4.telesco.pe/file/upc5JEZuL9Ob-30jgmKYuYEvX4vn9Hc3UxOUz2jp0UpUSJ5dabMXYxuhCXvFiDnWji-gZpmn15jZeXcOLJzwa9QJKS1wjEySHzUi8pd0vV4WDXaFCqhgr7SxbErWqhqyteQNdPajRnP_BeOd0uRLy7ez-OCO0gv9lbcbrrk0ZPMLqDprIyK9Yc9aj8tZk2WZBhhmNJdl0hdSmxqXVXL1_6MECXNcTwfnNX03I41Y8r2dJ0X4wua681qmdtL8OBPNRn_PP993qzf1ZkSNkepxEF0lZbWCAkEJmMZci_q6k8IzNoHUsWl8BRwoC5J3wdBxHo4DSEMlDc1laD4YNDeV4g.jpg",
+ "source_urls": [
+  "https://t.me/marva_edu"
+ ],
+ "description": "• Stomatolog va tish texnik xodimlarini o'qitish\n• Обучение стоматологов и зубных техников.\n\n📥Ko'proq ma'lumot olish uchun:\n\nAdmin: @MarvaDental_Education\n\n📍Олмазор тум, Фарабий, 94-B.\n📞99 037 63 00",
+ "city": "Toshkent",
+ "address": null,
+ "phone": "+998 99 037 63 00",
+ "website": null,
+ "logo_local": "img/marva-education/logo.jpg"
+}

@@ -7,7 +7,7 @@
  "website": "https://dentalkorzina.com",
  "telegram": "https://t.me/dentalkorzina_uz",
  "description": "Dentalkorzina — sifatli va ishonchli tibbiy uskunalar. WOSON, Carestream, Ivoclar, FGM, BEGO, MEDESY mahsulotlari.",
- "logo_url": null,
+ "logo_url": "https://cdn5.telesco.pe/file/VObH7zKcFaaVzih0H7_2sU_c7SZARkQh4_mt4gQfht_U7b-CYMUhKMs7ThaM0QYmknn-DGu0tRdZNlILMoIy4EFHmpLzjsWJUDN_nLs-b4XCgsb2fdUWqF2yewOGHSahxkFGHcgfwd-ZW1YpYTYThg1ZmujEfsVCZOk2Kli634RN6SXrLR9_g_cHTa4u7PB63N47LCWOavLtzTKT2LFb_xqMp8nFaZVt-ugAq2W3wwrX1-Wp8BJKVbTMsur9WLSt1Gjrw5r2mKSftzNGsgi8KnbsmPq5E-fhk6hoxkb3qToP8vV0O8GgB3QGOpqeEiQUlKqJABCkthL658Wdxb1n4A.jpg",
  "source_urls": [
   "https://t.me/s/dentalkorzina_uz"
  ],
@@ -190,5 +190,5 @@
   }
  ],
  "slug": "dentalkorzina",
- "logo_local": null
+ "logo_local": "img/dentalkorzina/logo.jpg"
 }
