@@ -30,7 +30,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/1.webp"
+   "image_local": "img/dental-trading/p01-jinme-e1-white-electric-micromotor.webp"
   },
   {
    "name": "JINME ES70 — хирургическая система для имплантации",
@@ -49,7 +49,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/2.webp"
+   "image_local": "img/dental-trading/p02-jinme-es70-implant-system.webp"
   },
   {
    "name": "JINME J1 Plus — турбинный наконечник M4 без подсветки",
@@ -63,7 +63,7 @@
     "brand": "JINME",
     "availability": "Ожидается поступление"
    },
-   "image_local": "img/dental-trading/3.webp"
+   "image_local": "img/dental-trading/p03-jinme-j1-plus-handpiece.webp"
   },
   {
    "name": "JINME J5 LED — турбинный наконечник M4 с подсветкой",
@@ -82,7 +82,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/4.webp"
+   "image_local": "img/dental-trading/p04-jinme-j5-fiber-optic-handpiece.webp"
   },
   {
    "name": "Lifedent Apollo 23B — автоклав класса B, 23 л",
@@ -101,7 +101,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/5.webp"
+   "image_local": "img/dental-trading/p05-lifedent-apollo-23b-autoclave.webp"
   },
   {
    "name": "Lifedent EGO-FILLER 2 — фильтр для воды",
@@ -115,7 +115,7 @@
     "brand": "Lifedent",
     "availability": "Ожидается поступление"
    },
-   "image_local": "img/dental-trading/6.webp"
+   "image_local": "img/dental-trading/p06-lifedent-ego-filler-2-water-filter.webp"
   },
   {
    "name": "Lifedent X330 — упаковочная машина",
@@ -134,7 +134,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/7.webp"
+   "image_local": "img/dental-trading/p07-lifedent-x330-sealing-machine.webp"
   },
   {
    "name": "Voldent VD SENSOR R1.5 Цифровой рентгеновский датчик",
@@ -153,7 +153,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/8.webp"
+   "image_local": "img/dental-trading/p08-voldent-vd-sensor-r15.webp"
   },
   {
    "name": "Perfect Dental T-Flex 25 мм · Assorted · 5 шт/уп",
@@ -172,7 +172,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/9.webp"
+   "image_local": "img/dental-trading/p09-perfect-dental-t-flex-25mm-assorted-5pcs-pack-1.webp"
   },
   {
    "name": "Perfect Dental TS4 25 мм · Assorted · 4 шт/уп",
@@ -191,14 +191,14 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/10.webp"
+   "image_local": "img/dental-trading/p10-perfect-dental-ts4-25mm-assorted-4pcs-pack-2.webp"
   },
   {
    "name": "Perfect Dental Retreaty Kit 25 мм · Assorted · 5 шт/уп",
    "price": 178676,
    "price_text": "Kurs: 11 911.71 so‘m, 04.11.2026, asl narx $15",
    "currency": "UZS",
-   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-retreaty-kit-25mm-assorted-5pcs-pack-3/01-main.webp",
+   "image_url": null,
    "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/rotary-files/perfect-dental-retreaty-kit-25mm-assorted-5pcs-pack-3",
    "description": "Perfect Dental Retreaty Kit 25 мм · Assorted · 5 шт/уп от Perfect Dental. Perfect Dental Retreaty Kit 25 мм · Assorted · 5 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
    "extra": {
@@ -208,9 +208,10 @@
     "usd_text": "$15",
     "cbu_rate": 11911.71,
     "cbu_date": "04.11.2026",
-    "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
+    "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/",
+    "image_removed": "Manba sahifadagi rasm mahsulotga mos emas (multfilm qahramonlari)"
    },
-   "image_local": "img/dental-trading/11.webp"
+   "image_local": null
   },
   {
    "name": "Perfect Dental K One 15 мм · #25/.06 · 4 шт/уп",
@@ -229,7 +230,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/12.webp"
+   "image_local": "img/dental-trading/p12-perfect-dental-k-one-15mm-25-06-4pcs-pack-4.webp"
   },
   {
    "name": "Perfect Dental V Blue 25 мм · #15-40/.04 · 6 шт/уп",
@@ -248,7 +249,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/13.webp"
+   "image_local": "img/dental-trading/p13-perfect-dental-v-blue-25mm-15-40-04-6pcs-pack-5.webp"
   },
   {
    "name": "Perfect Dental K Files 21 мм · 6 шт/уп",
@@ -267,7 +268,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/14.webp"
+   "image_local": "img/dental-trading/p14-perfect-dental-k-files-21mm-06-6pcs-pack-6.webp"
   },
   {
    "name": "Perfect Dental K Files 25 мм · 6 шт/уп",
@@ -286,7 +287,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/15.webp"
+   "image_local": "img/dental-trading/p15-perfect-dental-k-files-25mm-06-6pcs-pack-16.webp"
   },
   {
    "name": "Perfect Dental H Files 21 мм · 6 шт/уп",
@@ -305,7 +306,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/16.webp"
+   "image_local": "img/dental-trading/p16-perfect-dental-h-files-21mm-06-6pcs-pack-26.webp"
   },
   {
    "name": "Perfect Dental H Files 25 мм · 6 шт/уп",
@@ -324,7 +325,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/17.webp"
+   "image_local": "img/dental-trading/p17-perfect-dental-h-files-25mm-06-6pcs-pack-36.webp"
   },
   {
    "name": "JINME M3 1:1 — угловой наконечник без подсветки",
@@ -343,7 +344,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/18.webp"
+   "image_local": "img/dental-trading/p18-jinme-m3-1-1-contra-angle-handpiece.webp"
   },
   {
    "name": "Perfect Dental D Files 25 мм · 6 шт/уп",
@@ -362,7 +363,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/19.webp"
+   "image_local": "img/dental-trading/p19-perfect-dental-d-files-25mm-08-10-15-6pcs-pack-47.webp"
   },
   {
    "name": "Perfect Dental C Files 21 мм · 6 шт/уп",
@@ -381,7 +382,7 @@
     "cbu_date": "04.11.2026",
     "cbu_source": "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/"
    },
-   "image_local": "img/dental-trading/20.webp"
+   "image_local": "img/dental-trading/p20-perfect-dental-c-files-21mm-08-10-15-6pcs-pack-48.webp"
   }
  ],
  "slug": "dental-trading",
