@@ -8,5 +8,6 @@ Disallow: /profil
 Disallow: /savatcha
 Disallow: /buyurtma
 Disallow: /api/
+Disallow: /namuna
 
 Sitemap: https://stomahub-three.vercel.app/sitemap.xml
