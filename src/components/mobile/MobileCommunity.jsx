@@ -3,10 +3,11 @@ import { ensureLogin } from '../../loginPrompt'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, SlidersHorizontal, Image as ImageIcon, Video, Plus, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal,
-  Lightbulb, HelpCircle, Newspaper, PenLine, X, Check, Link2, EyeOff, Flag, Trash2, BadgeCheck,
+  Lightbulb, X, Check, Link2, EyeOff, Flag, Trash2, BadgeCheck, MessagesSquare, PenLine, ShieldCheck,
 } from 'lucide-react'
 import { useProfile } from '../../profileStore'
-import { FEED_TABS, useFeed, feed, countComments } from '../../communityFeed'
+import { FEED_TABS, POST_KINDS, useFeed, feed, countComments, validatePost, initials } from '../../communityFeed'
+import { CATS, catTopic } from '../../communityData'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
@@ -15,6 +16,7 @@ import { imgIcon } from '../tealIcons'
 export const KIND = {
   case: { label: 'Klinik case', icon: imgIcon('forum', 'klinik-holatlar'), cls: 'bg-[#e8f1ff] text-[#2f6fe4]' },
   maslahat: { label: 'Maslahatlar', icon: Lightbulb, cls: 'bg-[#e3f8ef] text-[#1f9d63]' },
+  muhokama: { label: 'Muhokama', icon: MessagesSquare, cls: 'bg-[#eef2ff] text-[#4f46e5]' },
   savol: { label: 'Savollar', icon: imgIcon('forum', 'savollar'), cls: 'bg-[#f3e8ff] text-[#8b3fd6]' },
   yangilik: { label: 'Yangiliklar', icon: imgIcon('forum', 'yangiliklar'), cls: 'bg-[#fff3df] text-[#c77700]' },
 }
@@ -25,12 +27,12 @@ export const postLink = (p) => `${window.location.origin}/community/${p.id}`
 export function Avatar({ p, size = 'size-11' }) {
   if (p.official) return <span className={`${size} grid shrink-0 place-items-center rounded-full bg-sea text-white`}><ToothIcon className="size-1/2" /></span>
   if (p.avatar) return <img src={p.avatar} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
-  const ini = (p.name || p.author).replace('Dr. ', '').split(' ').map((w) => w[0]).slice(0, 2).join('')
+  const ini = initials(p.name || p.author)
   return <span className={`${size} grid shrink-0 place-items-center rounded-full bg-[#e9eef3] text-[13px] font-semibold text-[#6b7f95]`}>{ini}</span>
 }
 
 export function KindBadge({ kind }) {
-  const k = KIND[kind]
+  const k = KIND[kind] || KIND.muhokama
   const Icon = k.icon
   return <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-[10.5px] font-semibold ${k.cls}`}><Icon className={Icon.raster ? 'size-4' : 'size-3.5'} /> {k.label}</span>
 }
@@ -79,7 +81,7 @@ export function Lightbox({ images, index, onClose }) {
   )
 }
 
-export function PostMenu({ p, saved, onClose, onToast, onDeleted }) {
+export function PostMenu({ p, saved, onClose, onToast, onDeleted, onEdit }) {
   const item = (Icon, label, fn, danger) => (
     <button type="button" onClick={() => { fn(); onClose() }} className={`flex h-12 w-full items-center gap-3 rounded-xl px-2 text-left text-[14px] font-medium ${danger ? 'text-sale' : 'text-ink'} active:bg-page`}>
       <Icon className="size-5" /> {label}
@@ -90,11 +92,27 @@ export function PostMenu({ p, saved, onClose, onToast, onDeleted }) {
       {item(Bookmark, saved ? 'Saqlanganlardan olib tashlash' : 'Saqlash', () => { feed.toggleSave(p.id); onToast(saved ? 'Saqlanganlardan olib tashlandi' : 'Saqlandi') })}
       {item(Link2, 'Havolani nusxalash', () => { navigator.clipboard?.writeText(postLink(p)).catch(() => {}); onToast('Havola nusxalandi') })}
       {p.mine
-        ? item(Trash2, 'Postni o‘chirish', () => { feed.remove(p.id); onToast('Post o‘chirildi'); onDeleted?.() }, true)
+        ? (
+          <>
+            {onEdit && item(PenLine, 'Tahrirlash', () => onEdit(p))}
+            {item(Trash2, 'O‘chirish', async () => {
+              if (!window.confirm('Postni o‘chirasizmi?')) return
+              const r = await feed.remove(p.id)
+              onToast(r.ok ? 'Post o‘chirildi' : r.error)
+              if (r.ok) onDeleted?.()
+            }, true)}
+          </>
+        )
         : (
           <>
             {item(EyeOff, 'Bu postni yashirish', () => { feed.hide(p.id); onToast('Post yashirildi'); onDeleted?.() })}
-            {item(Flag, 'Shikoyat qilish', () => onToast('Shikoyatingiz moderatorlarga yuborildi'), true)}
+            {item(Flag, 'Shikoyat qilish', async () => {
+              if (!ensureLogin()) return
+              const reason = window.prompt('Shikoyat sababi', 'Nomaqbul kontent')
+              if (reason === null) return
+              const r = await feed.report(p.id, reason)
+              onToast(r.ok ? 'Shikoyatingiz moderatorlarga yuborildi' : r.error)
+            }, true)}
           </>
         )}
     </BottomSheet>
@@ -113,13 +131,8 @@ export async function sharePost(p, onToast) {
 }
 
 function viewerOf(profile) {
-  if (!profile?.accountLive) return { name: 'Mehmon', role: 'Stomatolog', place: 'Toshkent', avatar: '/images/avatar.jpg' }
-  return {
-    name: profile.name || 'Shifokor',
-    role: profile.role || 'Stomatolog',
-    place: profile.city || 'Toshkent',
-    avatar: profile.avatar || '/images/avatar.jpg',
-  }
+  if (!profile?.accountLive) return { name: 'Mehmon', avatar: '' }
+  return { name: profile.name || 'Foydalanuvchi', avatar: profile.avatar || '' }
 }
 
 export default function MobileCommunity() {
@@ -133,6 +146,7 @@ export default function MobileCommunity() {
   const [sheet, setSheet] = useState(null)
   const composeIfAuthed = (kind) => { if (ensureLogin()) setSheet(kind) }
   const [menu, setMenu] = useState(null)
+  const [editing, setEditing] = useState(null)
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState('')
   const [undo, setUndo] = useState(null)
@@ -145,7 +159,7 @@ export default function MobileCommunity() {
       !hidden.has(p.id) &&
       (tab === 'all' || p.kind === tab) &&
       (!onlySaved || saved.has(p.id)) &&
-      (!s || `${p.title} ${p.body} ${p.author} ${p.tags.join(' ')}`.toLowerCase().includes(s)))
+      (!s || `${p.title} ${p.body} ${p.author} ${p.tags.map((t) => t?.t || t).join(' ')}`.toLowerCase().includes(s)))
     if (sort === 'top') return [...rows].sort((a, b) => b.likes - a.likes)
     if (sort === 'talk') return [...rows].sort((a, b) => countComments(b) - countComments(a))
     return rows
@@ -175,7 +189,7 @@ export default function MobileCommunity() {
         </div>
 
         <div className="mt-3 flex items-center gap-1.5 rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-          <img src={me.avatar} alt="" className="size-11 shrink-0 rounded-full object-cover" />
+          <Avatar p={me} />
           <button type="button" onClick={() => composeIfAuthed('compose')} className="ml-0.5 h-11 min-w-0 flex-1 truncate rounded-xl bg-[#f2f6f9] px-3 text-left text-[12.5px] text-muted">Nima haqida o‘ylayapsiz?</button>
           <button type="button" onClick={() => composeIfAuthed('compose-img')} aria-label="Rasm qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><ImageIcon className="size-[21px]" strokeWidth={1.7} /></button>
           <button type="button" onClick={() => say('Video yuklash tez orada qo‘shiladi')} aria-label="Video qo‘shish" className="grid size-8 shrink-0 place-items-center text-sea"><Video className="size-[21px]" strokeWidth={1.7} /></button>
@@ -200,7 +214,7 @@ export default function MobileCommunity() {
                 <Avatar p={p} />
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-1 truncate text-[14px] font-bold text-[#0d2a4a]">{p.author}{p.official && <BadgeCheck className="size-4 shrink-0 text-sea" />}</p>
-                  <p className="truncate text-[11.5px] text-muted">{p.role} · {p.time}</p>
+                  <p className="truncate text-[11.5px] text-muted">{p.role} · {p.time}{p.edited ? ' · tahrirlangan' : ''}</p>
                 </div>
                 <KindBadge kind={p.kind} />
                 <button type="button" onClick={() => setMenu(p)} aria-label="Ko‘proq" className="grid size-7 shrink-0 place-items-center text-muted"><MoreHorizontal className="size-5" /></button>
@@ -235,10 +249,6 @@ export default function MobileCommunity() {
         )}
       </div>
 
-      <button type="button" onClick={() => composeIfAuthed('compose')} className="fixed bottom-[76px] right-3.5 z-30 flex h-12 items-center gap-2 rounded-full bg-sea px-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgb(11_138_149/0.4)] active:scale-95">
-        <PenLine className="size-[18px]" /> Yangi post
-      </button>
-
       {sheet === 'filter' && (
         <BottomSheet title="Filtrlar" onClose={() => setSheet(null)} footer={<button type="button" onClick={() => setSheet(null)} className="h-12 flex-1 rounded-xl bg-sea text-[14px] font-semibold text-white">{list.length} ta postni ko‘rsatish</button>}>
           <p className="mt-3 text-[13px] font-semibold text-ink">Saralash</p>
@@ -257,12 +267,13 @@ export default function MobileCommunity() {
       )}
 
       {(sheet === 'compose' || sheet === 'compose-img') && (
-        <Composer
+        <PostComposer
           withImages={sheet === 'compose-img'}
           onClose={() => setSheet(null)}
-          onPublish={(post) => { feed.add(post); setSheet(null); setTab('all'); setQ(''); setOnlySaved(false); say('Post e’lon qilindi'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+          onDone={() => { setSheet(null); setTab('all'); setQ(''); setOnlySaved(false); say('Post e’lon qilindi'); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
         />
       )}
+      {editing && <PostComposer editing={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); say('Post yangilandi') }} />}
 
       {menu && (
         <PostMenu
@@ -270,6 +281,7 @@ export default function MobileCommunity() {
           saved={saved.has(menu.id)}
           onClose={() => setMenu(null)}
           onToast={say}
+          onEdit={(p) => setEditing(p)}
           onDeleted={() => { if (!menu.mine) { const id = menu.id; setTimeout(() => setUndo(() => () => feed.hide(id)), 0) } }}
         />
       )}
@@ -286,51 +298,54 @@ export default function MobileCommunity() {
   )
 }
 
-function Composer({ withImages, onClose, onPublish }) {
-  const me = viewerOf(useProfile())
-  const [kind, setKind] = useState('case')
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const [imgs, setImgs] = useState([])
-  const [pick, setPick] = useState(withImages)
-  const ok = title.trim().length >= 5 && body.trim().length >= 10
+// Mobil forma desktop bilan bir xil talablarga ega: bir xil turlar (POST_KINDS), kategoriya (CATS),
+// bemor roziligi (klinik keys yoki rasm bo‘lsa majburiy) va yagona validatePost.
+export function PostComposer({ withImages, editing, onClose, onDone }) {
+  const [kind, setKind] = useState(editing?.kind && POST_KINDS.some(([k]) => k === editing.kind) ? editing.kind : 'case')
+  const [cat, setCat] = useState(editing?.meta?.cat || CATS[0])
+  const [title, setTitle] = useState(editing?.title || '')
+  const [body, setBody] = useState(editing?.body || '')
+  const [imgs, setImgs] = useState(editing?.images || [])
+  const [consent, setConsent] = useState(!!editing?.consent)
+  const [pick, setPick] = useState(withImages || !!editing?.images?.length)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const needConsent = kind === 'case' || imgs.length > 0
 
-  const publish = () => onPublish({
-    id: `p${Date.now()}`,
-    kind,
-    author: me.name,
-    role: me.role,
-    place: `${me.place}, O‘zbekiston`,
-    time: 'Hozir',
-    avatar: me.avatar,
-    mine: true,
-    title: title.trim(),
-    body: body.trim(),
-    images: imgs,
-    layout: imgs.length === 2 ? 'ba' : imgs.length >= 3 ? 'row' : 'single',
-    tags: [KIND[kind].label],
-    likes: 0,
-    comments: [],
-  })
+  const publish = async () => {
+    const post = { kind, topic: catTopic[cat] || '', title, body, images: imgs, consent, meta: { ...(editing?.meta || {}), cat } }
+    const why = validatePost(post)
+    if (why) { setError(why); return }
+    setBusy(true)
+    const r = editing ? await feed.update(editing.id, post) : await feed.add(post)
+    setBusy(false)
+    if (!r.ok) { setError(r.error); return }
+    onDone()
+  }
 
   return (
     <BottomSheet
-      title="Yangi post"
+      title={editing ? 'Postni tahrirlash' : 'Yangi post'}
       onClose={onClose}
-      footer={<button type="button" disabled={!ok} onClick={publish} className="h-12 flex-1 rounded-xl bg-sea text-[14px] font-semibold text-white disabled:opacity-40">E’lon qilish</button>}
+      footer={<button type="button" disabled={busy} onClick={publish} className="h-12 flex-1 rounded-xl bg-sea text-[14px] font-semibold text-white disabled:opacity-60">{busy ? 'Saqlanmoqda…' : editing ? 'Saqlash' : 'E’lon qilish'}</button>}
     >
       <div className="mt-2 flex flex-wrap gap-2">
-        {Object.entries(KIND).filter(([k]) => k !== 'yangilik').map(([k, v]) => {
-          const Icon = v.icon
+        {POST_KINDS.map(([k, label]) => {
+          const Icon = (KIND[k] || KIND.muhokama).icon
           return (
-            <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={`flex h-9 items-center gap-1.5 rounded-xl border px-3 text-[12.5px] font-medium ${kind === k ? 'border-sea bg-sea-50 text-sea' : 'border-line text-ink'}`}>
-              <Icon className="size-4" /> {v.label}
+            <button key={k} type="button" aria-pressed={kind === k} onClick={() => { setKind(k); setError('') }} className={`flex h-9 items-center gap-1.5 rounded-xl border px-3 text-[12.5px] font-medium ${kind === k ? 'border-sea bg-sea-50 text-sea' : 'border-line text-ink'}`}>
+              <Icon className="size-4" /> {label}
             </button>
           )
         })}
       </div>
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Sarlavha" className="mt-3 h-11 w-full rounded-xl border border-line px-3 text-[14px] font-semibold outline-none focus:border-sea" />
-      <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} placeholder={kind === 'savol' ? 'Savolingizni batafsil yozing...' : 'Holat, davolash va natijani yozing...'} className="mt-2 w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-sea" />
+      <label className="mt-3 block text-[12px] font-semibold text-ink">Mavzu (kategoriya)
+        <select value={cat} onChange={(e) => setCat(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-line bg-white px-3 text-[14px] font-normal outline-none focus:border-sea">
+          {CATS.map((c) => <option key={c}>{c}</option>)}
+        </select>
+      </label>
+      <input value={title} onChange={(e) => { setTitle(e.target.value); setError('') }} placeholder="Sarlavha" className="mt-3 h-11 w-full rounded-xl border border-line px-3 text-[14px] font-semibold outline-none focus:border-sea" />
+      <textarea value={body} onChange={(e) => { setBody(e.target.value); setError('') }} rows={4} maxLength={10000} placeholder={kind === 'savol' ? 'Savolingizni batafsil yozing...' : 'Holat, davolash va natijani yozing...'} className="mt-2 w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-sea" />
       <button type="button" onClick={() => setPick(!pick)} className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-sea">
         <ImageIcon className="size-4" /> Rasm qo‘shish {imgs.length > 0 && `(${imgs.length})`}
       </button>
@@ -345,12 +360,18 @@ function Composer({ withImages, onClose, onPublish }) {
           {imgs.length < 3 && (
             <label className="grid h-[84px] cursor-pointer place-items-center rounded-lg border border-dashed border-line text-[12px] text-muted">
               + Rasm
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setImgs((l) => (l.length < 3 ? [...l, r.result] : l)); r.readAsDataURL(f); e.target.value = '' }} />
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 10 * 1024 * 1024) { setError('Fayl 10 MB dan katta bo‘lmasin.'); return } const r = new FileReader(); r.onload = () => setImgs((l) => (l.length < 3 ? [...l, r.result] : l)); r.readAsDataURL(f); e.target.value = '' }} />
             </label>
           )}
         </div>
       )}
-      <p className="mt-2 text-[11px] text-muted">Bemor yuzi va shaxsiy ma’lumotlari ko‘rinmasligiga ishonch hosil qiling. 3 tagacha rasm.</p>
+      <label className={`mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-[12.5px] ${needConsent && !consent && error ? 'border-sale' : 'border-line'}`}>
+        <input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); setError('') }} className="mt-0.5 accent-[#0b8a95]" />
+        <span><ShieldCheck className="mr-1 inline size-4 text-sea" />Bemor roziligi olingan{needConsent && <span className="text-sale"> *</span>}
+          <span className="block text-[11px] text-muted">Klinik keys yoki rasmli post uchun majburiy. Bemor yuzi va shaxsiy ma’lumotlari ko‘rinmasin.</span>
+        </span>
+      </label>
+      {error && <p role="alert" className="mt-2 rounded-xl bg-[#fff1f2] px-3 py-2 text-[12.5px] text-sale">{error}</p>}
     </BottomSheet>
   )
 }

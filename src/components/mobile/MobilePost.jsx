@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { MapPin, Heart, MessageCircle, Share2, Bookmark, ChevronDown, Image as ImageIcon, Send, MoreVertical, MoreHorizontal, X, Reply, Copy, Trash2, Flag, BadgeCheck } from 'lucide-react'
-import { ME } from '../../communityData'
+import { useProfile } from '../../profileStore'
+import { ensureLogin } from '../../loginPrompt'
 import { useFeed, feed, countComments } from '../../communityFeed'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
-import { Avatar, PostImages, Lightbox, PostMenu, sharePost } from './MobileCommunity'
+import { Avatar, PostImages, Lightbox, PostMenu, PostComposer, sharePost } from './MobileCommunity'
 
 const SORTS = [['new', 'Eng yangi'], ['top', 'Eng ko‘p yoqqan'], ['old', 'Eng eski']]
 
@@ -27,6 +28,9 @@ function PostView({ id }) {
   const [reply, setReply] = useState(null)
   const [menu, setMenu] = useState(null)
   const [postMenu, setPostMenu] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const profile = useProfile()
+  const me = { name: profile?.accountLive ? (profile.name || 'Foydalanuvchi') : 'Mehmon', avatar: profile?.accountLive ? profile.avatar || '' : '' }
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
@@ -68,10 +72,12 @@ function PostView({ id }) {
   const isSaved = saved.has(p.id)
   const total = countComments(p)
 
-  const send = () => {
+  const send = async () => {
     const t = text.trim()
     if (!t && !photo) return
-    feed.comment(p.id, t, reply?.id, photo)
+    if (!ensureLogin()) return
+    const r = await feed.comment(p.id, t, reply?.id, photo)
+    if (!r.ok) { setToast(r.error); return }
     setText('')
     setPhoto(null)
     setToast(reply ? 'Javobingiz qo‘shildi' : 'Izohingiz qo‘shildi')
@@ -150,7 +156,7 @@ function PostView({ id }) {
           </div>
         )}
         <div className="mt-3 flex items-center gap-2">
-          <img src={ME.avatar} alt="" className="size-10 shrink-0 rounded-full object-cover" />
+          <Avatar p={me} size="size-10" />
           <div className="flex h-11 min-w-0 flex-1 items-center rounded-full border border-line/80 bg-[#f7fafb] pl-4 pr-1.5 focus-within:border-sea">
             <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} placeholder={reply ? 'Javob yozing...' : 'Izoh yozing...'} className="min-w-0 flex-1 bg-transparent text-[13.5px] outline-none placeholder:text-muted" />
             <button type="button" onClick={() => fileRef.current?.click()} aria-label="Rasm biriktirish" className="grid size-8 shrink-0 place-items-center text-[#0b6d73]"><ImageIcon className="size-5" /></button>
@@ -191,7 +197,7 @@ function PostView({ id }) {
             [Reply, 'Javob berish', () => startReply(menu.c, menu.parent)],
             [Copy, 'Matnni nusxalash', () => { navigator.clipboard?.writeText(menu.c.text).catch(() => {}); setToast('Nusxalandi') }],
             menu.c.mine
-              ? [Trash2, 'Izohni o‘chirish', () => { feed.removeComment(p.id, menu.c.id); setToast('Izoh o‘chirildi') }, true]
+              ? [Trash2, 'Izohni o‘chirish', async () => { const r = await feed.removeComment(p.id, menu.c.id); setToast(r.ok ? 'Izoh o‘chirildi' : r.error) }, true]
               : [Flag, 'Shikoyat qilish', () => setToast('Shikoyatingiz moderatorlarga yuborildi'), true],
           ].map(([Icon, l, fn, danger]) => (
             <button key={l} type="button" onClick={() => { setMenu(null); fn() }} className={`flex h-12 w-full items-center gap-3 rounded-xl px-2 text-left text-[14px] font-medium ${danger ? 'text-sale' : 'text-ink'} active:bg-page`}>
@@ -200,7 +206,8 @@ function PostView({ id }) {
           ))}
         </BottomSheet>
       )}
-      {postMenu && <PostMenu p={p} saved={isSaved} onClose={() => setPostMenu(false)} onToast={setToast} onDeleted={() => navigate('/community', { replace: true })} />}
+      {postMenu && <PostMenu p={p} saved={isSaved} onClose={() => setPostMenu(false)} onToast={setToast} onEdit={() => setEditing(true)} onDeleted={() => navigate('/community', { replace: true })} />}
+      {editing && <PostComposer editing={p} onClose={() => setEditing(false)} onDone={() => { setEditing(false); setToast('Post yangilandi') }} />}
       {zoom !== null && <Lightbox images={p.images} index={zoom} onClose={() => setZoom(null)} />}
 
       <MobileToast text={toast} onClose={closeToast} />

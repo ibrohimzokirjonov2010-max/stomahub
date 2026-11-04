@@ -1,7 +1,7 @@
 import { friendlyError } from '../../lib/friendlyError'
-import { useMemo, useState } from 'react'
-import { EyeOff, Eye, Trash2 } from 'lucide-react'
-import { listContent, moderateContent, useAdminList } from '../api'
+import { useEffect, useMemo, useState } from 'react'
+import { EyeOff, Eye, Trash2, Flag, CheckCircle2 } from 'lucide-react'
+import { communityOpenReports, listContent, moderateContent, useAdminList } from '../api'
 import { dmyhm, num } from '../format'
 import ConfirmReason from '../components/ConfirmReason'
 import {
@@ -10,7 +10,7 @@ import {
 
 // StomaHub Market official kinds (Forma, Jihozlar, Marketplace) are intentionally NOT here.
 export const MOD_KINDS = [
-  ['ad', 'E’lonlar'], ['surplus', 'Ortiqcha materiallar'], ['post', 'Hamjamiyat postlari'], ['master', 'Ustalar'],
+  ['ad', 'E’lonlar'], ['surplus', 'Ortiqcha materiallar'], ['post', 'Hamjamiyat postlari'], ['post_reported', 'Shikoyatlar'], ['master', 'Ustalar'],
   ['book', 'Kitoblar'], ['course', 'Kurslar'], ['job', 'Vakansiyalar'], ['channel', 'Kanallar'], ['seminar', 'Seminarlar'],
 ]
 
@@ -45,11 +45,29 @@ export default function Moderatsiya() {
     async () => {
       const raw = await listContent({ kind, q, page, pageSize })
       // har bir qatorga so‘ralgan bo‘lim belgilanadi — boshqa tabning javobi bu tabda chiqmaydi
-      return { ...(raw || {}), rows: (raw?.rows || []).filter((r) => !r.kind || r.kind === kind).map((r) => ({ ...r, _kind: kind })) }
+      return { ...(raw || {}), rows: (raw?.rows || []).filter((r) => !r.kind || r.kind === kind || (kind === 'post_reported' && r.kind === 'post')).map((r) => ({ ...r, _kind: kind })) }
     }, [kind, q, page, pageSize],
   )
   const rows = allRows.filter((r) => r._kind === kind)
-  const tabs = useMemo(() => MOD_KINDS.map(([id, label]) => ({ id, label })), [])
+  // Hamjamiyat shikoyatlari soni (ochiq) — tab yonida badge
+  const [openReports, setOpenReports] = useState(0)
+  useEffect(() => {
+    let alive = true
+    communityOpenReports().then((n) => { if (alive) setOpenReports(Number(n) || 0) }).catch(() => {})
+    return () => { alive = false }
+  }, [allRows])
+  const tabs = useMemo(() => MOD_KINDS.map(([id, label]) => ({ id, label: id === 'post_reported' && openReports > 0 ? `${label} (${openReports})` : label })), [openReports])
+  const dismiss = async (r) => {
+    try { await moderateContent(kind, r.id, 'dismiss'); setMsg('Shikoyatlar rad etildi.'); reload() } catch (e) { setMsg(friendlyError(e)) }
+  }
+  const Reports = ({ r }) => (r.report_count > 0 ? (
+    <details className="mt-1 text-[12px]">
+      <summary className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-[#fff1f2] px-2 py-0.5 font-semibold text-[#b42318]"><Flag className="size-3" /> {r.report_count} shikoyat</summary>
+      <ul className="mt-1 space-y-0.5 text-[#5C6E80]">
+        {(r.reports || []).map((x, i) => <li key={i}>• {x.reason || '—'} <span className="text-[#8A9AA8]">({x.by || '—'}{x.at ? `, ${dmyhm(x.at)}` : ''})</span></li>)}
+      </ul>
+    </details>
+  ) : null)
   const unhide = async (r) => {
     try { await moderateContent(kind, r.id, 'unhide'); setMsg('Qayta ko‘rsatildi.'); reload() } catch (e) { setMsg(friendlyError(e)) }
   }
@@ -59,6 +77,7 @@ export default function Moderatsiya() {
         ? <Btn onClick={() => unhide(r)}><Eye className="size-3.5" /> Ko‘rsatish</Btn>
         : <Btn onClick={() => setPick({ row: r, action: 'hide' })}><EyeOff className="size-3.5" /> Yashirish</Btn>}
       <Btn tone="ghost" onClick={() => setPick({ row: r, action: 'delete' })}><Trash2 className="size-3.5" /> O‘chirish</Btn>
+      {r.report_count > 0 && <Btn tone="ghost" onClick={() => dismiss(r)}><CheckCircle2 className="size-3.5" /> Shikoyatni rad etish</Btn>}
     </RowActions>
   )
   return (
@@ -73,6 +92,7 @@ export default function Moderatsiya() {
       <MobileCards rows={rows} render={(r) => (
         <div className="space-y-2">
           <div className="font-semibold">{r.title}</div>
+          <Reports r={r} />
           <div className="text-[12px] text-[#5C6E80]"><Owner value={r.owner} avatar={r.owner_avatar} /> · {typeof r.at === "string" ? dmyhm(r.at) : "—"}</div>
           <StatusDot tone={r.hidden ? 'gray' : 'teal'}>{r.hidden ? 'Yashirilgan' : 'Ko‘rinadi'}</StatusDot>
           {actions(r)}
@@ -83,7 +103,7 @@ export default function Moderatsiya() {
           {rows.map((r, i) => (
             <tr key={`${r._kind}:${r.id}`} className="border-t border-[#EEF3F4]">
               <td className="px-3 py-3 text-[#8A9AA8]">{(page - 1) * pageSize + i + 1}</td>
-              <td className="px-3 py-3 font-semibold">{r.title}</td>
+              <td className="px-3 py-3"><b>{r.title}</b><Reports r={r} /></td>
               <td className="px-3 py-3"><Owner value={r.owner} avatar={r.owner_avatar} /></td>
               <td className="px-3 py-3">{typeof r.at === "string" ? dmyhm(r.at) : "—"}</td>
               <td className="px-3 py-3"><StatusDot tone={r.hidden ? 'gray' : 'teal'}>{r.hidden ? 'Yashirilgan' : 'Ko‘rinadi'}</StatusDot></td>
