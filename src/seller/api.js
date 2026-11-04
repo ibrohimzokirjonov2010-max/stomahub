@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from '../supabaseClient'
 import { getSession, refreshSession } from '../sessionStore'
 
-import { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash, realOrders, metrics, commissionDebt, tkDay, tkToday, ALL, monthRange, OPEN } from './lib/metrics'
+import { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash, realOrders, metrics, commissionDebt, tkDay, tkToday, ALL, monthRange, OPEN, addDays } from './lib/metrics'
 export { COMMISSION_RATE, netOf, isDelivered, isCancelled, commissionOf, payoutOf, isCash }
 
 export const STATUS = {
@@ -123,6 +123,19 @@ export function computeStats({ orders, products, payouts, customers, adTopups = 
 }
 
 /** month: Date (oyning istalgan kuni) yoki null = barcha vaqt */
+// Bosh sahifa davr filtri — bitta tanlov (standart: oxirgi 30 kun)
+export const PERIODS = [['7', 'Oxirgi 7 kun'], ['30', 'Oxirgi 30 kun'], ['month', 'Bu oy'], ['all', 'Barcha davr']]
+export function periodRange(key, today = tkToday()) {
+  if (key === '7') return { from: addDays(today, -6), to: today }
+  if (key === '30') return { from: addDays(today, -29), to: today }
+  if (key === 'month') return monthRange(today.slice(0, 7))
+  return ALL
+}
+export function periodStats(orders, key) {
+  const m = metrics(orders, periodRange(key))
+  return { sum: m.revenue, count: m.count, avg: m.avg, commission: m.commission, openCount: m.openCount, openSum: m.openSum }
+}
+
 export function monthStats(orders, month) {
   const r = month ? monthRange(`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`) : ALL
   const m = metrics(orders, r)
