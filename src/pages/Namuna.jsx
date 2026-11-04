@@ -55,7 +55,7 @@ export default function Namuna() {
       </div>
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-white p-5 shadow-sm">
-          {e.logo_url && <img src={e.logo_url} alt="" className="h-16 w-16 rounded-xl object-cover" />}
+          {e.logo_url && <img src={e.logo_url} alt="" className="h-16 w-16 shrink-0 rounded-xl border border-slate-100 bg-white object-contain" />}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-[#0F172A]">{e.name}</h1>
