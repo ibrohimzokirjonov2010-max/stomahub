@@ -49,7 +49,7 @@ export function KpiRow({ data }) {
   const items = [
     { icon: Coins, label: 'Umumiy aylanma', value: som(data.turnover), sub: 'Platformadagi jami savdolar' },
     { icon: ShoppingBag, label: 'Escrowdagi mablag‘', value: som(data.escrow), sub: `Karta to‘lovlari · naqd kutilmoqda: ${som(data.cash_pending)}` },
-    { icon: Percent, label: 'Komissiya daromadi (12%)', value: som(data.commission), sub: 'Faqat yetkazilgan, demo’siz' },
+    { icon: Percent, label: 'Komissiya daromadi', value: som(data.commission), sub: 'Faqat yetkazilgan buyurtmalardan' },
   ]
   return (
     <div className="mt-5 grid grid-cols-3 gap-4">

@@ -91,14 +91,14 @@ export const markSellerPaid = (sellerId, bankRef, ids = null, note = '') => rpc(
 
 export const listApprovals = (a) => rpc('admin_approvals_list', { p_type: a.type || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 
-export const fetchFinance = (from, to) => rpc('admin_finance', { p_from: iso(from), p_to: iso(to) })
+export const fetchFinance = (from, to, excludeTest = false) => rpc('admin_finance', { p_from: iso(from), p_to: iso(to), ...(excludeTest ? { p_exclude_test: true } : {}) })
 export const listPayouts = (a) => rpc('admin_payouts_list', { p_tab: a.tab || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 export const reviewPayout = (id, action, reason = '') => rpc('admin_review_payout', { p_id: id, p_action: action, p_reason: reason })
 
 export const listComplaints = (a) => rpc('admin_complaints_list', { p_tab: a.tab || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 export const updateComplaint = (id, status, resolution = '') => rpc('admin_complaint_update', { p_id: id, p_status: status, p_resolution: resolution })
 
-export const fetchReports = (from, to) => rpc('admin_reports', { p_from: iso(from), p_to: iso(to) })
+export const fetchReports = (from, to, excludeTest = false) => rpc('admin_reports', { p_from: iso(from), p_to: iso(to), ...(excludeTest ? { p_exclude_test: true } : {}) })
 
 export const pendingCounts = () => rpc('admin_pending_counts')
 export const licenseQueue = (tab = 'pending') => rpc('admin_license_queue', { p_tab: tab })

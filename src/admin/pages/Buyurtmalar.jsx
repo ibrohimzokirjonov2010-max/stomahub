@@ -22,9 +22,13 @@ export default function Buyurtmalar() {
     () => listOrders({ tab, q, page, pageSize }),
     [tab, q, page, pageSize],
   )
+  const isUnknown = (c) => !c || /^(noma.?lum|unknown|—|-)$/i.test(String(c).trim())
+  const knownRegions = (extra.regions || []).filter((r) => !isUnknown(r.city))
+  const unknownRegion = (extra.regions || []).filter((r) => isUnknown(r.city)).reduce((a, r) => a + (Number(r.count) || 0), 0)
   const tabs = useMemo(() => [
     { id: 'all', label: 'Barchasi', count: counts.all },
     { id: 'kutilmoqda', label: 'Kutilmoqda', count: counts.kutilmoqda },
+    ...(counts.kechikkan != null ? [{ id: 'kechikkan', label: 'Kechikkan (48 soat+)', count: counts.kechikkan }] : []),
     { id: 'yuborilgan', label: 'Yuborilgan', count: counts.yuborilgan },
     { id: 'yetkazilgan', label: 'Yetkazilgan', count: counts.yetkazilgan },
     { id: 'bekor', label: 'Bekor qilingan', count: counts.bekor },
@@ -64,14 +68,17 @@ export default function Buyurtmalar() {
                 <div className="font-semibold">#{r.code}</div>
                 <div className="text-[12px] text-[#5C6E80]">{r.shop_name} · {som(r.subtotal)}</div>
               </div>
-              <StatusDot tone={ORDER_STATUS[r.status]?.tone || 'gray'}>{ORDER_STATUS[r.status]?.label || r.status}</StatusDot>
+              <span className="flex flex-col items-end gap-1">
+                <StatusDot tone={ORDER_STATUS[r.status]?.tone || 'gray'}>{ORDER_STATUS[r.status]?.label || r.status}</StatusDot>
+                {r.stale && <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-semibold text-[#92400E]">Kechikkan</span>}
+              </span>
             </button>
           )} />
 
           <TableCard className="hidden lg:block">
-            <DataTable head={['#', 'Buyurtma', 'Xaridor', 'Mahsulot', 'Sotuvchi', 'Shahar', 'Summa', 'Sana', 'Holat', 'Amallar']}>
+            <DataTable head={['#', 'Buyurtma', 'Xaridor', 'Mahsulot', 'Sotuvchi', 'Viloyat', 'Summa', 'Sana', 'Holat', 'Amallar']}>
               {rows.map((r, i) => (
-                <tr key={r.id} className="border-t border-[#EEF3F4]">
+                <tr key={r.id} className="border-t border-[#EEF3F4] [&>td]:whitespace-nowrap">
                   <td className="px-3 py-3 text-[#8A9AA8]">{(page - 1) * pageSize + i + 1}</td>
                   <td className="px-3 py-3 font-semibold text-[#0F766E]">#{r.code}</td>
                   <td className="px-3 py-3">
@@ -82,15 +89,19 @@ export default function Buyurtmalar() {
                     <div className="flex items-center gap-2">
                       {r.first_item?.image_url
                         ? <img src={r.first_item.image_url} alt="" className="size-9 rounded-lg object-cover" />
-                        : <span className="size-9 rounded-lg bg-[#F0FDFA]" />}
-                      <span className="line-clamp-1 max-w-[140px]">{r.first_item?.name || '—'}</span>
+                        : <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#F0FDFA]"><ShoppingBag className="size-4 text-[#0F766E]/70" /></span>}
+                      <span className="block max-w-[160px] truncate" title={r.first_item?.name || ''}>{r.first_item?.name || '—'}</span>
+                      {r.items_count > 1 && <span className="text-[11.5px] text-[#8A9AA8]">+{r.items_count - 1}</span>}
                     </div>
                   </td>
                   <td className="px-3 py-3">{r.shop_name}</td>
                   <td className="px-3 py-3">{r.city || '—'}</td>
                   <td className="px-3 py-3 font-bold text-[#0F766E]">{som(r.subtotal)}</td>
                   <td className="px-3 py-3">{dmyhm(r.created_at)}</td>
-                  <td className="px-3 py-3"><StatusDot tone={ORDER_STATUS[r.status]?.tone || 'gray'}>{ORDER_STATUS[r.status]?.label || r.status}</StatusDot></td>
+                  <td className="px-3 py-3">
+                    <StatusDot tone={ORDER_STATUS[r.status]?.tone || 'gray'}>{ORDER_STATUS[r.status]?.label || r.status}</StatusDot>
+                    {r.stale && <span className="ml-1.5 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-semibold text-[#92400E]" title="48 soatdan ortiq ‘Yangi’ holatida">Kechikkan</span>}
+                  </td>
                   <td className="px-3 py-3"><Btn onClick={() => open(r.id)}><Eye className="size-3.5" /> Ko‘rish</Btn></td>
                 </tr>
               ))}
@@ -103,13 +114,16 @@ export default function Buyurtmalar() {
         <aside className={`${card} hidden h-fit p-4 lg:block`}>
           <h3 className="text-[14px] font-bold">Viloyat bo‘yicha buyurtmalar</h3>
           <ul className="mt-3 space-y-2">
-            {(extra.regions || []).map((r) => (
+            {knownRegions.map((r) => (
               <li key={r.city} className="flex items-center justify-between text-[13px]">
                 <span className="text-[#3D4E5F]">{r.city}</span>
                 <span className="font-bold text-[#0F766E]">{num(r.count)}</span>
               </li>
             ))}
-            {!extra.regions?.length && <Empty text="Ma’lumot yo‘q" />}
+            {!knownRegions.length && <Empty text="Viloyat ma’lumoti yo‘q — buyurtma manzillarida viloyat ko‘rsatilmagan" />}
+            {knownRegions.length > 0 && unknownRegion > 0 && (
+              <li className="flex items-center justify-between text-[12.5px] text-[#8A9AA8]"><span>Noma’lum</span><span>{num(unknownRegion)}</span></li>
+            )}
           </ul>
         </aside>
       </div>
@@ -146,7 +160,7 @@ export default function Buyurtmalar() {
             <ul className="space-y-2">
               {(detail.items || []).map((it) => (
                 <li key={it.id} className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-2.5">
-                  {it.image_url ? <img src={it.image_url} alt="" className="size-12 rounded-lg object-cover" /> : <span className="size-12 rounded-lg bg-[#F0FDFA]" />}
+                  {it.image_url ? <img src={it.image_url} alt="" className="size-12 rounded-lg object-cover" /> : <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-[#F0FDFA]"><ShoppingBag className="size-5 text-[#0F766E]/70" /></span>}
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">{it.name}</div>
                     <div className="text-[12px] text-[#5C6E80]">{it.qty} × {som(it.price)}</div>

@@ -18,6 +18,9 @@ export function BarChart({ labels, values, height = 220, color = '#0F766E', fmt 
   const step = every(n, maxTicks)
   const tipIdx = tipDay != null ? labels.findIndex((l) => Number(l) === Number(tipDay) || String(l).startsWith(String(tipDay))) : hover
   const tipValueFmt = tipFmt || ((v, i) => `${labels[i]}: ${fmt(v)}`)
+  if (!values.length || values.every((v) => !Number(v))) {
+    return <div className="grid place-items-center rounded-xl bg-[#F7FAFB] text-[13px] text-[#8A9AA8]" style={{ height }}>Ma’lumot yo‘q</div>
+  }
 
   return (
     <div className="flex gap-2" style={{ height }}>

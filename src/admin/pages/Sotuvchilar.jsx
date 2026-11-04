@@ -17,7 +17,7 @@ const STATUS = {
   registered: { label: 'Ro‘yxatdan o‘tgan (ariza yo‘q)', tone: 'gray' },
   rejected: { label: 'Rad etilgan', tone: 'gray' },
   blocked: { label: 'Bloklangan', tone: 'red' },
-  none: { label: 'Holat belgilanmagan', tone: 'gray' },
+  none: { label: 'Ro‘yxatdan o‘tgan (ariza yo‘q)', tone: 'gray' },
 }
 
 export default function Sotuvchilar() {
@@ -72,7 +72,7 @@ export default function Sotuvchilar() {
             <div className="font-semibold">{r.shop_name || r.name}</div>
             <div className="text-[12px] text-[#5C6E80]">{r.name} · {r.city || '—'} · {num(r.products_count)} mahsulot</div>
           </div>
-          <StatusDot tone={STATUS[r.seller_status]?.tone || 'gray'}>{STATUS[r.seller_status]?.label || r.seller_status || 'Holat belgilanmagan'}</StatusDot>
+          <StatusDot tone={STATUS[r.seller_status]?.tone || 'gray'}>{STATUS[r.seller_status || 'none']?.label || r.seller_status}</StatusDot>
         </button>
       )} />
 
@@ -90,7 +90,7 @@ export default function Sotuvchilar() {
               </td>
               <td className="px-3 py-3">{r.name}</td>
               <td className="px-3 py-3">{r.city || '—'}</td>
-              <td className="px-3 py-3"><StatusDot tone={STATUS[r.seller_status]?.tone || 'gray'}>{STATUS[r.seller_status]?.label || r.seller_status || 'Holat belgilanmagan'}</StatusDot></td>
+              <td className="px-3 py-3"><StatusDot tone={STATUS[r.seller_status]?.tone || 'gray'}>{STATUS[r.seller_status || 'none']?.label || r.seller_status}</StatusDot></td>
               <td className="px-3 py-3">{num(r.docs_count)} ta</td>
               <td className="px-3 py-3">{num(r.products_count)}</td>
               <td className="px-3 py-3">{maskPhone(r.phone)}</td>
@@ -118,6 +118,7 @@ export default function Sotuvchilar() {
         onConfirm={async (reason) => { await reviewSeller(blockRow.id, 'block', reason); setMsg('Bloklandi.'); reload() }} />
       <SellerApplicationModal
         id={sellerId}
+        official={!!rows.find((r) => r.id === sellerId)?.official}
         onClose={() => setSellerId(null)}
         onDone={() => { setMsg('Yangilandi.'); reload() }}
       />

@@ -1,6 +1,7 @@
 import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Package } from 'lucide-react'
 import { adminQueue, adminReview } from '../api'
 import { PRODUCT_STATUS, som } from '../format'
 
@@ -12,8 +13,10 @@ export default function Mahsulotlar() {
   const [reasons, setReasons] = useState({})
 
   const [tab, setTab] = useState('review')
-  const counts = state.rows.reduce((a, r) => ({ ...a, [r.status]: (a[r.status] || 0) + 1 }), {})
-  const shown = state.rows.filter((r) => tab === 'all' || r.status === tab)
+  // review/active/rejected dan boshqa holatlar (inactive, draft, hidden, archived) — "Faolsiz" tabida.
+  const group = (st) => (['review', 'active', 'rejected'].includes(st) ? st : 'inactive')
+  const counts = state.rows.reduce((a, r) => ({ ...a, [group(r.status)]: (a[group(r.status)] || 0) + 1 }), {})
+  const shown = state.rows.filter((r) => tab === 'all' || group(r.status) === tab)
   const load = () => {
     setState((s) => ({ ...s, loading: true, error: '' }))
     adminQueue()
@@ -57,7 +60,7 @@ export default function Mahsulotlar() {
         <p className="mt-6 rounded-2xl border border-dashed px-4 py-10 text-center text-[#8A9AA8]">Tekshiruvda mahsulot yo‘q.</p>
       )}
       <div className="mt-4 flex flex-wrap gap-2">
-        {[['review', 'Tekshiruvda'], ['active', 'Faol'], ['rejected', 'Rad etilgan'], ['all', 'Barchasi']].map(([id, label]) => (
+        {[['review', 'Tekshiruvda'], ['active', 'Faol'], ['rejected', 'Rad etilgan'], ['inactive', 'Faolsiz'], ['all', 'Barchasi']].map(([id, label]) => (
           <button key={id} type="button" onClick={() => setTab(id)}
             className={`h-9 rounded-full px-4 text-[13px] font-semibold ${tab === id ? 'bg-[#0F766E] text-white' : 'border border-[#E6EEF0] bg-white text-[#3D4E5F]'}`}>
             {label} ({id === 'all' ? state.rows.length : counts[id] || 0})
@@ -72,13 +75,13 @@ export default function Mahsulotlar() {
           <li key={row.id} className="flex gap-3 rounded-2xl border border-[#E6EEF0] bg-white p-3 shadow-sm">
             {row.image_url
               ? <img src={row.image_url} alt="" className="size-20 shrink-0 rounded-lg object-cover" />
-              : <div className="size-20 shrink-0 rounded-lg bg-[#f1f5f4]" />}
+              : <div className="grid size-20 shrink-0 place-items-center rounded-lg bg-[#F0FDFA]"><Package className="size-6 text-[#0F766E]/60" /></div>}
             <div className="min-w-0 flex-1">
               <p className="font-bold text-[#10283F]">{row.name}</p>
               <p className="text-[12px] text-[#5C6E80]">{row.shop_name} · {row.category} · {row.brand || '—'} · {som(row.price)} · {row.stock} dona</p>
               {row.description && <p className="mt-1 line-clamp-2 text-[12px] text-[#3D4E5F]">{row.description}</p>}
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${row.status === 'review' ? 'bg-[#FFEDD5] text-[#C2410C]' : row.status === 'active' ? 'bg-[#E3F4F1] text-[#0F766E]' : 'bg-[#FDE8E8] text-[#b42318]'}`}>{PRODUCT_STATUS[row.status]?.label || row.status}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${row.status === 'review' ? 'bg-[#FFEDD5] text-[#C2410C]' : row.status === 'active' ? 'bg-[#E3F4F1] text-[#0F766E]' : row.status === 'rejected' ? 'bg-[#FDE8E8] text-[#b42318]' : 'bg-[#EEF2F4] text-[#5C6E80]'}`}>{PRODUCT_STATUS[row.status]?.label || row.status}</span>
                 {row.status === 'rejected' && row.reject_reason && <span className="text-[12px] text-[#b42318]">Sabab: {row.reject_reason}</span>}
                 {row.status === 'review' && (<>
                 <button type="button" disabled={busy === row.id} onClick={() => act(row, true)} className="h-9 rounded-lg bg-[#0F766E] px-4 text-[13px] font-semibold text-white disabled:opacity-60">Tasdiqlash</button>

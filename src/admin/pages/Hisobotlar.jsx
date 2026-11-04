@@ -1,9 +1,9 @@
 import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
-import { CalendarDays, ChevronDown } from 'lucide-react'
 import { BarChart } from '../components/Chart'
 import { fetchReports } from '../api'
-import { daysInMonth, monthBounds, monthTitle, num, som } from '../format'
+import { daysInMonth, monthBounds, num, som } from '../format'
+import MonthPicker, { TestToggle } from '../components/MonthPicker'
 import { KpiStrip, MigrateBanner, PageHeader, card } from '../components/ui'
 
 export default function Hisobotlar() {
@@ -12,11 +12,12 @@ export default function Hisobotlar() {
   const [error, setError] = useState('')
   const [needsMigration, setNeeds] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [noTest, setNoTest] = useState(false)
 
   useEffect(() => {
     setLoading(true)
     const { from, to } = monthBounds(month)
-    fetchReports(from, to)
+    fetchReports(from, to, noTest)
       .then((d) => { setData(d); setError(''); setNeeds(false) })
       .catch((e) => {
         const rawmsg = e?.message || String(e)
@@ -26,7 +27,7 @@ export default function Hisobotlar() {
         setData(null)
       })
       .finally(() => setLoading(false))
-  }, [month])
+  }, [month, noTest])
 
   const n = daysInMonth(month)
   const byDay = Array.from({ length: n }, () => 0)
@@ -38,34 +39,21 @@ export default function Hisobotlar() {
       <PageHeader
         title="Hisobotlar"
         subtitle="Savdo, komissiya va foydalanuvchi o‘sishi bo‘yicha hisobotlar"
-        actions={
-          <label className="relative inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[#E6EEF0] bg-white px-3 text-[13.5px] font-semibold">
-            <CalendarDays className="size-4 text-[#0F766E]" />
-            {monthTitle(month)}
-            <ChevronDown className="size-4 text-[#5C6E80]" />
-            <input type="month" className="absolute inset-0 cursor-pointer opacity-0"
-              value={`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`}
-              onChange={(e) => {
-                const [y, m] = e.target.value.split('-').map(Number)
-                if (y && m) setMonth(new Date(y, m - 1, 1))
-              }}
-            />
-          </label>
-        }
+        actions={<div className="flex flex-wrap gap-2"><TestToggle value={noTest} onChange={setNoTest} /><MonthPicker value={month} onChange={setMonth} /></div>}
       />
       <MigrateBanner show={needsMigration} />
       {loading && <p className="mt-6 text-[#5C6E80]">Yuklanmoqda…</p>}
       {error && !needsMigration && <p role="alert" className="mt-6 text-[#b42318]">{error}</p>}
 
       <KpiStrip items={[
-        { label: 'Aylanma', value: som(data?.turnover), active: true },
-        { label: 'Komissiya 12%', value: som(data?.commission) },
-        { label: 'Buyurtmalar', value: num(data?.orders) },
+        { label: 'Aylanma (yetkazilgan)', value: som(data?.turnover), active: true, sub: data?.turnover_in_progress ? `Jarayonda: ${som(data.turnover_in_progress)}` : undefined },
+        { label: `Komissiya ${Math.round(Number(data?.commission_pct ?? 12))}% (yetkazilgan)`, value: som(data?.commission) },
+        { label: 'Buyurtmalar', value: num(data?.orders), sub: data?.orders_delivered != null ? `Yetkazilgan ${num(data.orders_delivered)} · jarayonda ${num(data.orders_in_progress)} · bekor ${num(data.orders_cancelled)}` : undefined },
         { label: 'Yangi foydalanuvchilar', value: num(data?.users_new) },
       ]} />
 
       <div className={`${card} mt-4 p-4`}>
-        <h3 className="mb-3 text-[15px] font-bold">Kunlik savdo</h3>
+        <h3 className="mb-3 text-[15px] font-bold">Kunlik savdo (yetkazilgan buyurtmalar)</h3>
         <BarChart values={byDay} labels={labels} height={220} tipFmt={(v) => som(v)} />
       </div>
 
@@ -99,6 +87,35 @@ export default function Hisobotlar() {
           </ul>
         </div>
       </div>
+      {(data?.test_accounts?.length > 0 || data?.duplicates?.length > 0) && (
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className={`${card} p-4`}>
+            <h3 className="mb-1 text-[15px] font-bold">Test akkauntlar ({num(data.test_accounts?.length || 0)})</h3>
+            <p className="mb-3 text-[12px] text-[#8A9AA8]">O‘chirilmaydi. “Test akkauntlarsiz” yoqilsa hisobotdan chiqariladi.</p>
+            <ul className="max-h-72 space-y-1.5 overflow-auto text-[13px]">
+              {(data.test_accounts || []).map((t) => (
+                <li key={t.id} className="flex justify-between gap-2">
+                  <span className="min-w-0 truncate font-semibold">{t.name}</span>
+                  <span className="truncate text-[#5C6E80]">{t.email}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className={`${card} p-4`}>
+            <h3 className="mb-1 text-[15px] font-bold">Takroriy ismlar ({num(data.duplicates?.length || 0)})</h3>
+            <p className="mb-3 text-[12px] text-[#8A9AA8]">Bir xil ism bilan bir nechta akkaunt — tekshirib chiqing.</p>
+            <ul className="max-h-72 space-y-2 overflow-auto text-[13px]">
+              {(data.duplicates || []).map((d) => (
+                <li key={d.name}>
+                  <div className="font-semibold capitalize">{d.name} <span className="text-[#5C6E80]">× {num(d.count)}</span></div>
+                  <div className="truncate text-[12px] text-[#5C6E80]">{(d.emails || []).filter(Boolean).join(', ')}</div>
+                </li>
+              ))}
+              {!data.duplicates?.length && <p className="py-4 text-center text-[#8A9AA8]">Ma’lumot yo‘q</p>}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

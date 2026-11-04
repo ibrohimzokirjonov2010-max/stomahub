@@ -6,7 +6,16 @@ import Lightbox from '../Lightbox'
 import { fetchSellerApplication, reviewSeller } from '../../api'
 import { dmyhm, maskEmail, maskPhone } from '../../format'
 
-export default function SellerApplicationModal({ id, onClose, onDone }) {
+const BADGE = {
+  official: { label: 'Rasmiy do‘kon', cls: 'bg-[#10283F] text-white' },
+  approved: { label: 'Tasdiqlangan', cls: 'bg-[#E3F4F1] text-[#0F766E]' },
+  pending: { label: 'Yangi ariza', cls: 'bg-[#E0F2FE] text-[#0369A1]' },
+  registered: { label: 'Ariza yuborilmagan', cls: 'bg-[#EEF2F4] text-[#5C6E80]' },
+  rejected: { label: 'Rad etilgan', cls: 'bg-[#FDE8E8] text-[#b42318]' },
+  blocked: { label: 'Bloklangan', cls: 'bg-[#FDE8E8] text-[#b42318]' },
+}
+
+export default function SellerApplicationModal({ id, official: officialProp = false, onClose, onDone }) {
   const [state, setState] = useState({ loading: true, error: '', data: null })
   const [busy, setBusy] = useState('')
   const [reason, setReason] = useState('')
@@ -41,29 +50,36 @@ export default function SellerApplicationModal({ id, onClose, onDone }) {
   }
 
   const d = state.data
-  const docs = (d?.docs?.length ? d.docs : defaultDocs()).map((doc) => ({
+  const official = !!(d?.official || officialProp)
+  const st = official ? 'official' : (d?.blocked ? 'blocked' : (!d?.seller_status || d.seller_status === 'none' ? 'registered' : d.seller_status))
+  const can = {
+    approve: ['pending', 'rejected', 'registered'].includes(st),
+    reject: st === 'pending',
+    block: !['official', 'blocked'].includes(st),
+  }
+  const docs = (d?.docs || []).map((doc) => ({
     label: doc.label || doc.name || 'Hujjat',
     url: doc.url || doc.image_url || '',
   }))
 
   const footer = d ? (
     <div className="flex flex-wrap items-center gap-2">
-      <button type="button" disabled={!!busy} onClick={() => act('approve')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0F766E] px-5 text-[14px] font-semibold text-white disabled:opacity-60">
+      {can.approve && <button type="button" disabled={!!busy} onClick={() => act('approve')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0F766E] px-5 text-[14px] font-semibold text-white disabled:opacity-60">
         <Check className="size-4" /> Tasdiqlash
-      </button>
-      <button type="button" disabled={!!busy} onClick={() => act('reject')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#1F2A3C] px-5 text-[14px] font-semibold text-white disabled:opacity-60">
+      </button>}
+      {can.reject && <button type="button" disabled={!!busy} onClick={() => act('reject')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#1F2A3C] px-5 text-[14px] font-semibold text-white disabled:opacity-60">
         <X className="size-4" /> Rad etish
-      </button>
-      <button type="button" disabled={!!busy} onClick={() => act('block')} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E6EEF0] bg-white px-5 text-[14px] font-semibold text-[#10283F] disabled:opacity-60">
+      </button>}
+      {can.block && <button type="button" disabled={!!busy} onClick={() => act('block')} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E6EEF0] bg-white px-5 text-[14px] font-semibold text-[#10283F] disabled:opacity-60">
         <Ban className="size-4" /> Bloklash
-      </button>
+      </button>}
       <button type="button" onClick={onClose} className="ml-auto inline-flex h-11 items-center rounded-xl border border-[#E6EEF0] bg-white px-5 text-[14px] font-semibold text-[#10283F]">Yopish</button>
     </div>
   ) : null
 
   return (
     <>
-      <Modal open={!!id} onClose={onClose} title="Sotuvchi arizasi" subtitle="Sotuvchi tomonidan yuborilgan ma’lumotlarni ko‘rib chiqing." width="max-w-[860px]" footer={footer}>
+      <Modal open={!!id} onClose={onClose} title={official ? "Rasmiy do‘kon" : "Sotuvchi arizasi"} subtitle={official ? "Platformaning o‘z do‘koni ma’lumotlari." : "Sotuvchi tomonidan yuborilgan ma’lumotlarni ko‘rib chiqing."} width="max-w-[860px]" footer={footer}>
         {state.loading && <p className="py-10 text-center text-[#5C6E80]">Yuklanmoqda…</p>}
         {state.error && <p role="alert" className="mb-3 rounded-xl bg-[#FEF2F2] px-3 py-2 text-[13px] text-[#b42318]">{state.error}</p>}
         {d && (
@@ -73,10 +89,15 @@ export default function SellerApplicationModal({ id, onClose, onDone }) {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-[20px] font-extrabold text-[#10283F]">{d.shop_name || d.name || '—'}</h3>
-                  <span className="rounded-full bg-[#E0F2FE] px-2.5 py-0.5 text-[12px] font-semibold text-[#0369A1]">Yangi sotuvchi</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${BADGE[st]?.cls || BADGE.registered.cls}`}>{BADGE[st]?.label || st}</span>
                 </div>
                 <p className="mt-0.5 text-[13.5px] text-[#5C6E80]">{d.shop_type || 'Tibbiy va stomatologik mahsulotlar'}</p>
-                <p className="mt-1 text-[12.5px] text-[#8A9AA8]">Ariza sanasi: {dmyhm(d.applied_at || d.created_at)}</p>
+                <p className="mt-1 text-[12.5px] text-[#8A9AA8]">{official ? 'Yaratilgan' : 'Ariza sanasi'}: {dmyhm(d.applied_at || d.created_at)}</p>
+                {d.products_count != null && (
+                  <p className="mt-1 text-[12.5px] text-[#5C6E80]">
+                    Mahsulotlar: {d.products_active ?? 0} faol / {d.products_count} jami · Buyurtmalar: {d.orders_count ?? 0} (yetkazilgan {d.orders_delivered ?? 0})
+                  </p>
+                )}
               </div>
             </div>
 
@@ -100,6 +121,7 @@ export default function SellerApplicationModal({ id, onClose, onDone }) {
 
             <div>
               <h4 className="mb-2 text-[14px] font-bold text-[#10283F]">Yuborilgan hujjatlar</h4>
+              {!docs.length && <p className="rounded-xl border border-dashed border-[#E6EEF0] px-3 py-4 text-center text-[13px] text-[#8A9AA8]">Hujjat yuklanmagan</p>}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {docs.map((doc, i) => (
                   <button
@@ -124,10 +146,10 @@ export default function SellerApplicationModal({ id, onClose, onDone }) {
               </div>
             </div>
 
-            <label className="block">
+            {(can.reject || can.block) && <label className="block">
               <span className="mb-1.5 block text-[13px] font-semibold text-[#3D4E5F]">Rad etish / bloklash sababi</span>
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Ixtiyoriy (rad/blok uchun majburiy)" className="w-full rounded-xl border border-[#E6EEF0] bg-[#F8FBFC] px-3 py-2.5 text-[14px] outline-none focus:border-[#0F766E]" />
-            </label>
+            </label>}
           </div>
         )}
       </Modal>
@@ -155,13 +177,4 @@ function Row({ icon: Icon, label, value }) {
       </div>
     </li>
   )
-}
-
-function defaultDocs() {
-  return [
-    { label: 'STIR hujjati' },
-    { label: 'Ro‘yxatdan o‘tish guvohnomasi' },
-    { label: 'Direktor pasporti' },
-    { label: 'Do‘kon suratlari' },
-  ]
 }
