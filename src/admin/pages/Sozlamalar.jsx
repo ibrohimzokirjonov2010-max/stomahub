@@ -1,6 +1,6 @@
 import { friendlyError } from '../../lib/friendlyError'
 import { useEffect, useState } from 'react'
-import { Save, Settings } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { getSettings, setSettings } from '../api'
 import { maskPhone } from '../format'
 import { Btn, FilterTabs, MigrateBanner, PageHeader, card } from '../components/ui'
@@ -9,7 +9,6 @@ const TABS = [
   { id: 'umumiy', label: 'Umumiy ma’lumot' },
   { id: 'komissiya', label: 'Komissiya va to‘lov' },
   { id: 'bildirishnoma', label: 'Bildirishnomalar' },
-  { id: 'xavfsizlik', label: 'Xavfsizlik' },
 ]
 
 export default function Sozlamalar() {
@@ -35,6 +34,8 @@ export default function Sozlamalar() {
   function patch(k, v) { setForm((f) => ({ ...f, [k]: v })) }
 
   async function save() {
+    const pe = pctError(form.commission_pct)
+    if (pe) { setMsg(pe); setTab('komissiya'); return }
     setBusy(true); setMsg('')
     try {
       const saved = await setSettings({
@@ -45,7 +46,7 @@ export default function Sozlamalar() {
         contact_phone: form.contact_phone,
         contact_email: form.contact_email,
         primary_color: form.primary_color || '#0F766E',
-        commission_pct: Number(form.commission_pct) || 12,
+        commission_pct: Number(form.commission_pct),
         payment_methods: form.payment_methods,
         notify_orders: form.notify_orders,
         notify_sellers: form.notify_sellers,
@@ -92,10 +93,6 @@ export default function Sozlamalar() {
               <span className="size-10 rounded-xl border border-[#E6EEF0]" style={{ background: form.primary_color || '#0F766E' }} />
               <span className="text-[13px] text-[#5C6E80]">Dizayn rangi: #0F766E (tavsiya)</span>
             </div>
-            <div className="rounded-xl border border-dashed border-[#E6EEF0] p-4 text-center text-[13px] text-[#8A9AA8]">
-              <Settings className="mx-auto mb-2 size-8 text-[#0F766E]" />
-              Logotip / favicon yuklash keyingi iteratsiyada (storage).
-            </div>
           </section>
         </div>
       )}
@@ -103,12 +100,13 @@ export default function Sozlamalar() {
       {tab === 'komissiya' && (
         <section className={`${card} mt-4 max-w-xl space-y-3 p-4`}>
           <h3 className="text-[15px] font-bold">Komissiya va to‘lov</h3>
-          <Field label="Platforma komissiyasi (%)" value={String(form.commission_pct)} onChange={(v) => patch('commission_pct', v)} />
+          <Field label="Platforma komissiyasi (%)" inputMode="decimal" value={String(form.commission_pct ?? '')} onChange={(v) => patch('commission_pct', v.replace(',', '.').replace(/[^0-9.]/g, ''))}
+            rawHint hint={pctError(form.commission_pct) || '0 dan 100 gacha'} />
           <div className="rounded-xl bg-[#F0FDFA] px-3 py-2 text-[13px] text-[#0F766E]">
-            Hozirgi komissiya: {form.commission_pct}% — barcha yangi buyurtmalarda 12% standart.
+            Hozirgi komissiya: {form.commission_pct}% — yangi buyurtmalarga qo‘llanadi.
           </div>
           <div>
-            <div className="mb-2 text-[13px] font-semibold">To‘lov usullari (demo)</div>
+            <div className="mb-2 text-[13px] font-semibold">To‘lov usullari</div>
             <div className="flex flex-wrap gap-2">
               {['uzcard', 'humo', 'click', 'payme'].map((m) => {
                 const on = (form.payment_methods || []).includes(m)
@@ -136,26 +134,6 @@ export default function Sozlamalar() {
         </section>
       )}
 
-      {tab === 'xavfsizlik' && (
-        <section className={`${card} mt-4 max-w-xl space-y-3 p-4`}>
-          <h3 className="text-[15px] font-bold">Xavfsizlik</h3>
-          {/* Honest state: neither option is enforced anywhere yet, so they are not offered as working switches. */}
-          <div data-testid="twofa-honest" className="rounded-xl border border-dashed border-[#E6EEF0] p-3 text-[13px]">
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-semibold text-[#10283F]">2FA majburiy</span>
-              <span className="rounded-full bg-[#F1F5F4] px-2 py-0.5 text-[11.5px] font-semibold text-[#5C6E80]">Hali ishlamaydi</span>
-            </div>
-            <p className="mt-1 text-[12.5px] text-[#5C6E80]">Ikki bosqichli tasdiqlash hozircha joriy qilinmagan — bu sozlama kirishga ta’sir qilmaydi, shuning uchun o‘chirib qo‘yilgan.</p>
-          </div>
-          <div className="rounded-xl border border-dashed border-[#E6EEF0] p-3 text-[13px]">
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-semibold text-[#10283F]">IP cheklovi</span>
-              <span className="rounded-full bg-[#F1F5F4] px-2 py-0.5 text-[11.5px] font-semibold text-[#5C6E80]">Hali ishlamaydi</span>
-            </div>
-          </div>
-          <p className="text-[12.5px] text-[#8A9AA8]">Parol o‘zgartirish va sessiyalar auth provider orqali boshqariladi.</p>
-        </section>
-      )}
     </div>
   )
 }
@@ -180,15 +158,15 @@ function normalize(d = {}) {
   }
 }
 
-function Field({ label, value, onChange, textarea, hint }) {
+function Field({ label, value, onChange, textarea, hint, inputMode, rawHint }) {
   const cls = 'mt-1 w-full rounded-xl border border-[#E6EEF0] bg-[#F8FBFC] px-3 py-2 text-[14px] outline-none focus:border-[#0F766E]'
   return (
     <label className="block text-[13px]">
       <span className="font-semibold text-[#10283F]">{label}</span>
       {textarea
         ? <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className={cls} />
-        : <input value={value} onChange={(e) => onChange(e.target.value)} className={cls} />}
-      {hint && <span className="mt-0.5 block text-[11.5px] text-[#8A9AA8]">Ko‘rinish: {hint}</span>}
+        : <input value={value} inputMode={inputMode} onChange={(e) => onChange(e.target.value)} className={cls} />}
+      {hint && <span className="mt-0.5 block text-[11.5px] text-[#8A9AA8]">{rawHint ? hint : `Ko‘rinish: ${hint}`}</span>}
     </label>
   )
 }
@@ -203,4 +181,11 @@ function Toggle({ label, checked, onChange }) {
       </span>
     </button>
   )
+}
+
+function pctError(v) {
+  const n = Number(String(v ?? '').replace(',', '.'))
+  if (String(v ?? '').trim() === '' || !Number.isFinite(n)) return 'Raqam kiriting'
+  if (n < 0 || n > 100) return 'Komissiya 0 dan 100 gacha bo‘lishi kerak'
+  return ''
 }

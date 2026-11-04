@@ -8,12 +8,11 @@ export const MONTHS_UZ = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'I
 export const monthTitle = (d) => `${MONTHS_UZ[d.getMonth()]} ${d.getFullYear()}`
 export const rangeLabel = (from, to) => `${dmy(from)} - ${dmy(to)}`
 /** To‘liq mask: raqam hech qachon ochiq ko‘rinmaydi. */
-export const maskPhone = (p) => (p ? '+998 ** *** ** **' : '—')
+// Admin panel: administrator telefon va emailni to‘liq ko‘radi (maskalash yo‘q).
+export const maskPhone = (p) => fullPhone(p)
 export const maskEmail = (e) => {
   if (!e) return '—'
-  const at = String(e).indexOf('@')
-  if (at < 0) return '********'
-  return `********${String(e).slice(at)}`
+  return String(e)
 }
 
 /** To‘lov usuli yorliqlari (uzcard/humo — eski buyurtmalar uchun). */
@@ -64,6 +63,7 @@ export const PRODUCT_STATUS = {
   review: { label: 'Tekshiruvda', tone: 'amber' }, active: { label: 'Faol', tone: 'teal' },
   rejected: { label: 'Rad etilgan', tone: 'red' }, draft: { label: 'Qoralama', tone: 'gray' },
   hidden: { label: 'Yashirilgan', tone: 'gray' }, archived: { label: 'Arxivlangan', tone: 'gray' },
+  inactive: { label: 'Faolsiz', tone: 'gray' },
 }
 export const ACCOUNT_STATUS = {
   none: 'Ro‘yxatdan o‘tmagan', registered: 'Ro‘yxatdan o‘tgan', pending: 'Kutilmoqda', approved: 'Tasdiqlangan',

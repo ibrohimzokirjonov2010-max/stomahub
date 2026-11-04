@@ -737,7 +737,13 @@ export function addMessage(text) {
   remote(() => pushMessage(text))
 }
 
+// Naqd to‘lov: pulni ishtirokchi tashkilotchiga to‘g‘ridan-to‘g‘ri beradi — platformada ushlab turilmaydi.
+// Tashkilotchi platformaga faqat komissiya qarzdor.
+export const isCashPayment = (p) => /naqd|cash/i.test(String(p?.method || ''))
+
 export function walletOf(s = state) {
+  let cash = 0
+  let cashDebt = 0
   let hold = 0
   let ready = 0
   let gross = 0
@@ -754,6 +760,14 @@ export function walletOf(s = state) {
       feeTotal += fee
     }
     let bucket = 'refund'
+    if (p.state === 'ok' && isCashPayment(p)) {
+      cash += sum
+      cashDebt += fee
+      paymentRows.push({
+        id: p.id, date: p.when, seminar: p.seminar, seminarId: p.seminarId, sum, fee, net, state: 'cash', who: p.who,
+      })
+      continue
+    }
     // Pul faqat seminar o‘tkazilgani tasdiqlangach chiqariladi (avtomatik "Yakunlangan" holat pulni ochmaydi)
     if (p.state === 'ok' && (sem?.held || (sem?.dbStatus || sem?.status) === 'yakunlangan')) {
       bucket = 'paid'
@@ -774,6 +788,8 @@ export function walletOf(s = state) {
   })
   return {
     hold,
+    cash,
+    cashDebt,
     available: Math.max(0, ready),
     transferred,
     gross,

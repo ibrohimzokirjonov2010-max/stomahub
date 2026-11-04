@@ -57,6 +57,17 @@ export const toMarketProduct = (row) => ({
   live: true,
 })
 
+// Tasdiqlanmagan / bloklangan sotuvchilar mahsulotlari vitrinada ko‘rinmasin (server himoyasi: 0050).
+// seller_is_public (0031) anon uchun ochiq; RPC xato bersa — mahsulot yashirilmaydi (server baribir to‘xtatadi).
+async function dropNonPublicSellers(rows) {
+  const ids = [...new Set(rows.map((r) => r.seller_id).filter(Boolean))]
+  if (!ids.length) return rows
+  const verdict = await Promise.all(ids.map((id) => supabase.rpc('seller_is_public', { p_id: id })
+    .then((r) => [id, r.error ? true : r.data !== false], () => [id, true])))
+  const ok = new Map(verdict)
+  return rows.filter((r) => !r.seller_id || ok.get(r.seller_id) !== false)
+}
+
 export async function loadMarketProducts() {
   if (!supabase) {
     marketProducts.splice(0, marketProducts.length)
@@ -79,6 +90,7 @@ export async function loadMarketProducts() {
     marketState = { status: 'error', error: friendlySupabaseError(err) }
   } else {
     // Faol sotuvchi chegirmalari (0048 market_discounts). RPC hali yo‘q bo‘lsa — chegirmasiz narx.
+    rows = await dropNonPublicSellers(rows || [])
     const disc = await supabase.rpc('market_discounts').then((r) => (r.error ? [] : r.data || []), () => [])
     marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct).map((p) => applyDiscount(p, disc)))
     marketState = { status: 'ready', error: '' }

@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BadgeCheck, CheckCircle2, Eye, GraduationCap, Megaphone, Package, Store, XCircle } from 'lucide-react'
 import { listApprovals, reviewSeller, reviewOrganizer, reviewCampaign, adminReview, useAdminList, licenseQueue, reviewLicense, pendingCounts } from '../api'
 import Arizalar from './Arizalar'
+import { adminListApplications } from '../../apply/api'
 import ConfirmReason from '../components/ConfirmReason'
 import { dmyhm, fullPhone, maskPhone, num } from '../format'
 import {
@@ -154,12 +155,35 @@ export default function Tasdiqlashlar() {
   const [params, setParams] = useSearchParams()
   const bolim = SECTIONS.some(([k]) => k === params.get('bolim')) ? params.get('bolim') : 'arizalar'
   const [pc, setPc] = useState(null)
-  useEffect(() => { pendingCounts().then(setPc).catch(() => setPc(null)) }, [bolim])
-  const badge = { arizalar: pc ? pc.sellers + pc.organizers : null, boshqa: pc ? pc.products + pc.ads : null, shifokor: pc ? pc.doctors : null }
+  // Bo‘lim nishonlari har bir ro‘yxat ishlatadigan so‘rovning o‘zidan hisoblanadi (son va ro‘yxat farq qilmasligi uchun).
+  const [lc, setLc] = useState({})
+  useEffect(() => {
+    let live = true
+    pendingCounts().then((d) => live && setPc(d)).catch(() => live && setPc(null))
+    Promise.all([
+      adminListApplications('seller', 'pending'),
+      adminListApplications('organizer', 'pending'),
+      listApprovals({ type: 'all', page: 1, pageSize: 1 }).catch(() => null),
+      licenseQueue('pending').catch(() => null),
+    ]).then(([s, o, q, d]) => {
+      if (!live) return
+      setLc({
+        arizalar: s.ok && o.ok ? s.data.length + o.data.length : null,
+        boshqa: q?.counts ? (q.counts.products || 0) + (q.counts.ads || 0) : null,
+        shifokor: d?.counts ? d.counts.pending || 0 : null,
+      })
+    })
+    return () => { live = false }
+  }, [bolim])
+  const badge = {
+    arizalar: lc.arizalar ?? (pc ? pc.sellers + pc.organizers : null),
+    boshqa: lc.boshqa ?? (pc ? pc.products + pc.ads : null),
+    shifokor: lc.shifokor ?? (pc ? pc.doctors : null),
+  }
   return (
     <div>
       <PageHeader title="Tasdiqlashlar" subtitle="Arizalar, mahsulot/reklama moderatsiyasi va shifokor litsenziyalari — bitta sahifada" />
-      {pc && <p className="-mt-1 mb-2 text-[12.5px] text-[#5C6E80]">Jami kutilmoqda: <b>{num(pc.total)}</b> (boshqaruv panelidagi son bilan bir xil manba)</p>}
+      {(pc || lc.arizalar != null) && <p className="-mt-1 mb-2 text-[12.5px] text-[#5C6E80]">Jami kutilmoqda: <b>{num((badge.arizalar || 0) + (badge.boshqa || 0) + (badge.shifokor || 0))}</b></p>}
       <div data-testid="approval-sections" className="mb-4 flex flex-wrap gap-2">
         {SECTIONS.map(([k, l]) => (
           <button key={k} type="button" onClick={() => setParams({ bolim: k }, { replace: true })}

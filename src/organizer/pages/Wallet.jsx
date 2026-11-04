@@ -11,6 +11,7 @@ const STATUS = {
   hold: { label: 'Ushlab turilgan', icon: Clock, cls: 'bg-[#fff4e0] text-[#e1960b]' },
   paid: { label: 'O‘tkazildi', icon: Check, cls: 'bg-[#e7f8ee] text-[#16a34a]' },
   refund: { label: 'Qaytarildi', icon: Undo2, cls: 'bg-[#eef2f3] text-[#7d8b90]' },
+  cash: { label: 'Naqd olingan', icon: Coins, cls: 'bg-[#eef6ff] text-[#2563eb]' },
 }
 
 const FILTERS = [
@@ -18,6 +19,7 @@ const FILTERS = [
   { value: 'hold', label: 'Ushlab turilgan' },
   { value: 'paid', label: 'O‘tkazildi' },
   { value: 'refund', label: 'Qaytarildi' },
+  { value: 'cash', label: 'Naqd olingan' },
 ]
 
 function compact(n) {
@@ -50,10 +52,10 @@ function mobileRows(wallet) {
       sub: `To‘lov (${r.who})`,
       amount: r.sum,
       kind: 'in',
-      status: r.state === 'refund' ? 'Qaytarildi' : 'Tushum',
+      status: r.state === 'refund' ? 'Qaytarildi' : r.state === 'cash' ? 'Naqd olingan' : 'Tushum',
     })
     if (r.fee) {
-      rows.push({ id: `${r.id}-fee`, date: r.date, time: '', title: 'Komissiya', sub: r.seminar, amount: -r.fee, kind: 'fee', status: 'Komissiya' })
+      rows.push({ id: `${r.id}-fee`, date: r.date, time: '', title: r.state === 'cash' ? 'Komissiya (platformaga qarz)' : 'Komissiya', sub: r.seminar, amount: -r.fee, kind: 'fee', status: r.state === 'cash' ? 'Platformaga qarz' : 'Komissiya' })
     }
   }
   return rows
@@ -71,6 +73,8 @@ const STATUS_TONE = {
   Yuborilgan: 'text-[#3b82f6]',
   Komissiya: 'text-[#8b979c]',
   Qaytarildi: 'text-[#8b979c]',
+  'Naqd olingan': 'text-[#2563eb]',
+  'Platformaga qarz': 'text-[#b42318]',
 }
 
 const FACTS = [
@@ -123,6 +127,10 @@ function DesktopWallet() {
     { icon: WalletIcon, title: 'Yechib olish mumkin', value: `${som(wallet.available)}`, text: 'Hozir pul yechish so‘rovini yuborishingiz mumkin', info: true },
     { icon: Coins, title: 'Jami o‘tkazilgan', value: `${som(wallet.transferred)}`, text: 'Oldingi to‘lovlar (muvaffaqiyatli o‘tkazilgan)', info: false },
   ]
+  const cashCards = wallet.cash > 0 ? [
+    { icon: Coins, title: 'Naqd olingan', value: `${som(wallet.cash)}`, text: 'Ishtirokchilar sizga to‘g‘ridan-to‘g‘ri to‘lagan (pul sizda)', info: false },
+    { icon: Info, title: 'Platformaga qarz', value: `${som(wallet.cashDebt)}`, text: 'Naqd to‘lovlar bo‘yicha 12% komissiya', info: false },
+  ] : []
 
   const submit = async () => {
     let res
@@ -149,6 +157,11 @@ function DesktopWallet() {
           <section className="grid grid-cols-3 gap-3">
             {balances.map((b) => <Balance key={b.title} {...b} />)}
           </section>
+          {cashCards.length > 0 && (
+            <section data-testid="wallet-cash" className="grid grid-cols-2 gap-3">
+              {cashCards.map((b) => <Balance key={b.title} {...b} />)}
+            </section>
+          )}
 
           <section className="rounded-2xl border border-[#d7f0ea] bg-[#f4fbfa] px-4 py-3.5">
             <div className="flex items-center gap-2">
@@ -450,6 +463,12 @@ function MobileWallet() {
         <MiniStat icon={WalletIcon} label="Yechib olish mumkin" value={compact(wallet.available)} />
         <MiniStat icon={Coins} label="Jami o‘tkazilgan" value={compact(wallet.transferred)} />
       </section>
+      {wallet.cash > 0 && (
+        <section data-testid="wallet-cash" className="mt-2 grid grid-cols-2 gap-2">
+          <MiniStat icon={Coins} label="Naqd olingan" value={compact(wallet.cash)} />
+          <MiniStat icon={Info} label="Platformaga qarz" value={compact(wallet.cashDebt)} />
+        </section>
+      )}
 
       <section className="mt-3 rounded-2xl border border-[#e6f1ef] bg-[#f7fcfb] px-3 py-3">
         <div className="flex items-center justify-between gap-2">

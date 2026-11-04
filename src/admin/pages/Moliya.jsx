@@ -5,6 +5,7 @@ import { fetchFinance, listPayouts, reviewPayout, useAdminList } from '../api'
 import { dmyhm, maskPhone, monthBounds, num, payLabel, som } from '../format'
 import Modal from '../components/Modal'
 import AdTopups from '../components/AdTopups'
+import MonthPicker, { TestToggle } from '../components/MonthPicker'
 import {
   Btn, DataTable, Empty, FilterTabs, KpiStrip, MigrateBanner, MobileCards,
   PageHeader, Pagination, RowActions, SearchRow, StatusDot, TableCard,
@@ -27,7 +28,8 @@ function Card({ label, value, sub }) {
 }
 
 export default function Moliya() {
-  const [month] = useState(() => new Date())
+  const [month, setMonth] = useState(() => new Date())
+  const [noTest, setNoTest] = useState(false)
   const [finance, setFinance] = useState(null)
   const [finErr, setFinErr] = useState('')
   const [tab, setTab] = useState('all')
@@ -41,8 +43,9 @@ export default function Moliya() {
 
   useEffect(() => {
     const { from, to } = monthBounds(month)
-    fetchFinance(from, to).then(setFinance).catch((e) => setFinErr(friendlyError(e)))
-  }, [month])
+    setFinErr('')
+    fetchFinance(from, to, noTest).then(setFinance).catch((e) => setFinErr(friendlyError(e)))
+  }, [month, noTest])
 
   const pct = Math.round(Number(finance?.commission_pct ?? (finance?.commission_rate != null ? finance.commission_rate * 100 : 12)))
   const { loading, error, needsMigration, rows, total, counts, reload } = useAdminList(
@@ -70,11 +73,12 @@ export default function Moliya() {
 
   return (
     <div>
-      <PageHeader title="Moliya va komissiya" subtitle="Komissiya faqat yetkazilgan buyurtmalardan; demo to‘lovlar hisobga olinmaydi" />
+      <PageHeader title="Moliya va komissiya" subtitle="Aylanma va komissiya faqat yetkazilgan buyurtmalardan hisoblanadi"
+        actions={<div className="flex flex-wrap gap-2"><TestToggle value={noTest} onChange={setNoTest} /><MonthPicker value={month} onChange={setMonth} /></div>} />
       <MigrateBanner show={needsMigration || /admin_finance|admin_payouts/i.test(finErr)} />
       {msg && <p role="status" className="mt-3 rounded-xl bg-[#eef8f6] px-3 py-2 text-[13px]">{msg}</p>}
       <KpiStrip items={[
-        { label: 'Aylanma (demo’siz)', value: som(finance?.turnover), active: true, icon: Wallet },
+        { label: 'Aylanma (yetkazilgan)', value: som(finance?.turnover), active: true, icon: Wallet, sub: finance?.turnover_in_progress ? `Jarayonda: ${som(finance.turnover_in_progress)}` : undefined },
         { label: `Komissiya ${pct}% (yetkazilgan)`, value: som(finance?.commission) },
         { label: 'Sotuvchilarga to‘lash kerak', value: som(finance?.seller_payable ?? finance?.payout) },
         { label: 'Kutilayotgan to‘lovlar', value: som(finance?.seller_payable ?? finance?.payouts_pending), sub: finance?.payouts_requested != null ? `So‘rov: ${som(finance.payouts_requested)}` : undefined },
@@ -96,7 +100,7 @@ export default function Moliya() {
       {finance?.orders_count != null && (
         <p className="mt-2 text-[12px] text-[#5C6E80]">
           Jami {num(finance.orders_count)} ta buyurtma = usullar bo‘yicha {num((finance.by_method || []).reduce((a, m) => a + Number(m.count || 0), 0))} ta
-          {finance.orders_demo ? ` (shundan ${num(finance.orders_demo)} ta demo to‘lov hisobotdan chiqarilgan)` : ''}.
+          {finance.orders_delivered != null ? ` · yetkazilgan ${num(finance.orders_delivered)}, jarayonda ${num(finance.orders_in_progress)}, bekor ${num(finance.orders_cancelled)}` : ''}.
         </p>
       )}
 

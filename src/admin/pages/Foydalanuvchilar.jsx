@@ -1,8 +1,24 @@
 import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
-import { Ban, CheckCircle2, GraduationCap, MoreVertical, Plus, Stethoscope, User } from 'lucide-react'
+import { Ban, CheckCircle2, MoreVertical, Plus, User } from 'lucide-react'
 import { listUsers, userBlock, userDetail, useAdminList } from '../api'
 import { dmyhm, maskPhone } from '../format'
+
+const ROLE_LABEL = { admin: 'Admin', seller: 'Sotuvchi', organizer: 'Tashkilotchi', clinic: 'Klinika', shifokor: 'Shifokor', talaba: 'Talaba' }
+// Eski RPC (0050 qo‘llanmagan) faqat user_type qaytaradi — shunda undan foydalanamiz.
+const rolesOf = (r) => (Array.isArray(r?.roles) && r.roles.length ? r.roles : [r?.user_type === 'talaba' ? 'talaba' : 'shifokor'])
+function RoleChips({ r }) {
+  return (
+    <span className="inline-flex flex-wrap gap-1">
+      {rolesOf(r).map((x) => (
+        <span key={x} className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${x === 'admin' ? 'bg-[#10283F] text-white' : x === 'seller' || x === 'organizer' || x === 'clinic' ? 'bg-[#E0F2FE] text-[#075985]' : 'bg-[#F0FDFA] text-[#0F766E]'}`}>
+          {ROLE_LABEL[x] || x}
+        </span>
+      ))}
+      {r?.is_test && <span className="rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[12px] font-semibold text-[#92400E]">Test</span>}
+    </span>
+  )
+}
 import Modal from '../components/Modal'
 import {
   Avatar, Btn, DataTable, Empty, FilterTabs, MigrateBanner, MobileCards,
@@ -30,6 +46,13 @@ export default function Foydalanuvchilar() {
     { id: 'all', label: 'Barchasi', count: counts.all },
     { id: 'shifokor', label: 'Shifokorlar', count: counts.shifokor },
     { id: 'talaba', label: 'Talabalar', count: counts.talaba },
+    ...(counts.seller != null ? [
+      { id: 'seller', label: 'Sotuvchi', count: counts.seller },
+      { id: 'organizer', label: 'Tashkilotchi', count: counts.organizer },
+      { id: 'clinic', label: 'Klinika', count: counts.clinic },
+      { id: 'admin', label: 'Admin', count: counts.admin },
+      { id: 'test', label: 'Test', count: counts.test },
+    ] : []),
   ], [counts])
 
   async function openDetail(id) {
@@ -75,7 +98,7 @@ export default function Foydalanuvchilar() {
           <Avatar name={r.name} src={r.avatar} />
           <div className="min-w-0 flex-1">
             <div className="font-semibold text-[#10283F]">{r.name}</div>
-            <div className="text-[12px] text-[#5C6E80]">{r.user_type === 'talaba' ? 'Talaba' : 'Shifokor'} · {r.city || '—'} · {maskPhone(r.phone)}</div>
+            <div className="text-[12px] text-[#5C6E80]">{rolesOf(r).map((x) => ROLE_LABEL[x] || x).join(', ')} · {r.city || '—'} · {maskPhone(r.phone)}</div>
           </div>
           <StatusDot tone={r.blocked ? 'gray' : 'teal'}>{r.blocked ? 'Bloklangan' : 'Faol'}</StatusDot>
         </button>
@@ -89,14 +112,14 @@ export default function Foydalanuvchilar() {
               <td className="px-3 py-3">
                 <button type="button" className="flex items-center gap-2.5 text-left" onClick={() => openDetail(r.id)}>
                   <Avatar name={r.name} src={r.avatar} size="sm" />
-                  <span className="font-semibold text-[#10283F]">{r.name}</span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-[#10283F]">{r.name}</span>
+                    {r.email && <span className="block text-[11.5px] text-[#8A9AA8]">{r.email}</span>}
+                  </span>
                 </button>
               </td>
               <td className="px-3 py-3">
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#F0FDFA] px-2.5 py-0.5 text-[12px] font-semibold text-[#0F766E]">
-                  {r.user_type === 'talaba' ? <GraduationCap className="size-3.5" /> : <Stethoscope className="size-3.5" />}
-                  {r.user_type === 'talaba' ? 'Talaba' : 'Shifokor'}
-                </span>
+                <RoleChips r={r} />
               </td>
               <td className="px-3 py-3 text-[#3D4E5F]">{r.city || '—'}</td>
               <td className="px-3 py-3 text-[#3D4E5F]">{dmyhm(r.created_at)}</td>
@@ -146,15 +169,14 @@ export default function Foydalanuvchilar() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-[18px] font-extrabold text-[#10283F]">{detail.name}</h3>
                   {detail.blocked && <StatusDot tone="gray">Bloklangan</StatusDot>}
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F0FDFA] px-2.5 py-0.5 text-[12px] font-semibold text-[#0F766E]">
-                    {detail.user_type === 'talaba' ? 'Talaba' : 'Shifokor'}
-                  </span>
+                  <RoleChips r={detail} />
                 </div>
                 <p className="text-[13px] text-[#5C6E80]">{detail.specialty || '—'}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-[13px]">
-              <Field label="Telefon raqami" value={maskPhone(detail.phone)} />
+              <Field label="Telefon raqami" value={`${maskPhone(detail.phone)}${detail.contact_from_order ? ' (buyurtmadan)' : ''}`} />
+              <Field label="Email" value={detail.email || '—'} />
               <Field label="Foydalanuvchi ID" value={`#${detail.code}`} />
               <Field label="Viloyat" value={detail.city || '—'} />
               <Field label="Buyurtmalar soni" value={`${detail.orders_count || 0} ta`} />
