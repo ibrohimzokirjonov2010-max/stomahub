@@ -93,7 +93,7 @@ export function Chips({ tabs, value, onChange }) {
   )
 }
 
-const TONES = { on: 'bg-[#CCFBF1] text-[#115E59]', mid: 'bg-[#E3F4F2] text-[#0F766E]', off: 'bg-[#E9EEF0] text-[#3D4E5F]', dark: 'bg-[#0F766E] text-white' }
+const TONES = { on: 'bg-[#CCFBF1] text-[#115E59]', mid: 'bg-[#E3F4F2] text-[#0F766E]', off: 'bg-[#E9EEF0] text-[#3D4E5F]', dark: 'bg-[#0F766E] text-white', late: 'bg-[#FDE8EC] text-[#BE123C] font-semibold' }
 export const Badge = ({ tone = 'on', children, dot, className = '' }) => (
   <span className={`inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[12px] font-medium ${TONES[tone]} ${className}`}>
     {dot && <span className={`size-1.5 rounded-full ${tone === 'off' ? 'bg-[#6B7A88]' : 'bg-[#0F766E]'}`} />}{children}
@@ -225,3 +225,6 @@ export const toast = (m) => toastFn?.(m)
 
 export const Th = ({ children, className = '' }) => <th className={`whitespace-nowrap px-3 py-2.5 text-left text-[12.5px] font-medium text-[#3D4E5F] ${className}`}>{children}</th>
 export const Td = ({ children, className = '' }) => <td className={`px-3 py-2 text-[13px] text-[#10283F] ${className}`}>{children}</td>
+
+// Yetkazish sanasi o‘tgan, hali yetkazilmagan buyurtma belgisi
+export const OverdueBadge = ({ className = '' }) => <Badge tone="late" className={className}>Muddati o‘tgan</Badge>

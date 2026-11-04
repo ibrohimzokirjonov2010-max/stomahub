@@ -4,6 +4,8 @@ import { CalendarDays, ChevronDown, ChevronRight, ShoppingCart, Box, CreditCard,
 import { dmy, hm, monthTitle, som, MONTHS } from '../../format'
 import ProductThumb from './ProductThumb'
 import { PERIODS } from '../../api'
+import { isLate } from '../buyurtmalar/constants'
+import { OverdueBadge } from '../ui'
 import Empty from '../shell/Empty'
 
 const MSTATUS = { yangi: 'Yangi', tasdiqlandi: 'Tasdiqlangan', tayyorlanmoqda: 'Tayyorlanmoqda', yetkazilmoqda: 'Yetkazilmoqda', yetkazildi: 'Yetkazildi', bekor_qilindi: 'Bekor qilindi' }
@@ -101,7 +103,7 @@ export function MobileOrders({ orders, onOpen }) {
               <div className="text-[12px] text-[#6B7A88]">{dmy(o.created_at)} {hm(o.created_at)}</div>
               <div className="text-[12px] text-[#6B7A88]">{o.items.length} ta mahsulot</div><div className="whitespace-nowrap text-[13px] font-semibold text-[#10283F]">{som(o.subtotal)}</div>
             </div>
-            <span className="rounded-full bg-[#E3F4F2] px-3 py-1 text-[11.5px] font-medium text-[#115E59]">{MSTATUS[o.status]}</span>
+            <span className="flex flex-col items-end gap-1"><span className="rounded-full bg-[#E3F4F2] px-3 py-1 text-[11.5px] font-medium text-[#115E59]">{MSTATUS[o.status]}</span>{isLate(o) && <OverdueBadge className="!rounded-full !px-2 !py-0.5 !text-[10.5px]" />}</span>
             <ChevronRight className="size-4 text-[#3D4E5F]" />
           </button>
         ))}

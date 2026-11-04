@@ -9,7 +9,7 @@ import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
 import ProductThumb from '../components/bosh-sahifa/ProductThumb'
 import { OrderBadge } from './Buyurtmalar'
-import { O_LABEL, O_NEXT, O_FLOW, DELIVERY, showPhone, phoneOf } from '../components/buyurtmalar/constants'
+import { O_LABEL, O_NEXT, O_FLOW, DELIVERY, showPhone, phoneOf, isLate } from '../components/buyurtmalar/constants'
 
 const PAY_METHOD = { cash: 'Naqd', card: 'Karta', click: 'Click', payme: 'Payme', uzcard: 'Uzcard', humo: 'Humo' }
 const REASONS = ['Mahsulot omborda qolmagan', 'Xaridor bekor qilishni so‘radi', 'Xaridor bilan bog‘lanib bo‘lmadi', 'Manzil noto‘g‘ri', 'Boshqa sabab']
@@ -197,7 +197,7 @@ export default function BuyurtmaDetail() {
         </div>
         <Err>{a.error}</Err>
         <div className="space-y-3">
-          <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge order={o} status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : <>{stepper(true)}{stepperHint}</>}</div>
+          <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge order={o} status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : <>{isLate(o) && <div className="mb-2 flex items-center gap-2 rounded-lg bg-[#FDE8EC] px-3 py-2 text-[12.5px] font-semibold text-[#BE123C]">Muddati o‘tgan — yetkazish sanasi {dmy(o.delivery_date)} edi</div>}{stepper(true)}{stepperHint}</>}</div>
           <div className={`${card} p-3`}>
             <div className="flex items-center justify-between"><h3 className="flex items-center gap-2 text-[15px] font-bold"><span className="grid size-8 place-items-center rounded-full bg-[#E3F4F2] text-[#0F766E]"><UserRound className="size-4" /></span>Mijoz ma’lumotlari</h3>{o.customer_id && <Link to={`/sotuvchi/mijozlar/${o.customer_id}`} className="text-[12.5px] text-[#0F766E]">Mijoz profilini ko‘rish ›</Link>}</div>
             <div className="mt-2 flex items-center gap-3"><span className="grid size-12 place-items-center rounded-full bg-[#E3F4F2] font-semibold text-[#0F766E]">{(o.customer_name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span><div className="text-[12.5px] text-[#5C6E80]"><div className="text-[14.5px] font-semibold text-[#10283F]">{o.customer_name || '—'}</div><div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{phoneOf(o)}</div><div className="flex items-center gap-1.5"><MapPin className="size-3.5 text-[#0F766E]" />{o.city || o.region || '—'}</div></div></div>

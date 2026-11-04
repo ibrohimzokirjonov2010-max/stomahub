@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { isLate } from '../buyurtmalar/constants'
+import { OverdueBadge } from '../ui'
 import { Link } from 'react-router-dom'
 import { ShoppingCart, FileText, Wallet, Clock, ArrowRight, Ellipsis, EllipsisVertical, Plus, ChevronDown, Box, Users, ChartLine, Coins, Store, Star, PackageCheck, Tag, Megaphone, House } from 'lucide-react'
 import { dmy, maskPhone, som, num, itemsLabel } from '../../format'
@@ -91,7 +93,7 @@ export function RecentOrders({ orders, onOpen }) {
             <span className="text-[#5C6E80]">{itemsLabel(o.items.length)}</span>
             <span className="truncate text-[#5C6E80]">{o.customer_phone ? maskPhone(o.customer_phone) : '—'}</span>
             <span>{som(o.subtotal)}</span>
-            <span className="text-center"><StatusBadge status={o.status} className="min-w-[96px]" /></span>
+            <span className="flex flex-col items-center gap-1 text-center"><StatusBadge status={o.status} className="min-w-[96px]" />{isLate(o) && <OverdueBadge />}</span>
             <span className="flex justify-end"><Ellipsis className="size-5" /></span>
           </div>
         ))}
