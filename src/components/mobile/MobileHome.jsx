@@ -5,7 +5,7 @@ import {
   Search, ShoppingCart, SlidersHorizontal, CalendarDays, Package, Shirt, GraduationCap, BookOpen, Wrench,
   FlaskConical, ArrowRight, ChevronRight, MapPin, Clock, FileText, Heart, Star, MoreVertical, X,
 } from 'lucide-react'
-import { useCart } from '../../cart'
+import { useCart, isOwnProduct } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { marketProducts, som } from '../../marketData'
 import { seminarPrice } from '../../seminarsData'
@@ -251,9 +251,11 @@ export default function MobileHome() {
                   <p className="mt-1 whitespace-nowrap text-[15px] font-extrabold text-ink">{som(p.price)}</p>
                   {p.oldPrice ? <p className="text-[11px] text-muted line-through">{som(p.oldPrice)}</p> : null}
                 </div>
+{isOwnProduct(p) ? <span className="shrink-0 rounded-lg bg-[#eef4f4] px-2 py-1.5 text-[10.5px] font-semibold leading-tight text-sea">Sizning<br />mahsulotingiz</span> : (
                 <button type="button" onClick={() => addToCart(p)} aria-label="Savatga qo‘shish" className="grid size-10 shrink-0 place-items-center rounded-xl bg-sea text-white active:scale-95">
                   <ShoppingCart className="size-[18px]" />
                 </button>
+                )}
               </div>
             </article>
           ))}

@@ -8,6 +8,9 @@ import { isRestricted } from './restricted.jsx'
 import { useProfile } from './profileStore'
 import { tierPrice } from './config/productCatalog'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
+// Sotuvchi o‘z mahsulotini sotib ololmaydi — kartochkalarda savat o‘rniga belgi ko‘rsatiladi
+export const isOwnProduct = (p) => { const u = currentUid(); return !!u && !!p && (p.sellerId || p.seller_id) === u }
+export const OWN_LABEL = 'Sizning mahsulotingiz'
 
 const CartContext = createContext(null)
 
