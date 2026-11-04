@@ -52,7 +52,7 @@ export function validatePost({ title, body, kind, images = [], consent }) {
 }
 
 // Yagona ism/initsial resolver (postlar va izohlar uchun).
-export const displayName = (a) => String(a?.full_name || a?.name || '').trim() || 'Foydalanuvchi'
+export const displayName = (a) => String(a?.name || a?.full_name || '').trim() || 'Foydalanuvchi'
 export const initials = (name) => String(name || '').replace(/^Dr\.?\s*/i, '').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'
 
 let state = { posts: [], legacy: [], live: false, ready: false, liked: new Set(), saved: new Set(), likedComments: new Set(), hidden: new Set() }

@@ -5,7 +5,7 @@ import { Logo } from './icons'
 import { useCart } from '../cart'
 import { useProfile } from '../profileStore'
 import { fetchNotifications } from '../buyerApi'
-import { pickDisplayName, signOut, useSession } from '../sessionStore'
+import { pickDisplayName, signOut, useSession, profileName } from '../sessionStore'
 import { looksLikeDemoName } from '../demoPurge'
 import UserAvatar, { realAvatar } from './UserAvatar'
 
@@ -18,7 +18,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const session = useSession()
   // Chiqqandan keyin eski profil keshi “kirgan” deb ko‘rsatmasin: faqat sessiya yuklanayotganda keshga ishonamiz
   const authed = session.status === 'authed' || (session.status === 'loading' && profile.accountLive)
-  const remoteName = session.profile?.full_name || session.profile?.name || ''
+  const remoteName = profileName(session.profile, session.user?.email)
   const localName = profile.accountLive ? (profile.name || '') : ''
   const rawName = authed ? (localName || remoteName || '') : ''
   // Lokal profil nomi test/placeholder bo‘lsa ('Test Stomatolog'), sessiyadagi haqiqiy ism ishlatiladi

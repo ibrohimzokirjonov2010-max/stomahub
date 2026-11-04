@@ -451,7 +451,7 @@ async function hydrateProfile(nextUid, opts = {}) {
     loggedOut: false,
     syncError: '',
     ownerUid: nextUid,
-    name: (() => { const n = (profile?.name || profile?.full_name || '').trim(); return looksLikeDemoName(n) ? '' : n })(),
+    name: (() => { const n = (String(profile?.name || '').trim() || String(profile?.full_name || '').trim()); return looksLikeDemoName(n) ? '' : n })(),
     role: profile?.specialty || '',
     clinic: profile?.clinic || clinicRow?.name || '',
     city: profile?.city || '',
