@@ -1,0 +1,17 @@
+{
+ "kind": "shop",
+ "name": "PRO DENTAL TECH",
+ "city": "Toshkent",
+ "address": "Yunusobod 17-kvartal (M Cosmetics yonida)",
+ "phone": "+998 94 688 56 06; +998 99 993 51 06",
+ "website": null,
+ "telegram": "https://t.me/pro_dental_shop",
+ "description": "Stomatologik materiallar va uskunalar. HAGER kreslolari rasmiy dileri (2 yil kafolat). Toshkent bo'ylab yetkazish bepul.",
+ "logo_url": null,
+ "source_urls": [
+  "https://t.me/s/pro_dental_shop"
+ ],
+ "items": [],
+ "slug": "pro-dental-tech",
+ "logo_local": null
+}

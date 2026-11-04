@@ -1,0 +1,194 @@
+{
+ "kind": "shop",
+ "name": "Dentalkorzina",
+ "city": "Toshkent",
+ "address": "Toshkent sh., Yashnobod t., Yangibozor ko'chasi, 1",
+ "phone": "+998 90 830-76-76; +998 91 781-76-76; +998 91 785-01-60",
+ "website": "https://dentalkorzina.com",
+ "telegram": "https://t.me/dentalkorzina_uz",
+ "description": "Dentalkorzina — sifatli va ishonchli tibbiy uskunalar. WOSON, Carestream, Ivoclar, FGM, BEGO, MEDESY mahsulotlari.",
+ "logo_url": null,
+ "source_urls": [
+  "https://t.me/s/dentalkorzina_uz"
+ ],
+ "items": [
+  {
+   "name": "Carestream CS 9600",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/SFE17VDgPdTVjzGdzgkmjCisl_xy3NpgXSdqwsnd4ys24CiIt1vfRxEMv4rAXvKFEB_I0SZG1zrWHKiPxERmngKXb3gRz3SgNKPeAMyj8dMsJu7h6m06qEfAJ33JWbv7pkgS01AdPrACDiWDqy8kUN1HXICfe76PlwpCHUrJscmNa5QWJ8pGLbJzkBVqzuBi4dKEn7IQhOu8ZtLZf-qe88eKKMqcY5y47Hjm3BR8qOZvN7InK5fvtjvdYJOU8VKFGjUmaILHbxU5XM5tHzB8K7WclnGewDx6fl_deHVY-ZLxCVtY3OwPky2EC7ySV_HXK3hxQ7c3VxPQlrNz1s7o4A.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/821",
+   "description": "5 tasi 1 da diagnostika majmuasi: Panorama, 3D KAKT (16×17), Sefalometriya, 3D yuz skani va CS MAR texnologiyasi. Endodontiya uchun 75 mkm gacha aniqlik.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/1.jpg"
+  },
+  {
+   "name": "WOSON stomatologik qurilmalari (WOVO, WOZO 2.0, WODO, WODO Junior)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/KmFEF8kGRlJbZ_pOICOoinlwKmS68ca9kMHQfB7MeQkwMgpZs0obGHIEYqAAQ0FTZBUNl5Uf_XF4bSeE4aUFYWrycwLEFF27YiCxU5aGu-DU75o1XrWDYiQsCQlnydipXheCc4dtQ1ISK6QaHLyjYo5xKJBwxuh33s2zSzVOcIGtmUTsnRGWTV98T8Kn6tA81xXbov6svUuqGPGxSO8S9l40PauTsgdOh1gHG3hLRPmRHQoeIgYdnUVk3UYxRg4dkMN2LZ14oNHpLWAlfsH2al7xPE8V0YzSeDkN3_lMxMvTLZs2MteyWmmrhtrL5WLSD2aZ94PH_En4t5bk0iZBfA.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/810",
+   "description": "To'liq komplektatsiya: nakonechniklar, skeyler, lampa, Full HD kamera, shifokor va assistent stullari. FARO (Italiya) premium soyasiz chiroqlari.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/2.jpg"
+  },
+  {
+   "name": "WOSON B sinf avtoklavlari (Tancy Touch 2L — Tanvo 45L)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/I0tQ6mp9MN2c5h_EqEONit4M7IKXPDr4g1ZVSgL9InIr_xcxh2n7CKAuCr9wSnbyAkTBlTVK6s_N2GVeUg-nCViou1By2p0-HZgkyvr94tOPyFaxoDUpsapi1aYR9hy-R1IJCONbYvEdH_Y5G7f8_9vJW7-9Wplw9LyXqUt3RoaIm5WcMoH-zAJgg10tb6oCQhj90Csp8hL3gIMqNz1_DTEu2qQbu4RQYJUwiq9LAGfaS8hqkRiQr_LUGQI5YCUvLI99NgF9VPFUc3MJJqee_VD558Tpd23rNxSEP7hwla2iT8Kp-q22snDYpQ-qhcKHb6Q2tRbqajIldpvYxfNfNQ.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/810",
+   "description": "3 bosqichli predvakuum va vakuumli quritish. 2L (Tancy Touch) dan 45L (Tanvo) gacha.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/3.jpg"
+  },
+  {
+   "name": "BEGO 3D-bosma qatronlari (doimiy koronkalar uchun)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/rWpT0u9wuPKL-kEQZUHxs5DRmMMZcaZTiHRsKv62qPy3tv5J7hUVHtdC6sBUN41R6u7yhVIoLay7bmeiXkohc1El_TIHSyKO8faUZCc9EZudKrBC7maSkUEznpcuM7qYad5GeyoQcVhNnGsom_sKsY5IpIZV183tjN5Ktd_X9qs0fGwFpXY9Oo4mf2L2QODVXg_jVzFek2Sv3z1LVSbtDB-oKp2iyxcqaflfi-m5CWWspQE99XBK-zrAIcSlnYC-76sf3G_gSiphC-unE7L_rtphLIRhCNxD0m-6db-iDO3-FGRoeAkR_PYkSzMrwQ0RszIzYMOR-hgveN44liL3jw",
+   "source_url": "https://t.me/dentalkorzina_uz/795",
+   "description": "Biomoslashuvchan; bukilishga chidamliligi 116 MPa; qatlam qalinligi 50 mkm; xizmat muddati 7 yilgacha. Turli xil ranglar mavjud.",
+   "extra": {},
+   "image_local": null
+  },
+  {
+   "name": "FGM Vitra APS kompoziti",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/PiTJihxaKeo7c_XfPwH9Zwo5H-4Zk9m9UkcPhUfE4V_YCOtIBDzj2rZ0gb_LS7E9OEdUjQqMEc532hNbKoEx4nVLnYfjOTyaG7QsvlxiPxYIQgX1oCGkkBw4jfHqWzP47Nc8X3JScsZZJAt1h4ZV2GvCZCcO0qnU8Zbg09GktB7AXp6h7heyFSdC0h-hP9TRncGZWzDLdgP-vbW43QJnYS5LcppDeAznA650hg8MEdqzCAO2hGd1wSOfQSrlcnHaXA0eUmC6qMPId91v8lrVRCqbswRZT77Cy8IIG9Cj8Q_nUB9YhMkE9PpBb6mhMdr2jR0kFtzIrTj4lp7GIObZeg",
+   "source_url": "https://t.me/dentalkorzina_uz/790",
+   "description": "Qulay va rangni aniq tanlash imkonini beruvchi kompozit.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/5.jpg"
+  },
+  {
+   "name": "FGM Vitra Unique kompoziti",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/PiTJihxaKeo7c_XfPwH9Zwo5H-4Zk9m9UkcPhUfE4V_YCOtIBDzj2rZ0gb_LS7E9OEdUjQqMEc532hNbKoEx4nVLnYfjOTyaG7QsvlxiPxYIQgX1oCGkkBw4jfHqWzP47Nc8X3JScsZZJAt1h4ZV2GvCZCcO0qnU8Zbg09GktB7AXp6h7heyFSdC0h-hP9TRncGZWzDLdgP-vbW43QJnYS5LcppDeAznA650hg8MEdqzCAO2hGd1wSOfQSrlcnHaXA0eUmC6qMPId91v8lrVRCqbswRZT77Cy8IIG9Cj8Q_nUB9YhMkE9PpBb6mhMdr2jR0kFtzIrTj4lp7GIObZeg",
+   "source_url": "https://t.me/dentalkorzina_uz/790",
+   "description": "\"Xameleon effekti\": bitta universal rang tishga moslashadi.",
+   "extra": {},
+   "image_local": null
+  },
+  {
+   "name": "G-WHITE WHITE.FORM modellashtirish smolasi, 10 ml",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/KH0zThPQ5pzTd0Rwhif5gn4kdBCTOcIgOYrjfBLgB9It0fCBV7jBSsk8betYT_DDlBvzl4jG5oHqm246LNW_sbzjNN7P9JE_tvhdWcXEgihLYlI9cuvrhwXEwLxsIjQhQNf1MjBMQRriqeRJYzbm-k3BOouYR9DiijuCRElmAXNs7GSjXfpyidyZ9zwgg4aWO2WREvu5UxqgQfQo_M05bITr4FcrbhSlE9DM1YD3fvA6JkZNKyc_5aAuQYKNIPlXya3cenEJzd0DkKR3jDItprLpUGxBQXqn0VSUF-CqRdAJCm1kIH2ZMigpYbY1cEfKznYeaKMhykC4i1fw3EsdGA.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/773",
+   "description": "Har qanday kompozit asbobga yopishishini to'xtatadi. Tiniq — restavratsiya rangiga ta'sir qilmaydi. Tomchili dozatorli 10 ml flakon.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/7.jpg"
+  },
+  {
+   "name": "Ivoclar Vivadent IPS e.max Ceram materiallari (Dentin, Incisal, Glaze Powder, Glaze FLUO)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/HNQ9JIpX5APBhZRUs7wu40Ir_j-3KyiNq1m44nxHG6a6k06M-Wmz9REpYIYkCkxP_RaVogmscvKYVJ8Lo56kJF3XJOQW8_yEJBdHMkPrYFotSaGS29LL7_U48MXM7fwNJU7jDWnqMlfH5ng3_jtSalNa3Rl4i8FIZeUtYH5eQXPVzd3rqxHMOLqNRO43VyEoPqK8P4kBfV1BZi7BLg_z7WDD9mNAiSrs4WvFI8nSZi7s9-wHfqCYvyFOFOmtUBuonvFUpWt6mUc6ZmR13CDTwMZbBb27Z03xwucExHsCVawUUQf3RGYvHccmMkNKtd3d3XJ6Qie7_0Xky8IjkZXFag.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/774",
+   "description": "Laboratoriya uchun: rang chuqurligi va aniq anatomiya, emalning tabiiy shaffofligi, glyanets va flyuoressensiya.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/8.jpg"
+  },
+  {
+   "name": "Ivoclar IPS Alox Plunger Separator",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/Ja3DVt7zj3b_PVCgVL34wQaVFKRIJPSO_C1eaAaZgoDzRg3zDuBCFKvHMyjbSZ3dj2i9GSlzLwYy8MvM0D7nRA9NVP7CRDU6FcTAeIdb4JwlgCzekNPaHaygxv8Bsi9GotW_1PR4mBY053ILwlWEkWtZerUGKL_RGWH80D6pyn_Gi_YxeDuEDMrK8UzXcnGk_TJiSxuXc0xhWBSWpEicQKUXhDHSxhPssNUKX9f1cr6YZyHD57X3Be5Q9qX1zwzl_7mDj4ZG9pQgVxkXL-D8x7bakkRZ1_F3rxZDvdM8ScJJsVY0IbcPQvRa50Z1cq5LV18Q6U7G6cC4lyttVdhlZQ.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/774",
+   "description": "Plunjerni himoya qilish va oson ochish uchun.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/9.jpg"
+  },
+  {
+   "name": "MEDESY stomatologik asboblari (Italiya)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/a_q1q749YVEkBasFutIzql6aOIF9apc6RcI8BPJ_cH2p8VxxN6a1dZO2ET_OJl_HWZGlBsE9SU8_JVd3yVeM_lFAXec2g8MD_IMnR2CD4UlT8_v1q1mwbjgwkW-nAiM1RRz6pab4w1AH26i0kvobsIasyhpy9ADAKOMtDEgpmusMd_endAgqXyQKhkq9d4VGPma7VRskLN5zCoX1pEd2-KUpi4jJE-gTTuK7ciTOYgFyNsRew9YMPWRGD9wKC-nuUIvoiBZOfI_0tULqCCBajSYNdYML-monraQQNooqbgkZML4LJ50zNDd4M64NERQSY0AHOVtVLB7HeKWcaX2kEg",
+   "source_url": "https://t.me/dentalkorzina_uz/786",
+   "description": "Jarrohlik, terapevtik stomatologiya, parodontologiya, ortodontiya uchun italyan asboblari.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/10.jpg"
+  },
+  {
+   "name": "DK Study 3D-modellari (restavratsiya mashqlari uchun)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/RUJH3sgI5JdqLToaj-0_QyxL3Q47JP_qE_dwhPhkay15QxUiPljRg_TrKDjEq6O5227EhQhOOhCMpJLRPXaEsVk0Uz5hmkKuy2Hb7yzPCcxh-fbU7ib1jwCJ-nzZf7MIhA8Bdlcls8SIosVSkS6-1rwZNIJxEdul0vEo5PAiSYHo_mO9wsh90p6rMP-6fqKlvO1Fvrdv39MhD76oL-W-RXv8fi90G6_Lq1cZuUHqtbbhlqTQVKXMD_Di2neiMq8kKdcp4wK1Ot9Id18vWRYN3zMmkOyAUlENaZ5IPHKYEoa8W8GwM2cD2YgCu7eOifs1oflK2WhiFhNy-qigWhoJhA.jpg",
+   "source_url": "https://t.me/dentalkorzina_uz/760",
+   "description": "Yakka tishlar, 2 va 3 tishdan iborat to'plamlar, frontal va yon tishlar segmentlari.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/11.jpg"
+  },
+  {
+   "name": "EsCom 100 System Kit (A1, A2, A3, A3.5, B2)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/SFkcTf33Ivkq7hDlUfzmV-JT3PMFe6-FhUxDsFaRbBRNh3ZmSR8yV3MGz7V-DCibavY8nz5X83BM0Ekp1SIeBduQ3zv-PbcJ9D-rjpmuBPracjCKZoMk2fmrpKN6tfo25MqDSzfoYTiP88KC3ikhhrSuHtpHF4kjQaN6PCvu_CA8o7MHJimcnTZiDMSU8nLKM36wjjBGH_LrVSXjYjIraVOomdsFdct7h93MgJ_it-eJLNZG0YaVFBguyfva_mXUnEnb5sP7DCMXlKdhVae-gPKr911g1g06UsXsFZpxw6OawKxZVcagT2tfaCFRPlRteP0QOe-8nIdMJgaNX8LIjQ",
+   "source_url": "https://t.me/dentalkorzina_uz/781",
+   "description": "Yangi kelgan materiallar ro'yxatidan. Narx uchun shaxsiy xabar orqali murojaat qilinadi.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/12.jpg"
+  },
+  {
+   "name": "EsCom 250 System Kit (A1, A2, A3, A3.5, B2)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/SFkcTf33Ivkq7hDlUfzmV-JT3PMFe6-FhUxDsFaRbBRNh3ZmSR8yV3MGz7V-DCibavY8nz5X83BM0Ekp1SIeBduQ3zv-PbcJ9D-rjpmuBPracjCKZoMk2fmrpKN6tfo25MqDSzfoYTiP88KC3ikhhrSuHtpHF4kjQaN6PCvu_CA8o7MHJimcnTZiDMSU8nLKM36wjjBGH_LrVSXjYjIraVOomdsFdct7h93MgJ_it-eJLNZG0YaVFBguyfva_mXUnEnb5sP7DCMXlKdhVae-gPKr911g1g06UsXsFZpxw6OawKxZVcagT2tfaCFRPlRteP0QOe-8nIdMJgaNX8LIjQ",
+   "source_url": "https://t.me/dentalkorzina_uz/781",
+   "description": "Yangi kelgan materiallar ro'yxatidan. Narx uchun shaxsiy xabar orqali murojaat qilinadi.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/13.jpg"
+  },
+  {
+   "name": "EsFlow (A1, A2, A3)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/SFkcTf33Ivkq7hDlUfzmV-JT3PMFe6-FhUxDsFaRbBRNh3ZmSR8yV3MGz7V-DCibavY8nz5X83BM0Ekp1SIeBduQ3zv-PbcJ9D-rjpmuBPracjCKZoMk2fmrpKN6tfo25MqDSzfoYTiP88KC3ikhhrSuHtpHF4kjQaN6PCvu_CA8o7MHJimcnTZiDMSU8nLKM36wjjBGH_LrVSXjYjIraVOomdsFdct7h93MgJ_it-eJLNZG0YaVFBguyfva_mXUnEnb5sP7DCMXlKdhVae-gPKr911g1g06UsXsFZpxw6OawKxZVcagT2tfaCFRPlRteP0QOe-8nIdMJgaNX8LIjQ",
+   "source_url": "https://t.me/dentalkorzina_uz/781",
+   "description": "Yangi kelgan materiallar ro'yxatidan. Narx uchun shaxsiy xabar orqali murojaat qilinadi.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/14.jpg"
+  },
+  {
+   "name": "Core.it Dual (Yellow, White)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/SFkcTf33Ivkq7hDlUfzmV-JT3PMFe6-FhUxDsFaRbBRNh3ZmSR8yV3MGz7V-DCibavY8nz5X83BM0Ekp1SIeBduQ3zv-PbcJ9D-rjpmuBPracjCKZoMk2fmrpKN6tfo25MqDSzfoYTiP88KC3ikhhrSuHtpHF4kjQaN6PCvu_CA8o7MHJimcnTZiDMSU8nLKM36wjjBGH_LrVSXjYjIraVOomdsFdct7h93MgJ_it-eJLNZG0YaVFBguyfva_mXUnEnb5sP7DCMXlKdhVae-gPKr911g1g06UsXsFZpxw6OawKxZVcagT2tfaCFRPlRteP0QOe-8nIdMJgaNX8LIjQ",
+   "source_url": "https://t.me/dentalkorzina_uz/781",
+   "description": "Yangi kelgan materiallar ro'yxatidan. Narx uchun shaxsiy xabar orqali murojaat qilinadi.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/15.jpg"
+  },
+  {
+   "name": "MTA material (vismutsiz)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/PuM2_5GV7L3tujlXbDanAAYlnDWEtXU4X262UBSpWT_tHwX-PxH72pCozI5-Gf6MVUVQe_foC1b2ZdGmXhcppG_VWvDN0iEWyvnjVtU6TMp3bJRI9T4tEO4JkDbKyKlL1Cb8-k9izYRNX05WKz49f849Qbs1iEf9xXadcbsMv8Ad8EN4k_tTZFwOrTKxB5c_ScGfsMpFDSXaMcjZgDwfo0R-aFUFfpMBurNFdZN9kHbBy99rJt-P4bpFfZba86XAxyWg4ijUkFYm24LuNe0euSL0PmH54zABF04Vr20_Bpdk4ox-_kWcFOwCPj3M31_-Fa9RhMerAyQ0foUUTaqPNg",
+   "source_url": "https://t.me/dentalkorzina_uz/787",
+   "description": "Vismutsiz zamonaviy MTA material: tish rangi o'zgarishi xavfini kamaytiradi. Rasmiy diler.",
+   "extra": {},
+   "image_local": "img/dentalkorzina/16.jpg"
+  }
+ ],
+ "slug": "dentalkorzina",
+ "logo_local": null
+}

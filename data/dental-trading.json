@@ -1,0 +1,299 @@
+{
+ "kind": "shop",
+ "name": "Dental Trading",
+ "city": "Toshkent",
+ "address": "Toshkent sh., Qorasaroy ko‘chasi, 270",
+ "phone": "+998 77 282 08 00",
+ "website": "https://dentaltrading.uz",
+ "telegram": "https://t.me/DentalTradingshop",
+ "description": "Stomatologik uskunalar va sarf materiallari: JINME, Lifedent, Voldent, Perfect Dental. Bepul yetkazib berish.",
+ "logo_url": "https://dentaltrading.uz/images/logo/dental-trading-logo.svg",
+ "source_urls": [
+  "https://dentaltrading.uz/ru/catalog",
+  "https://t.me/s/DentalTradingshop"
+ ],
+ "items": [
+  {
+   "name": "JINME E1 White — электрический микромотор",
+   "price": null,
+   "price_text": "$500",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/jinme/products/jinme-e1-white-electric-micromotor/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/equipment/micromotors/jinme-e1-white-electric-micromotor",
+   "description": "JINME E1 White — электрический микромотор от JINME. Портативный электрический микромотор JINME E1 White для профессиональной стоматологической работы. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "JINME",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/1.webp"
+  },
+  {
+   "name": "JINME ES70 — хирургическая система для имплантации",
+   "price": null,
+   "price_text": "$1,350",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/jinme/products/jinme-es70-implant-system/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/equipment/implant-systems/jinme-es70-implant-system",
+   "description": "JINME ES70 — хирургическая система для имплантации от JINME. JINME ES70 — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "JINME",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/2.webp"
+  },
+  {
+   "name": "JINME J1 Plus — турбинный наконечник M4 без подсветки",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://dentaltrading.uz/images/brands/jinme/products/jinme-j1-plus-handpiece/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/equipment/handpieces/jinme-j1-plus-handpiece",
+   "description": "JINME J1 Plus — турбинный наконечник M4 без подсветки от JINME. Турбинный наконечник JINME J1 Plus с тройным водяным спреем, кнопочным патроном и уровнем шума до 60 dB. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "JINME",
+    "availability": "Ожидается поступление"
+   },
+   "image_local": "img/dental-trading/3.webp"
+  },
+  {
+   "name": "JINME J5 LED — турбинный наконечник M4 с подсветкой",
+   "price": null,
+   "price_text": "$95",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/jinme/products/jinme-j5-fiber-optic-handpiece/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/equipment/handpieces/jinme-j5-fiber-optic-handpiece",
+   "description": "JINME J5 LED — турбинный наконечник M4 с подсветкой от JINME. Турбинный наконечник JINME J5 LED с тройным водяным спреем, кнопочным патроном и LED-подсветкой. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "JINME",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/4.webp"
+  },
+  {
+   "name": "Lifedent Apollo 23B — автоклав класса B, 23 л",
+   "price": null,
+   "price_text": "$1,800",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/lifedent/products/lifedent-apollo-23b-autoclave/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/sterilization-disinfection/autoclaves/lifedent-apollo-23b-autoclave",
+   "description": "Lifedent Apollo 23B — автоклав класса B, 23 л от Lifedent. Стоматологический автоклав класса B объёмом 23 литра для стерилизации инструментов. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Lifedent",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/5.webp"
+  },
+  {
+   "name": "Lifedent EGO-FILLER 2 — фильтр для воды",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://dentaltrading.uz/images/brands/lifedent/products/lifedent-ego-filler-2-water-filter/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/sterilization-disinfection/water-filters/lifedent-ego-filler-2-water-filter",
+   "description": "Lifedent EGO-FILLER 2 — фильтр для воды от Lifedent. Фильтр для подготовки воды при работе со стерилизационным оборудованием. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Lifedent",
+    "availability": "Ожидается поступление"
+   },
+   "image_local": "img/dental-trading/6.webp"
+  },
+  {
+   "name": "Lifedent X330 — упаковочная машина",
+   "price": null,
+   "price_text": "$200",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/lifedent/products/lifedent-x330-sealing-machine/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/sterilization-disinfection/sealing-machines/lifedent-x330-sealing-machine",
+   "description": "Lifedent X330 — упаковочная машина от Lifedent. Упаковочная машина для запайки стерилизационных пакетов и подготовки инструментов к стерилизации. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Lifedent",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/7.webp"
+  },
+  {
+   "name": "Voldent VD SENSOR R1.5 Цифровой рентгеновский датчик",
+   "price": null,
+   "price_text": "$600",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/voldent/products/voldent-vd-sensor-r15/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/equipment/x-ray/voldent-vd-sensor-r15",
+   "description": "Voldent VD SENSOR R1.5 Цифровой рентгеновский датчик от Voldent. Voldent VD SENSOR R1.5 Цифровой рентгеновский датчик — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Voldent",
+    "availability": "Уточните наличие"
+   },
+   "image_local": "img/dental-trading/8.webp"
+  },
+  {
+   "name": "Perfect Dental T-Flex 25 мм · Assorted · 5 шт/уп",
+   "price": null,
+   "price_text": "$10",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-t-flex-25mm-assorted-5pcs-pack-1/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/rotary-files/perfect-dental-t-flex-25mm-assorted-5pcs-pack-1",
+   "description": "Perfect Dental T-Flex 25 мм · Assorted · 5 шт/уп от Perfect Dental. Perfect Dental T-Flex 25 мм · Assorted · 5 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/9.webp"
+  },
+  {
+   "name": "Perfect Dental TS4 25 мм · Assorted · 4 шт/уп",
+   "price": null,
+   "price_text": "$15",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-ts4-25mm-assorted-4pcs-pack-2/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/rotary-files/perfect-dental-ts4-25mm-assorted-4pcs-pack-2",
+   "description": "Perfect Dental TS4 25 мм · Assorted · 4 шт/уп от Perfect Dental. Perfect Dental TS4 25 мм · Assorted · 4 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/10.webp"
+  },
+  {
+   "name": "Perfect Dental Retreaty Kit 25 мм · Assorted · 5 шт/уп",
+   "price": null,
+   "price_text": "$15",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-retreaty-kit-25mm-assorted-5pcs-pack-3/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/rotary-files/perfect-dental-retreaty-kit-25mm-assorted-5pcs-pack-3",
+   "description": "Perfect Dental Retreaty Kit 25 мм · Assorted · 5 шт/уп от Perfect Dental. Perfect Dental Retreaty Kit 25 мм · Assorted · 5 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/11.webp"
+  },
+  {
+   "name": "Perfect Dental K One 15 мм · #25/.06 · 4 шт/уп",
+   "price": null,
+   "price_text": "$12",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-k-one-15mm-25-06-4pcs-pack-4/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/rotary-files/perfect-dental-k-one-15mm-25-06-4pcs-pack-4",
+   "description": "Perfect Dental K One 15 мм · #25/.06 · 4 шт/уп от Perfect Dental. Perfect Dental K One 15 мм · #25/.06 · 4 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/12.webp"
+  },
+  {
+   "name": "Perfect Dental V Blue 25 мм · #15-40/.04 · 6 шт/уп",
+   "price": null,
+   "price_text": "$12",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-v-blue-25mm-15-40-04-6pcs-pack-5/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/rotary-files/perfect-dental-v-blue-25mm-15-40-04-6pcs-pack-5",
+   "description": "Perfect Dental V Blue 25 мм · #15-40/.04 · 6 шт/уп от Perfect Dental. Perfect Dental V Blue 25 мм · #15-40/.04 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/13.webp"
+  },
+  {
+   "name": "Perfect Dental K Files 21 мм · 6 шт/уп",
+   "price": null,
+   "price_text": "$3",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-k-files-21mm-06-6pcs-pack-6/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/hand-files/perfect-dental-k-files-21mm-06-6pcs-pack-6",
+   "description": "Perfect Dental K Files 21 мм · 6 шт/уп от Perfect Dental. Perfect Dental K Files 21 мм · #06 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/14.webp"
+  },
+  {
+   "name": "Perfect Dental K Files 25 мм · 6 шт/уп",
+   "price": null,
+   "price_text": "$3",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-k-files-25mm-06-6pcs-pack-16/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/hand-files/perfect-dental-k-files-25mm-06-6pcs-pack-16",
+   "description": "Perfect Dental K Files 25 мм · 6 шт/уп от Perfect Dental. Perfect Dental K Files 25 мм · #06 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/15.webp"
+  },
+  {
+   "name": "Perfect Dental H Files 21 мм · 6 шт/уп",
+   "price": null,
+   "price_text": "$3",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-h-files-21mm-06-6pcs-pack-26/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/hand-files/perfect-dental-h-files-21mm-06-6pcs-pack-26",
+   "description": "Perfect Dental H Files 21 мм · 6 шт/уп от Perfect Dental. Perfect Dental H Files 21 мм · #06 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/16.webp"
+  },
+  {
+   "name": "Perfect Dental H Files 25 мм · 6 шт/уп",
+   "price": null,
+   "price_text": "$3",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-h-files-25mm-06-6pcs-pack-36/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/hand-files/perfect-dental-h-files-25mm-06-6pcs-pack-36",
+   "description": "Perfect Dental H Files 25 мм · 6 шт/уп от Perfect Dental. Perfect Dental H Files 25 мм · #06 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/17.webp"
+  },
+  {
+   "name": "JINME M3 1:1 — угловой наконечник без подсветки",
+   "price": null,
+   "price_text": "$50",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/jinme/products/jinme-m3-1-1-contra-angle-handpiece/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/equipment/handpieces/jinme-m3-1-1-contra-angle-handpiece",
+   "description": "JINME M3 1:1 — угловой наконечник без подсветки от JINME. Угловой наконечник JINME M3 1:1 с внутренним водяным спреем и E-type интерфейсом. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "JINME",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/18.webp"
+  },
+  {
+   "name": "Perfect Dental D Files 25 мм · 6 шт/уп",
+   "price": null,
+   "price_text": "$5",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-d-files-25mm-08-10-15-6pcs-pack-47/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/hand-files/perfect-dental-d-files-25mm-08-10-15-6pcs-pack-47",
+   "description": "Perfect Dental D Files 25 мм · 6 шт/уп от Perfect Dental. Perfect Dental D Files 25 мм · #08, #10, #15 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/19.webp"
+  },
+  {
+   "name": "Perfect Dental C Files 21 мм · 6 шт/уп",
+   "price": null,
+   "price_text": "$5",
+   "currency": "USD",
+   "image_url": "https://dentaltrading.uz/images/brands/perfect-dental/products/perfect-dental-c-files-21mm-08-10-15-6pcs-pack-48/01-main.webp",
+   "source_url": "https://dentaltrading.uz/ru/catalog/endodontics/hand-files/perfect-dental-c-files-21mm-08-10-15-6pcs-pack-48",
+   "description": "Perfect Dental C Files 21 мм · 6 шт/уп от Perfect Dental. Perfect Dental C Files 21 мм · #08, #10, #15 · 6 шт/уп — стоматологический товар для стоматологической практики. Цена и наличие в каталоге Dental Trading Uzbekistan.",
+   "extra": {
+    "brand": "Perfect Dental",
+    "availability": "Есть в наличии"
+   },
+   "image_local": "img/dental-trading/20.webp"
+  }
+ ],
+ "slug": "dental-trading",
+ "logo_local": "img/dental-trading/logo.svg"
+}
