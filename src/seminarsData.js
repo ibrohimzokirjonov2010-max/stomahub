@@ -1,6 +1,7 @@
 import { som } from './marketData'
 import { joinAddress, splitAddress } from './seminarAddress'
 import { normalizeProgram } from './programDays'
+import { realAvatar } from './components/UserAvatar'
 
 const UZ_MON = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 const uzDay = (iso) => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${Number(m[3])} ${UZ_MON[Number(m[2]) - 1]}` : '' }
@@ -127,7 +128,7 @@ export function buildSeminarPage(s) {
   const speaker = {
     name: s.speaker?.name || 'Ma’ruzachi',
     role: s.speaker?.role || '',
-    avatar: s.speaker?.avatar || '/images/avatar.jpg',
+    avatar: realAvatar(s.speaker?.avatar),
     rating: Number(s.speaker?.rating) || 0,
     reviews: Number(s.speaker?.reviews) || 0,
     lines: s.organizer

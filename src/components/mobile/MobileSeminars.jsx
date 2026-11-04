@@ -15,6 +15,7 @@ import { SHOWCASE_SAVED, useSeminarStore, toggleSaved } from './seminarStore'
 import { useProfile } from '../../profileStore'
 import { currentUid } from '../../recordSync'
 import { useSession } from '../../sessionStore'
+import UserAvatar from '../UserAvatar'
 
 const ImplantIcon = (p) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" {...p}>
@@ -187,7 +188,7 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
         <p className="mt-1 flex items-center gap-1 truncate text-[10px] text-ink-2"><MapPin className="size-3 shrink-0 text-muted" /> <span className="truncate">{s.placeLabel}</span></p>
         <div className="mt-2 flex items-end justify-between gap-2 border-t border-line/70 pt-2">
           <div className="flex min-w-0 items-center gap-1.5">
-            <img src={s.speaker.avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
+            <UserAvatar src={s.speaker.avatar} name={s.speaker.name} className="size-7" textClass="text-[10px]" />
             <div className="min-w-0 leading-tight">
               <p className="text-[9px] text-muted">Ma’ruzachi</p>
               <p className="line-clamp-2 text-[10.5px] font-semibold text-ink">{s.speaker.name}</p>

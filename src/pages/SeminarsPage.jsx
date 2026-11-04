@@ -13,6 +13,7 @@ import { useSession } from '../sessionStore'
 import HubNotice from '../components/HubNotice'
 import { som } from '../marketData'
 import { seminarPrice } from '../seminarsData'
+import UserAvatar from '../components/UserAvatar'
 
 const UZ = ['', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
 const monthLabel = (key) => {
@@ -225,7 +226,7 @@ function SeminarRow({ item: s, liked, onLike }) {
         </p>
       </div>
       <div className="flex min-w-0 items-center gap-1.5">
-        <img src={s.speaker.avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
+        <UserAvatar src={s.speaker.avatar} name={s.speaker.name} className="size-7" textClass="text-[10px]" />
         <div className="min-w-0 leading-tight">
           <p className="truncate text-[10px] font-semibold text-ink">{s.speaker.name}</p>
           <p className="truncate text-[9px] text-muted">{s.speaker.role}</p>

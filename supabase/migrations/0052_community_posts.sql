@@ -57,6 +57,16 @@ alter table public.community_posts enable row level security;
 alter table public.community_comments enable row level security;
 alter table public.community_reports enable row level security;
 
+-- Savollar: «Eng yaxshi javob» (muallif belgilaydi) => «Hal qilindi»
+alter table public.community_posts add column if not exists solved_comment_id text references public.community_comments (id) on delete set null;
+-- Yangi postlarda rasm faqat Storage havolasi bo‘lishi kerak (base64 emas); eski ko‘chirilganlar istisno.
+alter table public.community_posts drop constraint if exists community_posts_no_inline_img;
+alter table public.community_posts add constraint community_posts_no_inline_img
+  check (legacy_source is not null or position('data:' in images::text) = 0);
+alter table public.community_comments drop constraint if exists community_comments_no_inline_img;
+alter table public.community_comments add constraint community_comments_no_inline_img
+  check (image is null or image not like 'data:%' or id like 'u-%');
+
 -- Postlar: hamma ko‘rinadiganini o‘qiydi; muallif o‘zinikini; admin hammasini.
 drop policy if exists community_posts_read on public.community_posts;
 create policy community_posts_read on public.community_posts for select to anon, authenticated
@@ -77,6 +87,7 @@ begin
   if not public.is_admin() then
     new.hidden := old.hidden; new.hidden_reason := old.hidden_reason;
     new.author_id := old.author_id; new.legacy_source := old.legacy_source; new.created_at := old.created_at;
+    if coalesce(current_setting('community.mark_best', true), '') <> '1' then new.solved_comment_id := old.solved_comment_id; end if;
     if new.title is distinct from old.title or new.body is distinct from old.body or new.images is distinct from old.images then
       new.edited_at := now();
     end if;
@@ -119,7 +130,8 @@ returns jsonb language sql stable security definer set search_path = public as $
   select jsonb_build_object(
     'id', p_id,
     'name', coalesce(nullif(trim(pr.full_name), ''), nullif(trim(pr.name), ''), nullif(p_fallback->>'name', ''), 'Foydalanuvchi'),
-    'avatar', coalesce(nullif(pr.avatar, ''), nullif(p_fallback->>'avatar', ''), ''),
+    -- umumiy stok rasm (/images/avatar.jpg) haqiqiy surat emas — initsiallar ko‘rsatiladi
+    'avatar', coalesce(nullif(nullif(pr.avatar, ''), '/images/avatar.jpg'), nullif(nullif(p_fallback->>'avatar', ''), '/images/avatar.jpg'), ''),
     'role', coalesce(nullif(pr.specialty, ''), nullif(p_fallback->>'role', ''), 'Stomatolog'))
   from (select 1) one left join public.profiles pr on pr.id = p_id;
 $$;
@@ -131,7 +143,7 @@ returns jsonb language sql stable security invoker set search_path = public as $
   select coalesce(jsonb_agg(x order by (x->>'created_at') desc), '[]'::jsonb) from (
     select jsonb_build_object(
       'id', p.id, 'kind', p.kind, 'topic', p.topic, 'title', p.title, 'body', p.body, 'images', p.images, 'tags', p.tags,
-      'meta', p.meta, 'consent', p.consent, 'hidden', p.hidden, 'created_at', p.created_at, 'edited_at', p.edited_at,
+      'meta', p.meta, 'consent', p.consent, 'solved_comment_id', p.solved_comment_id, 'hidden', p.hidden, 'created_at', p.created_at, 'edited_at', p.edited_at,
       'author', public.community_author(p.author_id, p.author_fallback),
       'mine', p.author_id is not null and p.author_id = auth.uid(),
       'comments', coalesce((select jsonb_agg(jsonb_build_object(
@@ -276,3 +288,56 @@ select 'cat-' || c.id,
   from public.catalog_items c
  where c.kind = 'post'
 on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------------------------------
+-- «Eng yaxshi javob»: faqat savol muallifi (server tekshiradi). p_comment = null => belgini olib tashlash.
+create or replace function public.community_mark_best(p_post text, p_comment text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v public.community_posts;
+begin
+  select * into v from public.community_posts where id = p_post;
+  if not found then raise exception 'Post topilmadi'; end if;
+  if v.author_id is distinct from auth.uid() then raise exception 'Faqat savol muallifi eng yaxshi javobni belgilaydi'; end if;
+  if v.kind <> 'savol' then raise exception 'Faqat savollar uchun'; end if;
+  if p_comment is not null and not exists (select 1 from public.community_comments c where c.id = p_comment and c.post_id = p_post) then
+    raise exception 'Javob topilmadi';
+  end if;
+  perform set_config('community.mark_best', '1', true);
+  update public.community_posts set solved_comment_id = p_comment where id = p_post;
+  perform set_config('community.mark_best', '', true);
+  return jsonb_build_object('ok', true, 'solved_comment_id', p_comment);
+end $$;
+revoke execute on function public.community_mark_best(text, text) from public, anon;
+grant execute on function public.community_mark_best(text, text) to authenticated;
+
+-- Yangi izoh/javob => post muallifiga (va javob berilgan izoh muallifiga) ilova ichidagi bildirishnoma.
+-- Mavjud tizim: public.customer_notifications (0007), sayt sarlavhasi va Profil sahifasi o‘qiydi.
+-- Trigger ko‘chirishdan KEYIN yaratiladi, shuning uchun eski izohlar uchun bildirishnoma ketmaydi.
+create or replace function public.community_comment_notify() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_post public.community_posts; v_who text; v_parent uuid;
+begin
+  select * into v_post from public.community_posts where id = new.post_id;
+  if not found then return new; end if;
+  v_who := public.community_author(new.author_id, new.author_fallback)->>'name';
+  if v_post.author_id is not null and v_post.author_id is distinct from new.author_id then
+    insert into public.customer_notifications (user_id, kind, title, body, link)
+    values (v_post.author_id, 'info',
+            case when v_post.kind = 'savol' then 'Savolingizga yangi javob' else 'Postingizga yangi izoh' end,
+            left(v_who || ': ' || coalesce(nullif(new.text, ''), '📷 Rasm'), 240),
+            '/community/' || new.post_id);
+  end if;
+  if new.parent_id is not null then
+    select author_id into v_parent from public.community_comments where id = new.parent_id;
+    if v_parent is not null and v_parent is distinct from new.author_id and v_parent is distinct from v_post.author_id then
+      insert into public.customer_notifications (user_id, kind, title, body, link)
+      values (v_parent, 'info', 'Izohingizga javob', left(v_who || ': ' || coalesce(nullif(new.text, ''), '📷 Rasm'), 240), '/community/' || new.post_id);
+    end if;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.community_comment_notify() from public, anon, authenticated;
+drop trigger if exists community_comment_notify on public.community_comments;
+create trigger community_comment_notify after insert on public.community_comments
+  for each row execute function public.community_comment_notify();

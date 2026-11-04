@@ -9,7 +9,7 @@ export const ORG = {
   name: '',
   role: 'Tashkilotchi',
   city: 'Toshkent',
-  avatar: '/images/avatar.jpg',
+  avatar: '',
   brand: 'StomaHub',
 }
 
@@ -21,7 +21,6 @@ export const num = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3
 export const som = (n) => `${num(n)} so‘m`
 
 export const FACES = [
-  '/images/avatar.jpg',
   '/images/seller-1.jpg',
   '/images/seller-2.jpg',
   '/images/seller-3.jpg',

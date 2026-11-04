@@ -1,17 +1,18 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ensureLogin } from '../../loginPrompt'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, SlidersHorizontal, Image as ImageIcon, Video, Plus, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal,
-  Lightbulb, X, Check, Link2, EyeOff, Flag, Trash2, BadgeCheck, MessagesSquare, PenLine, ShieldCheck,
+  Lightbulb, X, Check, Link2, EyeOff, Flag, Trash2, BadgeCheck, MessagesSquare, PenLine, ShieldCheck, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2,
 } from 'lucide-react'
 import { useProfile } from '../../profileStore'
-import { FEED_TABS, POST_KINDS, useFeed, feed, countComments, validatePost, initials } from '../../communityFeed'
+import { FEED_TABS, POST_KINDS, CLINIC_SECTIONS, IMAGE_TAGS, emptyNotes, composeCaseBody, useFeed, feed, countComments, validatePost } from '../../communityFeed'
 import { CATS, catTopic } from '../../communityData'
 import { MobileTopBar, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { imgIcon } from '../tealIcons'
+import UserAvatar from '../UserAvatar'
 
 export const KIND = {
   case: { label: 'Klinik case', icon: imgIcon('forum', 'klinik-holatlar'), cls: 'bg-[#e8f1ff] text-[#2f6fe4]' },
@@ -26,9 +27,11 @@ export const postLink = (p) => `${window.location.origin}/community/${p.id}`
 
 export function Avatar({ p, size = 'size-11' }) {
   if (p.official) return <span className={`${size} grid shrink-0 place-items-center rounded-full bg-sea text-white`}><ToothIcon className="size-1/2" /></span>
-  if (p.avatar) return <img src={p.avatar} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
-  const ini = initials(p.name || p.author)
-  return <span className={`${size} grid shrink-0 place-items-center rounded-full bg-[#e9eef3] text-[13px] font-semibold text-[#6b7f95]`}>{ini}</span>
+  return <UserAvatar src={p.avatar} name={p.name || p.author} className={size} textClass="text-[13px]" />
+}
+
+export function SolvedBadge() {
+  return <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-[#e3f8ef] px-2 text-[10.5px] font-semibold text-[#1f9d63]"><CheckCircle2 className="size-3.5" /> Hal qilindi</span>
 }
 
 export function KindBadge({ kind }) {
@@ -37,43 +40,114 @@ export function KindBadge({ kind }) {
   return <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-[10.5px] font-semibold ${k.cls}`}><Icon className={Icon.raster ? 'size-4' : 'size-3.5'} /> {k.label}</span>
 }
 
+// Rasm teglari (Oldin/Keyin). Eski postlarda layout 'ba' bo‘lsa — 1-rasm Oldin, 2-rasm Keyin.
+export const labelOf = (p, i) => p.labels?.[i] || (p.layout === 'ba' && !p.labels ? (i ? 'keyin' : 'oldin') : '')
+const TAG_TEXT = { oldin: 'Oldin', keyin: 'Keyin' }
+
 export function PostImages({ p, onOpen }) {
-  const img = (src, i, cls) => (
-    <button key={src + i} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} className={`relative overflow-hidden rounded-xl bg-page ${cls}`}>
-      <img src={src} alt="" loading="lazy" className="size-full object-cover" />
-      {p.layout === 'ba' && <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{i ? 'Keyin' : 'Oldin'}</span>}
+  const im = p.images || []
+  const img = (i, cls) => (
+    <button key={im[i] + i} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} className={`relative overflow-hidden rounded-xl bg-page ${cls}`}>
+      <img src={im[i]} alt={TAG_TEXT[labelOf(p, i)] || ''} loading="lazy" className="size-full object-cover" />
+      {TAG_TEXT[labelOf(p, i)] && <span className={`absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${labelOf(p, i) === 'oldin' ? 'bg-[#c2410c]/85' : 'bg-[#047857]/85'}`}>{TAG_TEXT[labelOf(p, i)]}</span>}
     </button>
   )
-  const im = p.images
   if (!im.length) return null
-  if (p.layout === 'ba') return <div className="grid grid-cols-2 gap-1.5">{im.slice(0, 2).map((s, i) => img(s, i, 'h-[118px]'))}</div>
-  if (p.layout === 'mosaic') {
+  const idx = im.map((_, i) => i)
+  const before = idx.filter((i) => labelOf(p, i) === 'oldin')
+  const after = idx.filter((i) => labelOf(p, i) === 'keyin')
+  if (before.length && after.length) {
+    const rest = idx.filter((i) => !before.includes(i) && !after.includes(i))
+    const col = (title, list, tone) => (
+      <div className="min-w-0">
+        <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${tone}`}>{title}</p>
+        <div className="grid gap-1.5">{list.map((i) => img(i, list.length > 1 ? 'h-[84px]' : 'h-[132px]'))}</div>
+      </div>
+    )
     return (
-      <div className="grid h-[150px] grid-cols-[1.25fr_1fr] gap-1.5">
-        {img(im[0], 0, 'h-full')}
-        <div className="grid grid-rows-2 gap-1.5">{im.slice(1, 3).map((s, i) => img(s, i + 1, 'h-full'))}</div>
+      <div>
+        <div className="grid grid-cols-2 gap-2">{col('Oldin', before, 'text-[#c2410c]')}{col('Keyin', after, 'text-[#047857]')}</div>
+        {rest.length > 0 && <div className="mt-1.5 grid grid-cols-3 gap-1.5">{rest.map((i) => img(i, 'h-[84px]'))}</div>}
       </div>
     )
   }
-  if (p.layout === 'row') return <div className="grid grid-cols-3 gap-1.5">{im.slice(0, 3).map((s, i) => img(s, i, 'h-[96px]'))}</div>
-  return img(im[0], 0, 'block h-[170px] w-full')
+  if (im.length === 2) return <div className="grid grid-cols-2 gap-1.5">{[0, 1].map((i) => img(i, 'h-[118px]'))}</div>
+  if (im.length >= 3) {
+    return (
+      <div className="grid h-[150px] grid-cols-[1.25fr_1fr] gap-1.5">
+        {img(0, 'h-full')}
+        <div className="grid grid-rows-2 gap-1.5">{[1, 2].map((i) => img(i, 'h-full'))}</div>
+      </div>
+    )
+  }
+  return img(0, 'block h-[170px] w-full')
 }
 
-export function Lightbox({ images, index, onClose }) {
+// To‘liq ekranli ko‘rish: barmoq bilan kattalashtirish (pinch), +/− tugmalar, ikki marta bosish,
+// chapga/o‘ngga surish (swipe) va klaviatura (← → Esc). Desktop ham shu komponentni ishlatadi.
+export function Lightbox({ images, index = 0, labels, onClose }) {
   const [i, setI] = useState(index)
+  const [z, setZ] = useState({ s: 1, x: 0, y: 0 })
+  const g = useRef({})
+  const n = images.length
+  const go = useCallback((d) => { setI((k) => (k + d + n) % n); setZ({ s: 1, x: 0, y: 0 }) }, [n])
+  const zoomBy = (f) => setZ((v) => { const s = Math.min(5, Math.max(1, v.s * f)); return s === 1 ? { s, x: 0, y: 0 } : { ...v, s } })
+  useEffect(() => {
+    const key = (e) => { if (e.key === 'Escape') onClose(); else if (e.key === 'ArrowRight') go(1); else if (e.key === 'ArrowLeft') go(-1); else if (e.key === '+' || e.key === '=') zoomBy(1.4); else if (e.key === '-') zoomBy(1 / 1.4) }
+    window.addEventListener('keydown', key)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', key); document.body.style.overflow = prev }
+  }, [go, onClose])
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+  const onTouchStart = (e) => {
+    const t = e.touches
+    if (t.length === 2) g.current = { pinch: dist(t), s0: z.s }
+    else if (t.length === 1) g.current = { x: t[0].clientX, y: t[0].clientY, px: z.x, py: z.y, t: Date.now() }
+  }
+  const onTouchMove = (e) => {
+    const t = e.touches; const st = g.current
+    if (t.length === 2 && st.pinch) { const s = Math.min(5, Math.max(1, st.s0 * (dist(t) / st.pinch))); setZ((v) => (s === 1 ? { s, x: 0, y: 0 } : { ...v, s })) }
+    else if (t.length === 1 && st.x != null && z.s > 1) setZ((v) => ({ ...v, x: st.px + t[0].clientX - st.x, y: st.py + t[0].clientY - st.y }))
+  }
+  const onTouchEnd = (e) => {
+    const st = g.current
+    if (st.x != null && z.s === 1 && e.changedTouches?.length) {
+      const dx = e.changedTouches[0].clientX - st.x; const dy = e.changedTouches[0].clientY - st.y
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3 && n > 1) go(dx < 0 ? 1 : -1)
+    }
+    if (!e.touches?.length) g.current = {}
+  }
+  const tag = labels?.[i]
+  const btn = 'grid size-10 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25 disabled:opacity-40'
   return (
-    <div className="fixed inset-0 z-[80] flex flex-col bg-black/90" onClick={onClose}>
-      <div className="flex items-center justify-between px-4 pt-4 text-white">
-        <span className="text-[13px]">{i + 1} / {images.length}</span>
-        <button type="button" onClick={onClose} aria-label="Yopish" className="grid size-9 place-items-center rounded-full bg-white/15"><X className="size-5" /></button>
+    <div role="dialog" aria-modal="true" aria-label="Rasmni ko‘rish" className="fixed inset-0 z-[90] flex select-none flex-col bg-black/95">
+      <div className="flex items-center justify-between gap-2 px-4 pt-[max(1rem,env(safe-area-inset-top))] text-white">
+        <span className="text-[13px]">{i + 1} / {n}{tag && TAG_TEXT[tag] ? ` · ${TAG_TEXT[tag]}` : ''}</span>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => zoomBy(1 / 1.4)} disabled={z.s <= 1} aria-label="Kichiklashtirish" className={btn}><ZoomOut className="size-5" /></button>
+          <span className="w-11 text-center text-[12px] tabular-nums">{Math.round(z.s * 100)}%</span>
+          <button type="button" onClick={() => zoomBy(1.4)} disabled={z.s >= 5} aria-label="Kattalashtirish" className={btn}><ZoomIn className="size-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Yopish" className={btn}><X className="size-5" /></button>
+        </div>
       </div>
-      <div className="grid flex-1 place-items-center p-4">
-        <img src={images[i]} alt="" className="max-h-[70dvh] max-w-full rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
+      <div
+        className="relative flex flex-1 touch-none items-center justify-center overflow-hidden"
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+        onWheel={(e) => zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15)}
+        onDoubleClick={() => setZ((v) => (v.s > 1 ? { s: 1, x: 0, y: 0 } : { ...v, s: 2.5 }))}
+        onClick={(e) => { if (e.target === e.currentTarget && z.s === 1) onClose() }}
+      >
+        <img src={images[i]} alt="" draggable={false} style={{ transform: `translate(${z.x}px, ${z.y}px) scale(${z.s})`, transition: g.current.pinch || g.current.x != null ? 'none' : 'transform .15s' }} className="max-h-full max-w-full object-contain" />
+        {n > 1 && <>
+          <button type="button" onClick={() => go(-1)} aria-label="Oldingi rasm" className={`${btn} absolute left-3 top-1/2 -translate-y-1/2`}><ChevronLeft className="size-6" /></button>
+          <button type="button" onClick={() => go(1)} aria-label="Keyingi rasm" className={`${btn} absolute right-3 top-1/2 -translate-y-1/2`}><ChevronRight className="size-6" /></button>
+        </>}
       </div>
-      {images.length > 1 && (
-        <div className="flex justify-center gap-2 pb-8" onClick={(e) => e.stopPropagation()}>
+      {n > 1 && (
+        <div className="flex justify-center gap-2 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
           {images.map((src, k) => (
-            <button key={src + k} type="button" onClick={() => setI(k)} aria-label={`Rasm ${k + 1}`} className={`size-12 overflow-hidden rounded-lg ${k === i ? 'ring-2 ring-white' : 'opacity-50'}`}><img src={src} alt="" className="size-full object-cover" /></button>
+            <button key={src + k} type="button" onClick={() => { setI(k); setZ({ s: 1, x: 0, y: 0 }) }} aria-label={`Rasm ${k + 1}`} className={`size-12 overflow-hidden rounded-lg ${k === i ? 'ring-2 ring-white' : 'opacity-50'}`}><img src={src} alt="" className="size-full object-cover" /></button>
           ))}
         </div>
       )}
@@ -143,6 +217,7 @@ export default function MobileCommunity() {
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('new')
   const [onlySaved, setOnlySaved] = useState(false)
+  const [solved, setSolved] = useState('all')
   const [sheet, setSheet] = useState(null)
   const composeIfAuthed = (kind) => { if (ensureLogin()) setSheet(kind) }
   const [menu, setMenu] = useState(null)
@@ -158,12 +233,13 @@ export default function MobileCommunity() {
     const rows = posts.filter((p) =>
       !hidden.has(p.id) &&
       (tab === 'all' || p.kind === tab) &&
+      (tab !== 'savol' || solved === 'all' || (solved === 'yes') === !!p.solved) &&
       (!onlySaved || saved.has(p.id)) &&
       (!s || `${p.title} ${p.body} ${p.author} ${p.tags.map((t) => t?.t || t).join(' ')}`.toLowerCase().includes(s)))
     if (sort === 'top') return [...rows].sort((a, b) => b.likes - a.likes)
     if (sort === 'talk') return [...rows].sort((a, b) => countComments(b) - countComments(a))
     return rows
-  }, [posts, hidden, tab, onlySaved, saved, q, sort])
+  }, [posts, hidden, tab, solved, onlySaved, saved, q, sort])
 
   const filters = (sort !== 'new' ? 1 : 0) + (onlySaved ? 1 : 0)
   const open = (p, focus) => navigate(`/community/${p.id}`, { state: focus ? { focus: true } : null })
@@ -204,6 +280,14 @@ export default function MobileCommunity() {
         })}
       </div>
 
+      {tab === 'savol' && (
+        <div className="mt-2 flex gap-1.5 px-3.5">
+          {[['all', 'Hammasi'], ['yes', 'Hal qilindi'], ['no', 'Javob kutilmoqda']].map(([k, l]) => (
+            <button key={k} type="button" aria-pressed={solved === k} onClick={() => setSolved(k)} className={`h-8 rounded-full px-3 text-[12px] font-medium ${solved === k ? 'bg-[#e3f8ef] text-[#1f9d63] ring-1 ring-[#1f9d63]/40' : 'bg-white text-ink-2 ring-1 ring-line/70'}`}>{l}</button>
+          ))}
+        </div>
+      )}
+
       <div className="mt-3 flex flex-col gap-3 px-3.5">
         {list.length ? list.map((p) => {
           const isLiked = liked.has(p.id)
@@ -217,13 +301,14 @@ export default function MobileCommunity() {
                   <p className="truncate text-[11.5px] text-muted">{p.role} · {p.time}{p.edited ? ' · tahrirlangan' : ''}</p>
                 </div>
                 <KindBadge kind={p.kind} />
+                {p.kind === 'savol' && p.solved && <SolvedBadge />}
                 <button type="button" onClick={() => setMenu(p)} aria-label="Ko‘proq" className="grid size-7 shrink-0 place-items-center text-muted"><MoreHorizontal className="size-5" /></button>
               </div>
               <button type="button" onClick={() => open(p)} className="mt-2 block w-full text-left">
                 <h3 className="text-[14.5px] font-bold leading-snug text-[#0d2a4a]">{p.title}</h3>
                 <p className="mt-1 line-clamp-3 text-[12.5px] leading-[1.5] text-ink-2">{p.body}</p>
               </button>
-              <div className="mt-2.5"><PostImages p={p} onOpen={(i) => setZoom({ images: p.images, i })} /></div>
+              <div className="mt-2.5"><PostImages p={p} onOpen={(i) => setZoom({ images: p.images, labels: p.images.map((_, k) => labelOf(p, k)), i })} /></div>
               <div className="mt-2 flex items-center text-[12.5px] text-ink-2">
                 <button type="button" onClick={() => feed.toggleLike(p.id)} aria-pressed={isLiked} className="flex h-9 items-center gap-1.5 pr-4 font-semibold">
                   <Heart className={`size-5 transition ${isLiked ? 'scale-110 fill-sale text-sale' : 'text-ink-2'}`} /> {p.likes + (isLiked ? 1 : 0)}
@@ -285,7 +370,7 @@ export default function MobileCommunity() {
           onDeleted={() => { if (!menu.mine) { const id = menu.id; setTimeout(() => setUndo(() => () => feed.hide(id)), 0) } }}
         />
       )}
-      {zoom && <Lightbox images={zoom.images} index={zoom.i} onClose={() => setZoom(null)} />}
+      {zoom && <Lightbox images={zoom.images} labels={zoom.labels} index={zoom.i} onClose={() => setZoom(null)} />}
 
       <MobileToast
         text={toast}
@@ -304,18 +389,25 @@ export function PostComposer({ withImages, editing, onClose, onDone }) {
   const [kind, setKind] = useState(editing?.kind && POST_KINDS.some(([k]) => k === editing.kind) ? editing.kind : 'case')
   const [cat, setCat] = useState(editing?.meta?.cat || CATS[0])
   const [title, setTitle] = useState(editing?.title || '')
-  const [body, setBody] = useState(editing?.body || '')
-  const [imgs, setImgs] = useState(editing?.images || [])
+  const [body, setBody] = useState(editing ? (editing.meta?.summary ?? editing.body ?? '') : '')
+  const [notes, setNotes] = useState({ ...emptyNotes(), ...(editing?.meta?.notes || {}) })
+  const [openSec, setOpenSec] = useState(editing?.meta?.notes ? '' : 'shikoyat')
+  const [imgs, setImgs] = useState((editing?.images || []).map((src, i) => ({ src, tag: labelOf(editing, i) })))
   const [consent, setConsent] = useState(!!editing?.consent)
   const [pick, setPick] = useState(withImages || !!editing?.images?.length)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const needConsent = kind === 'case' || imgs.length > 0
+  const isCase = kind === 'case'
+  const needConsent = isCase || imgs.length > 0
+  const maxImgs = isCase ? 6 : 3
 
   const publish = async () => {
-    const post = { kind, topic: catTopic[cat] || '', title, body, images: imgs, consent, meta: { ...(editing?.meta || {}), cat } }
+    const meta = { ...(editing?.meta || {}), cat }
+    let text = body
+    if (isCase) { meta.notes = notes; meta.summary = body.trim(); text = composeCaseBody(body, notes) }
+    const post = { kind, topic: catTopic[cat] || '', title, body: text, images: imgs.map((x) => x.src), labels: imgs.map((x) => (isCase ? x.tag : '')), consent, meta }
     const why = validatePost(post)
-    if (why) { setError(why); return }
+    if (why) { setError(isCase && why.startsWith('Sarlavha va') ? 'Sarlavha va kamida bitta bo‘limni to‘ldiring' : why); return }
     setBusy(true)
     const r = editing ? await feed.update(editing.id, post) : await feed.add(post)
     setBusy(false)
@@ -345,24 +437,57 @@ export function PostComposer({ withImages, editing, onClose, onDone }) {
         </select>
       </label>
       <input value={title} onChange={(e) => { setTitle(e.target.value); setError('') }} placeholder="Sarlavha" className="mt-3 h-11 w-full rounded-xl border border-line px-3 text-[14px] font-semibold outline-none focus:border-sea" />
-      <textarea value={body} onChange={(e) => { setBody(e.target.value); setError('') }} rows={4} maxLength={10000} placeholder={kind === 'savol' ? 'Savolingizni batafsil yozing...' : 'Holat, davolash va natijani yozing...'} className="mt-2 w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-sea" />
+      <textarea value={body} onChange={(e) => { setBody(e.target.value); setError('') }} rows={4} maxLength={10000} placeholder={kind === 'savol' ? 'Savolingizni batafsil yozing...' : isCase ? 'Qisqacha tavsif (ixtiyoriy)…' : 'Fikringizni yozing...'} className="mt-2 w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] leading-relaxed outline-none focus:border-sea" />
+      {isCase && (
+        <div className="mt-1 overflow-hidden rounded-xl border border-line">
+          {CLINIC_SECTIONS.map(([id, label, hint], k) => {
+            const on = openSec === id
+            const filled = !!notes[id].trim()
+            return (
+              <div key={id} className={k ? 'border-t border-line' : ''}>
+                <button type="button" aria-expanded={on} onClick={() => setOpenSec(on ? '' : id)} className="flex h-11 w-full items-center gap-2 px-3 text-left text-[13px] font-semibold text-ink">
+                  <span className={`grid size-5 place-items-center rounded-full text-[10px] ${filled ? 'bg-sea text-white' : 'bg-page text-muted'}`}>{filled ? <Check className="size-3" /> : k + 1}</span>
+                  <span className="flex-1">{label}</span>
+                  <ChevronDown className={`size-4 text-muted transition ${on ? 'rotate-180' : ''}`} />
+                </button>
+                {on && <textarea value={notes[id]} onChange={(e) => { const v = e.target.value; setNotes((n) => ({ ...n, [id]: v })); setError('') }} rows={3} maxLength={3000} placeholder={hint} className="mx-3 mb-3 block w-[calc(100%-1.5rem)] resize-none rounded-lg border border-line px-2.5 py-2 text-[13px] outline-none focus:border-sea" />}
+              </div>
+            )
+          })}
+        </div>
+      )}
       <button type="button" onClick={() => setPick(!pick)} className="mt-1 flex items-center gap-1.5 text-[13px] font-semibold text-sea">
         <ImageIcon className="size-4" /> Rasm qo‘shish {imgs.length > 0 && `(${imgs.length})`}
       </button>
       {pick && (
         <div className="mt-2 grid grid-cols-3 gap-1.5">
-          {imgs.map((src, i) => (
-            <button key={i} type="button" onClick={() => setImgs((l) => l.filter((_, j) => j !== i))} className="relative h-[84px] overflow-hidden rounded-lg ring-2 ring-sea">
-              <img src={src} alt="" className="size-full object-cover" />
-              <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-sea text-[10px] font-bold text-white">{i + 1}</span>
-            </button>
+          {imgs.map((x, i) => (
+            <div key={i} className="overflow-hidden rounded-lg ring-1 ring-line">
+              <div className="relative h-[84px]">
+                <img src={x.src} alt="" className="size-full object-cover" />
+                <button type="button" onClick={() => setImgs((l) => l.filter((_, j) => j !== i))} aria-label="Rasmni olib tashlash" className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/60 text-white"><X className="size-3.5" /></button>
+              </div>
+              {isCase && (
+                <div className="grid grid-cols-3 text-[10.5px] font-semibold">
+                  {IMAGE_TAGS.map(([t, l]) => (
+                    <button key={t || 'none'} type="button" aria-pressed={x.tag === t} onClick={() => setImgs((list) => list.map((y, j) => (j === i ? { ...y, tag: t } : y)))} className={`h-7 ${x.tag === t ? (t === 'oldin' ? 'bg-[#c2410c] text-white' : t === 'keyin' ? 'bg-[#047857] text-white' : 'bg-ink-2 text-white') : 'bg-page text-ink-2'}`}>{t ? l : '—'}</button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
-          {imgs.length < 3 && (
+          {imgs.length < maxImgs && (
             <label className="grid h-[84px] cursor-pointer place-items-center rounded-lg border border-dashed border-line text-[12px] text-muted">
               + Rasm
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; if (f.size > 10 * 1024 * 1024) { setError('Fayl 10 MB dan katta bo‘lmasin.'); return } const r = new FileReader(); r.onload = () => setImgs((l) => (l.length < 3 ? [...l, r.result] : l)); r.readAsDataURL(f); e.target.value = '' }} />
+              <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => {
+                const files = [...(e.target.files || [])]
+                e.target.value = ''
+                if (files.some((f) => f.size > 15 * 1024 * 1024)) { setError('Fayl 15 MB dan katta bo‘lmasin.'); return }
+                files.forEach((f) => { const rd = new FileReader(); rd.onload = () => setImgs((l) => (l.length < maxImgs ? [...l, { src: rd.result, tag: isCase ? (l.some((y) => y.tag === 'oldin') ? 'keyin' : 'oldin') : '' }] : l)); rd.readAsDataURL(f) })
+              }} />
             </label>
           )}
+          {isCase && imgs.length > 0 && <p className="col-span-3 text-[11px] text-muted">Har bir rasmni «Oldin» yoki «Keyin» deb belgilang — post ularni yonma-yon ko‘rsatadi. Rasmlar siqilib (≤1600px) xavfsiz serverga yuklanadi.</p>}
         </div>
       )}
       <label className={`mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-[12.5px] ${needConsent && !consent && error ? 'border-sale' : 'border-line'}`}>

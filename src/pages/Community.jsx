@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useFeed, feed, validatePost, initials } from '../communityFeed'
+import { useFeed, feed, validatePost, composeCaseBody, emptyNotes, IMAGE_TAGS } from '../communityFeed'
+import { PostImages, Lightbox, SolvedBadge, labelOf } from '../components/mobile/MobileCommunity'
 import { ensureLogin } from '../loginPrompt'
 import {
   Plus, BadgeCheck, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, HelpCircle,
@@ -12,6 +13,7 @@ import {
 } from '../communityData'
 import { useProfile } from '../profileStore'
 import { imgIcon } from '../components/tealIcons'
+import UserAvatar from '../components/UserAvatar'
 
 const CLINIC = [
   ['shikoyat', 'Shikoyat', 'Bemorning shikoyatlari va anamnezi...'],
@@ -31,7 +33,7 @@ const emptyForm = () => ({
   gender: 'Erkak',
   date: '',
   step: 'shikoyat',
-  notes: { shikoyat: '', tekshiruv: '', tashxis: '', reja: '', jarayon: '', natija: '' },
+  notes: emptyNotes(),
   images: [],
   tags: [],
   tag: '',
@@ -66,14 +68,15 @@ const toServer = (k) => (k === 'keys' ? 'case' : k)
 const TONE = { keys: 'keys', savol: 'savol', muhokama: 'talk', maslahat: 'talk', yangilik: 'paper' }
 
 function Face({ src, name, size = 'size-10' }) {
-  if (src) return <img src={src} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
-  return <span className={`${size} grid shrink-0 place-items-center rounded-full bg-[#e9eef3] text-[12px] font-semibold text-[#6b7f95]`}>{initials(name)}</span>
+  return <UserAvatar src={src} name={name} className={size} textClass="text-[12px]" />
 }
 
 function Board({ query }) {
   const [topic, setTopic] = useState('all')
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('yangi')
+  const [solved, setSolved] = useState('all')
+  const [zoom, setZoom] = useState(null)
   const store = useFeed()
   const { liked, saved, hidden } = store
   const posts = useMemo(() => store.posts.map((p, i) => {
@@ -109,13 +112,14 @@ function Board({ query }) {
     const rows = posts.filter((p) => {
       if (hidden.has(p.id)) return false
       if (tab !== 'all' && p.kind !== tab) return false
+      if (tab === 'savol' && solved !== 'all' && (solved === 'yes') !== !!p.solved) return false
       if (topic !== 'all' && p.topic !== topic) return false
       if (text && !`${p.title} ${p.body} ${p.author}`.toLowerCase().includes(text)) return false
       return true
     })
     rows.sort((a, b) => (sort === 'mashhur' ? b.likes - a.likes : a.rank - b.rank))
     return rows
-  }, [posts, hidden, tab, topic, query, sort])
+  }, [posts, hidden, tab, solved, topic, query, sort])
 
   const ping = (text) => {
     setToast(text)
@@ -131,16 +135,17 @@ function Board({ query }) {
   }
 
   const publish = async (form) => {
-    const notes = Object.values(form.notes).map((x) => x.trim()).filter(Boolean)
+    const isCase = form.kind === 'keys'
     const post = {
       kind: toServer(form.kind),
       topic: catTopic[form.cat] || 'endo',
       title: form.title.trim(),
-      body: [form.body.trim(), ...notes].filter(Boolean).join(' '),
+      body: isCase ? composeCaseBody(form.body, form.notes) : form.body.trim(),
       tags: form.tags,
       images: form.images.map((img) => img.src),
+      labels: form.images.map((img) => (isCase ? img.tag || '' : '')),
       consent: form.consent,
-      meta: { cat: form.cat, age: form.age, gender: form.gender, notes: form.notes },
+      meta: { ...(editing?.meta || {}), cat: form.cat, age: form.age, gender: form.gender, ...(isCase ? { notes: form.notes, summary: form.body.trim() } : {}) },
     }
     const res = editing ? await feed.update(editing.id, post) : await feed.add(post)
     if (!res.ok) return res.error
@@ -168,6 +173,7 @@ function Board({ query }) {
 
   return (
     <div className="pb-8 pt-3">
+      {zoom && <Lightbox images={zoom.images} labels={zoom.labels} index={zoom.i} onClose={() => setZoom(null)} />}
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-tight text-ink">Hamjamiyat</h1>
@@ -221,6 +227,13 @@ function Board({ query }) {
             </label>
           </div>
 
+          {tab === 'savol' && (
+            <div className="mb-2 flex gap-1.5">
+              {[['all', 'Hammasi'], ['yes', 'Hal qilindi'], ['no', 'Javob kutilmoqda']].map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={solved === k} onClick={() => setSolved(k)} className={`h-8 rounded-full px-3 text-[12px] font-semibold ${solved === k ? 'bg-[#e3f8ef] text-[#1f9d63] ring-1 ring-[#1f9d63]/40' : 'bg-white text-ink-2 shadow-card'}`}>{l}</button>
+              ))}
+            </div>
+          )}
           {list.length === 0 ? (
             <div className="rounded-2xl bg-white p-8 text-center text-[13px] text-muted shadow-card">Bu bo‘limda post yo‘q. Birinchi bo‘lib yozing.</div>
           ) : (
@@ -238,12 +251,13 @@ function Board({ query }) {
                     </button>
                     <Menu mine={p.mine} onHide={() => feed.hide(p.id)} onEdit={() => editPost(p)} onDelete={() => removePost(p)} onReport={() => reportPost(p)} />
                   </div>
+                  {p.kind === 'savol' && p.solved && <div className="mt-2"><SolvedBadge /></div>}
                   <h2 className="mt-3 text-[15px] font-bold leading-snug">{p.title}</h2>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{p.body}</p>
+                  <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-ink-2">{p.body}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {p.tags.map((tag) => <Tag key={tag.t} tag={tag} />)}
                   </div>
-                  {p.images.length > 0 && <div className="mt-3"><Shots images={p.images} /></div>}
+                  {p.images.length > 0 && <div className="mt-3 max-w-[560px]"><PostImages p={p} onOpen={(i) => setZoom({ images: p.images, labels: p.images.map((_, k) => labelOf(p, k)), i })} /></div>}
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-[12.5px] text-ink-2">
                     <button type="button" onClick={() => toggleLike(p.id)} className={`inline-flex items-center gap-1 ${liked.has(p.id) ? 'text-[#e11d48]' : ''}`}><Heart className={`size-4 ${liked.has(p.id) ? 'fill-[#e11d48]' : ''}`} /> {p.likes}</button>
                     <button type="button" onClick={() => setOpenId(openId === p.id ? null : p.id)} className="inline-flex items-center gap-1"><MessageCircle className="size-4" /> {p.comments}</button>
@@ -251,7 +265,7 @@ function Board({ query }) {
                     <button type="button" onClick={() => feed.toggleSave(p.id)} className={`inline-flex items-center gap-1 ${saved.has(p.id) ? 'text-sea' : ''}`}><Bookmark className={`size-4 ${saved.has(p.id) ? 'fill-sea' : ''}`} /> Saqlash</button>
                     <button type="button" onClick={() => share(p)} className="ml-auto inline-flex items-center gap-1"><Share2 className="size-4" /> Ulashish</button>
                   </div>
-                  {openId === p.id && <Thread post={p} onAdd={async (text) => { if (!ensureLogin()) return; const r = await feed.comment(p.id, text); if (!r.ok) ping(r.error) }} onRemove={async (c) => { const r = await feed.removeComment(p.id, c.id); if (!r.ok) ping(r.error) }} />}
+                  {openId === p.id && <Thread post={p} onBest={p.kind === 'savol' && p.mine ? async (c) => { const r = await feed.markBest(p.id, p.solvedId === c.id ? null : c.id); ping(r.ok ? (p.solvedId === c.id ? 'Belgi olib tashlandi' : 'Eng yaxshi javob belgilandi') : r.error) } : null} onAdd={async (text) => { if (!ensureLogin()) return; const r = await feed.comment(p.id, text); if (!r.ok) ping(r.error) }} onRemove={async (c) => { const r = await feed.removeComment(p.id, c.id); if (!r.ok) ping(r.error) }} />}
                 </article>
               ))}
             </div>
@@ -268,7 +282,7 @@ function Board({ query }) {
               {leaders.map((m, i) => (
                 <li key={m.name} className="flex items-center gap-2">
                   <span className="w-4 text-[12px] font-bold text-muted">{i + 1}</span>
-                  <img src={m.avatar} alt="" className="size-8 rounded-full object-cover" />
+                  <UserAvatar src={m.avatar} name={m.name} className="size-8" />
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-[12px]">{m.name}</b>
                     <span className="text-[11px] text-muted">{m.role}</span>
@@ -339,7 +353,7 @@ function Composer({ initialKind, editing, onClose, onPublish }) {
     const base = { ...emptyForm(), kind: KINDS.some((k) => k.id === initialKind && k.id !== 'maqola') ? initialKind : 'keys' }
     if (!editing) return base
     const tags = (editing.tags || []).map((t) => (typeof t === 'string' ? t : t.t)).filter((t) => String(t).startsWith('#'))
-    return { ...base, kind: editing.kind, title: editing.title, body: editing.body, cat: editing.meta?.cat || base.cat, tags, consent: !!editing.consent, images: (editing.images || []).map((src, i) => ({ id: `e${i}`, src })) }
+    return { ...base, kind: editing.kind, title: editing.title, body: editing.meta?.summary ?? editing.body, notes: { ...base.notes, ...(editing.meta?.notes || {}) }, cat: editing.meta?.cat || base.cat, tags, consent: !!editing.consent, images: (editing.images || []).map((src, i) => ({ id: `e${i}`, src, tag: labelOf(editing, i) })) }
   })
   const [error, setError] = useState('')
   const patch = (key, value) => setForm((f) => ({ ...f, [key]: value }))
@@ -354,7 +368,8 @@ function Composer({ initialKind, editing, onClose, onPublish }) {
         setError('Fayl 10 MB dan katta bo‘lmasin.')
         continue
       }
-      next.push({ id: `${file.name}-${file.size}-${next.length}`, src: URL.createObjectURL(file) })
+      if (!file.type.startsWith('image/')) { setError('Faqat rasm yuklash mumkin.'); continue }
+      next.push({ id: `${file.name}-${file.size}-${Date.now()}-${next.length}`, src: URL.createObjectURL(file), tag: '' })
     }
     if (next.length) setForm((f) => ({ ...f, images: [...f.images, ...next].slice(0, 8) }))
   }
@@ -372,7 +387,7 @@ function Composer({ initialKind, editing, onClose, onPublish }) {
 
   const [busy, setBusy] = useState(false)
   const submit = async () => {
-    const why = validatePost({ title: form.title, body: form.body, kind: toServer(form.kind), images: form.images, consent: form.consent })
+    const why = validatePost({ title: form.title, body: form.kind === 'keys' ? composeCaseBody(form.body, form.notes) : form.body, kind: toServer(form.kind), images: form.images, consent: form.consent })
     if (why) {
       setError(why)
       return
@@ -474,12 +489,19 @@ function Composer({ initialKind, editing, onClose, onPublish }) {
                   <label className="grid h-[74px] w-[92px] cursor-pointer place-items-center rounded-xl border border-dashed border-[#c9d5e2] text-center text-[10px] text-muted">
                     <Search className="size-4" />
                     Rasm, rentgen yoki fayl yuklash
-                    <span className="block">PNG, JPG, JPEG, DICOM, PDF · 10MB</span>
-                    <input type="file" accept="image/png,image/jpeg,application/pdf" multiple className="hidden" onChange={(e) => { addFiles([...e.target.files]); e.target.value = '' }} />
+                    <span className="block">PNG, JPG, WEBP · 10MB · klinik keysda Oldin/Keyin belgilang</span>
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addFiles([...e.target.files]); e.target.value = '' }} />
                   </label>
                   {form.images.map((img) => (
                     <span key={img.id} className="relative">
                       <img src={img.src} alt="" className="h-[74px] w-[74px] rounded-xl object-cover" />
+                      {form.kind === 'keys' && (
+                        <span className="mt-1 flex overflow-hidden rounded-lg text-[10px] font-semibold ring-1 ring-line">
+                          {IMAGE_TAGS.map(([t, l]) => (
+                            <button key={t || 'none'} type="button" aria-pressed={(img.tag || '') === t} onClick={() => setForm((f) => ({ ...f, images: f.images.map((x) => (x.id === img.id ? { ...x, tag: t } : x)) }))} className={`h-6 flex-1 ${(img.tag || '') === t ? (t === 'oldin' ? 'bg-[#c2410c] text-white' : t === 'keyin' ? 'bg-[#047857] text-white' : 'bg-ink-2 text-white') : 'bg-white text-ink-2'}`}>{t ? l : '—'}</button>
+                          ))}
+                        </span>
+                      )}
                       <button type="button" aria-label="Olib tashlash" onClick={() => setForm((f) => ({ ...f, images: f.images.filter((x) => x.id !== img.id) }))} className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-white shadow"><X className="size-3" /></button>
                     </span>
                   ))}
@@ -550,17 +572,19 @@ function Composer({ initialKind, editing, onClose, onPublish }) {
   )
 }
 
-function Thread({ post, onAdd, onRemove }) {
+function Thread({ post, onAdd, onRemove, onBest }) {
   const [text, setText] = useState('')
   return (
     <div className="mt-3 border-t border-line pt-3">
       <ul className="space-y-2">
         {(post.thread || []).map((c, i) => (
-          <li key={c.id || `${c.name}-${i}`} className="flex gap-2 rounded-xl bg-[#f6f9fc] px-3 py-2 text-[12.5px]">
+          <li key={c.id || `${c.name}-${i}`} className={`flex gap-2 rounded-xl px-3 py-2 text-[12.5px] ${post.solvedId === c.id ? 'bg-[#effaf5] ring-1 ring-[#1f9d63]/30' : 'bg-[#f6f9fc]'}`}>
             <Face src={c.avatar} name={c.name} size="size-7" />
             <span className="min-w-0 flex-1">
               <b>{c.name}</b> <span className="text-[11px] text-muted">{c.time}</span>
-              <p className="text-ink-2">{c.text}</p>
+              {post.solvedId === c.id && <span className="ml-1.5 rounded-full bg-[#1f9d63] px-1.5 py-0.5 text-[10px] font-bold text-white">✓ Eng yaxshi javob</span>}
+              <p className="whitespace-pre-line text-ink-2">{c.text}</p>
+              {onBest && !c.mine && !c.parentId && <button type="button" onClick={() => onBest(c)} className="mt-0.5 text-[11px] font-semibold text-[#1f9d63]">{post.solvedId === c.id ? 'Belgini olish' : 'Eng yaxshi javob deb belgilash'}</button>}
             </span>
             {c.mine && <button type="button" onClick={() => onRemove(c)} className="self-start text-[11px] text-muted">O‘chirish</button>}
           </li>

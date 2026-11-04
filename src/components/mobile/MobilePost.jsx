@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { MapPin, Heart, MessageCircle, Share2, Bookmark, ChevronDown, Image as ImageIcon, Send, MoreVertical, MoreHorizontal, X, Reply, Copy, Trash2, Flag, BadgeCheck } from 'lucide-react'
+import { MapPin, Heart, MessageCircle, Share2, Bookmark, ChevronDown, Image as ImageIcon, Send, MoreVertical, MoreHorizontal, X, Reply, Copy, Trash2, Flag, BadgeCheck, CheckCircle2 } from 'lucide-react'
 import { useProfile } from '../../profileStore'
 import { ensureLogin } from '../../loginPrompt'
 import { useFeed, feed, countComments } from '../../communityFeed'
@@ -8,7 +8,7 @@ import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
-import { Avatar, PostImages, Lightbox, PostMenu, PostComposer, sharePost } from './MobileCommunity'
+import { Avatar, PostImages, Lightbox, PostMenu, PostComposer, sharePost, SolvedBadge, labelOf } from './MobileCommunity'
 
 const SORTS = [['new', 'Eng yangi'], ['top', 'Eng ko‘p yoqqan'], ['old', 'Eng eski']]
 
@@ -54,8 +54,16 @@ function PostView({ id }) {
     const rows = [...p.comments]
     if (sort === 'top') rows.sort((a, b) => b.likes + (likedComments.has(`${p.id}:${b.id}`) ? 1 : 0) - a.likes - (likedComments.has(`${p.id}:${a.id}`) ? 1 : 0))
     if (sort === 'old') rows.reverse()
+    // «Eng yaxshi javob» doim birinchi
+    const bi = rows.findIndex((c) => c.id === p.solvedId)
+    if (bi > 0) rows.unshift(rows.splice(bi, 1)[0])
     return rows
   }, [p, sort, likedComments])
+  const canMark = !!p && p.kind === 'savol' && !!p.mine
+  const markBest = async (c) => {
+    const r = await feed.markBest(p.id, p.solvedId === c.id ? null : c.id)
+    setToast(r.ok ? (p.solvedId === c.id ? 'Belgi olib tashlandi' : 'Eng yaxshi javob belgilandi — savol hal qilindi') : r.error)
+  }
 
   if (!p) {
     return (
@@ -107,13 +115,14 @@ function PostView({ id }) {
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1 text-[15.5px] font-bold text-[#0d2a4a]">{p.author}{p.official && <BadgeCheck className="size-4 text-sea" />}</p>
             <p className="text-[12px] text-muted">{p.role}</p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-muted"><MapPin className="size-3.5" /> {p.place}</p>
+            {p.place && <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-muted"><MapPin className="size-3.5" /> {p.place}</p>}
           </div>
           <div className="flex shrink-0 flex-col items-end">
             <span className="text-[11.5px] text-muted">{p.time}</span>
             <button type="button" onClick={() => setPostMenu(true)} aria-label="Ko‘proq" className="-mr-1 grid size-8 place-items-center text-muted"><MoreHorizontal className="size-5" /></button>
           </div>
         </div>
+        {p.kind === 'savol' && p.solved && <div className="mt-2"><SolvedBadge /></div>}
         {p.title && <h1 className="mt-2 text-[15px] font-bold leading-snug text-[#0d2a4a]">{p.title}</h1>}
         <p className="mt-1.5 whitespace-pre-line text-[14px] leading-[1.55] text-ink">{p.body}</p>
         <div className="mt-3"><PostImages p={p} onOpen={(i) => setZoom(i)} /></div>
@@ -176,7 +185,7 @@ function PostView({ id }) {
         <div className="mt-2 flex flex-col">
           {comments.length ? comments.map((c) => (
             <div key={c.id} className="border-b border-line/60 py-3 last:border-0">
-              <Comment p={p} c={c} liked={likedComments.has(`${p.id}:${c.id}`)} onReply={() => startReply(c)} onMenu={() => setMenu({ c })} />
+              <Comment p={p} c={c} liked={likedComments.has(`${p.id}:${c.id}`)} onReply={() => startReply(c)} onMenu={() => setMenu({ c })} onBest={canMark && !c.mine ? markBest : null} />
               {c.replies.length > 0 && (
                 <div className="ml-12 mt-2 flex flex-col gap-2.5 border-l-2 border-[#e2f4f2] pl-3">
                   {c.replies.map((r) => (
@@ -195,6 +204,7 @@ function PostView({ id }) {
         <BottomSheet title="" onClose={() => setMenu(null)}>
           {[
             [Reply, 'Javob berish', () => startReply(menu.c, menu.parent)],
+            ...(canMark && !menu.parent && !menu.c.mine ? [[CheckCircle2, p.solvedId === menu.c.id ? 'Eng yaxshi javob belgisini olish' : 'Eng yaxshi javob deb belgilash', () => markBest(menu.c)]] : []),
             [Copy, 'Matnni nusxalash', () => { navigator.clipboard?.writeText(menu.c.text).catch(() => {}); setToast('Nusxalandi') }],
             menu.c.mine
               ? [Trash2, 'Izohni o‘chirish', async () => { const r = await feed.removeComment(p.id, menu.c.id); setToast(r.ok ? 'Izoh o‘chirildi' : r.error) }, true]
@@ -208,7 +218,7 @@ function PostView({ id }) {
       )}
       {postMenu && <PostMenu p={p} saved={isSaved} onClose={() => setPostMenu(false)} onToast={setToast} onEdit={() => setEditing(true)} onDeleted={() => navigate('/community', { replace: true })} />}
       {editing && <PostComposer editing={p} onClose={() => setEditing(false)} onDone={() => { setEditing(false); setToast('Post yangilandi') }} />}
-      {zoom !== null && <Lightbox images={p.images} index={zoom} onClose={() => setZoom(null)} />}
+      {zoom !== null && <Lightbox images={p.images} labels={p.images.map((_, k) => labelOf(p, k))} index={zoom} onClose={() => setZoom(null)} />}
 
       <MobileToast text={toast} onClose={closeToast} />
       <MobileTabBar />
@@ -216,9 +226,10 @@ function PostView({ id }) {
   )
 }
 
-function Comment({ p, c, liked, small, onReply, onMenu }) {
+function Comment({ p, c, liked, small, onReply, onMenu, onBest }) {
+  const best = !small && p.solvedId === c.id
   return (
-    <div className="flex gap-2.5">
+    <div className={`flex gap-2.5 ${best ? '-mx-2 rounded-xl bg-[#effaf5] px-2 py-2 ring-1 ring-[#1f9d63]/30' : ''}`}>
       <Avatar p={c} size={small ? 'size-8' : 'size-11'} />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
@@ -228,13 +239,15 @@ function Comment({ p, c, liked, small, onReply, onMenu }) {
           </div>
           <button type="button" onClick={onMenu} aria-label="Izoh menyusi" className="-mr-1 grid size-7 shrink-0 place-items-center text-muted"><MoreVertical className="size-4" /></button>
         </div>
-        {c.text && <p className="mt-1.5 rounded-xl rounded-tl-sm bg-[#f2f7f8] px-3 py-2 text-[13px] leading-snug text-ink">{c.text}</p>}
+        {best && <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#1f9d63] px-2 py-0.5 text-[10.5px] font-bold text-white"><CheckCircle2 className="size-3.5" /> Eng yaxshi javob</p>}
+        {c.text && <p className="mt-1.5 whitespace-pre-line rounded-xl rounded-tl-sm bg-[#f2f7f8] px-3 py-2 text-[13px] leading-snug text-ink">{c.text}</p>}
         {c.image && <img src={c.image} alt="" className="mt-1.5 max-h-40 rounded-xl object-cover" />}
         <div className="mt-1 flex items-center gap-4 text-[12px] text-ink-2">
           <button type="button" onClick={() => feed.likeComment(p.id, c.id)} aria-pressed={liked} className={`flex h-7 items-center gap-1.5 ${liked ? 'font-semibold text-[#0b6d73]' : ''}`}>
             <Heart className={`size-4 ${liked ? 'fill-[#0b6d73] text-[#0b6d73]' : ''}`} /> Yoqdi{c.likes + (liked ? 1 : 0) > 0 && <span className="text-muted">{c.likes + (liked ? 1 : 0)}</span>}
           </button>
           <button type="button" onClick={onReply} className="h-7">Javob berish</button>
+          {onBest && <button type="button" onClick={() => onBest(c)} aria-pressed={best} className={`flex h-7 items-center gap-1 ${best ? 'font-semibold text-[#1f9d63]' : 'text-ink-2'}`}><CheckCircle2 className="size-4" /> {best ? 'Belgini olish' : 'Eng yaxshi javob'}</button>}
         </div>
       </div>
     </div>

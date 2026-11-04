@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { bindBlob, touchBlob, currentUid, onAccount } from './recordSync'
 import { seedPosts } from './communityData'
+import { realAvatar } from './components/UserAvatar'
 
 // Hamjamiyat: barcha postlar BITTA umumiy jadvalda (public.community_posts).
 // Sayt ham, admin ham shu jadvalni o‘qiydi. Muallif ismi va avatari har safar
@@ -23,6 +24,23 @@ export const POST_KINDS = [
   ['savol', 'Savol'],
   ['muhokama', 'Muhokama'],
 ]
+// Klinik keys tuzilmasi (desktop va mobil bir xil 6 bo‘lim).
+export const CLINIC_SECTIONS = [
+  ['shikoyat', 'Shikoyat', 'Bemorning asosiy shikoyati…'],
+  ['tekshiruv', 'Tekshiruv', 'Ko‘rik, rentgen, testlar…'],
+  ['tashxis', 'Tashxis', 'Yakuniy / taxminiy tashxis…'],
+  ['reja', 'Reja', 'Davolash rejasi…'],
+  ['jarayon', 'Davolash', 'Bajarilgan muolajalar…'],
+  ['natija', 'Natija', 'Natija va kuzatuv…'],
+]
+export const emptyNotes = () => Object.fromEntries(CLINIC_SECTIONS.map(([id]) => [id, '']))
+// Matn: qisqa tavsif + to‘ldirilgan bo‘limlar sarlavhasi bilan (admin va eski ko‘rinishlar ham o‘qiydi).
+export function composeCaseBody(summary, notes = {}) {
+  const parts = CLINIC_SECTIONS.map(([id, label]) => [label, String(notes[id] || '').trim()]).filter(([, t]) => t).map(([l, t]) => `${l}: ${t}`)
+  return [String(summary || '').trim(), ...parts].filter(Boolean).join('\n\n')
+}
+export const IMAGE_TAGS = [['', 'Belgisiz'], ['oldin', 'Oldin'], ['keyin', 'Keyin']]
+
 export const EMPTY_POST_ERROR = 'Sarlavha va matnni kiriting'
 export const CONSENT_ERROR = 'Klinik keys yoki rasmli post uchun bemor roziligi belgilanishi kerak.'
 
@@ -77,17 +95,18 @@ const subscribe = (fn) => {
   return () => subs.delete(fn)
 }
 
-const ago = (iso) => {
+// Nisbiy vaqt haqiqiy created_at dan; lenta har daqiqada qayta hisoblanadi (pastdagi taymer).
+export const ago = (iso, now = Date.now()) => {
   const t = Date.parse(iso)
   if (!t) return ''
-  const s = Math.max(0, (Date.now() - t) / 1000)
+  const s = Math.max(0, (now - t) / 1000)
   if (s < 60) return 'Hozir'
-  if (s < 3600) return `${Math.floor(s / 60)} daq oldin`
+  if (s < 3600) return `${Math.floor(s / 60)} daqiqa oldin`
   if (s < 86400) return `${Math.floor(s / 3600)} soat oldin`
   if (s < 7 * 86400) return `${Math.floor(s / 86400)} kun oldin`
   return new Date(t).toLocaleDateString('ru-RU', { timeZone: 'Asia/Tashkent' })
 }
-const person = (a) => ({ authorId: a?.id || null, name: displayName(a), avatar: a?.avatar || '', role: a?.role || 'Stomatolog' })
+const person = (a) => ({ authorId: a?.id || null, name: displayName(a), avatar: realAvatar(a?.avatar), role: a?.role || 'Stomatolog' })
 
 function fromRow(r) {
   const au = person(r.author)
@@ -103,7 +122,9 @@ function fromRow(r) {
     else top.push(c)
   })
   top.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-  const images = Array.isArray(r.images) ? r.images.filter(Boolean) : []
+  const images = Array.isArray(r.images) ? r.images.map((x) => (typeof x === 'string' ? x : x?.src)).filter(Boolean) : []
+  const meta = r.meta && typeof r.meta === 'object' ? r.meta : {}
+  const labels = Array.isArray(meta.labels) ? meta.labels : images.map((_, i) => (typeof r.images[i] === 'object' ? r.images[i]?.tag || '' : ''))
   return {
     id: r.id,
     kind: r.kind || 'muhokama',
@@ -119,8 +140,12 @@ function fromRow(r) {
     title: r.title || '',
     body: r.body || '',
     images,
+    labels: images.map((_, i) => labels[i] || ''),
+    meta,
     tags: Array.isArray(r.tags) ? r.tags : [],
-    layout: images.length >= 3 ? 'mosaic' : undefined,
+    layout: labels.includes('oldin') && labels.includes('keyin') ? 'ba' : images.length >= 3 ? 'mosaic' : undefined,
+    solvedId: r.solved_comment_id || null,
+    solved: !!r.solved_comment_id,
     consent: !!r.consent,
     hiddenByAdmin: !!r.hidden,
     likes: 0,
@@ -150,8 +175,18 @@ export function reloadFeed() {
 reloadFeed()
 onAccount(() => { reloadFeed() })
 
+// Nisbiy vaqtni har daqiqada yangilash
+let minute = Math.floor(Date.now() / 60000)
+if (typeof window !== 'undefined') {
+  window.setInterval(() => {
+    const m = Math.floor(Date.now() / 60000)
+    if (m !== minute) { minute = m; set({ tick: m }, false) }
+  }, 15000)
+}
+const retime = (c, now) => ({ ...c, time: c.createdAt ? ago(c.createdAt, now) : c.time, replies: Array.isArray(c.replies) ? c.replies.map((x) => retime(x, now)) : [] })
 const visible = () => {
-  if (state.live) return state.posts
+  const now = Date.now()
+  if (state.live) return state.posts.map((p) => ({ ...retime(p, now), comments: p.comments.map((c) => retime(c, now)) }))
   const ids = new Set(state.legacy.map((p) => p?.id))
   return [...state.legacy.map(legacyNorm), ...seedPosts.filter((p) => p && p.id != null && !p._pending && !ids.has(p.id)).map(legacyNorm)]
 }
@@ -177,13 +212,30 @@ const toggle = (s, id) => {
 
 export const countComments = (p) => (Array.isArray(p.comments) ? p.comments.reduce((s, c) => s + 1 + (c.replies?.length || 0), 0) : Number(p.comments) || 0)
 
+// Klientda siqish: uzun tomoni ≤1600px, WebP (bo‘lmasa JPEG), sifat 0.82.
+export async function compressImage(blob, max = 1600) {
+  if (!blob?.type?.startsWith('image/') || blob.type === 'image/gif' || typeof document === 'undefined') return blob
+  try {
+    const bmp = await window.createImageBitmap(blob)
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height))
+    const c = document.createElement('canvas')
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height)
+    bmp.close?.()
+    const enc = (type) => new Promise((ok) => c.toBlob((b) => ok(b), type, 0.82))
+    let out = await enc('image/webp')
+    if (!out || out.type !== 'image/webp') out = await enc('image/jpeg')
+    return out && (out.size < blob.size || k < 1) ? out : blob
+  } catch { return blob }
+}
+
 // data:/blob: rasmlarni ommaviy 'avatars' bucketiga ({uid}/posts/...) yuklaydi.
 async function storeImage(src, i) {
   const s = String(src || '')
   if (!/^(data|blob):/.test(s)) return s
   const uid = currentUid()
   if (!supabase || !uid) throw new Error('Rasm yuklash uchun tizimga kiring')
-  const blob = await (await fetch(s)).blob()
+  const blob = await compressImage(await (await fetch(s)).blob())
   const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg'
   const path = `${uid}/posts/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}.${ext}`
   const { error } = await supabase.storage.from('avatars').upload(path, blob, { contentType: blob.type || 'image/jpeg', upsert: false })
@@ -217,7 +269,7 @@ export const feed = {
         body: post.body.trim(),
         images,
         tags: post.tags || [],
-        meta: post.meta || {},
+        meta: { ...(post.meta || {}), labels: post.labels || [] },
         consent: !!post.consent,
       }
       const { error } = await supabase.from('community_posts').insert(row)
@@ -232,7 +284,7 @@ export const feed = {
     try {
       const images = await Promise.all((patch.images || []).map(storeImage))
       const { data, error } = await supabase.from('community_posts')
-        .update({ kind: patch.kind, topic: patch.topic || '', title: patch.title.trim(), body: patch.body.trim(), images, consent: !!patch.consent })
+        .update({ kind: patch.kind, topic: patch.topic || '', title: patch.title.trim(), body: patch.body.trim(), images, consent: !!patch.consent, ...(patch.meta || patch.labels ? { meta: { ...(patch.meta || {}), labels: patch.labels || [] } } : {}) })
         .eq('id', id).select('id')
       if (error) return fail(error)
       if (!data?.length) return fail('Faqat muallif tahrirlay oladi')
@@ -273,6 +325,15 @@ export const feed = {
     const { data, error } = await supabase.from('community_comments').delete().eq('id', cid).select('id')
     if (error) return fail(error)
     if (!data?.length) return fail('Faqat muallif o‘chira oladi')
+    await reloadFeed()
+    return { ok: true }
+  },
+  // «Eng yaxshi javob» — server faqat savol muallifiga ruxsat beradi. cid = null => belgini olish.
+  async markBest(postId, cid) {
+    const why = need()
+    if (why) return fail(why)
+    const { error } = await supabase.rpc('community_mark_best', { p_post: postId, p_comment: cid || null })
+    if (error) return fail(error)
     await reloadFeed()
     return { ok: true }
   },

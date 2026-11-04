@@ -6,7 +6,8 @@ import { useCart } from '../cart'
 import { useProfile } from '../profileStore'
 import { fetchNotifications } from '../buyerApi'
 import { pickDisplayName, signOut, useSession } from '../sessionStore'
-import { initialsOf, looksLikeDemoName } from '../demoPurge'
+import { looksLikeDemoName } from '../demoPurge'
+import UserAvatar, { realAvatar } from './UserAvatar'
 
 // variant="home" — bosh sahifa dizayni, variant="shop" — marketplace sahifalari
 // search (faqat shop): "image" — "Rasm orqali qidirish" tugmasi, "icon" — faqat kamera ikonkasi, "plain" — oddiy qidiruv
@@ -24,7 +25,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const who = !authed ? 'Mehmon' : (looksLikeDemoName(rawName) && remoteName && !looksLikeDemoName(remoteName) ? remoteName : (pickDisplayName(rawName, remoteName) || 'Shifokor'))
   const role = !authed ? 'Hisobga kiring' : (profile.accountLive ? (profile.role || session.profile?.specialty || '') : (session.profile?.specialty || profile.role || '')) || '—'
   const avatarUrl = (profile.accountLive ? profile.avatar : '') || session.profile?.avatar_url || ''
-  const showInitials = authed && !avatarUrl
+  const showInitials = authed && !realAvatar(avatarUrl)
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const cartFrom = pathname.startsWith('/forma') ? 'forma' : pathname.startsWith('/jihoz') ? 'jihoz' : 'market'
@@ -138,11 +139,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
           </button>
         ) : (
         <button type="button" onClick={() => navigate(authed ? '/profil' : '/kirish')} className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-1.5 hover:bg-page">
-          {showInitials ? (
-            <span className="grid size-[26px] place-items-center rounded-full bg-sea-50 text-[10px] font-bold text-sea">{initialsOf(who)}</span>
-          ) : (
-            <img src={avatarUrl || (shop ? '/images/market/avatar2.jpg' : '/images/avatar.jpg')} alt="" className="size-[26px] rounded-full object-cover" />
-          )}
+          {shop && !realAvatar(avatarUrl) && !showInitials ? <img src="/images/market/avatar2.jpg" alt="" className="size-[26px] rounded-full object-cover" /> : <UserAvatar src={avatarUrl} name={who} className="size-[26px]" textClass="text-[10px]" />}
           <span className="hidden text-left leading-tight xl:block">
             {session.status === 'loading' && !profile.accountLive ? <>
               <span aria-hidden="true" className="block h-[11px] w-16 animate-pulse rounded bg-[#e8eef2]" />
