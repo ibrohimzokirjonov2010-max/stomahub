@@ -508,7 +508,9 @@ function AddModal({ onClose }) {
           <textarea value={f.note} maxLength={500} onChange={(e) => set('note', e.target.value)} placeholder="Qo‘shimcha ma’lumot (ixtiyoriy)" className="h-14 w-full resize-none rounded-lg border border-line px-2 py-1.5 text-[12.5px] outline-none" />
           <span className="mt-0.5 block text-right text-[10px] text-muted">{f.note.length}/500</span>
         </Field>
-        {err && <p className="mt-2 text-[12px] text-sale">Ism, familiya, telefon va tug‘ilgan sana majburiy.</p>}
+        {err && (f.first.trim() && f.last.trim() && f.birth && f.city && f.phone && !isCompleteUzPhone(f.phone)
+          ? <p className="mt-2 text-[12px] text-sale">Telefon raqami noto‘g‘ri (+998 XX XXX XX XX)</p>
+          : <p className="mt-2 text-[12px] text-sale">{f.phone && !isCompleteUzPhone(f.phone) ? 'Ism, familiya va tug‘ilgan sana majburiy. Telefon raqami noto‘g‘ri (+998 XX XXX XX XX)' : 'Ism, familiya, telefon va tug‘ilgan sana majburiy.'}</p>)}
         </div>
         <div className="bemor-dialog-foot flex items-center justify-between border-t border-line px-4 py-3">
           <button onClick={onClose} className="h-9 rounded-lg border border-line px-5 text-[13px] font-semibold">Bekor qilish</button>

@@ -4,7 +4,7 @@ import {
   Calendar, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, Clock, Download,
   Filter, Mail, MapPin, MessageSquare, Pencil, QrCode, Search, Send, Shield, Users,
 } from 'lucide-react'
-import { downloadText, generateCerts, issueCert, newestSeminar, useHub } from '../../hubStore'
+import { certIssueBlock, downloadText, generateCerts, issueCert, newestSeminar, useHub } from '../../hubStore'
 import { useOrg } from '../Shell'
 import { Avatar, Modal, QrMark } from '../ui'
 import { CertFrame, MiniCert } from './certArt'
@@ -105,6 +105,8 @@ export default function Certificates() {
   const certCme = cmeLabel(certSem)
 
   const issue = (c) => {
+    const blocked = certIssueBlock(c.id)
+    if (blocked) { notify(blocked); return }
     issueCert(c.id)
     setSelected(c.id)
     notify('Sertifikat berildi. Avtomatik yuborish ulanmagan — yuklab olib ishtirokchiga ulashing')
@@ -140,6 +142,8 @@ export default function Certificates() {
   })
 
   const sendMobile = (id) => {
+    const blocked = certIssueBlock(id)
+    if (blocked) { notify(blocked); return }
     const code = issueCert(id)
     notify(`Sertifikat berildi · ${code}. Avtomatik yuborish ulanmagan — yuklab olib ishtirokchiga ulashing`)
   }
@@ -199,7 +203,10 @@ export default function Certificates() {
           setTab={setMTab}
           onSendAll={() => {
             const made = generateCerts()
-            const waiting = mobile.filter((r) => r.state === 'wait')
+            const all = mobile.filter((r) => r.state === 'wait')
+            const blocked = all.map((r) => certIssueBlock(r.id)).find(Boolean)
+            const waiting = all.filter((r) => !certIssueBlock(r.id))
+            if (!waiting.length && blocked) { notify(blocked); return }
             waiting.forEach((r) => issueCert(r.id))
             if (!made && !waiting.length) { notify('Berilmagan sertifikat yo‘q. Sertifikat faqat kirishi tasdiqlangan ishtirokchilarga yaratiladi'); return }
             notify(`${waiting.length} ta sertifikat berildi${made ? `, ${made} ta yangi yaratildi — ularni ham berish uchun yana bosing` : ''}. Avtomatik yuborish ulanmagan`)
@@ -653,7 +660,7 @@ function Mobile(p) {
                 <span className="block truncate text-[10.5px] text-[#9aa8ae]">{r.phone}</span>
               </span>
             </span>
-            <span>{r.state === 'done' ? <MiniCert /> : null}</span>
+            <span>{r.state === 'done' ? <MiniCert name={r.name} /> : null}</span>
             <span>
               {r.state === 'done' ? (
                 <>

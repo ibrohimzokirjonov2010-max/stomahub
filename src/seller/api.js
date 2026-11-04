@@ -131,12 +131,15 @@ export function monthStats(orders, month) {
 
 export function popularProducts(orders, products, limit = 4) {
   const sold = new Map()
+  const inOrders = new Map()
   realOrders(orders).filter((o) => !isCancelled(o)).forEach((o) => (o.items || []).forEach((it) => {
     const p = products.find((x) => x.id === it.product_id || (!it.product_id && x.name === it.name)); if (!p) return; const k = p.id
     sold.set(k, (sold.get(k) || 0) + Number(it.qty || 0))
+    if (!inOrders.has(k)) inOrders.set(k, new Set())
+    inOrders.get(k).add(o.id)
   }))
   return products
-    .map((p) => ({ ...p, sold: sold.get(p.id) || 0 }))
+    .map((p) => ({ ...p, sold: sold.get(p.id) || 0, orderCount: inOrders.get(p.id)?.size || 0 }))
     .filter((p) => p.sold > 0)
     .sort((a, b) => b.sold - a.sold)
     .slice(0, limit)

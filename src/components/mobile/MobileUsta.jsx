@@ -93,7 +93,7 @@ function UstaView({ id }) {
             <div className="min-w-0 flex-1 pt-0.5">
               <h1 className="flex items-center gap-1 text-[19px] font-extrabold leading-tight text-[#0d2a4a]"><span className="truncate">{m.name}</span>{m.verified && <BadgeCheck className="size-5 shrink-0 fill-sea text-white" />}</h1>
               <p className="mt-0.5 truncate text-[12px] text-[#7d8fa9]">{m.role}</p>
-              <p className="mt-1 flex items-center gap-1 text-[12px] text-ink-2"><Star className="size-4 fill-star text-star" /> <b className="font-bold text-ink">{m.rating}</b> <span className="text-muted">({total} ta baho)</span></p>
+              <p className="mt-1 flex items-center gap-1 text-[12px] text-ink-2">{Number(total) > 0 ? <><Star className="size-4 fill-star text-star" /> <b className="font-bold text-ink">{m.rating}</b> <span className="text-muted">({total} ta baho)</span></> : 'Hali baho yo‘q'}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-ink-2">
                 <span className="flex items-center gap-1"><BriefcaseBusiness className="size-3.5 text-muted" /> {m.years} yil tajriba</span>
                 <span className="flex items-center gap-1"><MapPin className="size-3.5 text-muted" /> {m.city}</span>

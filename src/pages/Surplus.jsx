@@ -218,8 +218,8 @@ function Meta({ item }) {
       <div className="mt-1.5 flex items-center gap-1.5 text-[9px]">
         <img src={item.seller.avatar} alt="" className="size-[15px] rounded-full object-cover" />
         <span className="mr-1.5 font-medium text-ink">{item.seller.name}</span>
-        <Star className="size-[10px] fill-star text-star" />
-        <span className="text-ink-2">{item.rating} ({item.reviews})</span>
+        {Number(item.reviews) > 0 ? <><Star className="size-[10px] fill-star text-star" />
+        <span className="text-ink-2">{item.rating} ({item.reviews})</span></> : <span className="text-muted">Hali baho yo‘q</span>}
       </div>
     </>
   )

@@ -346,7 +346,7 @@ function Teacher({ c }) {
 function Meta({ c }) {
   return (
     <div className="mt-1">
-      <p className="flex items-center gap-1 text-[9.5px] text-ink-2"><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews} ta sharh)</span></p>
+      <p className="flex items-center gap-1 text-[9.5px] text-ink-2">{Number(c.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews} ta sharh)</span></> : 'Hali baho yo‘q'}</p>
       <p className="mt-0.5 text-[9.5px] text-ink-2">{c.lessons} dars · {c.hours} soat · O‘zbek</p>
     </div>
   )

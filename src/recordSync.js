@@ -203,7 +203,9 @@ export function registerCatalog(kind, list) {
 
 // job: 248 ta egasiz demo vakansiya, deal: soxta reyting/sotuvli demo aksiyalar, channel: o‘ylab topilgan obunachi sonli demo kanallar.
 // surplus: egasiz demo ‘Ortiqcha’ e’lonlari (Filtek, Straumann…) — haqiqiy emas.
-const SEED_KINDS = new Set(['course', 'certificate', 'book', 'job', 'deal', 'channel', 'surplus'])
+// QA2: uniform (Forma), master (Ustalar), device (Jihoz), doctor (Mutaxassislar), ad (E’lonlar) — egasiz seed qatorlar
+// soxta reyting/sharh/ish soni bilan va sotuvchisiz (savatga tushsa buyurtmani hech kim olmaydi) — ko‘rsatilmaydi.
+const SEED_KINDS = new Set(['course', 'certificate', 'book', 'job', 'deal', 'channel', 'surplus', 'uniform', 'master', 'device', 'doctor', 'ad'])
 // kind:id of rows that have a real owner (seller/organizer). Ratings/discounts are only trusted on these.
 const ownedRows = new Set()
 export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)

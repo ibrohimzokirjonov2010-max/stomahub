@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { priceDigits, priceFmt } from '../../lib/priceInput'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, LayoutGrid, ChevronDown, Heart, MapPin, X, Check, Camera, ImagePlus } from 'lucide-react'
 import { ensureLogin } from '../../loginPrompt'
@@ -346,11 +347,11 @@ export function PostSheet({ onClose, onSubmit }) {
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div>
           <p className="text-[12px] font-semibold text-ink">Narxi (so‘m) *</p>
-          <input inputMode="numeric" value={money(f.price)} onChange={(e) => patch({ price: e.target.value })} placeholder="850 000" className={`mt-1 ${field} ${err('price')}`} />
+          <input inputMode="numeric" value={priceFmt(f.price)} onChange={(e) => patch({ price: priceDigits(e.target.value) })} placeholder="850 000" className={`mt-1 ${field} ${err('price')}`} />
         </div>
         <div>
           <p className="text-[12px] text-ink-2">Asl narxi (yangi)</p>
-          <input inputMode="numeric" value={money(f.oldPrice)} onChange={(e) => patch({ oldPrice: e.target.value })} placeholder="1 200 000" className={`mt-1 ${field}`} />
+          <input inputMode="numeric" value={priceFmt(f.oldPrice)} onChange={(e) => patch({ oldPrice: priceDigits(e.target.value) })} placeholder="1 200 000" className={`mt-1 ${field}`} />
         </div>
       </div>
       {tried && errors.price && <p className="mt-1 text-[11px] text-sale">{errors.price}</p>}

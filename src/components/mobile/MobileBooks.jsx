@@ -201,7 +201,7 @@ function BookCard({ b, fmt, qty, liked, onLike, onAdd, onInc, onDec }) {
         <p className="mt-0.5 truncate text-[11px] text-muted">{b.author}</p>
       </Link>
       <p className="mt-1 flex items-center gap-1 px-0.5 text-[11px] text-ink-2">
-        <Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{b.rating}</b> <span className="truncate text-muted">({b.reviews} ta baho)</span>
+        {Number(b.reviews) > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{b.rating}</b> <span className="truncate text-muted">({b.reviews} ta baho)</span></> : 'Hali baho yo‘q'}
       </p>
       <span className={`mx-0.5 mt-1.5 w-fit rounded-md px-1.5 py-0.5 text-[10px] font-medium ${fmt === 'pdf' ? 'bg-[#e4f6ec] text-[#1f9d63]' : 'bg-[#e6f0fc] text-[#1f6fd1]'}`}>{fmt === 'pdf' ? 'PDF kitob' : 'Bosma kitob'}</span>
       <p className="mt-1.5 px-0.5 text-[15px] font-extrabold text-[#0d2a4a]">{money(bookPrice(b, fmt))}</p>

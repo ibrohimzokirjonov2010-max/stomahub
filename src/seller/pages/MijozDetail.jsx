@@ -4,6 +4,7 @@ import { ArrowLeft, Pencil, ShoppingCart, MessageSquare, Percent, Ban, UserRound
 import { useSellerData, updateRow, deleteRow, useAsync, netOf } from '../api'
 import { num, som, dmy, hm } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Input, Menu, Err, Pager, usePaged, Chips, Select } from '../components/ui'
+import { placeLabel } from './Mijozlar'
 import Empty from '../components/shell/Empty'
 import Modal from '../components/shell/Modal'
 import Confirm from '../components/shell/Confirm'
@@ -84,7 +85,7 @@ export default function MijozDetail() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               <Info icon={UserRound} l="Mas’ul shaxs">{c.contact_person || '—'}</Info>
               <Info icon={Phone} l="Telefon">{c.phone || '—'}</Info>
-              <Info icon={MapPin} l="Shahar">{c.city || '—'}{c.region && c.region !== 'Toshkent shahri' ? `, ${c.region}` : ''}</Info>
+              <Info icon={MapPin} l="Shahar">{c.city ? placeLabel(c) : '—'}{c.region && c.region !== 'Toshkent shahri' ? `, ${c.region}` : ''}</Info>
               <Info icon={MapPin} l="Manzil">{c.address || '—'}</Info>
               <Info icon={FileDigit} l="STIR">{c.stir || '—'}</Info>
               <Info icon={FileText} l="Izoh">{c.note || '—'}</Info>
@@ -121,7 +122,7 @@ export default function MijozDetail() {
       <div className="md:hidden">
         <div className="-mx-4 -mt-4 flex items-center justify-between bg-white px-4 py-3"><button type="button" aria-label="Ortga" onClick={() => navigate('/sotuvchi/mijozlar')} className="text-[#0F766E]"><ArrowLeft className="size-6" /></button><h1 className="text-[18px] font-bold">Mijoz tafsiloti</h1><Menu icon={Ellipsis} items={[['Teg qo‘shish', () => setTagOpen(true), Plus], ['Shaxsiy chegirma', () => setDisc(c.personal_discount || ''), Percent], ['Xabar yozish', write, MessageSquare], [c.blocked ? 'Blokdan chiqarish' : 'Bloklash', block, Ban], ...(mk ? [[c.hidden ? 'Ro‘yxatda ko‘rsatish' : 'Ro‘yxatdan yashirish', () => (c.hidden ? hide() : setDel(true)), EyeOff]] : [])]} /></div>
         <div className="-mx-4 bg-white px-4 pb-4">
-          <div className="flex gap-4"><span className="grid size-[74px] shrink-0 place-items-center rounded-full bg-[#E3F4F2] text-[24px] font-semibold text-[#0F766E]">{initials(c.contact_person || c.name)}</span><div className="min-w-0 text-[12.5px] text-[#5C6E80]"><div className="flex items-center gap-1.5 text-[17px] font-bold text-[#10283F]">{c.contact_person || c.name}<SourceBadge c={c} /></div>{c.contact_person && <div className="text-[14px]">{c.name}</div>}<div className="mt-1 flex items-center gap-1.5"><Phone className="size-4 text-[#0F766E]" />{c.phone || '—'}</div><div className="flex items-start gap-1.5"><MapPin className="mt-0.5 size-4 shrink-0 text-[#0F766E]" />{[c.city && `${c.city} shahri`, c.address].filter(Boolean).join(', ') || '—'}</div></div></div>
+          <div className="flex gap-4"><span className="grid size-[74px] shrink-0 place-items-center rounded-full bg-[#E3F4F2] text-[24px] font-semibold text-[#0F766E]">{initials(c.contact_person || c.name)}</span><div className="min-w-0 text-[12.5px] text-[#5C6E80]"><div className="flex items-center gap-1.5 text-[17px] font-bold text-[#10283F]">{c.contact_person || c.name}<SourceBadge c={c} /></div>{c.contact_person && <div className="text-[14px]">{c.name}</div>}<div className="mt-1 flex items-center gap-1.5"><Phone className="size-4 text-[#0F766E]" />{c.phone || '—'}</div><div className="flex items-start gap-1.5"><MapPin className="mt-0.5 size-4 shrink-0 text-[#0F766E]" />{[c.city && placeLabel(c), c.address].filter(Boolean).join(', ') || '—'}</div></div></div>
           <button type="button" onClick={() => setEdit(true)} className="mt-4 flex items-center gap-2 rounded-full bg-[#0F766E] px-5 py-2.5 text-[13px] text-white"><Pencil className="size-4" />Mijoz profilini tahrirlash</button>
         </div>
         <div className="mt-3 grid grid-cols-4 divide-x divide-[#CCFBF1] rounded-xl bg-[#F0FDFA] py-3 text-[11px] text-[#5C6E80]">

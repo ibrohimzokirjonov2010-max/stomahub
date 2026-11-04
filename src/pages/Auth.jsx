@@ -253,7 +253,10 @@ function Auth({ mode }) {
   const bot = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
   const finishing = useRef(false)
 
-  useEffect(() => { setIntendedRole(roleIntent) }, [roleIntent])
+  // Rol faqat foydalanuvchi uni o‘zgartirganda yoki kirish boshlanganda yoziladi; /kirish ochilishining o‘zi
+  // (chiqishdan keyin yo‘naltirish) mehmon uchun stomahub-auth-role ni qayta yozmasligi kerak (QA2 #10)
+  const roleTouched = useRef(false)
+  useEffect(() => { if (roleTouched.current) setIntendedRole(roleIntent); roleTouched.current = true }, [roleIntent])
 
   const destination = (role) => next || (role === 'organizer' ? '/tashkilotchi' : role === 'seller' ? '/sotuvchi' : '/klinika')
 

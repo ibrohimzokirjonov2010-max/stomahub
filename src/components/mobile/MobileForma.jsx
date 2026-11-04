@@ -229,7 +229,7 @@ function FormaCard({ p, liked, onLike, added, onAdd }) {
         <p className="text-[10.5px] text-muted">{p.brand}</p>
         <h3 className="truncate text-[12.5px] font-bold text-[#0d2a4a]">{p.title}</h3>
         <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-ink-2">
-          <Star className="size-3 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)
+          {Number(p.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta baho)</> : 'Hali baho yo‘q'}
         </p>
         <div className="mt-1.5 flex items-center gap-1.5">
           <span className="flex shrink-0 -space-x-0.5">

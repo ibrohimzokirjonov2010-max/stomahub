@@ -142,7 +142,7 @@ function UstaCard({ m, onCall, onOrder, onWorks, onOpen }) {
           <Link to={`/ustalar/${m.id}`} className="min-w-0 flex-1">
             <p className="flex items-center gap-1 text-[14px] font-bold leading-tight text-[#0d2a4a]"><span className="truncate">{m.name}</span>{m.verified && <BadgeCheck className="size-4 shrink-0 fill-sea text-white" />}</p>
             <p className="mt-0.5 truncate text-[10.5px] text-[#5f8f93]">{m.role}</p>
-            <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] text-ink-2"><Star className="size-3.5 fill-star text-star" /> <b className="font-bold text-ink">{m.rating}</b> <span className="text-muted">({m.reviews} ta baho)</span></p>
+            <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[11px] text-ink-2">{Number(m.reviews) > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-bold text-ink">{m.rating}</b> <span className="text-muted">({m.reviews} ta baho)</span></> : 'Hali baho yo‘q'}</p>
             <p className="mt-1 flex items-center gap-2 whitespace-nowrap text-[10.5px] text-ink-2">
               <span className="flex items-center gap-0.5"><BriefcaseBusiness className="size-3 text-muted" /> {m.years} yil tajriba</span>
               <span className="flex min-w-0 items-center gap-0.5"><MapPin className="size-3 shrink-0 text-muted" /> <span className="truncate">{m.city}</span></span>

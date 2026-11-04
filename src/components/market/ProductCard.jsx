@@ -42,7 +42,7 @@ export function LikeButton({ className = '', productId = '', favKey = 'favProduc
 }
 
 export function Rating({ rating, reviews }) {
-  if (!Number(rating)) return <p className="text-[8.5px] text-muted">Hali baho yo‘q</p>
+  if (!Number(rating) || !Number(reviews)) return <p className="text-[8.5px] text-muted">Hali baho yo‘q</p>
   return (
     <p className="flex items-center gap-1 text-[8.5px] text-muted">
       <Star className="size-[10px] fill-star text-star" />

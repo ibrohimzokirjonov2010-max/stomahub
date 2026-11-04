@@ -1,4 +1,5 @@
 import { tashkentToday } from '../../../tashkentDate'
+import { priceDigits, priceFmt } from '../../../lib/priceInput'
 import { useEffect, useMemo, useState } from 'react'
 import { UserRound, MapPin, Box, Truck, CalendarDays, CreditCard, FileText, Search, Plus, Minus, Trash2, Store, X, Check, Info, Banknote, Calculator, Tag } from 'lucide-react'
 import Modal from '../shell/Modal'
@@ -183,7 +184,7 @@ export default function OrderForm({ open, onClose, onCreated, presetCustomer }) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <section><H icon={Truck} n={!mobile && 4}>Yetkazib berish usuli</H><Select value={method} onChange={setMethod} options={DELIVERY} />
-              {method !== 'olib_ketish' && <Input className="mt-2" inputMode="numeric" placeholder="Yetkazish narxi (so‘m)" value={fee} onChange={(e) => setFee(e.target.value)} />}</section>
+              {method !== 'olib_ketish' && <Input className="mt-2" inputMode="numeric" placeholder="Yetkazish narxi (so‘m)" value={priceFmt(fee)} onChange={(e) => setFee(priceDigits(e.target.value))} />}</section>
             <section><H icon={CalendarDays} n={!mobile && 5}>Yetkazib berish sanasi</H><input type="date" min={today()} value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} /></section>
             <section><H icon={CreditCard} n={!mobile && 6}>To‘lov usuli</H>
               <div className="flex h-[42px] items-center gap-2 rounded-[10px] border border-[#DCE5E7] bg-[#F4F7F8] px-3 text-[13.5px] text-[#5C6E80]"><Banknote className="size-4" />Naqd</div>

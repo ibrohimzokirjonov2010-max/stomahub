@@ -139,8 +139,8 @@ function DoctorCard({ d, fav, onFav, onChat, onCall }) {
           <button type="button" onClick={onFav} aria-label="Sevimlilarga" aria-pressed={fav} className="-mr-0.5 -mt-0.5 grid size-8 shrink-0 place-items-center"><Heart className={`size-5 ${fav ? 'fill-sale text-sale' : 'text-sea'}`} /></button>
         </div>
         <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[10.5px] text-ink-2">
-          <Stars value={d.rating} size="size-[11px]" /> <b className="font-semibold text-ink">{d.rating}</b>
-          <span className="text-muted">({d.reviews} ta sharh)</span>
+          {Number(d.reviews) > 0 ? <><Stars value={d.rating} size="size-[11px]" /> <b className="font-semibold text-ink">{d.rating}</b>
+          <span className="text-muted">({d.reviews} ta sharh)</span></> : 'Hali baho yo‘q'}
         </p>
         <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-ink-2"><MapPin className="size-3 shrink-0 text-sea" /> <span className="truncate">{d.city}, {d.district}</span></p>
         <p className="mt-1.5 flex items-center gap-2 whitespace-nowrap text-[10px] text-ink-2">

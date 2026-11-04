@@ -347,12 +347,12 @@ function Desktop() {
     notify('Promo-kod nusxalandi')
   }
 
-  const save = () => {
+  const save = async () => {
     const e = validate(form)
     setErr(e)
     if (Object.keys(e).length) return
     const value = Number(form.value)
-    upsertPromo({
+    const res = await upsertPromo({
       id: Date.now(),
       code: form.code.trim().toUpperCase(),
       name: form.name.trim(),
@@ -365,6 +365,7 @@ function Desktop() {
       status: 'faol',
       seminar: picked,
     })
+    if (!res.ok) return notify(res.error || 'Promo-kod saqlanmadi')
     setForm(blank)
     setErr({})
     notify('Promo-kod saqlandi')
@@ -495,7 +496,7 @@ function Desktop() {
                     </td>
                     <td className="px-0.5">
                       <MiniMenu items={[
-                        { label: 'Nusxa yaratish', onClick: () => { upsertPromo({ ...p, id: Date.now(), code: `${p.code.slice(0, 14)}2`, used: 0 }); notify('Nusxa yaratildi') } },
+                        { label: 'Nusxa yaratish', onClick: async () => { const res = await upsertPromo({ ...p, id: Date.now(), code: `${p.code.slice(0, 14)}2`, used: 0 }); notify(res.ok ? 'Nusxa yaratildi' : res.error) } },
                         { label: p.status === 'nofaol' ? 'Faollashtirish' : 'Nofaol qilish', onClick: () => upsertPromo({ ...p, status: p.status === 'nofaol' ? 'faol' : 'nofaol' }) },
                       ]} />
                     </td>
@@ -550,12 +551,12 @@ function Mobile() {
   const [err, setErr] = useState({})
   const [menu, setMenu] = useState(null)
 
-  const save = () => {
+  const save = async () => {
     const e = validate(form)
     setErr(e)
     if (Object.keys(e).length) return
     const value = Number(form.value)
-    upsertPromo({
+    const res = await upsertPromo({
       id: Date.now(),
       code: form.code.trim().toUpperCase(),
       name: form.name.trim(),
@@ -568,6 +569,7 @@ function Mobile() {
       status: 'faol',
       seminar: sem?.id || 'all',
     })
+    if (!res.ok) return notify(res.error || 'Promo-kod saqlanmadi')
     setForm(blank)
     setErr({})
     setOpen(false)

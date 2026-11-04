@@ -212,7 +212,7 @@ function ChannelCard({ c, saved, joined, onSave, onJoin }) {
           {c.tags.map((t) => <span key={t} className="rounded-full bg-[#f3f6fa] px-1.5 py-0.5 text-[8.5px] text-ink-2">{t}</span>)}
         </div>
         <div className="mt-auto flex items-center justify-between gap-1 pt-2">
-          <p className="flex items-center gap-1 text-[9.5px] text-ink-2"><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews})</span></p>
+          <p className="flex items-center gap-1 text-[9.5px] text-ink-2">{Number(c.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews})</span></> : 'Hali baho yo‘q'}</p>
           <button onClick={onJoin} className={`h-[26px] rounded-full px-2.5 text-[10px] font-semibold ${joined ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white hover:bg-sea-600'}`}>
             {joined ? 'Obuna' : 'Obuna bo‘lish'}
           </button>

@@ -54,7 +54,7 @@ function fromStore(id, reg) {
       date: `${s.monthKey || ''}-${day}`, days: Number(s.days) || 1, from, to, online,
       place: online ? 'Onlayn' : [s.city, venue.name].filter(Boolean).join(', ') || 'Manzil keyinroq',
       address: online ? 'Zoom havolasi email orqali yuboriladi' : venue.address || '',
-      image: s.image || '', pos: 'object-center', order: String(reg?.order || ''), plan: reg?.plan || 'Standart',
+      image: s.image || '', pos: 'object-center', order: String(reg?.order || ''), attendee: String(reg?.attendee || reg?.name || '').trim(), plan: reg?.plan || 'Standart',
       price: Number(reg?.price) || 0, method: reg?.method || 'click', months: Number(reg?.months) || 0, cme: Number(s.cme) || 0,
       ended: /yakunlangan|tugallangan/i.test(String(rec.status || '')),
     }
@@ -75,6 +75,7 @@ export function useMySeminars() {
     server[id] = {
       order: row.code || row.id,
       plan: row.ticket || 'Standart',
+      attendee: row.name || '',
       price: registered[id]?.price,
       method: registered[id]?.method || 'click',
       format: /onlayn/i.test(row.ticket || '') ? 'online' : 'offline',
@@ -247,7 +248,7 @@ export default function MobileSeminarlarim() {
   }
   const cert = async (s) => {
     try {
-      await downloadCertificate(s, profile?.name)
+      await downloadCertificate(s, s.attendee || profile?.name)
       setToast('Sertifikat yuklab olindi')
     } catch {
       setToast('Sertifikatni yuklab bo‘lmadi')
@@ -376,7 +377,7 @@ function TicketSheet({ s, profile, past, onClose, onToast }) {
       await downloadTicket({
         s: { id: s.key, image: s.image, catName: s.cat, title: s.title, speaker: { name: s.speaker } },
         m: { whenFull: dateLabel(s) },
-        reg: { order: s.order, phone: profile?.phone, name: profile?.name, plan: s.plan, price: s.price },
+        reg: { order: s.order, phone: profile?.phone, name: s.attendee || profile?.name, plan: s.plan, price: s.price },
         place: s.online ? 'Onlayn (Zoom)' : s.place,
         methodLabel: s.months ? `${METHOD_LABEL.split} (${s.months} oy)` : METHOD_LABEL[s.method] || 'Click',
       })
@@ -414,7 +415,7 @@ function TicketSheet({ s, profile, past, onClose, onToast }) {
       </div>
       <dl className="mt-3 divide-y divide-[#eef2f4] rounded-xl bg-[#f6faf9] px-3 text-[12.5px]">
         {[
-          [UserRound, 'Ishtirokchi', profile?.name],
+          [UserRound, 'Ishtirokchi', s.attendee || profile?.name],
           [CalendarDays, 'Sana va vaqt', dateLabel(s)],
           [s.online ? Video : MapPin, 'Joy', s.online ? 'Onlayn (Zoom)' : `${s.place}`],
           [Ticket, 'Chipta turi', s.plan],

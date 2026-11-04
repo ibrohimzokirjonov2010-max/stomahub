@@ -73,7 +73,7 @@ function DoctorView({ id }) {
             <p className="flex items-center gap-1 text-[17px] font-extrabold leading-tight text-[#0d2a4a]">{d.name}<BadgeCheck className="size-[18px] shrink-0 fill-[#0b6d73] text-white" /></p>
             <p className="mt-0.5 text-[12.5px] text-[#5f8f93]">{d.role}</p>
             <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-muted"><MapPin className="size-3.5 text-[#0b6d73]" /> {d.city}, {d.district}</p>
-            <p className="mt-1 flex items-center gap-1 text-[11.5px] text-ink-2"><Stars value={d.rating} size="size-3" /> <b className="font-semibold text-ink">{d.rating}</b> <span className="text-muted">({total})</span></p>
+            <p className="mt-1 flex items-center gap-1 text-[11.5px] text-ink-2">{Number(total) > 0 ? <><Stars value={d.rating} size="size-3" /> <b className="font-semibold text-ink">{d.rating}</b> <span className="text-muted">({total})</span></> : 'Hali baho yo‘q'}</p>
           </div>
         </section>
 

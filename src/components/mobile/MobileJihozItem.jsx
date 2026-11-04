@@ -157,8 +157,8 @@ function JihozView({ id }) {
         </div>
         <h1 className="mt-2 text-[21px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{p.title}</h1>
         <p className="mt-1 flex items-center gap-1 text-[12px] text-ink-2">
-          {[1, 2, 3, 4, 5].map((i) => <Star key={i} className={`size-3.5 ${i <= Math.round(p.rating) ? 'fill-star text-star' : 'text-line'}`} />)}
-          <b className="ml-0.5 font-semibold text-ink">{p.rating}</b> ({p.reviews} ta sharh)
+          {Number(p.reviews) > 0 ? <>{[1, 2, 3, 4, 5].map((i) => <Star key={i} className={`size-3.5 ${i <= Math.round(p.rating) ? 'fill-star text-star' : 'text-line'}`} />)}
+          <b className="ml-0.5 font-semibold text-ink">{p.rating}</b> ({p.reviews} ta sharh)</> : 'Hali baho yo‘q'}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <p className="whitespace-nowrap text-[22px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{money(p.price)}</p>
@@ -243,8 +243,7 @@ function JihozView({ id }) {
               <BadgeCheck className="size-4 shrink-0 fill-[#1a73e8] text-white" />
             </p>
             <p className="truncate text-[11px] text-muted">{official ? 'Rasmiy distribyutor' : 'Tekshirilgan sotuvchi'} · Stomatologik jihozlar</p>
-            <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-ink-2"><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">4.9</b> (156 ta baho)</p>
-          </div>
+                      </div>
         </div>
         <button type="button" onClick={() => setSheet('chat')} className="mt-2.5 h-11 w-full rounded-xl border border-sea text-[13.5px] font-semibold text-sea active:bg-sea-50">Sotuvchiga yozish</button>
       </section>

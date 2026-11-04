@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { priceDigits, priceFmt } from '../../../lib/priceInput'
 import { Send, Info, Banknote, Landmark, ImagePlus, Loader2, X, Clock3 } from 'lucide-react'
 import { requestAdTopup, cancelAdTopup, uploadMedia, useAsync, useSellerData, CLICK_TOPUP_ENABLED, startClickTopup } from '../../api'
 import { som, dmy } from '../../format'
@@ -47,7 +48,7 @@ export default function TopupModal({ open, onClose }) {
       <div className="space-y-3.5">
         <div>
           <div className="mb-1.5 text-[13px] font-semibold text-[#10283F]">Summa *</div>
-          <div className="relative"><Input type="number" inputMode="numeric" min={ADS.minTopup} step="1000" value={v.amount} onChange={set('amount')} placeholder="Kamida 50 000" className="pr-12" /><span className="absolute inset-y-0 right-3 grid place-items-center text-[12.5px] text-[#5C6E80]">so‘m</span></div>
+          <div className="relative"><Input inputMode="numeric" value={priceFmt(v.amount)} onChange={(e) => set('amount')(priceDigits(e.target.value))} placeholder="Kamida 50 000" className="pr-12" /><span className="absolute inset-y-0 right-3 grid place-items-center text-[12.5px] text-[#5C6E80]">so‘m</span></div>
           <div className="mt-2 flex flex-wrap gap-2">{[100000, 300000, 500000, 1000000].map((x) => <button key={x} type="button" onClick={() => setV((s) => ({ ...s, amount: String(x) }))} className={`rounded-lg border px-2.5 py-1 text-[12.5px] ${Number(v.amount) === x ? 'border-[#0F766E] bg-[#F0FDFA] text-[#0F766E]' : 'border-[#DCE5E7] hover:border-[#0F766E]'}`}>{som(x)}</button>)}</div>
         </div>
         <div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { priceFmt } from '../../lib/priceInput'
 import { Link } from 'react-router-dom'
 import {
   Calendar, Check, ChevronDown, Crown, Download, Gem, GraduationCap, House, Link2, MapPin,
@@ -243,7 +244,7 @@ function DesktopTickets() {
       {tab === 'settings' && <TicketSettings notify={notify} />}
 
       <TicketModal open={open} initial={editing} onClose={() => { setOpen(false); setEditing(null) }} onSave={saveRow} />
-      <PromoModal open={promo} onClose={() => setPromo(false)} onSave={(code) => { upsertPromo({ id: Date.now(), code, name: code, kind: 'foiz', value: 10, used: 0, limit: 100, from: 'bugun', to: 'ochiq', status: 'faol', seminar: sem?.id || 'all' }); setPromo(false); notify('Promo-kod qo‘shildi') }} />
+      <PromoModal open={promo} onClose={() => setPromo(false)} onSave={async (code) => { const res = await upsertPromo({ id: Date.now(), code, name: code, kind: 'foiz', value: 10, used: 0, limit: 100, from: 'bugun', to: 'ochiq', status: 'faol', seminar: sem?.id || 'all' }); if (!res.ok) return notify(res.error || 'Promo-kod saqlanmadi'); setPromo(false); notify('Promo-kod qo‘shildi') }} />
       <Modal open={design} title="Dizaynni sozlash" onClose={() => setDesign(false)}>
         <p className="text-[13px] text-[#5e787e]">Chipta foni hozircha StomaHub teal uslubida. Tish va implant rasmi namuna chiptada ko‘rinadi.</p>
         <Btn className="mt-4" onClick={() => setDesign(false)}>Tayyor</Btn>
@@ -645,7 +646,7 @@ function TicketForm({ open, initial, onClose, onSave, blank }) {
       <div className="space-y-3">
         <Field label="Chipta turi nomi" req error={err.name}><input className={inputCls(err.name)} value={f.name} onChange={set('name')} placeholder="Masalan: Standart chipta" /></Field>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Narx" req error={err.price}><input className={inputCls(err.price)} value={f.price} onChange={set('price')} placeholder="2 500 000" /></Field>
+          <Field label="Narx" req error={err.price}><input inputMode="numeric" className={inputCls(err.price)} value={f.price} onChange={(e) => setF({ ...f, price: priceFmt(e.target.value) })} placeholder="2 500 000" /></Field>
           <Field label="Joylar soni" req error={err.seats}><input className={inputCls(err.seats)} value={f.seats} onChange={set('seats')} placeholder="100" /></Field>
         </div>
         <Field label="Tavsif" hint={`${f.note.length}/500`}><textarea maxLength={500} className={`${inputCls()} h-20 py-2`} value={f.note} onChange={set('note')} /></Field>
