@@ -234,7 +234,7 @@ export default function MobileMarketplace() {
       </div>
 
       {sheet && (
-        <FilterSheet
+        <FilterSheet brands={BRANDS}
           initial={filters}
           count={(f) => apply(f, query, group).length}
           onClose={() => setSheet(false)}
@@ -268,7 +268,7 @@ function LikeBtn({ on, onClick, className = '' }) {
   )
 }
 
-function FilterSheet({ initial, count, onClose, onApply }) {
+function FilterSheet({ brands: BRANDS = [], initial, count, onClose, onApply }) {
   const [f, setF] = useState(initial)
   const patch = (p) => setF((x) => ({ ...x, ...p }))
   const n = count(f)
