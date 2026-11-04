@@ -67,11 +67,16 @@ export function toRow(v) {
     reg_cert_no: v.reg_cert_no.trim(), lot_no: v.lot_no.trim(), storage_temp: v.storage_temp.trim(),
   }
 }
+// Yangi mahsulot formasi uchun lokal qoralama (sahifa yopilsa ham yo‘qolmaydi)
+const DRAFT_KEY = 'sh:seller:product-draft'
+const readDraft = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null') } catch { return null } }
+const hasContent = (v) => !!(v.name?.trim() || v.description?.trim() || v.images?.length || String(v.price || '').trim())
 const missingColumn = (e) => /column|schema cache|0029/i.test(String(e || ''))
 
 export default function ProductForm({ open, onClose, product, onSaved }) {
   const [v, setV] = useState(blank)
   const [up, setUp] = useState(false)
+  const [draftAt, setDraftAt] = useState(null)
   const { busy, error, setError, go } = useAsync()
   const fileRef = useRef(null)
   const docRef = useRef(null)
@@ -79,8 +84,20 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   useEffect(() => {
     if (!open) return
     setError('')
-    setV(fromProduct(product))
+    const d = !product && readDraft()
+    if (d?.v && hasContent(d.v)) { setV({ ...blank, ...d.v }); setDraftAt(d.at); toast('Qoralama tiklandi') } else { setV(fromProduct(product)); setDraftAt(null) }
   }, [open, product, setError])
+  // Avtosaqlash: yangi mahsulot uchun 800 ms kechikish bilan
+  useEffect(() => {
+    if (!open || product) return
+    const t = setTimeout(() => {
+      try {
+        if (hasContent(v)) { const at = Date.now(); localStorage.setItem(DRAFT_KEY, JSON.stringify({ v, at })); setDraftAt(at) }
+      } catch { /* storage to‘lgan */ }
+    }, 800)
+    return () => clearTimeout(t)
+  }, [v, open, product])
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY) } catch { /* */ } setDraftAt(null) }
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e?.target ? e.target.value : e }))
   const setVar = (i, k, val) => setV((s) => ({ ...s, variants: s.variants.map((x, j) => (j === i ? { ...x, [k]: val } : x)) }))
   const setList = (key, i, k, val) => setV((s) => ({ ...s, [key]: s[key].map((x, j) => (j === i ? (Array.isArray(x) ? x.map((y, n) => (n === k ? val : y)) : { ...x, [k]: val }) : x)) }))
@@ -135,6 +152,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     if (res?.ok) {
       logActivity(product ? 'Mahsulot tahrirlandi' : 'Mahsulot qo‘shildi', row.name)
       toast(product ? 'O‘zgarishlar saqlandi' : asDraft ? 'Qoralama saqlandi' : 'Mahsulot tekshiruvga yuborildi')
+      if (!product) clearDraft()
       onSaved?.(res.data); onClose()
     }
   }
@@ -146,6 +164,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
         <Info className="mt-0.5 size-5 shrink-0 text-[#0F766E]" />
         <div><div className="text-[13.5px] font-semibold text-[#10283F]">Komissiya 12%</div><div className="text-[12px] text-[#5C6E80]">Sotilgan har bir mahsulot uchun StomaHub komissiya sifatida 12% ni oladi. To‘lov faqat naqd.</div></div>
       </div>
+      {!product && draftAt && <div className="flex items-center justify-between gap-2 text-[12px] text-[#0F766E] md:hidden"><span>✓ Qoralama saqlandi · {new Date(draftAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</span><button type="button" onClick={() => { clearDraft(); setV(blank) }} className="font-semibold text-[#BE123C]">Tozalash</button></div>}
+      {!product && draftAt && <div className="hidden items-center text-[12px] text-[#0F766E] md:flex">✓ Qoralama saqlandi · <button type="button" onClick={() => { clearDraft(); setV(blank) }} className="ml-1 font-semibold text-[#BE123C]">Tozalash</button></div>}
       <div className="grid grid-cols-2 gap-3 md:flex">
         <Btn variant="outline" icon={mobile ? X : undefined} onClick={onClose} className="h-12 md:w-[120px]">Bekor qilish</Btn>
         {!product && !mobile && <Btn variant="gray" disabled={busy || up} onClick={() => submit(true)} className="h-12">Qoralama</Btn>}
@@ -191,7 +211,6 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
           <div className="mt-2.5 flex flex-wrap gap-2">
             {v.images.map((src, i) => <Thumb key={src} src={src} main={i === 0} onRemove={() => setV((s) => ({ ...s, images: s.images.filter((x) => x !== src) }))} />)}
           </div>
-          <Field label="Tavsif" required className="mt-4"><Textarea value={v.description} onChange={(e) => set('description')(e.target.value.slice(0, 1000))} placeholder="Mahsulot haqida batafsil ma’lumot yozing..." /><span className="mt-1 block text-right text-[11.5px] text-[#5C6E80]">{v.description.length}/1000</span></Field>
         </div>
         {/* main info */}
         <div className="grid grid-cols-2 content-start gap-3 md:pl-5">
@@ -200,6 +219,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
           <Field label="Brend" hint="Ro‘yxatdan tanlang yoki o‘zingiz yozing"><Input list="sh-brands" value={v.brand} onChange={set('brand')} placeholder="Masalan: Zhermack" /></Field>
           <Field label="Ishlab chiqaruvchi davlat"><Select value={v.country} onChange={set('country')} options={COUNTRIES} placeholder="— Tanlang —" /></Field>
           <Field label="Qadoq tarkibi" hint="Masalan: 2 × 50 ml, 4 g"><Input value={v.unit} onChange={set('unit')} placeholder="2 × 50 ml" /></Field>
+          <Field label="Tavsif" required className="col-span-2"><Textarea value={v.description} onChange={(e) => set('description')(e.target.value.slice(0, 1000))} placeholder="Mahsulot haqida batafsil ma’lumot yozing..." /><span className="mt-1 block text-right text-[11.5px] text-[#5C6E80]">{v.description.length}/1000</span></Field>
         </div>
       </div>
 
