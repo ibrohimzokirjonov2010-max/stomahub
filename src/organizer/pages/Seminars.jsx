@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Poster from '../../components/Poster'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Award, Calendar, CalendarDays, ChevronDown, ChevronRight, LayoutGrid, List,
@@ -235,7 +236,7 @@ function Drop({ value, onChange, options, width }) {
 function Banner({ s, className = 'h-[76px] w-[248px]' }) {
   return (
     <div className={`relative flex shrink-0 flex-col justify-between overflow-hidden rounded-[10px] bg-[#0b5962] p-2 ${className}`}>
-      <img src={photoOf(s)} alt="" className="absolute inset-0 size-full object-cover object-[72%_center]" />
+      <Poster src={photoOf(s)} className="absolute inset-0 size-full" imgClassName="object-right" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#085860_0%,#085860_30%,rgba(8,88,96,0.82)_48%,rgba(8,88,96,0.2)_68%,rgba(8,88,96,0)_80%)]" />
       <span className="relative z-10 w-fit rounded-full px-2 py-[3px] text-[10px] font-semibold leading-none text-white" style={{ background: '#129e90' }}>{s.badge}</span>
       <p className="relative z-10 line-clamp-2 max-w-[62%] text-[10.5px] font-semibold leading-[1.15] text-white">{s.title}</p>
@@ -427,10 +428,10 @@ function Mobile() {
           return (
             <article key={s.id} className="relative rounded-[18px] border border-[#eef1f4] bg-white px-3 py-3 shadow-[0_6px_18px_rgb(16_36_58/0.05)]">
               <div className="flex gap-3">
-                <img src={s.image} alt="" className="size-[72px] shrink-0 rounded-xl object-cover" style={{ objectPosition: s.pos }} />
+                <Poster src={s.image} className="aspect-video w-[112px] shrink-0 self-start rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-org-teal">{s.cat}</span>
+                    <span className="line-clamp-2 min-w-0 flex-1 break-words text-[12px] font-medium leading-tight text-org-teal">{s.cat}</span>
                     <span className="inline-flex shrink-0 items-center gap-1 text-[12px] font-semibold" style={{ color: st.text }}>
                       <span className="size-[7px] rounded-full" style={{ background: st.dot }} />
                       {st.label}

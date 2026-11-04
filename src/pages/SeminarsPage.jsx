@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Poster from '../components/Poster'
 import { Link } from 'react-router-dom'
 import {
   LayoutGrid, Crosshair, Microscope, Smile, Sparkles, Activity, Scissors, Ellipsis, ChevronDown, ChevronLeft, ChevronRight,
@@ -211,7 +212,7 @@ function SeminarRow({ item: s, liked, onLike }) {
         <span className="mt-1 text-[9px] text-muted">{s.weekday}</span>
       </Link>
       <Link to={`/seminarlar/${s.id}`} className="overflow-hidden rounded-lg bg-[#eef3f8]" style={{ height: 68 }}>
-        <img src={s.image} alt="" className="size-full object-cover" />
+        <Poster src={s.image} className="size-full" />
       </Link>
       <div className="min-w-0">
         <Link to={`/seminarlar/${s.id}`} className="inline-flex rounded-md bg-sea-50 px-1.5 py-0.5 text-[9px] font-semibold text-sea-600">{seminarChips.find((c) => c.key === s.cat)?.label}</Link>

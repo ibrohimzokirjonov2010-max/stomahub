@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import Poster from '../Poster'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Search, SlidersHorizontal, LayoutGrid, Scissors, Sparkles, HeartPulse, Ellipsis, ChevronDown, Bookmark, CalendarDays,
@@ -165,8 +166,8 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
   const TagIcon = s.online ? Video : UserRound
   return (
     <article className="relative flex gap-2.5 rounded-2xl bg-white p-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-      <Link to={`/seminarlar/${s.id}`} className="relative w-[116px] shrink-0 overflow-hidden rounded-xl bg-[#dfeeee]">
-        <img src={s.image} alt={s.title} className="absolute inset-0 size-full object-cover object-[80%_center]" />
+      <Link to={`/seminarlar/${s.id}`} className="relative w-[128px] shrink-0 self-start overflow-hidden rounded-xl bg-[#dfeeee] aspect-video">
+        <Poster src={s.image} alt={s.title} className="absolute inset-0 size-full" />
         <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full bg-[#0b7f87]/90 px-2 py-[3px] text-[9.5px] font-semibold text-white backdrop-blur-sm">
           <TagIcon className="size-3" /> {s.tag}
         </span>
