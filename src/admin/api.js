@@ -62,6 +62,7 @@ export const reviewAdTopup = (id, action, reason = '') => rpc('admin_review_ad_t
 
 export const listOrders = (a) => rpc('admin_orders_list', { p_tab: a.tab || 'all', p_q: a.q || '', p_page: a.page || 1, p_page_size: a.pageSize || 10 })
 export const orderDetail = (id) => rpc('admin_order_detail', { p_id: id })
+export const orderAction = (id, action, status = '', note = '') => rpc('admin_order_action', { p_id: id, p_action: action, p_status: status, p_note: note })
 
 export const fetchEscrow = (a) => rpc('admin_escrow', { p_page: a.page || 1, p_page_size: a.pageSize || 10, p_q: a.q || '', p_tab: a.tab || 'all' })
 export const releaseEscrow = (id) => rpc('admin_escrow_release', { p_order: id })

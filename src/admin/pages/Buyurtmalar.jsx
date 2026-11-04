@@ -1,7 +1,8 @@
 import { friendlyError } from '../../lib/friendlyError'
 import { useMemo, useState } from 'react'
 import { Eye, ShoppingBag } from 'lucide-react'
-import { listOrders, orderDetail, useAdminList } from '../api'
+import { listOrders, orderAction, orderDetail, useAdminList } from '../api'
+import ConfirmReason from '../components/ConfirmReason'
 import { dmyhm, maskPhone, num, ORDER_STATUS, payLabel, som, fullPhone } from '../format'
 import Modal from '../components/Modal'
 import { PayBadge } from '../components/dashboard/StatusBadge'
@@ -17,6 +18,16 @@ export default function Buyurtmalar() {
   const [pageSize, setPageSize] = useState(10)
   const [detail, setDetail] = useState(null)
   const [msg, setMsg] = useState('')
+  const [act, setAct] = useState(null) // { action, status?, title, text, label, danger, needReason }
+  const [note, setNote] = useState('')
+  const NEXT = { yangi: 'tasdiqlandi', tasdiqlandi: 'tayyorlanmoqda', tayyorlanmoqda: 'yetkazilmoqda', yetkazilmoqda: 'yetkazildi' }
+  const closed = (d) => ['yetkazildi', 'bekor_qilindi'].includes(d?.status)
+  const buyerName = (d) => d?.customer_name || d?.contact_person || 'Xaridor'
+  const sellerName = (d) => d?.seller?.shop_name || d?.seller?.name || 'Sotuvchi'
+  async function runAction(reason = '') {
+    const next = await orderAction(detail.id, act.action, act.status || '', act.action === 'note' ? note : reason)
+    setDetail(next); setNote(next?.admin_note || ''); setMsg('Saqlandi.'); reload()
+  }
 
   const { loading, error, needsMigration, rows, total, counts, extra, reload } = useAdminList(
     () => listOrders({ tab, q, page, pageSize }),
@@ -35,7 +46,7 @@ export default function Buyurtmalar() {
   ], [counts])
 
   async function open(id) {
-    try { setDetail(await orderDetail(id)); setMsg('') }
+    try { const d = await orderDetail(id); setDetail(d); setNote(d?.admin_note || ''); setMsg('') }
     catch (e) { setMsg(friendlyError(e)) }
   }
 
@@ -153,8 +164,8 @@ export default function Buyurtmalar() {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3 text-[13px]">
-              <div><div className="text-[#8A9AA8]">Xaridor</div><div className="font-semibold">{detail.customer_name}</div><a href={`tel:${String(detail.customer_phone || '').replace(/[^\d+]/g, '')}`} className="text-[#0F766E] underline">{fullPhone(detail.customer_phone)}</a></div>
-              <div><div className="text-[#8A9AA8]">Sotuvchi</div><div className="font-semibold">{detail.seller?.shop_name || detail.seller?.name}</div><div>{detail.seller?.city} · {maskPhone(detail.seller?.phone)}</div></div>
+              <div><div className="text-[#8A9AA8]">Xaridor</div><div className="font-semibold">{buyerName(detail)}</div><a href={`tel:${String(detail.customer_phone || '').replace(/[^\d+]/g, '')}`} className="text-[#0F766E] underline">{fullPhone(detail.customer_phone)}</a></div>
+              <div><div className="text-[#8A9AA8]">Sotuvchi</div><div className="font-semibold">{sellerName(detail)}</div><div>{detail.seller?.city} · {maskPhone(detail.seller?.phone)}</div></div>
               <div className="col-span-2"><div className="text-[#8A9AA8]">Manzil</div><div className="font-semibold">{detail.address || '—'}</div></div>
             </div>
             <ul className="space-y-2">
@@ -162,16 +173,45 @@ export default function Buyurtmalar() {
                 <li key={it.id} className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-2.5">
                   {it.image_url ? <img src={it.image_url} alt="" className="size-12 rounded-lg object-cover" /> : <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-[#F0FDFA]"><ShoppingBag className="size-5 text-[#0F766E]/70" /></span>}
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold">{it.name}</div>
+                    <div className="font-semibold">{it.name || it.product_name || 'Mahsulot'}</div>
                     <div className="text-[12px] text-[#5C6E80]">{it.qty} × {som(it.price)}</div>
                   </div>
                   <div className="font-bold text-[#0F766E]">{som(it.total)}</div>
                 </li>
               ))}
             </ul>
+            <div className="rounded-xl border border-[#E6EEF0] p-3">
+              <div className="text-[12.5px] font-semibold text-[#12263a]">Admin amallari</div>
+              {detail.payment_status === 'refunded' && <p className="mt-1 text-[12.5px] text-[#5C6E80]">To‘lov xaridorga qaytarilgan.</p>}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {NEXT[detail.status] && (
+                  <Btn tone="primary" onClick={() => setAct({ action: 'status', status: NEXT[detail.status], title: 'Holatni o‘zgartirish', label: 'O‘zgartirish', needReason: false,
+                    text: `Buyurtma holati “${ORDER_STATUS[NEXT[detail.status]]?.label}” ga o‘tkaziladi.` })}>
+                    “{ORDER_STATUS[NEXT[detail.status]]?.label}” qilish
+                  </Btn>
+                )}
+                {!closed(detail) && detail.payment_status !== 'released' && (
+                  <Btn onClick={() => setAct({ action: 'cancel', title: 'Buyurtmani bekor qilish', label: 'Bekor qilish', danger: true, needReason: true,
+                    text: `#${detail.code} bekor qilinadi. Sabab xaridor va sotuvchiga ko‘rinadi.` })}>Bekor qilish</Btn>
+                )}
+                {!['refunded', 'released'].includes(detail.payment_status) && (
+                  <Btn onClick={() => setAct({ action: 'refund', title: 'Pul qaytarildi deb belgilash', label: 'Belgilash', danger: true, needReason: true,
+                    text: 'Pul xaridorga haqiqatda qaytarilganini tasdiqlang. Buyurtma bekor qilinadi (yetkazilgan bo‘lsa, holat saqlanadi).' })}>Pul qaytarildi</Btn>
+                )}
+              </div>
+              <label className="mt-3 block text-[12.5px] font-semibold text-[#12263a]">Nizo / admin izohi
+                <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nizo tafsilotlari, kelishuvlar, qo‘ng‘iroqlar…"
+                  className="mt-1 w-full rounded-xl border border-[#e6ebf2] px-3 py-2 text-[13.5px] font-normal" />
+              </label>
+              <div className="mt-2 flex justify-end">
+                <Btn onClick={() => setAct({ action: 'note', title: 'Izohni saqlash', label: 'Saqlash', needReason: false, text: 'Nizo izohi saqlanadi (faqat adminlarga ko‘rinadi).' })}>Izohni saqlash</Btn>
+              </div>
+            </div>
           </div>
         )}
       </Modal>
+      <ConfirmReason open={!!act && !!detail} title={act?.title} text={act?.text} confirmLabel={act?.label} danger={!!act?.danger}
+        needReason={!!act?.needReason} reasonLabel="Sabab / izoh" onClose={() => setAct(null)} onConfirm={runAction} />
     </div>
   )
 }

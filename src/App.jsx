@@ -254,6 +254,7 @@ export default function App() {
           <Route path="/profil/sevimlilar" element={<RequireAuth><Responsive mobile={<MobileSevimlilar />}><Profil section="saved" /></Responsive></RequireAuth>} />
           <Route path="/profil/buyurtmalar" element={<RequireAuth><Responsive mobile={<MobileBuyurtmalar />}><Profil section="orders" /></Responsive></RequireAuth>} />
           <Route path="/profil/kurslar" element={<RequireAuth><Responsive mobile={<MobileKurslarim />}><Profil section="courses" /></Responsive></RequireAuth>} />
+          <Route path="/profil/sertifikatlar" element={<RequireAuth><Responsive mobile={<MobileSertifikatlar />}><Sertifikatlar /></Responsive></RequireAuth>} />
           <Route path="/profil/seminarlar" element={<RequireAuth><Responsive mobile={<MobileSeminarlarim />}><Profil section="tickets" /></Responsive></RequireAuth>} />
           <Route path="/buyurtma/kuzatish/:id" element={<RequireAuth><Responsive mobile={<MobileKuzatish />}><ShopLayout active="market" placeholder="Material, brend yoki kategoriya bo‘yicha qidiring..."><OrderTracking /></ShopLayout></Responsive></RequireAuth>} />
           <Route path="/xizmatlar" element={<CrmGate><Xizmatlar /></CrmGate>} />

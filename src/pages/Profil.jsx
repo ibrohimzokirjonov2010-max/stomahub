@@ -19,6 +19,7 @@ import {
 import { demoBadgeProps, isDemoPayments, linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
 import { supabase } from '../supabaseClient'
 import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
+import { dateLabel, useMySeminars } from '../components/mobile/MobileSeminarlarim'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Ortoped stomatolog', 'Stomatolog', 'Terapevt', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba', 'Klinika egasi']
@@ -28,6 +29,7 @@ const NAV = [
   ['info', 'Shaxsiy ma’lumotlar'],
   ['clinic', 'Klinikam'],
   ['orders', 'Buyurtmalarim'],
+  ['tickets', 'Seminarlarim'],
   ['courses', 'Kurslarim va sertifikatlar'],
   ['saved', 'Saqlanganlar'],
   ['addresses', 'Manzillar'],
@@ -99,7 +101,7 @@ const SECTION_TAB = {
   profile: 'info',
   info: 'info',
   orders: 'orders',
-  tickets: 'courses',
+  tickets: 'tickets',
   courses: 'courses',
   addresses: 'addresses',
   payments: 'payments',
@@ -281,8 +283,8 @@ function Board({ initial }) {
   }
 
   const stats = [
-    { label: 'Buyurtmalar', value: orders.length, icon: M.buyurtmalar, tone: 'bg-[#e7f6f4] text-[#0F766E]' },
-    { label: 'Sertifikatlar', value: certCount, icon: M.sertifikatlar, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
+    { label: 'Buyurtmalar', value: orders.length, icon: M.buyurtmalar, tone: 'bg-[#e7f6f4] text-[#0F766E]', to: '/profil/buyurtmalar' },
+    { label: 'Sertifikatlar', value: certCount, icon: M.sertifikatlar, tone: 'bg-[#e8f0fc] text-[#2563eb]', to: '/profil/sertifikatlar' },
     { label: 'Kurslar', value: myCourses.length, icon: M.kurslar, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
     { label: 'Bonus ballar', value: fmtBonus(profile.bonus), icon: Star, tone: 'bg-[#fff6df] text-[#d97706]' },
     { label: 'Saqlanganlar', value: favCount, icon: M.saqlanganlar, tone: 'bg-[#fde8ef] text-[#e11d48]' },
@@ -345,13 +347,13 @@ function Board({ initial }) {
       {/* Stats */}
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5">
         {stats.filter((s) => s.label !== 'Kurslar' || s.value > 0).map((s) => (
-          <div key={s.label} className={`${card} flex items-center gap-3 p-3.5`}>
+          <StatBox key={s.label} to={s.to} className={`${card} flex items-center gap-3 p-3.5 ${s.to ? 'transition hover:border-[#0F766E]/40' : ''}`}>
             <span className={`grid size-10 place-items-center rounded-xl ${s.tone}`}><s.icon className={s.icon.raster ? 'size-8' : 'size-5'} /></span>
             <div className="min-w-0">
               <p className="truncate text-[18px] font-extrabold leading-none text-[#12263a]">{s.value}</p>
               <p className="mt-1 truncate text-[12px] text-[#6b7c8f]">{s.label}</p>
             </div>
-          </div>
+          </StatBox>
         ))}
       </div>
 
@@ -452,6 +454,7 @@ function Board({ initial }) {
           )}
           {tab === 'orders' && <OrdersBlock orders={orders} status={profile.ordersStatus} error={profile.ordersError} full />}
           {tab === 'courses' && <CoursesBlock courses={myCourses} full />}
+          {tab === 'tickets' && <SeminarsBlock />}
           {tab === 'saved' && <SavedBlock profile={profile} />}
           {tab === 'addresses' && (
             <AddressesBlock profile={profile} form={addrForm} setForm={setAddrForm} onToast={setToast} onErr={setErr} full />
@@ -639,6 +642,46 @@ function SettingsCard({ profile }) {
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+function StatBox({ to, className, children }) {
+  return to ? <Link to={to} className={className}>{children}</Link> : <div className={className}>{children}</div>
+}
+
+function SeminarsBlock() {
+  const { upcoming, past } = useMySeminars()
+  const Row = ({ s, done }) => (
+    <Link to={s.link} className="flex gap-3 rounded-xl border border-[#e7eef2] p-2.5 hover:border-[#0F766E]/40">
+      {s.image
+        ? <img src={s.image} alt="" className="size-[72px] shrink-0 rounded-lg object-cover" />
+        : <span className="grid size-[72px] shrink-0 place-items-center rounded-lg bg-[#e7f6f4] text-[#0F766E]"><GraduationCap className="size-6" /></span>}
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-[13.5px] font-bold text-[#12263a]">{s.title}</p>
+        <p className="mt-1 text-[12px] text-[#5b6b7d]">{dateLabel(s)}</p>
+        <p className="mt-0.5 truncate text-[12px] text-[#5b6b7d]">{s.place} · {s.plan}{s.order ? ` · #${s.order}` : ''}</p>
+        <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${done ? 'bg-[#eef2f4] text-[#5b6b7d]' : 'bg-[#e7f6f4] text-[#0F766E]'}`}>{done ? 'O‘tgan' : 'Kelgusi'}</span>
+      </div>
+    </Link>
+  )
+  return (
+    <section className={card}>
+      <SectionHead title="Seminarlarim" />
+      {!upcoming.length && !past.length ? (
+        <Empty text="Hali seminarga ro‘yxatdan o‘tmagansiz." />
+      ) : (
+        <div className="space-y-4">
+          {upcoming.length > 0 && <div className="grid gap-3 md:grid-cols-2">{upcoming.map((s) => <Row key={s.key} s={s} />)}</div>}
+          {past.length > 0 && (
+            <div>
+              <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-[#6b7c8f]">O‘tgan seminarlar</p>
+              <div className="grid gap-3 md:grid-cols-2">{past.map((s) => <Row key={s.key} s={s} done />)}</div>
+            </div>
+          )}
+          <Link to="/profil/sertifikatlar" className="inline-block text-[13px] font-semibold text-[#0F766E]">Sertifikatlarim →</Link>
+        </div>
+      )}
     </section>
   )
 }
