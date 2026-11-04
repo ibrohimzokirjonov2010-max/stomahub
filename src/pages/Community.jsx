@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { mergePublicPosts } from '../communityFeed'
+import { useCatalogVersion } from '../recordSync'
 import { ensureLogin } from '../loginPrompt'
 import {
   Plus, BadgeCheck, Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, HelpCircle,
@@ -64,7 +66,10 @@ function Board({ query }) {
   const [topic, setTopic] = useState('all')
   const [tab, setTab] = useState('all')
   const [sort, setSort] = useState('yangi')
-  const [posts, setPosts] = useState([])
+  const [localPosts, setPosts] = useState([])
+  const catV = useCatalogVersion()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const posts = useMemo(() => mergePublicPosts(localPosts).map((p, i) => ({ rank: i + 1, extra: 0, thread: [], tags: [], ...p, comments: Array.isArray(p.comments) ? p.comments.length : (p.comments || 0) })), [localPosts, catV])
   // Faqat haqiqiy postlar soni (bo‘lmasa son ko‘rsatilmaydi)
   const topicCount = useMemo(() => (posts || []).reduce((m, p) => { if (p?.topic) m[p.topic] = (m[p.topic] || 0) + 1; return m }, {}), [posts])
   const [liked, setLiked] = useState(() => new Set())

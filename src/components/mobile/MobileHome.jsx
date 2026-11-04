@@ -56,7 +56,13 @@ export default function MobileHome() {
   })()
   const hello = !profile.accountLive ? 'mehmon' : (looksLikeDemoName(rawHello) ? 'shifokor' : (helloName || 'shifokor'))
   const hub = useHub()
-  const todaySeminars = publicRecords(hub).filter((x) => !x.past && !x.cancelled && x.startIso && x.startIso <= tashkentToday() && x.endIso >= tashkentToday()).slice(0, 2).map((raw) => {
+  const live = publicRecords(hub).filter((x) => !x.past && !x.cancelled && x.startIso)
+  const todayIso = tashkentToday()
+  const todayList = live.filter((x) => x.startIso <= todayIso && (x.endIso || x.startIso) >= todayIso)
+  // Bugun seminar bo‘lmasa — eng yaqin kelgusi seminarlar ko‘rsatiladi
+  const showToday = todayList.length > 0
+  const pickList = showToday ? todayList : live.filter((x) => x.startIso > todayIso).sort((a, b) => a.startIso.localeCompare(b.startIso))
+  const todaySeminars = pickList.slice(0, 2).map((raw) => {
     const s = seminarCard(raw)
     return {
       id: s.id,
@@ -178,9 +184,8 @@ export default function MobileHome() {
 
 
         {/* Bugungi seminarlar */}
-        <SectionHead title="Bugungi seminarlar" to="/seminarlar" />
+        {todaySeminars.length > 0 && <SectionHead title={showToday ? 'Bugungi seminarlar' : 'Yaqin seminarlar'} to="/seminarlar" />}
         <div className="space-y-2.5">
-          {!todaySeminars.length && <p className="py-6 text-center text-[12px] text-muted">Bugun seminar yo‘q</p>}
           {todaySeminars.map((s) => (
             <article key={s.id} className="flex gap-1.5 rounded-2xl bg-white p-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
               <Link to={`/seminarlar/${s.id}`} className="relative mr-0.5 h-[76px] w-[84px] shrink-0 overflow-hidden rounded-xl bg-page">
@@ -255,9 +260,8 @@ export default function MobileHome() {
         </div>
 
         {/* Hamjamiyat */}
-        <SectionHead title="Hamjamiyat" to="/community" />
+        {communityPosts.length > 0 && <SectionHead title="Hamjamiyat" to="/community" />}
         <div className="space-y-2.5">
-          {!communityPosts.length && <p className="py-6 text-center text-[12px] text-muted">Hamjamiyatda hali post yo‘q</p>}
           {communityPosts.map((p) => (
             <Link key={p.id} to="/community" className="flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
               <img src={p.avatar} alt="" className="size-10 shrink-0 rounded-full object-cover" />

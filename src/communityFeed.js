@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import { ME } from './communityData'
-import { bindBlob, touchBlob } from './recordSync'
+import { useMemo } from 'react'
+import { bindBlob, touchBlob, useCatalogVersion } from './recordSync'
+import { seedPosts } from './communityData'
 
 const face = (n) => `/images/bemorlar/${n}.jpg`
 const sem = (n) => `/images/seminars/${n}.jpg`
@@ -53,8 +55,20 @@ const subscribe = (fn) => {
   return () => subs.delete(fn)
 }
 
+// Admin moderatsiyasidagi (catalog_items kind='post', hidden=false) ochiq postlar.
+// Oldin sayt faqat foydalanuvchining shaxsiy 'community' blobini o‘qirdi, shu sabab
+// adminda «Ko‘rinadi» turgan postlar saytda chiqmasdi.
+export const normalizePost = (p) => ({ likes: 0, shares: 0, images: [], ...p, comments: Array.isArray(p?.comments) ? p.comments.map((c) => ({ ...c, replies: Array.isArray(c?.replies) ? c.replies : [] })) : [] })
+export function mergePublicPosts(own = []) {
+  const ids = new Set(own.map((p) => p?.id))
+  const pub = seedPosts.filter((p) => p && p.id != null && !p._pending && !ids.has(p.id)).map(normalizePost)
+  return [...own, ...pub]
+}
 export function useFeed() {
-  return useSyncExternalStore(subscribe, () => state)
+  const st = useSyncExternalStore(subscribe, () => state)
+  const v = useCatalogVersion()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => ({ ...st, posts: mergePublicPosts(st.posts) }), [st, v])
 }
 
 const toggle = (s, id) => {
