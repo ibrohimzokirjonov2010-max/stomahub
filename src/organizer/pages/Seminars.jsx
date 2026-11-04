@@ -477,8 +477,9 @@ function Mobile() {
         })}
       </div>
 
-      <Link to="/tashkilotchi/seminarlar/yangi" aria-label="Yangi seminar" className="fixed bottom-[calc(64px+max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px))+16px)] right-4 z-40 grid size-14 place-items-center rounded-full text-white shadow-[0_10px_22px_rgb(12_143_134/0.35)]" style={{ background: BRAND }}>
-        <Plus className="size-7" strokeWidth={2.2} />
+      <Link to="/tashkilotchi/seminarlar/yangi" aria-label="Yangi seminar" className="fixed bottom-[calc(64px+max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px))+28px)] right-4 z-40 inline-flex h-12 items-center gap-1.5 rounded-2xl pl-3.5 pr-4 text-[14px] font-semibold text-white shadow-[0_10px_22px_rgb(12_143_134/0.35)] md:hidden" style={{ background: BRAND }}>
+        {/* Kengaytirilgan (yozuvli) FAB — pastki menyudagi dumaloq Check-in tugmasi bilan adashtirilmasin */}
+        <Plus className="size-5" strokeWidth={2.4} /> Yangi seminar
       </Link>
     </div>
   )
