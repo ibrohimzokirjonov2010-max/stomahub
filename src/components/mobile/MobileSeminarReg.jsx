@@ -16,7 +16,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { downloadIcs } from './MobileSeminar'
 import { register, useSeminarStore } from './seminarStore'
-import { useSession } from '../../sessionStore'
+import { useSession, profileName } from '../../sessionStore'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Farg‘ona', 'Qarshi', 'Nukus', 'Urganch', 'Termiz']
@@ -92,7 +92,7 @@ function RegView({ id, seminar, profile }) {
   const [step, setStep] = useState(reg?.order ? 3 : 1)
   // Profil ma’lumotlari bilan to‘ldiriladi; soxta standart qiymatlar (Toshkent / Implantolog / 3 yil) yo‘q
   const fromProfile = (p) => ({
-    name: String(p?.full_name || p?.name || '').trim(),
+    name: profileName(p),
     phone: extractUzLocalDigits(String(p?.phone || '')),
     email: String(p?.email || '').trim(),
     city: String(p?.city || '').trim(),

@@ -6,19 +6,35 @@ import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
 import { useCart } from '../cart'
 import { getCatalog, clock, som, useCountdown } from '../aksiyaData'
+import { useMarket } from '../buyerApi'
+import { offPercent } from '../lib/discounts'
+import { matchSearch } from '../lib/searchNorm'
+
+// Aksiyalar = sotuvchi aksiyalari (seller_promotions → catalog 'deal') + avtomatik chegirmali
+// mahsulotlar (market_discounts → marketProducts.oldPrice). Bitta mahsulot bir marta.
+export function useAksiyalar() {
+  useCatalogVersion()
+  const market = useMarket()
+  const deals = getCatalog()
+  return useMemo(() => {
+    const seen = new Set(deals.map((d) => String(d.productId || '')).filter(Boolean))
+    const fromDisc = market.products
+      .filter((p) => offPercent(p) > 0 && !seen.has(String(p.id)))
+      .map((p) => ({ id: p.id, productId: p.id, link: `/product/${p.id}`, name: p.name, brand: p.brand, image: p.image, price: p.price, oldPrice: p.oldPrice, off: offPercent(p), left: 0, reviews: p.reviews, rating: p.rating }))
+    return [...deals.map((d) => ({ ...d, off: d.off || offPercent(d) })), ...fromDisc]
+  }, [deals, market.products])
+}
 
 
 export default function Aksiyalar() {
-  useCatalogVersion()
-  const catalog = getCatalog()
+  const catalog = useAksiyalar()
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('pop')
   const [saved, setSaved] = useState({})
 
   const list = useMemo(() => {
-    const query = q.trim().toLowerCase()
     let rows = catalog.filter((d) => {
-      const okQuery = !query || `${d.name} ${d.brand}`.toLowerCase().includes(query)
+      const okQuery = matchSearch(q, d.name, d.brand)
       return okQuery
     })
     if (sort === 'off') rows = [...rows].sort((a, b) => b.off - a.off)
@@ -82,7 +98,7 @@ function Card({ deal, saved, onSave }) {
       <button onClick={onSave} className="absolute right-2.5 top-2.5 z-10 grid size-7 place-items-center rounded-full bg-white text-muted shadow-card" aria-label="Saqlash">
         <Heart className={`size-3.5 ${saved ? 'fill-sale text-sale' : ''}`} />
       </button>
-      <Link to={`/aksiyalar/${deal.id}`} className="grid h-[128px] place-items-center overflow-hidden">
+      <Link to={deal.link || `/aksiyalar/${deal.id}`} className="grid h-[128px] place-items-center overflow-hidden">
         <img src={deal.image} alt={deal.name} className="max-h-[118px] max-w-full object-contain" />
       </Link>
       {deal.left > 0 && (
@@ -90,7 +106,7 @@ function Card({ deal, saved, onSave }) {
           <Clock className="size-3" /> {clock(sec)}
         </p>
       )}
-      <Link to={`/aksiyalar/${deal.id}`} className="mt-1 truncate text-[13px] font-bold text-ink">{deal.name}</Link>
+      <Link to={deal.link || `/aksiyalar/${deal.id}`} className="mt-1 truncate text-[13px] font-bold text-ink">{deal.name}</Link>
       <p className="text-[11px] text-muted">{deal.brand}</p>
       {/* Reyting/sotuv faqat real sharhlar/buyurtmalar bo‘lsa ko‘rsatiladi */}
       {(Number(deal.reviews) > 0 || Number(deal.sold) > 0) && (

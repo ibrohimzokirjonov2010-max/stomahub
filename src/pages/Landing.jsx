@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CONTACT_PHONE, CONTACT_PHONE_TEL, CONTACT_EMAIL, SOCIAL_LINKS } from '../config/contact'
-import { useSession } from '../sessionStore'
+import { useSession, profileName } from '../sessionStore'
 import { useCrmStats, mln } from '../crmStats'
 import { useClinicPayments } from '../tolovData'
 import {
@@ -320,7 +320,7 @@ function PhoneHome({ compact = false, tall = false }) {
   const session = useSession()
   const firstName = (() => {
     if (session.status !== 'authed') return ''
-    const parts = String(session.profile?.full_name || session.profile?.name || session.profile?.fullName || session.user?.user_metadata?.name || '').trim().split(/\s+/).filter(Boolean)
+    const parts = String(profileName(session.profile) || session.user?.user_metadata?.name || '').trim().split(/\s+/).filter(Boolean)
     if (!parts.length) return ''
     // Uzbek «Familiya Ism» → greet with Ism
     return parts.length >= 2 ? parts[1] : parts[0]

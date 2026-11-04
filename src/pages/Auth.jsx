@@ -5,7 +5,7 @@ import { profileStore, useProfile } from '../profileStore'
 import { retryHub } from '../hubStore'
 import { supabase } from '../supabaseClient'
 import { flashToast } from '../components/FlashToast'
-import { ensureProfile, intendedRole, setIntendedRole, useSession } from '../sessionStore'
+import { ensureProfile, intendedRole, setIntendedRole, useSession, profileName } from '../sessionStore'
 import PhoneInput, { extractUzLocalDigits, toE164 } from '../components/PhoneInput'
 
 const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
@@ -274,7 +274,7 @@ function Auth({ mode }) {
     })
     if (!res.ok) throw new Error(res.error || 'Profil saqlanmadi')
     const localPhone = extractUzLocalDigits(res.profile?.phone)
-    const savedName = res.profile?.full_name || res.profile?.name || fullName || ''
+    const savedName = profileName(res.profile) || fullName || ''
     profileStore.update({
       loggedOut: false,
       accountLive: true,
@@ -309,7 +309,7 @@ function Auth({ mode }) {
       loggedOut: false,
       accountLive: true,
       lang,
-      name: session.profile.full_name || session.profile.name || session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+      name: profileName(session.profile, session.user.email) || session.user.user_metadata?.name || session.user.user_metadata?.full_name || '',
       email: session.profile.email || session.user.email || '',
       phone: localPhone,
       role: session.profile.specialty || '',

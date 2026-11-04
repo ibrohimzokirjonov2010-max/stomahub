@@ -1,3 +1,4 @@
+import { useMarket } from '../../buyerApi'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays, Check, GraduationCap, Heart, MapPin, Megaphone, ShoppingBag, ShoppingCart } from 'lucide-react'
@@ -19,6 +20,7 @@ const TABS = [['products', 'Mahsulotlar', ShoppingBag], ['seminars', 'Seminarlar
 const SEMINARS = seminars.map(seminarCard)
 
 export default function MobileSevimlilar() {
+  const { status: marketStatus } = useMarket()
   const navigate = useNavigate()
   const location = useLocation()
   const profile = useProfile()
@@ -31,7 +33,7 @@ export default function MobileSevimlilar() {
   useEffect(() => { window.scrollTo(0, 0) }, [tab])
 
   const lists = {
-    products: (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || { id, name: String(id), type: 'Mahsulot', price: 0, image: '/images/market/placeholder.jpg' }),
+    products: (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || (marketStatus === 'ready' ? null : { id, name: 'Yuklanmoqda…', type: 'Mahsulot', price: 0, image: '/images/market/placeholder.jpg' })).filter(Boolean),
     seminars: SEMINARS.filter((s) => seminarStore.saved.includes(s.id)),
     courses: COURSES.filter((c) => profile.favCourses.includes(c.id)),
     ads: [...added, ...ADS].filter((a) => savedAds.has(a.id)),

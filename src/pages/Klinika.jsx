@@ -11,7 +11,7 @@ import AppointmentForm from '../components/crm/AppointmentForm'
 import PatientForm from '../components/crm/PatientForm'
 import { STAFF_ROLES, setClinicSettings } from '../clinicSettings'
 import { ToothIcon } from '../components/icons'
-import { addBemor } from '../bemorData'
+import { patchBemor, useBemorlar } from '../bemorData'
 import { useOmbor, patchOmbor } from '../omborData'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from '../recordSync'
 import { supabase } from '../supabaseClient'
@@ -105,7 +105,16 @@ export default function Klinika() {
   const stock = useOmbor()
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS }))
   const [visits, setVisits] = useState([])
-  const [patients, setPatients] = useState([])
+  // Bemorlar — /bemorlar sahifasi bilan YAGONA manba (user_blobs 'patients'); avval clinic_board ichidagi alohida nusxa edi.
+  const bemorlar = useBemorlar()
+  const patients = useMemo(() => bemorlar.map((p) => {
+    const female = p.female ?? p.gender === 'Ayol'
+    return { ...p, female, debt: Number(p.debt) || 0, last: p.last || '', next: p.next || '', status: p.status || 'Yangi', avatar: p.avatar || avatarOf(p.name || '', female) }
+  }), [bemorlar])
+  const setPatients = (fn) => {
+    const next = typeof fn === 'function' ? fn(patients) : fn
+    next.forEach((p) => { const old = patients.find((x) => x.id === p.id); if (old && old.debt !== p.debt && !p.debt) patchBemor(p.id, { paid: Number(old.total) || 0, total: Number(old.total) || 0 }) })
+  }
   const crm = useCrmStats()
   const [boardReady, setBoardReady] = useState(false)
   const [date, setDate] = useState(TODAY)
@@ -124,7 +133,6 @@ export default function Klinika() {
         setBoardReady(false)
         setSettings({ ...DEFAULT_SETTINGS })
         setVisits([])
-        setPatients([])
         return
       }
       const [clinic, payload] = await Promise.all([fetchCustomerClinic(id), loadBlob('clinic_board')])
@@ -136,13 +144,11 @@ export default function Klinika() {
       if (payload) {
         const cleaned = isDemoUser() ? payload : scrubClinicBoard(payload)
         setVisits(Array.isArray(cleaned.visits) ? cleaned.visits : [])
-        setPatients(Array.isArray(cleaned.patients) ? cleaned.patients : [])
         if (!isDemoUser() && JSON.stringify(cleaned) !== JSON.stringify(payload)) {
           saveBlob('clinic_board', cleaned)
         }
       } else {
         setVisits([])
-        setPatients([])
       }
       setBoardReady(true)
     })
@@ -150,8 +156,8 @@ export default function Klinika() {
   }, [])
   useEffect(() => {
     if (!boardReady || !currentUid()) return
-    saveBlob('clinic_board', { settings, visits, patients })
-  }, [boardReady, settings, visits, patients])
+    saveBlob('clinic_board', { settings, visits })
+  }, [boardReady, settings, visits])
   const [staffOpen, setStaffOpen] = useState(false)
   const [order, setOrder] = useState(null)
   const [toast, setToast] = useState('')
@@ -191,9 +197,8 @@ export default function Klinika() {
     setBooking(null)
     flash(`${v.name} ${label(v.date)}, ${v.start} ga yozildi`)
   }
-  const savePatient = (p) => {
-    const female = p.gender === 'Ayol'
-    setPatients((list) => [{ id: p.id, name: p.name, female, phone: p.phone, last: '', next: '', debt: 0, status: 'Yangi', avatar: avatarOf(p.name, female) }, ...list])
+  const savePatient = () => {
+    // PatientForm o‘zi addBemor() qiladi — bu yerda faqat hisoblagich
     setNewCount((n) => n + 1)
     setAdding(false)
     flash('Bemor qo‘shildi va Bemorlar bo‘limiga saqlandi')

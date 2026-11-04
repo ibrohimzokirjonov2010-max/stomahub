@@ -1,5 +1,5 @@
 /* StomaHub service worker — navigations always network-first; never cache-first for HTML. */
-const CACHE = 'stomahub-v5'
+const CACHE = 'stomahub-v6'
 const PRECACHE = ['/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (event) => {

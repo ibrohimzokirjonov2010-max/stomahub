@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
 import { normCategory } from './config/productCatalog'
-import { applyDiscount } from './lib/discounts'
+import { applyDiscount, applyPromotion } from './lib/discounts'
 
 // ---- marketplace feed (active seller products) -------------------------------------
 let marketState = { status: 'idle', error: '' }
@@ -92,7 +92,10 @@ export async function loadMarketProducts() {
     // Faol sotuvchi chegirmalari (0048 market_discounts). RPC hali yo‘q bo‘lsa — chegirmasiz narx.
     rows = await dropNonPublicSellers(rows || [])
     const disc = await supabase.rpc('market_discounts').then((r) => (r.error ? [] : r.data || []), () => [])
-    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct).map((p) => applyDiscount(p, disc)))
+    // Sotuvchi aksiyalari (0047 seller_promotions → catalog_items kind='deal'): aksiya narxi marketplace kartasida ham.
+    const promos = await supabase.from('catalog_items').select('payload').eq('kind', 'deal')
+      .then((r) => (r.error ? [] : (r.data || []).map((x) => x.payload).filter(Boolean)), () => [])
+    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct).map((p) => applyPromotion(applyDiscount(p, disc), promos)))
     marketState = { status: 'ready', error: '' }
     marketLoadedAt = Date.now()
   }

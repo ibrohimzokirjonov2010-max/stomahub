@@ -18,7 +18,7 @@ export const MOD_KINDS = [
 export function ownerInfo(owner) {
   let o = owner
   if (typeof o === 'string' && /^\s*\{/.test(o)) { try { o = JSON.parse(o) } catch { /* oddiy matn */ } }
-  if (o && typeof o === 'object') return { name: String(o.name || o.full_name || o.title || '—'), avatar: typeof o.avatar === 'string' ? o.avatar : '' }
+  if (o && typeof o === 'object') return { name: String(o.name || o.full_name || (o.email ? String(o.email).split('@')[0] : '') || o.title || '—'), avatar: typeof o.avatar === 'string' ? o.avatar : '' }
   return { name: o == null || o === '' ? '—' : String(o), avatar: '' }
 }
 

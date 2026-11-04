@@ -47,7 +47,7 @@ export default function MobileHome() {
   const profile = useProfile()
   const session = useSession()
   const feed = useFeed()
-  const rawHello = profile.accountLive ? pickDisplayName(profile.name, session.profile?.full_name, session.profile?.name) : pickDisplayName(session.profile?.full_name, session.profile?.name)
+  const rawHello = profile.accountLive ? pickDisplayName(profile.name, session.profile?.name, session.profile?.full_name) : pickDisplayName(session.profile?.name, session.profile?.full_name)
   // Ism: profildagi first_name, bo‘lmasa ko‘rsatiladigan ismning birinchi so‘zi (familiya emas)
   const helloName = (() => {
     const first = String(session.profile?.first_name || profile.firstName || '').trim()

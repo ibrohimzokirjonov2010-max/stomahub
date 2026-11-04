@@ -1,3 +1,4 @@
+import { normSearch } from '../lib/searchNorm'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -36,10 +37,11 @@ export default function AdminLayout() {
   const [bell, setBell] = useState(false)
   const [q, setQ] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [mobileSearch, setMobileSearch] = useState(false)
   const month = useMemo(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1), [])
   const { data } = useAdminDashboard(month)
 
-  useEffect(() => { window.scrollTo(0, 0); setDrawer(false); setMenu(false); setBell(false); setSearchOpen(false) }, [pathname])
+  useEffect(() => { window.scrollTo(0, 0); setDrawer(false); setMenu(false); setBell(false); setSearchOpen(false); setMobileSearch(false) }, [pathname])
 
   const name = session.profile?.name?.trim() || 'Admin'
   const pending = data?.pending || {}
@@ -56,9 +58,9 @@ export default function AdminLayout() {
   const _unusedUnread = notifItems.reduce((s, x) => s + (Number(x.count) || 0), 0)
 
   const hits = useMemo(() => {
-    const s = q.trim().toLowerCase()
+    const s = normSearch(q)
     if (!s) return SEARCH_TARGETS.slice(0, 6)
-    return SEARCH_TARGETS.filter((t) => t.q.some((k) => k.includes(s) || s.includes(k)) || t.label.toLowerCase().includes(s))
+    return SEARCH_TARGETS.filter((t) => t.q.some((k) => normSearch(k).includes(s) || s.includes(normSearch(k))) || normSearch(t.label).includes(s))
   }, [q])
 
   return (
@@ -101,9 +103,31 @@ export default function AdminLayout() {
           <button type="button" onClick={() => setDrawer(true)} aria-label="Menyu" className="rounded-lg p-1.5 text-[#0F766E]"><Menu className="size-6" /></button>
           <Logo size="sm" subtitle="Admin paneli" />
           <div className="ml-auto flex items-center gap-1.5">
+            <button type="button" aria-label="Qidirish" onClick={() => { setMobileSearch((v) => !v); setSearchOpen(true) }} className="grid size-9 place-items-center rounded-lg text-[#0F766E] hover:bg-[#F0FDFA]">
+              {mobileSearch ? <X className="size-5" /> : <Search className="size-5" />}
+            </button>
             <BellButton unread={unread} open={bell} setOpen={setBell} items={notifItems} navigate={navigate} compact />
             <ProfileChip name={name} open={menu} setOpen={setMenu} compact />
           </div>
+          {mobileSearch && (
+            <div className="absolute inset-x-0 top-full border-b border-[#E6EEF0] bg-white px-3 pb-3 pt-1">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5C6E80]" />
+                <input
+                  autoFocus
+                  value={q}
+                  onChange={(e) => { setQ(e.target.value); setSearchOpen(true) }}
+                  onFocus={() => setSearchOpen(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && hits[0]) { navigate(hits[0].to); setMobileSearch(false); setQ('') } }}
+                  placeholder="Qidirish..."
+                  className="h-10 w-full rounded-xl border border-[#E6EEF0] bg-[#F8FBFC] pl-10 pr-3 text-[14px] outline-none placeholder:text-[#8A9AA8] focus:border-[#0F766E]"
+                />
+                {searchOpen && (
+                  <SearchDropdown hits={hits} onPick={(to) => { navigate(to); setMobileSearch(false); setSearchOpen(false); setQ('') }} onClose={() => setSearchOpen(false)} />
+                )}
+              </div>
+            </div>
+          )}
         </header>
 
         <main className="min-w-0 px-3 pb-28 pt-4 sm:px-4 lg:px-6 lg:pb-10 lg:pt-6">

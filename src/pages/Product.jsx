@@ -196,7 +196,7 @@ function ProductBody({ p }) {
                 </p>
               )}
             </div>
-            <LikeButton className="size-7 bg-[#f3f6fa]" />
+            <LikeButton productId={p.id} className="size-7 bg-[#f3f6fa]" />
           </div>
 
           <div className="mt-3 flex items-center gap-4">
@@ -296,7 +296,7 @@ function ProductBody({ p }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between">
                 <p className="truncate text-[10px] font-bold text-ink">{s.name}</p>
-                <LikeButton className="-mr-1 -mt-1" />
+                <LikeButton productId={s.id} className="-mr-1 -mt-1" />
               </div>
               <p className="text-[9.5px] text-ink-2">{s.type}</p>
               <p className="text-[8.5px] text-muted">{s.brand}</p>

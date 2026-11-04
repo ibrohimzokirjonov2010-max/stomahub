@@ -1,3 +1,5 @@
+import { matchSearch } from '../../lib/searchNorm'
+import { offPercent } from '../../lib/discounts'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -58,11 +60,11 @@ export default function MobileMarketplace() {
 
   const apply = useCallback((f, q, g) => {
     const cats = GROUPS.find((x) => x.key === g)?.cats
-    const text = q.trim().toLowerCase()
+    const text = q.trim()
     return marketProducts
       .filter((p) => !kat || g || matchKat(p, kat))
       .filter((p) => !cats || cats.includes(p.cat))
-      .filter((p) => !text || `${p.name} ${p.brand} ${p.type}`.toLowerCase().includes(text))
+      .filter((p) => matchSearch(text, p.name, p.brand, p.type, p.category))
       .filter((p) => !f.brands.length || f.brands.includes(p.brand))
       .filter((p) => p.price >= f.min && p.price <= f.max)
       .filter((p) => !f.sale || p.oldPrice)
@@ -162,7 +164,8 @@ export default function MobileMarketplace() {
                 <Discount p={p} className="absolute left-2.5 top-2.5 z-10" />
                 <LikeBtn on={liked[p.id]} onClick={() => toggleLike(p.id)} className="absolute right-2 top-2 z-10" />
                 <Link to={`/product/${p.id}`} className="block">
-                  <div className="h-[118px] overflow-hidden rounded-xl bg-[#f6f8fb]">
+                  <div className="relative h-[118px] overflow-hidden rounded-xl bg-[#f6f8fb]">
+                    {offPercent(p) > 0 && <span className="absolute left-1.5 top-1.5 rounded-md bg-sale px-1.5 py-0.5 text-[10px] font-bold text-white">-{offPercent(p)}%</span>}
                     <img src={p.image} alt={p.name} className="size-full object-contain mix-blend-multiply" />
                   </div>
                   <p className="mt-2 text-[11px] text-muted">{p.brand}</p>

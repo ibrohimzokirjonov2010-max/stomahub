@@ -195,6 +195,13 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       subtitle={product ? 'Mahsulot ma’lumotlarini yangilang. Bo‘sh qoldirilgan bo‘limlar mahsulot sahifasida ko‘rinmaydi.' : 'Yangi mahsulotingiz haqida ma’lumotlarni kiriting.'} footer={footer}>
       <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onChange={(e) => { addFiles([...e.target.files], 'img'); e.target.value = '' }} />
       <input ref={docRef} type="file" accept="application/pdf,image/*" hidden onChange={(e) => { addFiles([...e.target.files], 'doc'); e.target.value = '' }} />
+      {product?.status === 'rejected' && (
+        <div role="alert" className="mb-4 rounded-xl border border-[#FBCFD6] bg-[#FFF1F3] px-4 py-3 text-[13.5px] text-[#9F1239]">
+          <b className="block">Mahsulot rad etilgan</b>
+          <span>Sabab: {String(product.reject_reason || '').trim() || 'Moderator sabab ko‘rsatmagan'}</span>
+          <span className="mt-1 block text-[12px] text-[#BE123C]">Kamchilikni tuzatib, qayta tekshiruvga yuboring.</span>
+        </div>
+      )}
       <datalist id="sh-brands">{BRANDS.map((b) => <option key={b} value={b} />)}</datalist>
       <datalist id="sh-spec-keys">{SPEC_PRESETS.map((b) => <option key={b} value={b} />)}</datalist>
       <datalist id="sh-temps">{STORAGE_TEMPS.map((b) => <option key={b} value={b} />)}</datalist>

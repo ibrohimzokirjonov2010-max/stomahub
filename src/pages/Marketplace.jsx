@@ -1,3 +1,4 @@
+import { matchSearch } from '../lib/searchNorm'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
@@ -23,6 +24,7 @@ const initialFilters = { cats: [], brands: [], min: 0, max: 50000000, inStock: t
 export default function Marketplace() {
   const market = useMarket()
   const [params] = useSearchParams()
+  const q = params.get('q') || ''
   const initialCat = params.get('cat')
   const initialBrand = params.get('brand')
   const [filters, setFilters] = useState({
@@ -40,12 +42,13 @@ export default function Marketplace() {
   const list = useMemo(
     () =>
       marketProducts
+        .filter((p) => matchSearch(q, p.name, p.brand, p.type, p.category))
         .filter((p) => !kat || filters.cats.length || matchKat(p, kat))
         .filter((p) => !filters.cats.length || filters.cats.includes(p.cat))
         .filter((p) => !filters.brands.length || filters.brands.includes(p.brand))
         .filter((p) => p.price >= filters.min && p.price <= filters.max)
         .sort(sorts[sort].fn),
-    [filters, sort, market.status, kat],
+    [filters, sort, market.status, kat, q],
   )
 
   return (

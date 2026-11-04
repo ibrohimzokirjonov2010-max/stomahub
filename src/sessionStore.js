@@ -16,6 +16,11 @@ export function isPlaceholderName(n) {
 }
 
 /** Birinchi haqiqiy (test/placeholder bo‘lmagan) ismni qaytaradi; hammasi placeholder bo‘lsa birinchisini. */
+/** YAGONA ism ustuvorligi (SQL public.display_name bilan bir xil): name → full_name → email handle. */
+export function profileName(p, email) {
+  return String(p?.name || '').trim() || String(p?.full_name || '').trim() || String(email ?? p?.email ?? '').split('@')[0].trim()
+}
+
 export function pickDisplayName(...names) {
   const list = names.map((n) => String(n || '').trim()).filter(Boolean)
   return list.find((n) => !isPlaceholderName(n)) || list[0] || ''
@@ -72,8 +77,8 @@ export async function refreshSession() {
   }
   // Profildagi nom test/placeholder bo‘lsa (masalan 'Test Stomatolog'), Google/akkaunt metadatasidagi haqiqiy ismni ko‘rsatamiz (DB o‘zgartirilmaydi)
   const meta = session.user.user_metadata || {}
-  const metaName = String(meta.full_name || meta.name || '').trim()
-  const stored = String(data?.full_name || data?.name || '').trim()
+  const metaName = String(meta.name || meta.full_name || '').trim()
+  const stored = String(data?.name || data?.full_name || '').trim()
   const shown = (!stored || isPlaceholderName(stored)) && metaName ? metaName : stored
   const metaAvatar = String(meta.avatar_url || meta.picture || '').trim()
   const profile = data ? { ...data, full_name: shown, name: (!data.name || isPlaceholderName(data.name)) && metaName ? metaName : data.name, avatar_url: data.avatar_url || metaAvatar } : null
@@ -125,7 +130,7 @@ export async function ensureProfile({ role, name, fullName, phone, specialty, em
   const chosen = role === 'organizer' || role === 'customer' || role === 'seller' ? role : (meta.role === 'organizer' ? 'organizer' : 'customer')
   const { data: existing, error: readError } = await supabase.from('profiles').select('id,role').eq('id', uid).maybeSingle()
   if (readError) return { ok: false, error: readError.message }
-  const displayName = (fullName || name || meta.full_name || meta.name || '').trim()
+  const displayName = (name || fullName || meta.name || meta.full_name || '').trim()
   const patch = {
     name: displayName || undefined,
     full_name: displayName || undefined,
