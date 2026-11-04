@@ -1,3 +1,4 @@
+import { useMarket } from '../buyerApi'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import MapPicker, { MapPreview } from '../components/MapPicker'
@@ -16,7 +17,7 @@ import { marketProducts, som } from '../marketData'
 import {
   ADDRESS_KINDS, COURSES, addr, allOrders, courseDone, flushProfile, profileStore, useProfile,
 } from '../profileStore'
-import { demoBadgeProps, isDemoPayments, linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
+import { linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
 import { supabase } from '../supabaseClient'
 import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
 import { dateLabel, useMySeminars } from '../components/mobile/MobileSeminarlarim'
@@ -843,8 +844,6 @@ function AddressesBlock({ profile, form, setForm, onToast, onErr, full }) {
 function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletForm, onToast, onErr, full }) {
   const cards = profile.cards || []
   const wallets = profile.linkedWallets || []
-  const demo = isDemoPayments()
-  const badge = demoBadgeProps()
 
   const saveCard = async () => {
     try {
@@ -884,13 +883,10 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
     <section className={card}>
       <div className="mb-3 flex items-center gap-2">
         <h2 className="text-[16px] font-extrabold text-[#12263a]">To‘lov usullari</h2>
-        {demo && (
-          <span title={badge.title} className="rounded-full bg-[#fff4d6] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b45309]">{badge.label}</span>
-        )}
       </div>
       <p className="mb-3 text-[12.5px] text-[#6b7c8f]">
         UZCARD/HUMO uchun faqat turi, oxirgi 4 raqam va muddat saqlanadi. Click/Payme uchun telefon yoki nom. To‘liq karta raqami va CVV hech qachon yozilmaydi.
-        {demo && ' Hozircha to‘lovlar simulyatsiya (demo) rejimida.'}
+        
       </p>
       <div className={`grid gap-3 ${full ? 'md:grid-cols-2 xl:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
         {cards.map((c) => (
@@ -912,7 +908,7 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
               <Wallet className="size-5 text-[#0F766E]" />
               <span className="text-[14px] font-bold text-[#12263a]">{w.provider === 'click' ? 'Click' : 'Payme'}</span>
               {w.isDefault && <span className="rounded-full bg-[#e7f6f4] px-2 py-0.5 text-[10.5px] font-semibold text-[#0F766E]">Asosiy</span>}
-              {demo && <span className="rounded-full bg-[#fff4d6] px-1.5 py-0.5 text-[10px] font-bold text-[#b45309]">Demo</span>}
+              
             </div>
             <p className="mt-3 text-[13px] text-[#5b6b7d]">{w.label || fmtPhone(w.phone)}</p>
             <button
@@ -972,7 +968,7 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
       </div>
       {walletForm && (
         <div className="mt-3 grid gap-2 rounded-xl border border-[#d7e5e3] bg-[#f8fbfb] p-3 sm:grid-cols-2">
-          <p className="sm:col-span-2 text-[13px] font-semibold text-[#12263a]">{walletForm.provider === 'click' ? 'Click' : 'Payme'} — demo bog‘lash</p>
+          <p className="sm:col-span-2 text-[13px] font-semibold text-[#12263a]">{walletForm.provider === 'click' ? 'Click' : 'Payme'} hamyonini bog‘lash</p>
           <PhoneInput className="h-11" placeholder="+998 90 123 45 67" value={walletForm.phone} onChange={(v) => setWalletForm({ ...walletForm, phone: extractUzLocalDigits(v) })} valueMode="local" />
           <input className={field} placeholder="Nom (ixtiyoriy)" value={walletForm.label} onChange={(e) => setWalletForm({ ...walletForm, label: e.target.value })} />
           <label className="flex items-center gap-2 text-[13px]">
@@ -989,7 +985,8 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
 }
 
 function SavedBlock({ profile }) {
-  const products = (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || { id, name: String(id) })
+  const { status: marketStatus } = useMarket()
+  const products = (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || (marketStatus === 'ready' ? null : { id, name: 'Yuklanmoqda…', type: 'Mahsulot', price: 0, image: '/images/market/placeholder.jpg' })).filter(Boolean)
   const courses = (profile.favCourses || []).map((id) => COURSES.find((c) => c.id === id) || { id, title: id })
   const masters = profile.favMasters || []
   const n = products.length + courses.length + masters.length

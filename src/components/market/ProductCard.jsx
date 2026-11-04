@@ -1,3 +1,4 @@
+import { offPercent } from '../../lib/discounts'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, ShoppingCart, Star, CircleCheck } from 'lucide-react'
@@ -77,6 +78,7 @@ export default function ProductCard({ product }) {
     <Link to={`/product/${p.id}`} className="group relative flex flex-col rounded-xl bg-white p-2.5 shadow-card transition hover:shadow-md">
       <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />
       <LikeButton productId={product.id} className="absolute right-1.5 top-1.5 z-10" />
+      {!p.badge && offPercent(p) > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[9px] font-bold text-white">-{offPercent(p)}%</span>}
       <div className="mt-3 h-[66px] overflow-hidden">
         <img src={p.image} alt={p.name} className="mx-auto h-full object-contain transition group-hover:scale-105" />
       </div>

@@ -85,6 +85,8 @@ if (looksLikeDemoName(state.name)) {
   try { localStorage.setItem(KEY, JSON.stringify({ ...state, avatar: '' })) } catch { /* ignore */ }
 }
 
+const FAV_KIND = { favProducts: 'product', favCourses: 'course', favMasters: 'master' }
+
 function write(next, opts = {}) {
   if (!opts.remote && 'addresses' in next) localAddrEditAt = Date.now()
   state = { ...state, ...next }
@@ -133,6 +135,7 @@ async function pushProfile() {
   }
   const patch = {
     name: state.name,
+    full_name: state.name,
     specialty: state.role,
     clinic: state.clinic,
     city: state.city,
@@ -415,6 +418,12 @@ async function hydrateProfile(nextUid, opts = {}) {
     return
   }
 
+  // Seminar sertifikatlari: soat/CME/format seminar ma’lumotidan (0053 ustunlari bo‘lmasa ham)
+  const semIds = [...new Set((certsRes?.data || []).map((c) => String(c.course_id || '')).filter((id) => id.startsWith('seminar:')).map((id) => id.slice(8)))]
+  const semRes = semIds.length
+    ? await supabase.from('seminars').select('id,format,form,place,city,speaker').in('id', semIds).then((r) => r, () => ({ data: [] }))
+    : { data: [] }
+  const semById = new Map((semRes?.data || []).map((r) => [String(r.id), r]))
   const prefs = { ...(profile?.prefs || {}) }
   if (!prefs.customer_seeded) {
     prefs.customer_seeded = true
@@ -442,7 +451,7 @@ async function hydrateProfile(nextUid, opts = {}) {
     loggedOut: false,
     syncError: '',
     ownerUid: nextUid,
-    name: (() => { const n = (profile?.full_name || profile?.name || '').trim(); return looksLikeDemoName(n) ? '' : n })(),
+    name: (() => { const n = (profile?.name || profile?.full_name || '').trim(); return looksLikeDemoName(n) ? '' : n })(),
     role: profile?.specialty || '',
     clinic: profile?.clinic || clinicRow?.name || '',
     city: profile?.city || '',
@@ -482,13 +491,24 @@ async function hydrateProfile(nextUid, opts = {}) {
       website: clinicRow?.website || '',
       photo: clinicRow?.photo_url || '',
     },
-    certificates: (certsRes?.data || []).map((c) => ({
-      id: c.id,
-      courseId: c.course_id,
-      title: c.title,
-      issuedAt: c.issued_at,
-      fileUrl: c.file_url || '',
-    })),
+    certificates: (certsRes?.data || []).map((c) => {
+      const sem = semById.get(String(c.course_id || '').replace(/^seminar:/, '')) || null
+      const f = sem?.form || {}
+      return {
+        id: c.id,
+        courseId: c.course_id,
+        title: c.title,
+        issuedAt: c.issued_at,
+        fileUrl: c.file_url || '',
+        kind: c.kind || (String(c.course_id || '').startsWith('seminar:') ? 'seminar' : ''),
+        hours: Number(c.hours) || Number(f.cmeHours) || 0,
+        cme: Number(c.cme) || Number(f.cmePoints) || 0,
+        format: c.format || sem?.format || f.format || '',
+        place: c.place || sem?.place || sem?.city || '',
+        speaker: c.speaker || sem?.speaker || '',
+        holderName: c.holder_name || '',
+      }
+    }),
     defaultAddr: prefs.defaultAddr || '',
     defaultPay: prefs.defaultPay || '',
     favProducts: (favs.data || []).filter((row) => row.kind === 'product').map((row) => row.item_id),
@@ -545,10 +565,21 @@ export const profileStore = {
   },
   toggleFav: (key, id) => {
     // Sevimlilar hisobga bog‘lanadi: mehmon avval kiradi
-    if (!currentUid() && !isDemoUser()) { askLogin(); return false }
+    if (!currentUid() && !isDemoUser()) { askLogin(); return null }
     const sid = String(id)
     const list = (state[key] || []).map(String)
-    write({ [key]: list.includes(sid) ? list.filter((x) => x !== sid) : [...list, sid] })
+    const removing = list.includes(sid)
+    write({ [key]: removing ? list.filter((x) => x !== sid) : [...list, sid] })
+    // Darhol DBga yozamiz (to‘liq profil push’iga bog‘liq emas — u boshqa sabab bilan yiqilsa ham sevimli saqlanadi).
+    const uid = currentUid()
+    const kind = FAV_KIND[key]
+    if (supabase && uid && kind) {
+      const q = removing
+        ? supabase.from('customer_favorites').delete().eq('user_id', uid).eq('kind', kind).eq('item_id', sid)
+        : supabase.from('customer_favorites').upsert({ user_id: uid, kind, item_id: sid }, { onConflict: 'user_id,kind,item_id' })
+      Promise.resolve(q).then((r) => { if (r?.error) write({ syncError: r.error.message }, { remote: true }) }, () => {})
+    }
+    return !removing
   },
   setCourseDone: (id, n) => write({ courseDone: { ...state.courseDone, [id]: n } }),
 }

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Award, GraduationCap, Clock, Star, Calendar, Eye, Download, Share2, Copy, Building2, UserRound, CircleCheck, MapPin, Monitor } from 'lucide-react'
-import { certs } from '../../sertifikatData'
+import { certs, certFromRow, hoursLine } from '../../sertifikatData'
 import { useProfile } from '../../profileStore'
 import { currentUid } from '../../recordSync'
 import { useSession } from '../../sessionStore'
@@ -36,21 +36,7 @@ export default function MobileSertifikatlar() {
   const [tab, setTab] = useState('all')
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
-  const fromProfile = (profile.certificates || []).map((c, i) => {
-    const iso = (c.issuedAt || c.issued_at || '').slice(0, 10)
-    return {
-      id: c.id || `cert-${i}`,
-      title: c.title || 'Sertifikat',
-      type: 'online',
-      speaker: '',
-      date: iso || '',
-      iso: iso || '1970-01-01',
-      place: 'Onlayn',
-      cme: 0,
-      hours: 0,
-      theme: 'teal',
-    }
-  })
+  const fromProfile = (profile.certificates || []).map(certFromRow)
   const source = live ? fromProfile : certs
   const open = source.find((c) => c.id === params.get('cert')) || null
   const list = useMemo(() => source.filter((c) => tab === 'all' || c.type === tab).sort((a, b) => b.iso.localeCompare(a.iso)), [tab, source])
@@ -131,7 +117,7 @@ export default function MobileSertifikatlar() {
                 <h3 className="line-clamp-2 text-[13px] font-bold leading-[1.25] text-[#0d2a4a]">{c.title}</h3>
                 <span className="mt-1 inline-block rounded-md bg-[#e2f4f2] px-1.5 py-0.5 text-[10px] font-medium text-[#0b6d73]">{PILL[c.type]}</span>
                 <p className="mt-1 flex items-center gap-1 text-[11px] text-ink-2"><Calendar className="size-3.5 shrink-0 text-[#0b6d73]" /> {c.date}</p>
-                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ink-2"><Clock className="size-3.5 shrink-0 text-[#0b6d73]" /> {c.hours} soat · {c.cme} CME</p>
+                {hoursLine(c) && <p className="mt-0.5 flex items-center gap-1 text-[11px] text-ink-2"><Clock className="size-3.5 shrink-0 text-[#0b6d73]" /> {hoursLine(c)}</p>}
               </div>
               <button type="button" onClick={() => show(c)} aria-label="QR kod" className="flex w-[66px] shrink-0 flex-col items-center self-start rounded-lg bg-[#f2f8f8] p-1.5">
                 <Qr seed={linkOf(c)} className="size-[50px]" />
@@ -168,9 +154,9 @@ export default function MobileSertifikatlar() {
               <button type="button" onClick={() => copy(open.id, 'Sertifikat raqami nusxalandi')} className="inline-flex items-center gap-1 text-sea">{open.id} <Copy className="size-3.5" /></button>
             </Row>
             <Row icon={Calendar} label="Berilgan sana">{open.date}</Row>
-            <Row icon={UserRound} label="Ma’ruzachi">{open.speaker}</Row>
+            <Row icon={UserRound} label="Ma’ruzachi">{open.speaker || '—'}</Row>
             <Row icon={open.place === 'Onlayn' ? Monitor : MapPin} label="Joyi">{open.place}</Row>
-            <Row icon={Clock} label="Soatlar">{open.hours} soat · {open.cme} CME</Row>
+            {hoursLine(open) && <Row icon={Clock} label="Soatlar">{hoursLine(open)}</Row>}
             <Row icon={Building2} label="Tashkilotchi">StomaHub</Row>
             <Row icon={CircleCheck} label="Holat"><span className="rounded-full bg-[#e5f7ea] px-2 py-0.5 text-[11px] font-semibold text-[#17803d]">Tasdiqlangan</span></Row>
           </dl>

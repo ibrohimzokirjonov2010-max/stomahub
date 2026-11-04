@@ -56,7 +56,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
       </div>
 
       {shop ? (
-        <form className={`hidden h-[29px] flex-1 items-center rounded-full bg-[#f2f5f9] md:flex ${search === 'image' ? 'max-w-[628px]' : 'max-w-[595px]'}`} onSubmit={(e) => e.preventDefault()}>
+        <form className={`hidden h-[29px] flex-1 items-center rounded-full bg-[#f2f5f9] md:flex ${search === 'image' ? 'max-w-[628px]' : 'max-w-[595px]'}`} onSubmit={(e) => { e.preventDefault(); if (!onQuery && text.trim()) navigate(`/marketplace?q=${encodeURIComponent(text.trim())}`) }}>
           <Search className="ml-3.5 size-[14px] shrink-0 text-ink-2" />
           <input
             type="text"
@@ -83,7 +83,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
           )}
         </form>
       ) : (
-        <form className="hidden h-[29px] max-w-[642px] flex-1 items-center md:flex" onSubmit={(e) => e.preventDefault()}>
+        <form className="hidden h-[29px] max-w-[642px] flex-1 items-center md:flex" onSubmit={(e) => { e.preventDefault(); if (!onQuery && text.trim()) navigate(`/marketplace?q=${encodeURIComponent(text.trim())}`) }}>
           <div className="flex h-full flex-1 items-center rounded-l-lg bg-[#f2f5fa]">
             <Search className="ml-3.5 size-[14px] shrink-0 text-ink-2" />
             <input

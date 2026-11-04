@@ -147,7 +147,7 @@ export default function Mahsulotlar() {
                   <Td><Checkbox checked={sel.has(p.id)} onChange={(c) => setSel((s) => { const n = new Set(s); c ? n.add(p.id) : n.delete(p.id); return n })} /></Td>
                   <Td className="text-[#5C6E80]">{pg.offset + i + 1}</Td>
                   <Td><ProductThumb src={p.image_url} className="h-[30px] w-[50px]" /></Td>
-                  <Td><div className="truncate font-semibold">{p.name}</div><div className="truncate text-[12px] text-[#5C6E80]">{p.unit || (p.variants?.length ? `${p.variants.length} ta variant` : '—')}</div></Td>
+                  <Td><div className="truncate font-semibold">{p.name}</div><div className="truncate text-[12px] text-[#5C6E80]">{p.unit || (p.variants?.length ? `${p.variants.length} ta variant` : '—')}</div>{p.status === 'rejected' && <div className="truncate text-[12px] font-medium text-[#BE123C]" title={p.reject_reason || ''}>Sabab: {p.reject_reason || 'ko‘rsatilmagan'}</div>}</Td>
                   <Td className="truncate text-[#5C6E80]">{p.sku || '—'}</Td>
                   <Td className="truncate text-[#5C6E80]">{p.category || '—'}</Td>
                   <Td>{num(p.price)}</Td>
@@ -189,6 +189,7 @@ export default function Mahsulotlar() {
                 <div className="truncate text-[12px] text-[#5C6E80]">SKU: {p.sku || '—'} <span className="mx-1 text-[#C9D6DA]">|</span> {p.category || '—'}</div>
                 <div className="text-[16px] font-extrabold">{som(p.price)}</div>
                 <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-[#5C6E80]"><ClipboardList className="size-3.5" />Stok: {p.stock} dona</div>
+                {p.status === 'rejected' && <div className="mt-1 line-clamp-2 rounded-lg bg-[#FFF1F3] px-2 py-1 text-[12px] text-[#BE123C]">Rad etish sababi: {p.reject_reason || 'ko‘rsatilmagan'}</div>}
               </div>
             </div>
           ))}

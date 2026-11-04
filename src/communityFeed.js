@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { bindBlob, touchBlob, currentUid, onAccount } from './recordSync'
-import { seedPosts } from './communityData'
 import { realAvatar } from './components/UserAvatar'
 
 // Hamjamiyat: barcha postlar BITTA umumiy jadvalda (public.community_posts).
@@ -154,7 +153,6 @@ function fromRow(r) {
     mine: !!r.mine,
   }
 }
-const legacyNorm = (p) => ({ likes: 0, shares: 0, images: [], tags: [], ...p, comments: Array.isArray(p?.comments) ? p.comments.map((c) => ({ ...c, replies: Array.isArray(c?.replies) ? c.replies : [] })) : [] })
 
 let loading = null
 export function reloadFeed() {
@@ -187,8 +185,8 @@ const retime = (c, now) => ({ ...c, time: c.createdAt ? ago(c.createdAt, now) : 
 const visible = () => {
   const now = Date.now()
   if (state.live) return state.posts.map((p) => ({ ...retime(p, now), comments: p.comments.map((c) => retime(c, now)) }))
-  const ids = new Set(state.legacy.map((p) => p?.id))
-  return [...state.legacy.map(legacyNorm), ...seedPosts.filter((p) => p && p.id != null && !p._pending && !ids.has(p.id)).map(legacyNorm)]
+  // QA4-8: server feed bo‘lmasa ham namuna/seed yoki eski localStorage postlari ko‘rsatilmaydi — faqat real ma’lumot.
+  return []
 }
 let lastSnap = null
 let lastKey = null

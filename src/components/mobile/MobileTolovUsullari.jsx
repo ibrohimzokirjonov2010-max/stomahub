@@ -3,8 +3,6 @@ import { CreditCard, Plus, Trash2, Wallet } from 'lucide-react'
 import { flushProfile, profileStore, useProfile } from '../../profileStore'
 import {
   CARD_BRANDS,
-  demoBadgeProps,
-  isDemoPayments,
   linkWalletInput,
   tokenizeCardInput,
   WALLET_PROVIDERS,
@@ -22,8 +20,6 @@ export default function MobileTolovUsullari() {
   const [walletForm, setWalletForm] = useState(null)
   const [toast, setToast] = useState('')
   const [err, setErr] = useState('')
-  const demo = isDemoPayments()
-  const badge = demoBadgeProps()
   const cards = profile.cards || []
   const wallets = profile.linkedWallets || []
 
@@ -69,13 +65,10 @@ export default function MobileTolovUsullari() {
       <div className="px-3 pt-3">
         <SubTopBar title="To‘lov usullari" subtitle="Kartalar va hamyonlar" />
         <div className="mt-3 flex items-center gap-2">
-          {demo && (
-            <span title={badge.title} className="rounded-full bg-[#fff4d6] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#b45309]">{badge.label}</span>
-          )}
         </div>
         <p className="mt-2 text-[12.5px] text-[#6b7c8f]">
           UZCARD/HUMO — faqat turi, oxirgi 4 raqam va muddat. Click/Payme — telefon yoki nom. PAN/CVV saqlanmaydi.
-          {demo ? ' To‘lovlar demo rejimida.' : ''}
+          
         </p>
         {(toast || err) && (
           <p className={`mt-2 rounded-xl px-3 py-2 text-[13px] ${err ? 'bg-[#fff4f4] text-[#b42318]' : 'bg-[#e7f8ee] text-[#15803d]'}`}>{err || toast}</p>
@@ -111,7 +104,7 @@ export default function MobileTolovUsullari() {
               <div className="flex items-center gap-2">
                 <Wallet className="size-5 text-[#0F766E]" />
                 <span className={`text-[14px] font-bold ${navy}`}>{w.provider === 'click' ? 'Click' : 'Payme'}</span>
-                {demo && <span className="rounded-full bg-[#fff4d6] px-1.5 py-0.5 text-[10px] font-bold text-[#b45309]">Demo</span>}
+                
               </div>
               <p className="mt-2 text-[13px] text-[#5b6b7d]">{w.label || w.phone}</p>
               <button
@@ -180,7 +173,7 @@ export default function MobileTolovUsullari() {
 
         {walletForm && (
           <div className="mt-3 grid gap-2 rounded-2xl border border-[#d7e5e3] bg-white p-3">
-            <p className={`text-[13px] font-semibold ${navy}`}>{walletForm.provider === 'click' ? 'Click' : 'Payme'} — demo bog‘lash</p>
+            <p className={`text-[13px] font-semibold ${navy}`}>{walletForm.provider === 'click' ? 'Click' : 'Payme'} hamyonini bog‘lash</p>
             <input className={field} placeholder="Telefon (9 raqam)" value={walletForm.phone} onChange={(e) => setWalletForm({ ...walletForm, phone: e.target.value.replace(/\D/g, '').slice(0, 9) })} />
             <input className={field} placeholder="Nom (ixtiyoriy)" value={walletForm.label} onChange={(e) => setWalletForm({ ...walletForm, label: e.target.value })} />
             <div className="flex gap-2">

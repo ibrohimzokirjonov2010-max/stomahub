@@ -24,7 +24,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register('/sw.js', { updateViaCache: 'none' })
       .then((reg) => {
         const ping = () => {
           try {

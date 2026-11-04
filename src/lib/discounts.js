@@ -48,3 +48,16 @@ export function applyDiscount(product, discounts, today) {
     priceTiers: (product.priceTiers || []).map((t) => ({ ...t, price: discountedPrice(d, t.price) })),
   }
 }
+
+/** Faol sotuvchi aksiyasi (seller_promotions → deal payload) — chegirmadan arzonroq bo‘lsa qo‘llanadi. */
+export function applyPromotion(product, promos = [], today = tashkentToday()) {
+  const d = promos.find((x) => x && String(x.productId) === String(product.id)
+    && (!x.startsOn || x.startsOn <= today) && (!x.endsOn || x.endsOn >= today))
+  const price = Number(d?.price) || 0
+  if (!d || !price || price >= product.price) return product
+  const old = Math.max(Number(product.oldPrice) || 0, Number(d.oldPrice) || 0, Number(product.price) || 0)
+  return { ...product, oldPrice: old, price, promotionId: d.id, endsOn: d.endsOn || '' }
+}
+
+/** Chegirma foizi (badge uchun): -15% */
+export const offPercent = (p) => (p?.oldPrice > p?.price && p.price > 0 ? Math.round((1 - p.price / p.oldPrice) * 100) : 0)
