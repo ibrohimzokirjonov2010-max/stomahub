@@ -1,0 +1,36 @@
+{
+ "slug": "dental-academy",
+ "kind": "organizer",
+ "name": "Dental Academy",
+ "items": [
+  {
+   "kind": "seminar",
+   "name": "Bepul kurs «Tishlar anatomiyasi» (har dushanba)",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/tS1ffgDJesR_VGd8LhSCWyGcL_vAIJQuB9xfS6tXz5nRgz9a5sotDAssFT7jP4WzcJNydO14DqP-kjx-xeaff0f9xRLTRsUkS-skRjJ3jcuDzkbmcjjuvsVXbgAGF2NRdC2Wg8LRZt1JV7PD9FOA74LGZkwyl1MXxssTe8zNwFbrT2R-7EwIoid4znYU46lzuTj-vzkfwqQcwHM2_17Ux3zxHQzHwLARyDhjHBkmDdEaHot5dLZ5k_hmI0uF3hW-q2SCK1OlfTQezE4AMHnyTIrn9zZItKSfsGz11V3Xq3_HDa5sQI7ouiEKQ7mCak3MwcgMYnE6BRbFdO9Sp4fe8g.jpg",
+   "source_url": "https://t.me/DentalAcademy_uz/702",
+   "description": "09.11.2026 Понедельник \n\nБЕСПЛАТНЫЙ КУРС «АНАТОМИЯ ЗУБОВ»\n\n🗓 Каждый понедельник\n⏰ 15:00 - 16:30 или\n⏰ 17:00 - 18:30\n📍 Ташкент \nDental Academy\n\n⚡️ Количество мест ограничено! \n📩 Предварительная запись обязательна\n\nХотите довести свои работы до идеала и уверенно понимать каждую фиссуру и бугор?\n\nDental Academy запускает серию БЕСПЛАТНЫХ уроков по анатомии зубов!\n\nКаждый понедельник мы разбираем то, на чём строится мастерство любого сильного специалиста — форму, функции и тонкости естественной анатомии.\n\n📌 Кому будет полезен этот курс?\n\n🔹 Будущим экспертам в стоматологии — студентам, ординаторам и начинающим врачам, которые хотят заложить мощный фундамент с самого начала. \n🔹 Практикующим…",
+   "extra": {
+    "start_date": "2026-11-09",
+    "date_text": "09.11.2026, har dushanba 15:00 yoki 17:00",
+    "location": "Toshkent, Dental Academy",
+    "speaker": null
+   },
+   "sort_at": "2026-11-09",
+   "image_local": "img/dental-academy/1.jpg"
+  }
+ ],
+ "telegram": "https://t.me/DentalAcademy_uz",
+ "logo_url": "https://cdn4.telesco.pe/file/FVKQZOeITXZuv5T_dI3Lx3dN8p7RtG_BfcpusblWoqLBg_yblvw34QtigR2w67MgIPDShzE-9VqAiaXuWSivK100bWdiyA_Iqrv_OkfdlfiZBM0lBv9W800TN5N14SngRmxrikASkOFhiY89rwOBc0MsQNl5nhwHgLAQF1sp_cAPhV2TW0yoMsi9aGVCElxiV8lxL-6m5p7iMN-pE4hTPE2NnswT8Ze44ga6SPSYSn0PHv4mmrXt40kGITcSbfA7liSm42-tr8hO_8CDUiRywj6hW2GRFk9Nosc870yKBADgUB2nSyA24G7V74hbPhksV9-fEy4ohQOU_o0UM5LNtA.jpg",
+ "source_urls": [
+  "https://t.me/DentalAcademy_uz"
+ ],
+ "description": "🔶Первый стоматологический учебный центр в Узбекистане!🎓📖📝\n\n🔸Индивидуальное обучение\n🔸Курсы\n🔸Мастер-классы\n🔸Международные конференции  \n\nПо вопросам : @DentalAcademyUz",
+ "city": "Toshkent",
+ "address": null,
+ "phone": "@DentalAcademyUz",
+ "website": null,
+ "logo_local": "img/dental-academy/logo.jpg"
+}

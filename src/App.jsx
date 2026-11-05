@@ -8,6 +8,7 @@ import { useCatalogVersion } from './recordSync'
 import './catalogBindings'
 import { CartProvider } from './cart'
 import NotFound from './pages/NotFound'
+import Namuna from './pages/Namuna'
 import { RxPrompt } from './restricted.jsx'
 import Home from './pages/Home'
 import { Login, Register } from './pages/Auth'
@@ -157,6 +158,7 @@ export default function App() {
         <LoginRedirector />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/namuna/:token" element={<Namuna />} />
           <Route path="/kirish" element={<Login />} />
           <Route path="/royxat" element={<Register />} />
           <Route path="/maxfiylik" element={<Privacy />} />

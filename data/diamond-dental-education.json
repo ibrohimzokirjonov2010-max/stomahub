@@ -1,0 +1,54 @@
+{
+ "slug": "diamond-dental-education",
+ "kind": "organizer",
+ "name": "Diamond Dental Education",
+ "items": [
+  {
+   "kind": "seminar",
+   "name": "Domeniko Rikuchchi: «Международный апдейт в современной эндодонтии»",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/ZN-be2FVHsUDskfyU9_1U8NyrUHpS61NdxeS8vb01XSqkbFky7kMLc_6FOD7OTaJsaGHik__a5CGLPReMve-Ncefb-GtzSPxMeiAboh8aN-1XiqoO_QOXPHVLE3J7jCZvLTI7LL0Iv9tEG-ogmMYhoP-D_eiK7AvNwa-X-a6MDqQFu9fhu95A77sOZttK4HZptlJ0ozlnArB8D5Bwn5BY5ZMBymW9rojD7EZunDV-wsC_JxNeEGYAOqkWP5r8A2lwlbR-JEl8ZwwyW9yfAUHqzCyfeYaDxJprYXURmDYHyV1-V-IzKly2cJ_QT3JygEbDAk9SKcgTzRJ7S6ggkCbVA.jpg",
+   "source_url": "https://t.me/diamond_dental_education/1583",
+   "description": "✨ Уважаемые коллеги!\n\nС огромным удовольствием сообщаем о событии, которого многие ждали долгие годы.\n\nПосле трёхлетнего перерыва Ташкент вновь станет местом встречи с одной из самых выдающихся личностей в мировой эндодонтии — Доменико Рикуччи 🇮🇹, чьё имя давно стало символом высочайшего профессионализма, научной точности и клинического мастерства.\n\n👨🏻‍🎓 Доменико Рикуччи\n\n📖 Авторский курс:\n«Международный апдейт в современной эндодонтии»\n\n📅 20–22 ноября 2026 года\n📍 Ташкент, Узбекистан\n\nЭто не просто курс — это уникальная возможность прикоснуться к передовому мировому опыту, познакомиться с последними научными достижениями и получить практические знания от специалиста, чьи исследования и…",
+   "extra": {
+    "start_date": "2026-11-20",
+    "date_text": "20–22-noyabr, 2026",
+    "location": "Toshkent",
+    "speaker": "Доменико Рикуччи"
+   },
+   "sort_at": "2026-11-20",
+   "image_local": "img/diamond-dental-education/1.jpg"
+  },
+  {
+   "kind": "seminar",
+   "name": "Максим Копылов: «Кость. Мягкие ткани. Осложнения: Реконструктивная имплантология без иллюзий»",
+   "price": null,
+   "price_text": null,
+   "currency": null,
+   "image_url": "https://cdn4.telesco.pe/file/tJpusMr4qA3HebK2wK_BJENL0W6c4zxcFZhf-h-3O8UMmUl-gJ-L-SGLwza_fVVHLRXTmWcKtT9vKM9Mme2rZGmVF0s98pJvhmTGJrCFC33PsEh2tW-z6IhVn9cCe4kFockSV56yHnUhhbDqesnJtNGDmetvvKpuogW7HYK2104iIWbDvDLzPWuklQcU6a8xDA-ABMWiioUtkPG1oiD8p2IJUmaVxU62SPSUdWQNfxsXMDHEPEdBKLmPFvZFJ-Vr9ontwBHAkgoSQmtM8qS7YMc99eHx3u7roO8BAqLyGO9fbiqvJ1Y6j6_7NfA3fF0Djkveikkjvmv84kZ_nJ2RNQ.jpg",
+   "source_url": "https://t.me/diamond_dental_education/1547",
+   "description": "Узбекистан впервые принимает спикера мирового уровня.\n\nИмя, которое знают все хирурги СНГ.\nПервый ученик Иштвана Урбана.\nЗаслуженный хирург РФ.\nЧелюстно-лицевой хирург, имплантолог, пародонтолог.\n\nОснователь инновационной реферативной клиники «MaxTreat».\n\nЭксклюзивный формат:\n3 модуля за 2 дня + Live Surgery.\n\nМаксимум практики.\nЖивая хирургия.\nСовременные протоколы.\nОпыт, который меняет уровень врача.\n\nНе пропустите событие, которое станет новой точкой роста для хирургии Центральной Азии.\n\n👨🏻‍🎓 Спикер : Максим Копылов\n👨‍🎓Модератор:Улугбек Нуруллаев\n\n✍️Тема курса:\n«Кость.Мягкие ткани.Осложнения:Реконструктивная имплантология без иллюзий»\n\n🗓Дата: 28-29 ноября 2026 года\n\n📍Локация: Ташкент,…",
+   "extra": {
+    "start_date": "2026-11-28",
+    "date_text": "28–29-noyabr, 2026",
+    "location": "Toshkent",
+    "speaker": "Максим Копылов"
+   },
+   "sort_at": "2026-11-28",
+   "image_local": "img/diamond-dental-education/2.jpg"
+  }
+ ],
+ "telegram": "https://t.me/diamond_dental_education",
+ "logo_url": "https://cdn4.telesco.pe/file/AW-cnb35sAAdYJSq2G_5J-fV65l7EwmHHX-6fIbi4IZZVG9xP0fyNu17XWgumsvIA8mjWvOs1WwS2bzRE-vTr2wJqom2rlEDQQjqDTW2zfBUARTk0flOE-1_y4yxz2Yauwcu6Cq_-ayybs1296Kt-tNbS0R7DO3tiDOgRKohC5xiZYpXaq79kN6nrNjiTe2wydvzBoemDMjviMnGM3ZR_5efVuRpqyuMkOf_DuEDgOCSZfezNZaqF5XYteGZB61Mw3CkpYm6md4-OmkoAb9rMNtMs8OdkHnVTilWHr7PLwU4CKo4cSiMXL6tuXcK0f6l_SAUbqx4MsyEnWt5DQj9jA.jpg",
+ "source_urls": [
+  "https://t.me/diamond_dental_education"
+ ],
+ "description": null,
+ "city": "Toshkent",
+ "address": null,
+ "phone": "+998958845555",
+ "website": null,
+ "logo_local": "img/diamond-dental-education/logo.jpg"
+}

@@ -1,0 +1,162 @@
+{
+ "slug": "dentrade",
+ "kind": "shop",
+ "name": "DENTRADE (PRO-TEXNIKA)",
+ "items": [
+  {
+   "kind": "product",
+   "name": "Апекс-локатор пятого поколения I-Root",
+   "price": 4590000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/DqMJ6CknJ0O73_UGRdBsqw/1200r1200/d/apeks-lokator_pyatogo_pokoleniya_i-root.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/apeks-lokator-pyatogo-pokoleniya-i-root",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/1.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Эндомотор E-Cube",
+   "price": 6120000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/0NE-mY1u1dmVgUappEK8Nw/1200r1200/d/endomotor.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/endomotor-e-cube",
+   "description": "Комплектация: Ножная педаль в комплекте, 9 программ, автореверс, реципрок и совместимость со всеми эндоголовками NSK. ТЕХНИЧЕСКИЕ ХАРАКТЕРИСТИКИ НАКОНЕЧНИКА ACL(B) 42EP • Передача 16:1 • Вес 35г • Размер мм L63 Х D16,7 • Обмин 812 • Крутящий момент 5,2 Н*см ТЕХНИЧЕСКИЕ ХАРАКТЕРИСТИКИ МОТОРА CUBE EP • Постоянный ток (вход) DC6V • Размер мм L108 Х D19,8 • Вес 106г",
+   "extra": {},
+   "image_local": "img/dentrade/2.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Имплантологический физиодиспенсер с фиброоптикой",
+   "price": 25500000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/EpwhEtf1AAPjn_e4COfvxw/1200r1200/d/implantologicheskij_fiziodispenser_s_fibrooptikoj.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/implantologicheskij-fiziodispenser-s-fibrooptikoj",
+   "description": "Технические характеристики Эргономика уровня Hi-End Физиодиспенсер Saeshin Traus SIP10 (X-CUBE) оснащен современной подсветкой LED, обеспечивающей наивысший уровень яркого рассеянного света при работе в полостях  самой сложной морфологии. Высокий интеллект Физиодиспенсер Saeshin Traus SIP10 (X-CUBE) оснащен функцией записи 9-ти программ -  Ваша работа стала более оперативной, точной и безопасной – с любым пациентом, с любой имплантационной системой -  Saeshin Traus SIP10 (X-CUBE) – Ваша уверенность в точном соблюдении протокола имплантации. Уникальная вариативность работы Физиодиспенсер…",
+   "extra": {},
+   "image_local": "img/dentrade/3.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Коллагеновая мембрана Colla-D Hard Type 10х20",
+   "price": 612000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/FX3VmTd5E_zdCUGa5qTHCQ/1200r1200/d/soft.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/kollagenovaya-membrana-colla-d",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/4.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Костный материал Osteon мелкодисперсный 0,5сс",
+   "price": 510000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/v_9wpzMJk7_AYK8I6ICItw/1200r1200/d/kostnyj_material_osteon.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/kostnyj-material-osteon",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/5.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Ксенокость (бычья) мелкодисперсная 0.15г",
+   "price": 357000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/dfiKfG5tNCZwvLGLBfLv7Q/1200r1200/d/bez_imeni-1_0.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/ksenokost-bychya",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/6.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Наногибридный композит DenFil Nano",
+   "price": 867000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/YIprbw9wf-CGKOhVH2Udzw/1200r1200/d/nanogibridnyj_kompozit_denfil_n.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/nanogibridnyj-kompozit-denfil-n",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/7.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Портативный рентген аппарат PROX",
+   "price": 25500000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/8gGbS4kLXGVLt5xfoh8cMw/1200r1200/d/portativnyj_renten_apparat.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/portativnyj-renten-apparat-prox",
+   "description": "Технические характеристики PROX— компактный портативный высокочастотный рентген-аппарат. В компактном эргономичном корпусе цифрового дентального рентген-аппарата PROX конструкторы смогли разместить высокотехничное устройство, обеспечивающее комфортную работу стоматологу как при работе с дентальной фотопленкой так и с различными видами цифровых радиовизиографов. Основное достоинство рентген-аппарата PROX – малые размеры и вес (1,8 кг), низкое значение тока генерирующей трубки (2 мА), широкий диапазон экспозиций (0,01 с – 1,6 с) и высокочастотный принцип действия. Все вместе это позволяет…",
+   "extra": {},
+   "image_local": "img/dentrade/8.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Ультрафиолетовая лампа",
+   "price": 2754000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/Wfnm_dvW3YZdhGjt9Xiyow/1200r1200/d/ultrafioletovaya_lampa.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/ultrafioletovaya-lampa",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/9.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Body Ø3.1 | Platform Ø3.2",
+   "price": 765000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/zF175_bkEh3vruBZuDJ7zg/1200r1200/d/photo_2018-12-19_00-47-58.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/zubnoj-implantat-nrline",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/10.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Зубной имплантат SuperLine",
+   "price": 765000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/kRSymU6YJOtXF7Recszwjw/1200r1200/d/photo_2020-03-20_09-47-06.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/zubnoj-implantat-superline",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentrade/11.jpg"
+  },
+  {
+   "kind": "product",
+   "name": "Зуботехнический микромотор Strong 210",
+   "price": 1326000,
+   "price_text": null,
+   "currency": "UZS",
+   "image_url": "https://dentrade.uz/thumb/2/Gx8ry37VLgrMyueAjUXcVg/1200r1200/d/zubotehnicheskij_mikromotor_strong_210.jpg",
+   "source_url": "https://dentrade.uz/magazin/product/zubotehnicheskij-mikromotor-strong-210",
+   "description": "Технические характеристики Комплектация Описание Strong 210/105L с педалью Устройство устанавливают в сухом помещении. Важно следить за тем, чтобы пыль и остатки пломбировочных средств не проникали внутрь блока микромотора Strong 210. Для удаления пыли с внешних поверхностей прибора можно использовать спирт. Нужно избегать попадания влаги внутрь. С микромотором Strong 210/105L с педалью используются только буры стандарта 2,35 мм. Блок прибора нужно беречь от ударов, поскольку это может привести к повреждению подшипников. О неполадках говорят сильный шум и перегрев блока. В таком случае…",
+   "extra": {},
+   "image_local": "img/dentrade/12.jpg"
+  }
+ ],
+ "description": "Магазин по продаже стоматологических расходных материалов, зубных имплантов и стоматологического оборудования.",
+ "city": "Toshkent",
+ "address": "г. Ташкент, ул. Абдуллы Каххара 47",
+ "phone": "+998 (95) 340-10-10; +998 (95) 340-20-20",
+ "website": "https://dentrade.uz",
+ "telegram": null,
+ "logo_url": "https://dentrade.uz/thumb/2/LWXycLAsrYVHUeczKuvz_w/r/favicon.png",
+ "source_urls": [
+  "https://dentrade.uz/magazin"
+ ],
+ "logo_local": "img/dentrade/logo.png"
+}

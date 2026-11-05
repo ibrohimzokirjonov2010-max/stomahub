@@ -1,0 +1,238 @@
+{
+ "kind": "shop",
+ "name": "Dentashop (Max Denta Tech)",
+ "city": "Toshkent",
+ "address": "Toshkent, Chilonzor, Naqqoshlik 16A",
+ "phone": "+998 33 344-48-90; +998 33 137-77-54",
+ "website": "https://dentashop.uz",
+ "telegram": null,
+ "description": "«Max Denta Tech» — stomatologik va tish texnikasi uskunalari hamda sarf materiallari yetkazib beruvchi.",
+ "logo_url": "https://dentashop.uz/wp-content/themes/vegan/favicons/apple-touch-icon.png",
+ "source_urls": [
+  "https://dentashop.uz/"
+ ],
+ "items": [
+  {
+   "name": "Жидко-текучий, нано-гибридный композит",
+   "price": 195000,
+   "price_text": "195 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2021/04/photo_2021-04-03_11-26-58.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%b6%d0%b8%d0%b4%d0%ba%d0%be-%d1%82%d0%b5%d0%ba%d1%83%d1%87%d0%b8%d0%b9-%d0%bd%d0%b0%d0%bd%d0%be-%d0%b3%d0%b8%d0%b1%d1%80%d0%b8%d0%b4%d0%bd%d1%8b%d0%b9-%d0%ba%d0%be%d0%bc%d0%bf%d0%be%d0%b7%d0%b8/",
+   "description": null,
+   "extra": {},
+   "image_local": "img/dentashop/p01-жидко-текучий-нано-гибридный-компози.jpg"
+  },
+  {
+   "name": "Алмазный зуботехнический диск для керамики, пластмассы и гипса.",
+   "price": 39000,
+   "price_text": "39 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2020-08-18_15-15-56.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%b4%d0%b8%d1%81%d0%ba-%d0%be%d1%82%d1%80%d0%b5%d0%b7%d0%bd%d0%be%d0%b9-%d0%b0%d0%bb%d0%bc%d0%b0%d0%b7%d0%bd%d1%8b%d0%b9-%d0%b4%d0%bb%d1%8f-%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d0%ba%d0%b8-%d0%bf/",
+   "description": "Круг алмазный Косой Акрил для сепарации и контуровки керамики, твердых пластмасс, гипса. Идеальный обзор, охлаждение поверхности и удаление продуктов обработки.",
+   "extra": {},
+   "image_local": "img/dentashop/p02-диск-отрезной-алмазный-для-керамики-п.jpg"
+  },
+  {
+   "name": "Терапевтический наконечник Apple Dental RED-SUQP LED M4 MULTIflex М4",
+   "price": 975000,
+   "price_text": "975 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/09/photo_2020-06-16_10-08-43.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%82%d0%b5%d1%80%d0%b0%d0%bf%d0%b5%d0%b2%d1%82%d0%b8%d1%87%d0%b5%d1%81%d0%ba%d0%b8%d0%b9-%d0%bd%d0%b0%d0%ba%d0%be%d0%bd%d0%b5%d1%87%d0%bd%d0%b8%d0%ba-apple-dental/",
+   "description": "Терапевтический наконечник Apple Dental RED-SUQP LED M4 MULTIflex",
+   "extra": {},
+   "image_local": "img/dentashop/p03-терапевтический-наконечник-apple-dental.jpg"
+  },
+  {
+   "name": "Турбинный наконечник для 4-х канального соединения Appledental Apple TU",
+   "price": 299000,
+   "price_text": "299 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/09/photo_2020-09-10_17-12-33.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%82%d1%83%d1%80%d0%b1%d0%b8%d0%bd%d0%bd%d1%8b%d0%b9-%d0%bd%d0%b0%d0%ba%d0%be%d0%bd%d0%b5%d1%87%d0%bd%d0%b8%d0%ba-%d0%b4%d0%bb%d1%8f-4-%d1%85-%d0%ba%d0%b0%d0%bd%d0%b0%d0%bb%d1%8c%d0%bd%d0%be%d0%b3/",
+   "description": "Турбинный наконечник для 4-х канального соединения.",
+   "extra": {},
+   "image_local": "img/dentashop/p04-турбинный-наконечник-для-4-х-канальног.jpg"
+  },
+  {
+   "name": "Зуботехнические воскотопки",
+   "price": 910000,
+   "price_text": "910 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2018-01-20_09-11-k32-600x455-2.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%b7%d1%83%d0%b1%d0%be%d1%82%d0%b5%d1%85%d0%bd%d0%b8%d1%87%d0%b5%d1%81%d0%ba%d0%b0%d1%8f-%d0%bb%d0%b0%d0%b1%d0%be%d1%80%d0%b0%d1%82%d0%be%d1%80%d0%bd%d0%b0%d1%8f-%d0%b2%d0%be%d1%81%d0%ba%d0%be%d1%82/",
+   "description": "Зуботехническая лабораторная воскотопкагорячего покрытия для нагрева",
+   "extra": {},
+   "image_local": "img/dentashop/p05-зуботехническая-лабораторная-воскот.jpg"
+  },
+  {
+   "name": "Эндобоксы автоклавируемые.",
+   "price": 260000,
+   "price_text": "260 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/endoboks_v044_72_otv_d_endoinstrum_105_45_50.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%8d%d0%bd%d0%b4%d0%be%d0%b1%d0%be%d0%ba%d1%81%d1%8b-%d0%b0%d0%b2%d1%82%d0%be%d0%ba%d0%bb%d0%b0%d0%b2%d0%b8%d1%80%d1%83%d0%b5%d0%bc%d1%8b%d0%b9/",
+   "description": "Контейнер для дезинфекции с 60 отверстиями Материал: алюминий Цвет: фиолетовый, синий, красный, белый Функция: дезинфекция скоростного бура",
+   "extra": {},
+   "image_local": "img/dentashop/p06-эндобоксы-автоклавируемый.jpg"
+  },
+  {
+   "name": "Дистиллятор для воды.",
+   "price": 1300000,
+   "price_text": "1 300 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/unnamed-2.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%b4%d0%b8%d1%81%d1%82%d0%b8%d0%bb%d0%bb%d1%8f%d1%82%d0%be%d1%80-%d0%b4%d0%bb%d1%8f-%d0%b2%d0%be%d0%b4%d1%8b/",
+   "description": "Дистиллятор для воды. Экономичный, миниатюрный дистиллятор эконом-класса. Производительность 1 л/ч. Идеально подходит для подготовки воды для питания лабораторных и медицинских стерилизаторов и автоклавов. Мощность нагрева 750 Вт. Защита от перегрева, отключение при 160°С. Объем 4л. Внутренний бак изготовлен из нержавеющей стали.",
+   "extra": {},
+   "image_local": "img/dentashop/p07-дистиллятор-для-воды.jpg"
+  },
+  {
+   "name": "Ручная упаковочная машина.",
+   "price": 3250000,
+   "price_text": "3 250 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2020-08-24_15-53-21.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%80%d1%83%d1%87%d0%bd%d0%b0%d1%8f-%d1%83%d0%bf%d0%b0%d0%ba%d0%be%d0%b2%d0%be%d1%87%d0%bd%d0%b0%d1%8f-%d0%bc%d0%b0%d1%88%d0%b8%d0%bd%d0%b0-2/",
+   "description": "Упаковочная машина позволяет самостоятельно запечатать пакеты, регулируя их ширину и длину. Для этого используются рулоны разной ширины намотки (она подбирается под размеры инструментов и лотков).",
+   "extra": {},
+   "image_local": "img/dentashop/p08-ручная-упаковочная-машина-2.jpg"
+  },
+  {
+   "name": "Ручная упаковочная машина.",
+   "price": 3900000,
+   "price_text": "3 900 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2020-08-24_15-53-27.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%80%d1%83%d1%87%d0%bd%d0%b0%d1%8f-%d1%83%d0%bf%d0%b0%d0%ba%d0%be%d0%b2%d0%be%d1%87%d0%bd%d0%b0%d1%8f-%d0%bc%d0%b0%d1%88%d0%b8%d0%bd%d0%b0/",
+   "description": "Упаковочная машина позволяет самостоятельно запечатать пакеты, регулируя их ширину и длину. Для этого используются рулоны разной ширины намотки (она подбирается под размеры инструментов и лотков).",
+   "extra": {},
+   "image_local": "img/dentashop/p09-ручная-упаковочная-машина.jpg"
+  },
+  {
+   "name": "Штифты анкерные  12 штук",
+   "price": 31200,
+   "price_text": "31 200 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/unnamed-1.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%88%d1%82%d0%b8%d1%84%d1%82%d1%8b-%d0%b0%d0%bd%d0%ba%d0%b5%d1%80%d0%bd%d1%8b%d0%b5-12-%d1%88%d1%82%d1%83%d0%ba/",
+   "description": "Штифты латунные анкерные внутриканальные 12 штук в пакетике. Выберите нужный вам размер",
+   "extra": {},
+   "image_local": "img/dentashop/p10-штифты-анкерные-12-штук.jpg"
+  },
+  {
+   "name": "СВЕТООТВЕРЖДАЕМЫЙ МИКРОГИБРИДНЫЙ КОМПОЗИТ RHEINLIGHT FILL",
+   "price": 191100,
+   "price_text": "191 100 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/1-12.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%81%d0%b2%d0%b5%d1%82%d0%be%d0%be%d1%82%d0%b2%d0%b5%d1%80%d0%b6%d0%b4%d0%b0%d0%b5%d0%bc%d1%8b%d0%b9-%d0%bc%d0%b8%d0%ba%d1%80%d0%be%d0%b3%d0%b8%d0%b1%d1%80%d0%b8%d0%b4%d0%bd%d1%8b%d0%b9-%d0%ba%d0%be/",
+   "description": "Универсальный микрогибридный композит светового отверждения для передних и задних реставраций",
+   "extra": {},
+   "image_local": "img/dentashop/p11-светоотверждаемый-микрогибридный-ко.jpg"
+  },
+  {
+   "name": "Мини литейный цех  Powerful Cast PC-45",
+   "price": 32500000,
+   "price_text": "32 500 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2020-08-11_14-24-06.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%bc%d0%b8%d0%bd%d0%b8-%d0%bb%d0%b8%d1%82%d0%b5%d0%b9%d0%bd%d1%8b%d0%b9-%d1%86%d0%b5%d1%85-powerful-cast-pc-45/",
+   "description": "ЦЕНТРОБЕЖНАЯ ЛИТЕЙНАЯ УСТАНОВКА Powerful Cast PC-45 с комплектом готовый мини литейный цех. В комплекте есть: МУФЕЛЬНАЯ печь, ПЕСКОСТРУЙКА, вакуумный КАСТРЮЛЬ, ЦЕНТРОБЕЖНАЯ ЛИТЕЙНАЯ проспект. Купив установку у нас вы получите бонус стартовый набор и бесплатная мастер класс от специалистами !!!",
+   "extra": {},
+   "image_local": "img/dentashop/p12-мини-литейный-цех-powerful-cast-pc-45.jpg"
+  },
+  {
+   "name": "ЦЕНТРОБЕЖНАЯ ЛИТЕЙНАЯ УСТАНОВКА Powerful Cast PC-45",
+   "price": 17550000,
+   "price_text": "17 550 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2019-03-04_13-49-25.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%86%d0%b5%d0%bd%d1%82%d1%80%d0%be%d0%b1%d0%b5%d0%b6%d0%bd%d0%b0%d1%8f-%d0%bb%d0%b8%d1%82%d0%b5%d0%b9%d0%bd%d0%b0%d1%8f-%d1%83%d1%81%d1%82%d0%b0%d0%bd%d0%be%d0%b2%d0%ba%d0%b0-powerful-cast-pc-45/",
+   "description": "ЦЕНТРОБЕЖНАЯ ЛИТЕЙНАЯ УСТАНОВКА С кислородно газовой горелкой Powerful Cast PC-45 Установка для литья драгоценных и не драгоценных металлов и сплавов методом высокочастотной индукции. Отличительной особенностью Литейной Установки Powerful Cast PC-45 является надежность и простота в использовании.",
+   "extra": {},
+   "image_local": "img/dentashop/p13-центробежная-литейная-установка-powerful.jpg"
+  },
+  {
+   "name": "Ручная пресс установка EASY PRESS",
+   "price": 9100000,
+   "price_text": "9 100 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2019-08-17_13-44-00.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%80%d1%83%d1%87%d0%bd%d0%be%d0%b9-%d0%bf%d1%80%d0%b5%d1%81%d1%81-%d1%83%d1%81%d1%82%d0%b0%d0%bd%d0%be%d0%b2%d0%ba%d0%b0-easy-press-%d0%b4%d0%bb%d1%8f-%d0%b1%d0%b5%d0%b7-%d0%bc%d0%b5%d1%82%d0%b0-2/",
+   "description": "Оборудование предназначено для ручного прессования стеклокерамики из дисиликата лития.",
+   "extra": {},
+   "image_local": "img/dentashop/p14-ручной-пресс-установка-easy-press-для-бе.jpg"
+  },
+  {
+   "name": "Зуботехнический комплект оборудования",
+   "price": 26000000,
+   "price_text": "26 000 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/photo_2019-08-17_13-41-36.jpg",
+   "source_url": "https://dentashop.uz/product/%d1%80%d1%83%d1%87%d0%bd%d0%be%d0%b9-%d0%bf%d1%80%d0%b5%d1%81%d1%81-%d1%83%d1%81%d1%82%d0%b0%d0%bd%d0%be%d0%b2%d0%ba%d0%b0-easy-press-%d0%b4%d0%bb%d1%8f-%d0%b1%d0%b5%d0%b7-%d0%bc%d0%b5%d1%82%d0%b0/",
+   "description": "Оборудование предназначено для ручного прессования стеклокерамики из дисиликата лития.",
+   "extra": {},
+   "image_local": "img/dentashop/p15-ручной-пресс-установка-easy-press-для-бе.jpg"
+  },
+  {
+   "name": "Погружные воски.",
+   "price": 351000,
+   "price_text": "351 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/06/3-4.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%bf%d0%be%d0%b3%d1%80%d1%83%d0%b6%d0%bd%d1%8b%d0%b5-%d0%b2%d0%be%d1%81%d0%ba%d0%b8/",
+   "description": "Готовый к применению, мягкий погружной воск с минимальной усадкой для техники изготовления коронок и мостовидных протезов.",
+   "extra": {},
+   "image_local": "img/dentashop/p16-погружные-воски.jpg"
+  },
+  {
+   "name": "ПЕЧИ ДЛЯ ОБЖИГА КЕРАМИКИ",
+   "price": 46800000,
+   "price_text": "46 800 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/08/1-1.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%bf%d0%b5%d1%87%d0%b8-%d0%b4%d0%bb%d1%8f-%d0%be%d0%b1%d0%b6%d0%b8%d0%b3%d0%b0-%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d0%ba%d0%b8/",
+   "description": "ВАКУУМНАЯ ПЕЧЬ ДЛЯ ОБЖИГА КЕРАМИКИ FORMAT SD-100",
+   "extra": {},
+   "image_local": "img/dentashop/p17-печи-для-обжига-керамики.jpg"
+  },
+  {
+   "name": "Фрезы.",
+   "price": 78000,
+   "price_text": "78 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/07/51-min.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d1%81%d1%82/",
+   "description": "Твердосплавные зуботехнические фрезы — необходимый инструмент для всех зуботехнических работ.",
+   "extra": {},
+   "image_local": "img/dentashop/p18-керамист.jpg"
+  },
+  {
+   "name": "Фрезы.",
+   "price": 78000,
+   "price_text": "78 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/07/50-min.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d1%81%d1%82-51-%d0%ba%d0%be%d0%bf%d0%b8%d1%80%d0%be%d0%b2%d0%b0%d1%82%d1%8c/",
+   "description": "Твердосплавные зуботехнические фрезы — необходимый инструмент для всех зуботехнических работ.",
+   "extra": {},
+   "image_local": "img/dentashop/p19-керамист-51-копировать.jpg"
+  },
+  {
+   "name": "Стеклянный тигель",
+   "price": 39000,
+   "price_text": "39 000 сўм",
+   "currency": "UZS",
+   "image_url": "https://dentashop.uz/wp-content/uploads/2020/07/46-min.jpg",
+   "source_url": "https://dentashop.uz/product/%d0%ba%d0%b5%d1%80%d0%b0%d0%bc%d0%b8%d1%81%d1%82-50/",
+   "description": "Стеклянный тигель предназначается для дозирования ков примпоненто изготовлении материалов для ортодонтических конструкций и препаратов. Объем в 5 мл является оптимальным для работы с небольшими объемами.",
+   "extra": {},
+   "image_local": "img/dentashop/p20-керамист-50.jpg"
+  }
+ ],
+ "slug": "dentashop",
+ "logo_local": "img/dentashop/logo.png"
+}
