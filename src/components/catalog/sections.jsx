@@ -35,6 +35,8 @@ import { orderForMarketplace } from '../../personal/rank.js'
 import { seminarMatches } from '../../personal/specialtyMap.js'
 import { SizUchun, SpecialtyPicker } from '../../personal/PersonalBlocks'
 import { useMobile } from '../../useMobile'
+import { BookOpen as PBook, Recycle as PRecycle, Megaphone as PMegaphone, PlayCircle as PPlay, ShoppingBag as PBag, CalendarDays as PCal, MonitorCog as PMonitor, Shirt as PShirt, Wrench as PWrench, BriefcaseBusiness as PJob, Stethoscope as PDoc } from 'lucide-react'
+import { sectionPoster, categoryPoster } from '../../posters/sectionPosters'
 
 /* ---- helpers ---- */
 const chipsFrom = (pairs, icons) => pairs.filter(([k]) => k !== 'all').map(([key, label]) => ({ key, label, icon: icons[key] }))
@@ -51,13 +53,19 @@ const realDiscount = (kind, it) => (isOwned(kind, it.id) && Number(it.oldPrice) 
 const realRating = () => null
 const priceBand = (bands) => ({ key: 'price', label: 'Narx', options: bands.map(([k, l]) => [k, l]), match: (it, v) => { const [lo, hi] = bands.find(([k]) => k === v)[2]; const p = Number(it.price); return p >= lo && p < hi } })
 
-/** Hero slides from real items only (their own images, titles); no invented promos. */
-const slidesFor = ({ title, accent, text, items, image, href, scroll }) => {
+/**
+ * Bo‘lim posterlari: matn src/posters/sectionPosters.js dan, rasm va son — faqat bo‘limning real yozuvlaridan.
+ * 1-slayd bo‘limni tushuntiradi (+ real son), keyingilari (ko‘pi bilan 3) — real sotuvchi yozuvlari, 1-slayd rasmi takrorlanmaydi.
+ * ctx: { scroll, post, catLabel } — catLabel bo‘lsa (Marketplace turkumi), poster shu turkumniki.
+ */
+const posterAction = (a, ctx) => (a === 'scroll' ? { onClick: ctx.scroll } : a === 'post' ? { onClick: ctx.post } : { href: a })
+const slidesFor = ({ key, icon, items, count = items.length, image, href, ctx = {} }) => {
   const withImg = items.filter((x) => image(x))
-  const intro = { id: 'intro', title, accent, text, images: withImg.slice(0, 1).map(image), cta: 'Barchasini ko‘rish', onClick: scroll }
-  const owned = withImg.filter((x) => x.__owned)
-  const feat = (owned.length ? owned : []).slice(0, 3).map((x) => ({ id: `f-${x.id}`, title: x.__title, text: x.__sub, images: [image(x)], cta: 'Ko‘rish', href: href(x) }))
-  return [intro, ...feat].filter((s) => s.images.length || s.id === 'intro')
+  const poster = ctx.catLabel ? { ...categoryPoster(ctx.catLabel), badge: items.length ? `${items.length} ta mahsulot` : '' } : sectionPoster(key, count)
+  const lead = withImg[0]
+  const intro = { id: `intro-${ctx.catLabel || 'all'}`, title: poster.title, text: poster.text, badge: poster.badge, cta: poster.cta, icon, images: lead ? [image(lead)] : [], ...posterAction(poster.action, ctx) }
+  const feat = withImg.filter((x) => x.__owned && x !== lead).slice(0, 3).map((x) => ({ id: `f-${x.id}`, item: true, title: x.__title, text: x.__sub, images: [image(x)], cta: 'Ko‘rish', href: href(x) }))
+  return [intro, ...feat]
 }
 const tag = (kind, list, titleOf, subOf) => list.map((x) => Object.assign({}, x, { __owned: isOwned(kind, x.id), __title: titleOf(x), __sub: subOf ? subOf(x) : '' }))
 
@@ -93,7 +101,7 @@ export function useFormaSection() {
           cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${sizesOf(p)[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
         }
       },
-      slides: (list, scroll) => slidesFor({ title: 'Ish kiyimingiz —', accent: 'sizning uslubingiz', text: 'Shifokor va assistentlar uchun forma, xalat va poyabzal', items: list, image: (p) => p.image, href: (p) => `/forma/${p.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'forma', icon: PShirt, items: list, image: (p) => p.image, href: (p) => `/forma/${p.id}`, ctx }),
     }
   }, [v])
 }
@@ -106,9 +114,9 @@ export function useMarketSection() {
   return useMemo(() => {
     // Kirgan foydalanuvchi: qiziqish (ko‘rgan/qidirgan/savat/xarid) va yo‘nalish bo‘yicha standart tartib.
     const ordered = me.authed ? orderForMarketplace(products, { signals: me.signals, specialty: me.specialty }) : products
-    const items = ordered.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.seller }))
+    const items = ordered.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.category || p.seller }))
     return {
-      key: 'marketplace', shopActive: 'market', imageSearch: true, ads: true, track: true,
+      key: 'marketplace', shopActive: 'market', imageSearch: true, catPosters: true, ads: true, track: true,
       top: me.authed ? <><SpecialtyPicker desktop={desktop} /><SizUchun desktop={desktop} /></> : null, title: 'Marketplace', subtitle: 'Stomatologiya materiallari va asboblari — tasdiqlangan sotuvchilardan', placeholder: 'Mahsulot, brend yoki sotuvchi qidiring...',
       items, loading: status === 'loading' || status === 'idle', emptyText: 'Hozircha sotuvdagi mahsulotlar yo‘q',
       cats: uniq(items.map((p) => p.category)).map((c) => ({ key: c, label: c, icon: MARKET_ICONS[c] || Package })), catOf: (p) => p.category,
@@ -124,7 +132,7 @@ export function useMarketSection() {
         badge: p.stock <= 0 ? { text: 'Tugagan', tone: 'info' } : null, rating: p.reviews > 0 ? { value: p.rating, count: p.reviews } : null,
         cart: p.stock > 0 ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
       }),
-      slides: (list, scroll) => slidesFor({ title: 'Klinikangiz uchun', accent: 'hamma narsa bir joyda', text: `${list.length} ta mahsulot sotuvda`, items: list, image: (p) => p.image, href: (p) => `/product/${p.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'marketplace', icon: PBag, items: list, image: (p) => p.image, href: (p) => `/product/${p.id}`, ctx }),
     }
   }, [products, status, me.authed, me.signals, me.specialty, desktop])
 }
@@ -152,7 +160,7 @@ export function useSeminarsSection() {
       text: (s) => `${s.title} ${s.speaker?.name || s.speaker || ''} ${s.city} ${s.placeLabel}`,
       // seminarCard().off is derived from an invented plan oldPrice — not shown.
       card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, fit: 'contain', kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.__mine ? { text: 'Sizning yo‘nalishingiz', tone: 'new' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
-      slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: (() => { const n = list.filter((s) => !s.past && !s.cancelled).length; return n ? `${n} ta yaqinlashayotgan seminar` : 'Yaqinlashayotgan seminarlar tez orada' })(), items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'seminarlar', icon: PCal, items: list, count: list.filter((s) => !s.past && !s.cancelled).length, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, ctx }),
     }
   }, [hub, spec])
 }
@@ -174,7 +182,7 @@ export function useBooksSection() {
       sorts: [...PRICE_SORTS(), ['year', 'Eng yangi nashr', (a, b) => (b.year || 0) - (a.year || 0)]],
       text: (b) => `${b.title} ${b.author} ${b.isbn || ''}`,
       card: (b) => ({ id: b.id, href: `/kitoblar/${b.id}`, image: b.cover, fit: 'contain', kicker: b.author, title: b.title, meta: [[b.year, b.pages && `${b.pages} bet`].filter(Boolean).join(' · ')], price: b.price == null || b.price === '' ? null : Number(b.price), priceText: b.price == null || b.price === '' ? 'Narxi kelishiladi' : undefined, badge: (b.formats || []).includes('pdf') ? { text: 'PDF', tone: 'info' } : null }),
-      slides: (list, scroll) => slidesFor({ title: 'Kasbiy kutubxona', accent: 'bir joyda', text: 'Bosma va elektron kitoblar', items: list, image: (b) => b.cover, href: (b) => `/kitoblar/${b.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'kitoblar', icon: PBook, items: list, image: (b) => b.cover, href: (b) => `/kitoblar/${b.id}`, ctx }),
     }
   }, [v])
 }
@@ -196,7 +204,7 @@ export function useEducationSection() {
       sorts: PRICE_SORTS(),
       text: (c) => `${c.title} ${c.doctor} ${c.about || ''}`,
       card: (c) => ({ id: c.id, href: '/talim', image: c.cover, kicker: c.doctor, title: c.title, meta: [[c.lessons && `${c.lessons} dars`, c.hours && `${c.hours} soat`].filter(Boolean).join(' · ')], price: Number(c.price) || 0, badge: { text: formats.find(([k]) => k === c.format)?.[1] || 'Kurs', tone: 'info' } }),
-      slides: (list, scroll) => slidesFor({ title: 'O‘rganing', accent: 'va rivojlaning', text: 'Amaliyotchi shifokorlardan kurslar', items: list, image: (c) => c.cover, href: () => '/talim', scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'talim', icon: PPlay, items: list, image: (c) => c.cover, href: () => '/talim', ctx }),
     }
   }, [v])
 }
@@ -217,7 +225,7 @@ export function useUstalarSection() {
       sorts: [['default', 'Tavsiya etilgan', null], ['years', 'Tajriba', (a, b) => (b.years || 0) - (a.years || 0)]],
       text: (m) => `${m.name} ${m.role} ${(m.tags || []).join(' ')} ${(m.brands || []).join(' ')} ${m.city} ${m.district || ''}`,
       card: (m) => ({ id: m.id, href: `/ustalar/${m.id}`, image: m.photo, kicker: [m.city, m.district].filter(Boolean).join(', '), title: m.name, meta: [m.role, m.years && `${m.years} yil tajriba`], priceText: m.services?.[0]?.price || '', badge: m.status === 'online' ? { text: 'Onlayn', tone: 'new' } : null }),
-      slides: (list, scroll) => slidesFor({ title: 'Uskunangiz', accent: 'ishonchli qo‘llarda', text: 'Ta’mir, o‘rnatish va servis xizmatlari', items: list, image: (m) => m.photo, href: (m) => `/ustalar/${m.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'ustalar', icon: PWrench, items: list, image: (m) => m.photo, href: (m) => `/ustalar/${m.id}`, ctx }),
     }
   }, [v])
 }
@@ -242,7 +250,7 @@ export function useJihozSection() {
         const off = realDiscount('device', p)
         return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.city, p.warranty && `Kafolat: ${p.warranty} oy`], price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
       },
-      slides: (list, scroll) => slidesFor({ title: 'Klinikangizni', accent: 'jihozlang', text: 'Ustanovka, rentgen, skaner va boshqalar', items: list, image: (p) => p.image, href: (p) => `/jihozlar/${p.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'jihozlar', icon: PMonitor, items: list, image: (p) => p.image, href: (p) => `/jihozlar/${p.id}`, ctx }),
     }
   }, [v])
 }
@@ -264,7 +272,7 @@ export function useIshlarSection() {
       sorts: [['default', 'Eng yangi', null], ['pay', 'Maosh', (a, b) => (b.max || 0) - (a.max || 0)]],
       text: (j) => `${j.title} ${j.clinic} ${j.cityLabel || ''} ${j.district || ''} ${j.about || ''}`,
       card: (j) => ({ id: j.id, href: `/ishlar/${j.id}`, image: j.image, kicker: j.clinic, title: j.title, meta: [[j.cityLabel || jobCity[j.city], j.district].filter(Boolean).join(', '), j.posted], priceText: j.min && j.max ? pay(j.min, j.max) : 'Kelishiladi', badge: { text: jobTypes.find(([k]) => k === j.type)?.[1] || 'Ish', tone: 'info' } }),
-      slides: (list, scroll) => slidesFor({ title: 'Yangi ish', accent: 'yangi imkoniyat', text: `${list.length} ta vakansiya`, items: list, image: (j) => j.image, href: (j) => `/ishlar/${j.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'ishlar', icon: PJob, items: list, image: (j) => j.image, href: (j) => `/ishlar/${j.id}`, ctx }),
     }
   }, [v])
 }
@@ -290,7 +298,7 @@ export function useSurplusSection() {
         const off = realDiscount('surplus', s)
         return { id: s.id, href: `/ortiqcha/${s.id}`, image: s.image, fit: 'contain', kicker: s.brand, title: s.name, meta: [s.type, [s.city, s.expiry && `Muddati: ${s.expiry}`].filter(Boolean).join(' · ')], price: s.price, oldPrice: off ? s.oldPrice : 0, badge: s._pending ? { text: 'Moderatsiyada', tone: 'info' } : off ? { text: `-${off}%`, tone: 'sale' } : { text: s.condition, tone: 'info' } }
       },
-      slides: (list, scroll) => slidesFor({ title: 'Ortiqcha materialni', accent: 'foydaga aylantiring', text: 'Yopiq va yaroqli materiallar', items: list, image: (s) => s.image, href: (s) => `/ortiqcha/${s.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'ortiqcha', icon: PRecycle, items: list, image: (s) => s.image, href: (s) => `/ortiqcha/${s.id}`, ctx }),
     }
   }, [v, rev])
 }
@@ -310,7 +318,7 @@ export function useDoctorsSection() {
       sorts: [['default', 'Tavsiya etilgan', null], ['exp', 'Tajriba', (a, b) => (b.exp || 0) - (a.exp || 0)]],
       text: (d) => `${d.name} ${d.role} ${d.clinic} ${(d.tags || []).join(' ')} ${d.city}`,
       card: (d) => ({ id: d.id, href: `/mutaxassislar/${d.id}`, image: d.photo, kicker: d.clinic, title: d.name, meta: [d.role, [d.city, d.exp && `${d.exp} yil tajriba`].filter(Boolean).join(' · ')], priceText: d.services?.[0]?.price ? (typeof d.services[0].price === 'number' ? som(d.services[0].price) : String(d.services[0].price)) : '', badge: d.online ? { text: 'Onlayn', tone: 'new' } : null }),
-      slides: (list, scroll) => slidesFor({ title: 'Tajribali mutaxassis', accent: 'maslahati', text: 'Onlayn va klinikada konsultatsiya', items: list, image: (d) => d.photo, href: (d) => `/mutaxassislar/${d.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'mutaxassislar', icon: PDoc, items: list, image: (d) => d.photo, href: (d) => `/mutaxassislar/${d.id}`, ctx }),
     }
   }, [v])
 }
@@ -333,7 +341,7 @@ export function useElonlarSection() {
       action: { label: 'E’lon joylash', render: ({ close, done }) => <PostAdSheet onClose={close} onDone={(a) => { adsStore.add(a); done() }} /> },
       text: (a) => `${a.title} ${a.sub} ${a.city} ${dealName[a.deal] || ''}`,
       card: (a) => ({ id: a.id, href: `/elonlar/${a.id}`, image: a.images?.[0], kicker: [a.city, a.date].filter(Boolean).join(' · '), title: a.title, meta: [a.sub], priceText: a.price ? adPrice(a) : 'Kelishiladi', badge: { text: dealName[a.deal] || 'E’lon', tone: a.deal === 'sale' ? 'new' : 'info' } }),
-      slides: (list, scroll) => slidesFor({ title: 'Keraksizini soting,', accent: 'keraklisini toping', text: 'Hamkasblar e’lonlari', items: list, image: (a) => a.images?.[0], href: (a) => `/elonlar/${a.id}`, scroll }),
+      slides: (list, ctx) => slidesFor({ key: 'elonlar', icon: PMegaphone, items: list, image: (a) => a.images?.[0], href: (a) => `/elonlar/${a.id}`, ctx }),
     }
   }, [v, added])
 }

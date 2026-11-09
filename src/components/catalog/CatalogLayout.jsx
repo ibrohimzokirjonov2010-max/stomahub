@@ -66,7 +66,7 @@ export function HeroSlider({ slides, desktop }) {
   return (
     <div
       data-testid="catalog-hero"
-      className={`relative mt-3 overflow-hidden rounded-2xl ${desktop ? 'h-[230px]' : 'h-[150px]'}`}
+      className={`relative mt-3 overflow-hidden rounded-2xl ${desktop ? 'h-[230px]' : 'h-[164px]'}`}
       onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
       onTouchEnd={(e) => {
         if (touch.current == null || n < 2) return
@@ -108,31 +108,30 @@ function AdSlide({ s, desktop }) {
 }
 
 function Slide({ s, desktop }) {
-  // Hero tor: bitta rasm object-contain — 2 ta yonma-yon poster telefonda "ST POSTER" bo‘lib qirqilardi.
-  const imgs = (s.images || []).filter(Boolean).slice(0, 1)
+  // Matn chap ustunda, rasm o‘ng ustunda — bir-birining ustiga chiqmaydi. Rasm yo‘q bo‘lsa (bo‘sh bo‘lim) bo‘lim belgisi.
+  const img = (s.images || []).filter(Boolean)[0]
+  const Icon = s.icon
   const Btn = s.href ? Link : 'button'
   return (
-    <div className="relative h-full w-full shrink-0 bg-gradient-to-r from-[#e3f3f4] via-[#eaf5f7] to-[#d7ecf0]">
-      {imgs.length > 0 && (
-        <div className={`absolute inset-y-0 right-0 flex items-center ${desktop ? 'w-[42%] p-3' : 'w-[46%] p-2'}`}>
-          {imgs.map((src) => (
-            <div key={src} className="relative h-full w-full overflow-hidden rounded-xl bg-white/85 ring-1 ring-white/70">
-              <img src={src} alt="" className="size-full object-contain p-2" />
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="absolute inset-y-0 left-0 w-[64%] bg-gradient-to-r from-[#e6f4f5] via-[#e6f4f5]/95 to-transparent" />
-      <div className={`relative flex h-full flex-col justify-center ${desktop ? 'max-w-[54%] pl-8' : 'max-w-[64%] pl-3.5'}`}>
-        <p className={`${desktop ? 'text-[28px]' : 'text-[17px]'} line-clamp-2 font-extrabold leading-[1.15] text-[#0d2a4a]`}>
-          {s.title} {s.accent && <span className="block text-sea">{s.accent}</span>}
-        </p>
-        {s.text && <p className={`mt-1 line-clamp-2 ${desktop ? 'max-w-[380px] text-[14px]' : 'max-w-[170px] text-[10.5px]'} leading-snug text-ink-2`}>{s.text}</p>}
+    <div data-testid="hero-slide" className={`relative flex h-full w-full shrink-0 items-stretch bg-gradient-to-r from-[#e6f4f5] via-[#eaf5f7] to-[#d7ecf0] ${desktop ? 'gap-6 pl-8 pr-3' : 'gap-2 pl-3.5 pr-2'}`}>
+      <div data-testid="hero-slide-text" className={`flex min-w-0 flex-col justify-center ${desktop ? 'w-[56%] py-4' : 'w-[58%] py-2.5'}`}>
+        {s.badge && <span className={`mb-1 w-fit max-w-full truncate rounded-full bg-white/80 font-semibold text-[#0F766E] ring-1 ring-[#0F766E]/15 ${desktop ? 'px-2.5 py-0.5 text-[12px]' : 'px-2 py-px text-[10px]'}`}>{s.badge}</span>}
+        <p className={`${desktop ? (s.item ? 'text-[24px]' : 'text-[28px]') : s.item ? 'line-clamp-3 text-[14.5px]' : 'line-clamp-2 text-[16px]'} ${desktop ? 'line-clamp-2' : ''} font-extrabold leading-[1.15] text-[#0d2a4a]`}>{s.title}</p>
+        {s.text && <p className={`mt-1 ${s.item ? 'line-clamp-1' : 'line-clamp-2'} ${desktop ? 'max-w-[420px] text-[14px]' : 'text-[11px]'} leading-snug text-ink-2`}>{s.text}</p>}
         {s.cta && (
-          <Btn {...(s.href ? { to: s.href } : { type: 'button', onClick: s.onClick })} className={`mt-2.5 flex w-fit items-center gap-1.5 rounded-xl bg-sea font-semibold text-white active:scale-[0.97] ${desktop ? 'h-11 px-5 text-[14px]' : 'h-9 px-3.5 text-[12px]'}`}>
-            {s.cta} <ArrowRight className="size-3.5" />
+          <Btn {...(s.href ? { to: s.href } : { type: 'button', onClick: s.onClick })} data-testid="hero-cta" className={`mt-2 flex w-fit max-w-full items-center gap-1.5 rounded-xl bg-[#0F766E] font-semibold text-white active:scale-[0.97] ${desktop ? 'h-11 px-5 text-[14px]' : 'h-8 px-3 text-[11.5px]'}`}>
+            <span className="truncate">{s.cta}</span> <ArrowRight className="size-3.5 shrink-0" />
           </Btn>
         )}
+      </div>
+      <div className={`flex min-w-0 flex-1 items-center justify-center ${desktop ? 'py-3 pb-7' : 'py-2 pb-5'}`}>
+        {img ? (
+          <div className="relative h-full w-full overflow-hidden rounded-xl bg-white/85 ring-1 ring-white/70">
+            <img src={img} alt="" className="size-full object-contain p-2" />
+          </div>
+        ) : Icon ? (
+          <span className={`grid place-items-center rounded-full bg-white/80 text-[#0F766E] ring-1 ring-[#0F766E]/10 ${desktop ? 'size-[120px]' : 'size-[76px]'}`}><Icon className={desktop ? 'size-14' : 'size-9'} strokeWidth={1.6} /></span>
+        ) : null}
       </div>
     </div>
   )
@@ -232,6 +231,9 @@ export function FilterBar({ filters, values, onChange, sorts, sort, onSort, desk
  * card: { id, href, image, kicker, title, meta: [string], extra: node, price: number|null, priceText,
  *         badge: {text, tone:'new'|'sale'|'info'}|null, rating: {value,count}|null, cart: {item}|null }
  */
+/** Raqam guruhlari orasidagi bo‘shliqni bo‘linmas qiladi: "18 000 000 so‘m" -> faqat "so‘m" oldidan qator buzilishi mumkin. */
+export const keepDigits = (t) => String(t ?? '').replace(/(\d)[ \u00a0\u202f](?=\d)/g, '$1\u00a0')
+
 export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
   const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea' }
   return (
@@ -255,11 +257,14 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
         )}
         {(card.meta || []).filter(Boolean).slice(0, 2).map((m) => <p key={m} className="mt-0.5 truncate text-[10.5px] text-ink-2">{m}</p>)}
         {card.extra}
-        <div className="mt-auto flex items-center justify-between gap-1 pt-1.5">
-          <span className="min-w-0 truncate whitespace-nowrap text-[14px] font-extrabold text-[#0d2a4a]">
-            {card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price))}
-            {card.oldPrice ? <s className="ml-1 text-[10.5px] font-medium text-muted">{som(card.oldPrice)}</s> : null}
-          </span>
+        <div className="mt-auto flex items-end justify-between gap-1.5 pt-1.5">
+          {/* Narx hech qachon kesilmaydi: raqam guruhlari ajralmaydi, kerak bo‘lsa "so‘m" keyingi qatorga o‘tadi */}
+          <div data-testid="catalog-price" className="min-w-0 flex-1 leading-tight">
+            <p className={`break-words font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[13px]'}`}>
+              {keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))}
+            </p>
+            {card.oldPrice ? <s className="block text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
+          </div>
           {card.cart ? (
             <button type="button" onClick={(e) => { e.preventDefault(); onAdd() }} aria-label={added ? 'Savatda' : 'Savatga qo‘shish'} className={`grid size-9 shrink-0 place-items-center rounded-xl active:scale-95 ${added ? 'bg-sea-50 text-sea ring-1 ring-sea/40' : 'bg-sea text-white'}`}>
               {added ? <Check className="size-[18px]" strokeWidth={2.4} /> : <ShoppingCart className="size-[17px]" />}
@@ -313,6 +318,11 @@ export function CatalogPage({ section }) {
   const [toast, setToast] = useState('')
   const [allSheet, setAllSheet] = useState(false)
   const [posting, setPosting] = useState(false)
+  // /elonlar?joylash=1 kabi havola (bo‘sh bo‘lim posterlaridan) — shu bo‘limning e’lon oynasini ochadi.
+  useEffect(() => {
+    if (!section.action || !new URLSearchParams(window.location.search).get('joylash')) return
+    if (ensureLogin()) setPosting(true)
+  }, [section.key]) // eslint-disable-line react-hooks/exhaustive-deps
   const [limit, setLimit] = useState(24)
   const [imgOpen, setImgOpen] = useState(false)
   const [vis, setVis] = useState(null) // image-search result { name, brand, category, terms, thumb }
@@ -360,7 +370,13 @@ export function CatalogPage({ section }) {
   const sponsoredIds = new Set(sponsored.map((x) => x.item.id))
   const adProps = { section, desktop, cartItems, add, navigate, setToast }
   const active = Object.values(values).filter(Boolean).length
-  const baseSlides = useMemo(() => section.slides(section.items, () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })), [section])
+  // Poster: bo‘lim (yoki Marketplace turkumi) bo‘yicha; CTA ro‘yxatga tushadi yoki shu bo‘limda e’lon ochadi.
+  const catLabel = section.catPosters && cat !== 'all' ? cats.find((c) => c.key === cat)?.label || '' : ''
+  const baseSlides = useMemo(() => section.slides(catLabel ? section.items.filter(inCat) : section.items, {
+    catLabel,
+    scroll: () => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    post: () => { if (section.action && ensureLogin()) setPosting(true) },
+  }), [section, catLabel]) // eslint-disable-line react-hooks/exhaustive-deps
   // Tasdiqlangan banner kampaniyalari — mavjud poster slayderining BOSHIGA (ko‘pi bilan 2 ta), keyin odatiy posterlar.
   const slides = useMemo(() => {
     const ads = adOn ? joinAds(adBanner, section.items, () => true, 2) : []
@@ -371,10 +387,11 @@ export function CatalogPage({ section }) {
     <>
       <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => setPosting(true)} />
       <CatalogSearch value={q} onChange={setQ} placeholder={section.placeholder} onFilter={() => setAllSheet(true)} active={active} inputRef={searchRef} desktop={desktop} onImage={section.imageSearch ? () => setImgOpen(true) : undefined} />
-      {section.top && !q.trim() && !vis ? section.top : null}
       {vis ? (
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
       ) : <HeroSlider slides={slides} desktop={desktop} />}
+      {/* Siz uchun — poster slayderi ostida, mahsulotlar panjarasi ustida */}
+      {section.top && !q.trim() && !vis ? section.top : null}
       {cats.length > 0 && <CategoryChips cats={cats} value={cat} onChange={setCat} desktop={desktop} />}
       {catRow.length > 0 && (
         <section data-testid="ad-cat-row" className="mt-3">
