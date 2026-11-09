@@ -22,3 +22,33 @@ test('move swaps within bounds', () => {
   assert.deepEqual(move(['a', 'b', 'c'], 0, 1), ['b', 'a', 'c'])
   assert.deepEqual(move(['a', 'b'], 0, -1), ['a', 'b'])
 })
+
+import { ratingOf, salesOf, verifiedOf, workTimeOf, contactOf, categoriesOf, orderProducts } from '../src/seller-public/lib.js'
+test('v2: rating only with real reviews', () => {
+  assert.equal(ratingOf({ rating: null, reviews_count: 0 }), null)
+  assert.equal(ratingOf({ rating: 4.83, reviews_count: 3 }), 4.8)
+  assert.equal(ratingOf({ rating: 5, reviews_count: 0 }), null)
+})
+test('v2: sales hidden unless RPC returns it', () => {
+  assert.equal(salesOf({}), null)
+  assert.equal(salesOf({ sales_count: 0 }), 0)
+  assert.equal(salesOf({ sales_count: '12' }), 12)
+})
+test('v2: verified', () => {
+  assert.equal(verifiedOf(null), false)
+  assert.equal(verifiedOf({ id: 'x' }), true)
+  assert.equal(verifiedOf({ verified: false }), false)
+})
+test('v2: contact channels', () => {
+  assert.deepEqual(contactOf({}), { telegram: null, tel: '', message: '', messageVia: '' })
+  assert.equal(contactOf({ telegram: 'https://t.me/dokon' }).message, 'https://t.me/dokon')
+  assert.equal(contactOf({ telegram: '@dokon' }).telegram.handle, '@dokon')
+  const c = contactOf({ phone: '+998 90 123 45 67' })
+  assert.equal(c.tel, 'tel:+998901234567'); assert.equal(c.messageVia, 'sms')
+})
+test('v2: work time, categories, featured order', () => {
+  assert.equal(workTimeOf({ work_days: 'Du-Sh', work_hours: ' ' }), 'Du-Sh')
+  assert.deepEqual(categoriesOf([{ category: 'A' }, { category: 'B' }, { category: 'A' }, {}]), ['A', 'B'])
+  const ps = ['a', 'b', 'c'].map((id) => ({ id }))
+  assert.deepEqual(orderProducts(ps, ['c']).map((p) => p.id), ['c', 'a', 'b'])
+})

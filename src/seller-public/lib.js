@@ -2,7 +2,7 @@
 // the Sozlamalar live preview and node tests. No React, no Supabase.
 import { normCategory } from '../config/productCatalog.js'
 
-export const PUBLIC_KEYS = ['id', 'shop_name', 'description', 'shop_type', 'categories', 'city', 'avatar_url', 'cover_url', 'work_days', 'work_hours', 'phone', 'address', 'telegram', 'instagram', 'website', 'since', 'rating', 'reviews_count', 'reviews', 'featured_ids']
+export const PUBLIC_KEYS = ['id', 'shop_name', 'description', 'shop_type', 'categories', 'city', 'avatar_url', 'cover_url', 'work_days', 'work_hours', 'phone', 'address', 'telegram', 'instagram', 'website', 'since', 'verified', 'sales_count', 'rating', 'reviews_count', 'reviews', 'featured_ids']
 // Whitelist: only these keys are ever rendered, even if the RPC returned more (never legal/requisites).
 export const pickPublic = (d) => (d && typeof d === 'object' ? Object.fromEntries(PUBLIC_KEYS.filter((k) => k in d).map((k) => [k, d[k]])) : d)
 export const FEATURED_MIN = 4
@@ -19,3 +19,36 @@ export const featuredError = (ids) => (ids.length && ids.length < FEATURED_MIN ?
 export const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return arr; const n = [...arr]; [n[i], n[j]] = [n[j], n[i]]; return n }
 // Seller's own product row (seller_products) -> the shape the public page renders.
 export const toPublicCard = (r) => ({ id: r.id, name: r.name, category: normCategory(r.category), brand: r.brand || '', price: Number(r.price) || 0, image: r.image_url || (Array.isArray(r.images) ? r.images[0] : '') || '/images/market/p1.jpg' })
+
+// ---- v2 profile helpers (pure) ----
+const num = (v) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
+// Reyting: faqat haqiqiy sharhlar bo‘lsa son, aks holda null ("Yangi").
+export const ratingOf = (info) => (num(info?.reviews_count) > 0 && num(info?.rating) > 0 ? Number(num(info.rating).toFixed(1)) : null)
+// Sotuvlar: 0057 RPC qaytargandagina (yetkazilgan Marketplace buyurtmalari). Bo‘lmasa null — karta yashiriladi.
+export const salesOf = (info) => (info && 'sales_count' in info ? num(info.sales_count) : null)
+// "Tasdiqlangan": 0057 dan keyin profiles.seller_status = 'approved'. 0057 qo‘llanmagan bo‘lsa — RPC faqat
+// seller_is_public (admin tasdiqlagan yoki platforma admini) sotuvchini qaytaradi, shuning uchun info bor = tasdiqlangan.
+export const verifiedOf = (info) => (!info ? false : 'verified' in info ? info.verified === true : true)
+export const workTimeOf = (info) => [info?.work_days, info?.work_hours].map((x) => String(x || '').trim()).filter(Boolean).join(', ')
+// Xabar yozish: platformada ichki chat yo‘q — sotuvchining Telegrami, bo‘lmasa (ochiq) telefoniga SMS.
+export function contactOf(info) {
+  const tg = String(info?.telegram || '').trim()
+  const m = tg.match(/^(?:https?:\/\/)?(?:www\.)?(?:t\.me|telegram\.me)\/(?:s\/)?([A-Za-z0-9_+]{3,})/i)
+  const name = (m ? m[1] : tg.replace(/^@+/, '')).replace(/[^A-Za-z0-9_+]/g, '')
+  const digits = String(info?.phone || '').replace(/[^\d+]/g, '')
+  const phone = digits.replace(/\D/g, '').length >= 7 ? digits : ''
+  return {
+    telegram: name ? { handle: name.startsWith('+') ? `t.me/${name}` : `@${name}`, url: `https://t.me/${name}` } : null,
+    tel: phone ? `tel:${phone}` : '',
+    message: name ? `https://t.me/${name}` : phone ? `sms:${phone}` : '',
+    messageVia: name ? 'telegram' : phone ? 'sms' : '',
+  }
+}
+// "Hammasi" + faqat shu sotuvchi mahsulotlarida bor kategoriyalar (birinchi uchrash tartibida).
+export const categoriesOf = (products) => [...new Set((products || []).map((p) => p.category).filter(Boolean))]
+// Sotuvchi tanlagan "tavsiya etilgan" mahsulotlar birinchi, qolgani o‘z tartibida.
+export function orderProducts(products, featuredIds) {
+  const top = pickFeatured(featuredIds, products)
+  const set = new Set(top)
+  return [...top, ...(products || []).filter((p) => !set.has(p))]
+}
