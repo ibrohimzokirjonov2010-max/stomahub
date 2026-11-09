@@ -247,8 +247,8 @@ export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
   const qty = useCardQty(lineId)
   const priceText = keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))
   const priceBlock = (
-    <div data-testid="catalog-price" className="min-w-0 leading-tight">
-      <p className={`whitespace-nowrap font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[13px]'}`}>{priceText}</p>
+    <div data-testid="catalog-price" className="max-w-full leading-tight">
+      <p className={`whitespace-nowrap font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[12.5px]'}`}>{priceText}</p>
       {card.oldPrice ? <s className="block whitespace-nowrap text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
     </div>
   )
@@ -285,9 +285,9 @@ export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
             {cartCtrl}
           </div>
         ) : (
-          <div className="mt-auto flex items-end justify-between gap-1.5 pt-1.5">
-            <div className="min-w-0 flex-1 overflow-hidden">{priceBlock}</div>
-            {cartCtrl}
+          <div className="mt-auto flex flex-wrap items-end gap-x-1.5 gap-y-1 pt-1.5">
+            {priceBlock}
+            <span className="ml-auto shrink-0">{cartCtrl}</span>
           </div>
         )}
       </div>

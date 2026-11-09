@@ -77,13 +77,13 @@ function ProductCard({ p, onAdded, demo = false }) {
   const cartDisabled = demo || out
   const cartLabel = demo ? 'Savatchaga qo‘shib bo‘lmaydi' : (out ? 'Tugagan' : 'Savatga qo‘shish')
   const cartLine = { id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }
-    const qty = useCardQty(own || isSeminar || cartDisabled ? '' : p.id)
+  const qty = useCardQty(own || isSeminar || cartDisabled ? '' : p.id)
   const priceBlock = noPrice ? (
     <span className="block text-[12.5px] font-semibold leading-tight text-muted">{p.priceText || 'Narx ko‘rsatilmagan'}</span>
   ) : (
-    <span data-testid="seller-price" className="block min-w-0 leading-tight">
+    <span data-testid="seller-price" className="block max-w-full leading-tight">
       {p.oldPrice > p.price && <span className="block whitespace-nowrap text-[11px] text-muted line-through">{som(p.oldPrice)}</span>}
-      <span className={`block whitespace-nowrap text-[14.5px] font-bold leading-tight tracking-[-0.01em] @[176px]/card:text-[15px] ${p.oldPrice > p.price ? 'text-sale' : 'text-[#0b4f54]'}`}>{som(p.price)}</span>
+      <span className={`block whitespace-nowrap text-[13px] font-bold leading-tight tracking-[-0.01em] @[170px]/card:text-[14.5px] ${p.oldPrice > p.price ? 'text-sale' : 'text-[#0b4f54]'}`}>{som(p.price)}</span>
     </span>
   )
   const action = own ? (
@@ -116,9 +116,10 @@ function ProductCard({ p, onAdded, demo = false }) {
       {action}
     </span>
   ) : (
-    <span className="mt-auto flex items-end justify-between gap-1 pt-1.5">
-      <span className="min-w-0 flex-1 overflow-hidden">{priceBlock}</span>
-      {action}
+    // qty=0: narx nowrap; joy yetmasa tugma pastga (ml-auto) — hech qachon kesilmaydi
+    <span className="mt-auto flex flex-wrap items-end gap-x-1.5 gap-y-1 pt-1.5">
+      {priceBlock}
+      {action ? <span className="ml-auto shrink-0">{action}</span> : null}
     </span>
   )
   const body = (

@@ -85,12 +85,12 @@ export default function ProductCard({ product }) {
           <AddButton product={p} />
         </div>
       ) : (
-        <div className="mt-auto flex items-end justify-between gap-1 pt-1.5">
-          <div className="min-w-0 flex-1 overflow-hidden leading-tight">
+        <div className="mt-auto flex flex-wrap items-end gap-x-1 gap-y-1 pt-1.5">
+          <div className="leading-tight">
             {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
             <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
           </div>
-          <AddButton product={p} />
+          <span className="ml-auto shrink-0"><AddButton product={p} /></span>
         </div>
       )}
     </Link>
