@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Share2 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
-import { demoEntityToInfo, demoItemsToCards, demoProductsLabel } from '../seller-public/lib'
+import { demoEntityToInfo, demoItemsToCards, demoProductsLabel, demoProfileTitle } from '../seller-public/lib'
 import SellerProfileView from '../seller-public/SellerProfileView'
 import { useMobile } from '../useMobile'
 import MobileTabBar from '../components/mobile/MobileTabBar'
@@ -95,7 +95,7 @@ export default function Namuna() {
           <button type="button" aria-label="Orqaga" onClick={() => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/'))} className={iconBtn}>
             <ChevronLeft className="size-6" />
           </button>
-          <h1 className="min-w-0 flex-1 truncate text-center text-[19px] font-bold text-ink lg:text-left lg:text-[22px]">Sotuvchi profili</h1>
+          <h1 className="min-w-0 flex-1 truncate text-center text-[19px] font-bold text-ink lg:text-left lg:text-[22px]">{demoProfileTitle(entity?.kind)}</h1>
           <button type="button" aria-label="Ulashish" onClick={share} className={iconBtn}>
             <Share2 className="size-5" />
           </button>

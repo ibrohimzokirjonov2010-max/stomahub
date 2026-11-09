@@ -53,7 +53,7 @@ test('v2: work time, categories, featured order', () => {
   assert.deepEqual(orderProducts(ps, ['c']).map((p) => p.id), ['c', 'a', 'b'])
 })
 
-import { demoEntityToInfo, demoItemsToCards, demoProductsLabel } from '../src/seller-public/lib.js'
+import { demoEntityToInfo, demoItemsToCards, demoProductsLabel, demoProfileTitle } from '../src/seller-public/lib.js'
 test('demo: labels by kind', () => {
   assert.equal(demoProductsLabel('shop'), 'Mahsulotlar')
   assert.equal(demoProductsLabel('organizer'), 'Seminarlar')
@@ -90,4 +90,10 @@ test('demo: items → cards keep null price and seminar meta', () => {
   assert.equal(cards[2].priceText, 'so‘ralganda')
   assert.equal(cards[2].meta, 'BB')
   assert.equal(cards[2].kind, 'book')
+})
+
+test('demo: profile titles', () => {
+  assert.equal(demoProfileTitle('organizer'), 'Tashkilotchi profili')
+  assert.equal(demoProfileTitle('shop'), 'Sotuvchi profili')
+  assert.equal(demoProfileTitle('bookseller'), 'Sotuvchi profili')
 })

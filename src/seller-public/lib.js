@@ -56,6 +56,7 @@ export function orderProducts(products, featuredIds) {
 // ---- Namuna (demo) adapters: get_demo → SellerProfileView shape. No invented ratings/sales. ----
 const DEMO_KIND_LABEL = { shop: 'Do‘kon', organizer: 'Seminar tashkilotchisi', bookseller: 'Kitob sotuvchisi' }
 export const demoProductsLabel = (kind) => (kind === 'organizer' ? 'Seminarlar' : kind === 'bookseller' ? 'Kitoblar' : 'Mahsulotlar')
+export const demoProfileTitle = (kind) => (kind === 'organizer' ? 'Tashkilotchi profili' : 'Sotuvchi profili')
 export const demoEmptyCopy = (kind) => (
   kind === 'organizer'
     ? { title: 'Hozircha seminar yo‘q', hint: 'Seminarlar qo‘shilganda shu yerda ko‘rinadi.' }

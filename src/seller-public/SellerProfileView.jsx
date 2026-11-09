@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BadgeCheck, CalendarDays, Clock, Globe, Info, MapPin, MessageCircle, MessageSquareText, Package, Phone, Send, ShoppingCart, Star, Store, Tag } from 'lucide-react'
+import { BadgeCheck, BookOpen, CalendarDays, Clock, Globe, GraduationCap, Info, MapPin, MessageCircle, MessageSquareText, Package, Phone, Send, ShoppingCart, Star, Store, Tag } from 'lucide-react'
 import { MapPreview, parseGeo } from '../components/MapPicker'
 import { som } from '../marketData'
 import { useCart, isOwnProduct } from '../cart'
@@ -37,6 +37,23 @@ function Stat({ icon: Icon, label, value, muted }) {
   )
 }
 
+function Thumb({ p }) {
+  const [broken, setBroken] = useState(false)
+  const show = p.image && !broken
+  const Icon = p.kind === 'seminar' ? GraduationCap : p.kind === 'book' ? BookOpen : Package
+  return (
+    <span className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-xl bg-[#e8f3f3]">
+      {show ? (
+        <img src={p.image} alt="" loading="lazy" onError={() => setBroken(true)} className="size-full object-contain p-3" />
+      ) : (
+        <span className="grid size-14 place-items-center rounded-2xl bg-[#0b6d73]/12 text-[#0b6d73]" aria-hidden="true">
+          <Icon className="size-7" strokeWidth={1.6} />
+        </span>
+      )}
+    </span>
+  )
+}
+
 function ProductCard({ p, onAdded, demo = false }) {
   const { add } = useCart()
   const navigate = useNavigate()
@@ -45,19 +62,18 @@ function ProductCard({ p, onAdded, demo = false }) {
   const out = !hasVariants && p.stock != null && Number(p.stock) < 1
   const off = demo ? 0 : offPercent(p)
   const noPrice = p.price == null || p.price === ''
+  const isSeminar = p.kind === 'seminar'
   const onCart = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (demo) return
+    if (demo || isSeminar) return
     // Variantli mahsulotda variantni mahsulot sahifasida tanlaydi (savatga noto‘g‘ri variant tushmasin).
     if (hasVariants) { navigate(`/product/${p.id}`); return }
     const ok = add({ id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }, Math.max(1, Number(p.minQty) || 1))
     if (ok) onAdded?.(`${p.name} savatga qo‘shildi`)
   }
   const cartDisabled = demo || out
-  const cartLabel = demo
-    ? (p.kind === 'seminar' ? 'Ro‘yxatdan o‘tish o‘chirilgan' : 'Savatchaga qo‘shib bo‘lmaydi')
-    : (out ? 'Tugagan' : 'Savatga qo‘shish')
+  const cartLabel = demo ? 'Savatchaga qo‘shib bo‘lmaydi' : (out ? 'Tugagan' : 'Savatga qo‘shish')
   const priceBlock = noPrice ? (
     <span className="block text-[12.5px] font-semibold leading-tight text-muted">{p.priceText || 'Narx ko‘rsatilmagan'}</span>
   ) : (
@@ -68,27 +84,37 @@ function ProductCard({ p, onAdded, demo = false }) {
       </span>
     </span>
   )
+  const action = own ? (
+    <span className="shrink-0 rounded-lg bg-[#eef4f4] px-1.5 py-1 text-[9.5px] font-semibold leading-tight text-[#0b6d73]">Sizniki</span>
+  ) : isSeminar ? (
+    demo ? (
+      <span className="mt-1.5 block w-full cursor-not-allowed rounded-lg bg-[#E2E8F0] py-2 text-center text-[11.5px] font-semibold text-[#94A3B8]">Ro‘yxatdan o‘tish o‘chirilgan</span>
+    ) : null
+  ) : (
+    <button type="button" onClick={onCart} disabled={cartDisabled} aria-label={cartLabel} title={cartLabel}
+      className="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-[#0b6d73] text-white transition active:scale-95 disabled:bg-[#c9d6d8]">
+      <ShoppingCart className="size-[18px]" strokeWidth={2} />
+    </button>
+  )
   const body = (
     <>
       {off > 0 && <span className="absolute left-3 top-3 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
       {demo && <span className="absolute left-2 top-2 z-10 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400E]">Namuna</span>}
-      <span className="block aspect-[4/3] overflow-hidden rounded-xl bg-[#f3f7f8]">
-        {p.image ? <img src={p.image} alt="" loading="lazy" className="size-full object-contain p-3" /> : null}
-      </span>
+      <Thumb p={p} />
       <span className="flex flex-1 flex-col px-1 pb-0.5 pt-2">
         <span className="line-clamp-2 min-h-[2.6em] text-[13px] font-medium leading-[1.3] text-ink">{p.name}</span>
         {p.meta ? <span className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted">{p.meta}</span> : null}
-        <span className="mt-auto flex items-end justify-between gap-1 pt-1.5">
-          {priceBlock}
-          {own ? (
-            <span className="shrink-0 rounded-lg bg-[#eef4f4] px-1.5 py-1 text-[9.5px] font-semibold leading-tight text-[#0b6d73]">Sizniki</span>
-          ) : (
-            <button type="button" onClick={onCart} disabled={cartDisabled} aria-label={cartLabel} title={cartLabel}
-              className="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-[#0b6d73] text-white transition active:scale-95 disabled:bg-[#c9d6d8]">
-              <ShoppingCart className="size-[18px]" strokeWidth={2} />
-            </button>
-          )}
-        </span>
+        {isSeminar && demo ? (
+          <>
+            <span className="mt-auto pt-1.5">{priceBlock}</span>
+            {action}
+          </>
+        ) : (
+          <span className="mt-auto flex items-end justify-between gap-1 pt-1.5">
+            {priceBlock}
+            {action}
+          </span>
+        )}
         {demo && p.sourceUrl ? (
           <a href={p.sourceUrl} target="_blank" rel="noreferrer nofollow" onClick={(e) => e.stopPropagation()}
             className="mt-1.5 text-[11px] text-muted underline">Manba</a>
@@ -242,7 +268,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
         <div className="rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center">
           <MessageSquareText className="mx-auto size-9 text-[#0b6d73]/50" strokeWidth={1.5} />
           <p className="mt-2 text-[14px] font-semibold text-ink">Hozircha sharhlar yo‘q</p>
-          <p className="mt-1 text-[12.5px] text-muted">{demo ? 'Namuna sahifada sharhlar ko‘rsatilmaydi.' : 'Xaridorlar buyurtmani olgandan keyin baho va sharh qoldira oladi.'}</p>
+          <p className="mt-1 text-[12.5px] text-muted">{demo ? (info?.demo_kind === 'organizer' ? 'Namuna sahifada ishtirokchi sharhlari ko‘rsatilmaydi.' : 'Namuna sahifada sharhlar ko‘rsatilmaydi.') : 'Xaridorlar buyurtmani olgandan keyin baho va sharh qoldira oladi.'}</p>
         </div>
       ) : (
         <div className={`rounded-2xl border border-[#e3eef0] bg-white p-4 ${shadow}`}>
@@ -264,12 +290,17 @@ export default function SellerProfileView({ info, products, loading = false, inf
 
   const site = String(info?.website || '').trim()
   const insta = String(info?.instagram || '').trim().replace(/^@+/, '').replace(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\//i, '').replace(/\/.*$/, '')
+  const demoKind = info?.demo_kind
+  const aboutLabel = demoKind === 'organizer' ? 'Markaz haqida' : 'Do‘kon haqida'
+  const infoEmpty = demoKind === 'organizer' ? 'Tashkilotchi hali ma’lumot qo‘shmagan.' : 'Sotuvchi hali ma’lumot qo‘shmagan.'
+  const cityOnly = String(info?.city || '').trim()
   const infoItems = [
-    info?.description && ['about', Info, 'Do‘kon haqida', <span className="whitespace-pre-line">{info.description}</span>],
+    info?.description && ['about', Info, aboutLabel, <span className="whitespace-pre-line">{info.description}</span>],
     info?.shop_type && ['type', Store, 'Faoliyat turi', info.shop_type],
     shopCats.length > 0 && ['cats', Tag, 'Yo‘nalishlar', shopCats.join(', ')],
     work && ['work', Clock, 'Ish vaqti', work],
     geo.text && ['addr', MapPin, 'Manzil', geo.text],
+    !geo.text && cityOnly && ['city', MapPin, 'Shahar', cityOnly],
     info?.phone && ['phone', Phone, 'Telefon', info.phone, contact.tel],
     contact.telegram && ['tg', Send, 'Telegram', contact.telegram.handle, contact.telegram.url],
     insta && ['ig', Globe, 'Instagram', `@${insta}`, `https://instagram.com/${insta}`],
@@ -279,7 +310,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
   const infoTab = (
     <div className="mt-3">
       {infoItems.length === 0 ? (
-        <p className="rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center text-[13px] text-muted">Sotuvchi hali ma’lumot qo‘shmagan.</p>
+        <p className="rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center text-[13px] text-muted">{infoEmpty}</p>
       ) : (
         <div className={`rounded-2xl border border-[#e3eef0] bg-white px-4 py-1 ${shadow}`}>
           <ul className="divide-y divide-[#eef3f4]">{infoItems.map(([k, Icon, label, val, href]) => <InfoRow key={k} icon={Icon} label={label} href={href}>{val}</InfoRow>)}</ul>
