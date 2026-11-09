@@ -40,14 +40,25 @@ function Stat({ icon: Icon, label, value, muted }) {
 function Thumb({ p }) {
   const [broken, setBroken] = useState(false)
   const show = p.image && !broken
-  const Icon = p.kind === 'seminar' ? GraduationCap : p.kind === 'book' ? BookOpen : Package
+  const isSeminar = p.kind === 'seminar'
+  const Icon = isSeminar ? GraduationCap : p.kind === 'book' ? BookOpen : Package
+  // Marketplace CatalogCard uslubi: oq fon + object-contain (mahsulot/kitob), posterlar — object-cover.
+  // absolute inset-0: aspect-square ichida rasm barqaror to‘ldi (grid+%-height ba’zan poster balandligini ushlamaydi).
   return (
-    <span className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-xl bg-[#e8f3f3]">
+    <span className={`relative block aspect-square overflow-hidden rounded-[14px] ${isSeminar ? 'bg-[#eef3f6]' : 'bg-white'}`}>
       {show ? (
-        <img src={p.image} alt="" loading="lazy" onError={() => setBroken(true)} className="size-full object-contain p-3" />
+        <img
+          src={p.image}
+          alt=""
+          loading="lazy"
+          onError={() => setBroken(true)}
+          className={`absolute inset-0 size-full ${isSeminar ? 'object-cover' : 'object-contain p-[7px]'}`}
+        />
       ) : (
-        <span className="grid size-14 place-items-center rounded-2xl bg-[#0b6d73]/12 text-[#0b6d73]" aria-hidden="true">
-          <Icon className="size-7" strokeWidth={1.6} />
+        <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
+          <span className="grid size-14 place-items-center rounded-2xl bg-[#0b6d73]/12 text-[#0b6d73]">
+            <Icon className="size-7" strokeWidth={1.6} />
+          </span>
         </span>
       )}
     </span>
@@ -98,10 +109,10 @@ function ProductCard({ p, onAdded, demo = false }) {
   )
   const body = (
     <>
-      {off > 0 && <span className="absolute left-3 top-3 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
+      {off > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
       {demo && <span className="absolute left-2 top-2 z-10 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400E]">Namuna</span>}
       <Thumb p={p} />
-      <span className="flex flex-1 flex-col px-1 pb-0.5 pt-2">
+      <span className="flex flex-1 flex-col px-1.5 pb-1 pt-1.5">
         <span className="line-clamp-2 min-h-[2.6em] text-[13px] font-medium leading-[1.3] text-ink">{p.name}</span>
         {p.meta ? <span className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted">{p.meta}</span> : null}
         {isSeminar && demo ? (
@@ -122,7 +133,7 @@ function ProductCard({ p, onAdded, demo = false }) {
       </span>
     </>
   )
-  const cls = `@container/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e3eef0] bg-white p-1.5 transition hover:shadow-md ${shadow}`
+  const cls = `@container/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e3eef0] bg-white p-1 transition hover:shadow-md ${shadow}`
   if (demo) return <div className={cls}>{body}</div>
   return <Link to={`/product/${p.id}`} className={cls}>{body}</Link>
 }
@@ -246,7 +257,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
           ))}
         </div>
       )}
-      {loading && <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @6xl:grid-cols-4" aria-label="Yuklanmoqda">{Array.from({ length: 4 }, (_, i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-[#e9f0f2]" />)}</div>}
+      {loading && <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @6xl:grid-cols-4" aria-label="Yuklanmoqda">{Array.from({ length: 4 }, (_, i) => <div key={i} className="aspect-[5/6] animate-pulse rounded-2xl bg-[#e9f0f2]" />)}</div>}
       {!loading && !list.length && (
         <div className="mt-3 rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center">
           <Store className="mx-auto size-9 text-[#0b6d73]/50" strokeWidth={1.5} />
@@ -255,7 +266,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
         </div>
       )}
       {!loading && list.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @4xl:gap-3 @6xl:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @4xl:gap-2.5 @6xl:grid-cols-4">
           {list.map((p) => <ProductCard key={p.id} p={p} onAdded={onToast} demo={demo} />)}
         </div>
       )}
