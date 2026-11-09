@@ -2,9 +2,16 @@ import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { useCart } from '../cart'
 import { qtyAfterDec } from './cardQtyLogic'
 
+/** Kartochka layouti uchun: savatdagi miqdor (0 = steyper yo‘q). */
+export function useCardQty(lineId) {
+  const { items } = useCart()
+  if (!lineId) return 0
+  return items.find((it) => it.id === lineId)?.qty || 0
+}
+
 /**
  * Kartochkadagi savat tugmasi ↔ miqdor steyperi (savat store bilan sinxron).
- * variant="icon" — kichik teal savat → [− n +] pill (2 ustunli kartalar).
+ * variant="icon" — kichik teal savat; qty>0 da to‘liq enli [− n +] pill.
  * variant="bar"  — to‘liq "Savatga" tugmasi → steyper.
  */
 export default function CardQtyStepper({
@@ -64,13 +71,13 @@ export default function CardQtyStepper({
   }
 
   if (qty > 0) {
-    // Pill: och kulrang, oq ±, o‘rtada qalin raqam. Tap ≥36px.
+    // To‘liq en: − chapda, raqam markazda, + o‘ngda. Tap ≥36px.
     return (
       <div
         data-testid="card-qty-stepper"
         role="group"
         aria-label="Miqdor"
-        className={`flex h-10 max-w-full shrink-0 items-center rounded-xl bg-[#f0f1f5] p-0.5 ${variant === 'bar' ? 'w-full' : 'w-[110px]'} ${className}`}
+        className={`flex h-10 w-full items-center rounded-xl bg-[#f0f1f5] p-0.5 ${className}`}
         onClick={stop}
       >
         <button type="button" onClick={dec} aria-label="Kamaytirish"

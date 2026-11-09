@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, Check, X, LayoutGrid, Tag } from 'lucide-react'
-import CardQtyStepper from '../CardQtyStepper'
+import CardQtyStepper, { useCardQty } from '../CardQtyStepper'
 import { useMobile } from '../../useMobile'
 import { ensureLogin } from '../../loginPrompt'
 import { BottomSheet } from '../mobile/MobileSeminars'
@@ -243,6 +243,20 @@ export const keepDigits = (t) => String(t ?? '').replace(/(\d)[ \u00a0\u202f](?=
 
 export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
   const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea' }
+  const lineId = card.cart?.line?.id
+  const qty = useCardQty(lineId)
+  const priceText = keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))
+  const priceBlock = (
+    <div data-testid="catalog-price" className="min-w-0 leading-tight">
+      <p className={`whitespace-nowrap font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[13px]'}`}>{priceText}</p>
+      {card.oldPrice ? <s className="block whitespace-nowrap text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
+    </div>
+  )
+  const cartCtrl = card.cart ? (
+    <CardQtyStepper product={card.cart.line} lineId={lineId} onAdded={() => onAdd?.()} />
+  ) : (
+    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-sea-50 text-sea"><ArrowRight className="size-[17px]" /></span>
+  )
   return (
     <Link to={card.href} data-testid="catalog-card" className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
       <div className={`relative ${card.fit === 'contain' ? 'bg-white' : 'bg-[#eef3f6]'} ${desktop ? 'h-[190px]' : 'h-[150px]'}`}>
@@ -264,24 +278,18 @@ export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
         )}
         {(card.meta || []).filter(Boolean).slice(0, 2).map((m) => <p key={m} className="mt-0.5 truncate text-[10.5px] text-ink-2">{m}</p>)}
         {card.extra}
-        <div className="mt-auto flex items-end justify-between gap-1.5 pt-1.5">
-          {/* Narx hech qachon kesilmaydi: raqam guruhlari ajralmaydi, kerak bo‘lsa "so‘m" keyingi qatorga o‘tadi */}
-          <div data-testid="catalog-price" className="min-w-0 flex-1 leading-tight">
-            <p className={`break-words font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[13px]'}`}>
-              {keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))}
-            </p>
-            {card.oldPrice ? <s className="block text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
+        {/* qty>0: narx alohida qator (nowrap), steyper pastda to‘liq en — narx siqilmaydi */}
+        {qty > 0 && card.cart ? (
+          <div className="mt-auto flex flex-col gap-1.5 pt-1.5">
+            {priceBlock}
+            {cartCtrl}
           </div>
-          {card.cart ? (
-            <CardQtyStepper
-              product={card.cart.line}
-              lineId={card.cart.line?.id}
-              onAdded={() => onAdd?.()}
-            />
-          ) : (
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-sea-50 text-sea"><ArrowRight className="size-[17px]" /></span>
-          )}
-        </div>
+        ) : (
+          <div className="mt-auto flex items-end justify-between gap-1.5 pt-1.5">
+            <div className="min-w-0 flex-1 overflow-hidden">{priceBlock}</div>
+            {cartCtrl}
+          </div>
+        )}
       </div>
     </Link>
   )

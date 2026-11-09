@@ -5,7 +5,7 @@ import { MapPreview, parseGeo } from '../components/MapPicker'
 import { ReviewCard } from '../components/ReviewList'
 import { som } from '../marketData'
 import { isOwnProduct } from '../cart'
-import CardQtyStepper from '../components/CardQtyStepper'
+import CardQtyStepper, { useCardQty } from '../components/CardQtyStepper'
 import { offPercent } from '../lib/discounts'
 import { categoriesOf, contactOf, orderProducts, ratingOf, salesOf, verifiedOf, workTimeOf } from './lib'
 
@@ -76,17 +76,16 @@ function ProductCard({ p, onAdded, demo = false }) {
   const isSeminar = p.kind === 'seminar'
   const cartDisabled = demo || out
   const cartLabel = demo ? 'Savatchaga qo‘shib bo‘lmaydi' : (out ? 'Tugagan' : 'Savatga qo‘shish')
+  const cartLine = { id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }
+    const qty = useCardQty(own || isSeminar || cartDisabled ? '' : p.id)
   const priceBlock = noPrice ? (
     <span className="block text-[12.5px] font-semibold leading-tight text-muted">{p.priceText || 'Narx ko‘rsatilmagan'}</span>
   ) : (
-    <span className="min-w-0 leading-tight">
-      {p.oldPrice > p.price && <span className="block truncate text-[11px] text-muted line-through">{som(p.oldPrice)}</span>}
-      <span className={`flex flex-wrap items-baseline gap-x-1 font-bold leading-tight tracking-[-0.01em] ${p.oldPrice > p.price ? 'text-sale' : 'text-[#0b4f54]'}`}>
-        <span className="whitespace-nowrap text-[14.5px] @[176px]/card:text-[15px]">{som(p.price).replace(/\s*so‘m$/, '')}</span><span className="text-[13px]">so‘m</span>
-      </span>
+    <span data-testid="seller-price" className="block min-w-0 leading-tight">
+      {p.oldPrice > p.price && <span className="block whitespace-nowrap text-[11px] text-muted line-through">{som(p.oldPrice)}</span>}
+      <span className={`block whitespace-nowrap text-[14.5px] font-bold leading-tight tracking-[-0.01em] @[176px]/card:text-[15px] ${p.oldPrice > p.price ? 'text-sale' : 'text-[#0b4f54]'}`}>{som(p.price)}</span>
     </span>
   )
-  const cartLine = { id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }
   const action = own ? (
     <span className="shrink-0 rounded-lg bg-[#eef4f4] px-1.5 py-1 text-[9.5px] font-semibold leading-tight text-[#0b6d73]">Sizniki</span>
   ) : isSeminar ? (
@@ -106,6 +105,22 @@ function ProductCard({ p, onAdded, demo = false }) {
       }}
     />
   )
+  const priceCart = isSeminar && demo ? (
+    <>
+      <span className="mt-auto pt-1.5">{priceBlock}</span>
+      {action}
+    </>
+  ) : qty > 0 && action ? (
+    <span className="mt-auto flex flex-col gap-1.5 pt-1.5">
+      {priceBlock}
+      {action}
+    </span>
+  ) : (
+    <span className="mt-auto flex items-end justify-between gap-1 pt-1.5">
+      <span className="min-w-0 flex-1 overflow-hidden">{priceBlock}</span>
+      {action}
+    </span>
+  )
   const body = (
     <>
       {off > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
@@ -114,17 +129,7 @@ function ProductCard({ p, onAdded, demo = false }) {
       <span className="flex flex-1 flex-col px-1.5 pb-1 pt-1.5">
         <span className="line-clamp-2 min-h-[2.6em] text-[13px] font-medium leading-[1.3] text-ink">{p.name}</span>
         {p.meta ? <span className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted">{p.meta}</span> : null}
-        {isSeminar && demo ? (
-          <>
-            <span className="mt-auto pt-1.5">{priceBlock}</span>
-            {action}
-          </>
-        ) : (
-          <span className="mt-auto flex items-end justify-between gap-1 pt-1.5">
-            {priceBlock}
-            {action}
-          </span>
-        )}
+        {priceCart}
         {demo && p.sourceUrl ? (
           <a href={p.sourceUrl} target="_blank" rel="noreferrer nofollow" onClick={(e) => e.stopPropagation()}
             className="mt-1.5 text-[11px] text-muted underline">Manba</a>
