@@ -8,7 +8,7 @@
  */
 export const SECTION_POSTERS = {
   marketplace: {
-    full: { title: 'Kerakli material, bir joyda', text: 'Mahsulotlarni ko‘ring, solishtiring va buyurtma bering', cta: 'Mahsulotlarni ko‘rish', action: 'scroll' },
+    full: { title: 'Kerakli material, bir joyda', text: 'Mahsulotlarni ko‘ring va bir joyda buyurtma bering', cta: 'Mahsulotlarni ko‘rish', action: 'scroll' },
     empty: { title: 'Mahsulotingizni shu yerda soting', text: 'Stomatologlar material va asboblarni shu yerdan qidiradi', cta: 'Sotuvchi bo‘lish', action: '/sotuvchi-bolish' },
     count: (n) => `${n} ta mahsulot sotuvda`,
   },
@@ -72,7 +72,7 @@ export const PROMO_POSTERS = {
 
 /** Marketplace turkum sahifasi (turkum tanlanganda) — sarlavha = turkum nomi, matn shu yerdan. */
 export const MARKET_CATEGORY_TEXT = {
-  'Restavratsion materiallar': 'Kompozit, bond va plomba materiallarini solishtiring',
+  'Restavratsion materiallar': 'Kompozit, bond va plomba materiallari',
   Implantlar: 'Implant tizimlari, abatment va komponentlar',
   'Yordamchi materiallar': 'Kundalik ish uchun yordamchi materiallar',
   'Sarflanadigan materiallar': 'Har kuni kerak bo‘ladigan sarf materiallari',
@@ -87,7 +87,7 @@ export const MARKET_CATEGORY_TEXT = {
   Ortodontiya: 'Breket, dugalar va ortodontik materiallar',
   'Gigiyena vositalari': 'Professional gigiyena va profilaktika vositalari',
 }
-export const categoryPoster = (label) => ({ title: label, text: MARKET_CATEGORY_TEXT[label] || 'Shu turkumdagi mahsulotlarni solishtiring va buyurtma bering', cta: 'Mahsulotlarni ko‘rish', action: 'scroll' })
+export const categoryPoster = (label) => ({ title: label, text: MARKET_CATEGORY_TEXT[label] || 'Shu turkumdagi mahsulotlarni ko‘ring va buyurtma bering', cta: 'Mahsulotlarni ko‘rish', action: 'scroll' })
 
 /** Bo‘lim uchun asosiy poster: real son bo‘lsa full, bo‘lmasa empty. */
 export function sectionPoster(key, n) {
