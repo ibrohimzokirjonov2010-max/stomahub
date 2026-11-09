@@ -232,6 +232,9 @@ export function FilterBar({ filters, values, onChange, sorts, sort, onSort, desk
  * card: { id, href, image, kicker, title, meta: [string], extra: node, price: number|null, priceText,
  *         badge: {text, tone:'new'|'sale'|'info'}|null, rating: {value,count}|null, cart: {item}|null }
  */
+/** Raqam guruhlari orasidagi bo‘shliqni bo‘linmas qiladi: "18 000 000 so‘m" -> faqat "so‘m" oldidan qator buzilishi mumkin. */
+export const keepDigits = (t) => String(t ?? '').replace(/(\d)[ \u00a0\u202f](?=\d)/g, '$1\u00a0')
+
 export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
   const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea' }
   return (
@@ -255,11 +258,14 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
         )}
         {(card.meta || []).filter(Boolean).slice(0, 2).map((m) => <p key={m} className="mt-0.5 truncate text-[10.5px] text-ink-2">{m}</p>)}
         {card.extra}
-        <div className="mt-auto flex items-center justify-between gap-1 pt-1.5">
-          <span className="min-w-0 truncate whitespace-nowrap text-[14px] font-extrabold text-[#0d2a4a]">
-            {card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price))}
-            {card.oldPrice ? <s className="ml-1 text-[10.5px] font-medium text-muted">{som(card.oldPrice)}</s> : null}
-          </span>
+        <div className="mt-auto flex items-end justify-between gap-1.5 pt-1.5">
+          {/* Narx hech qachon kesilmaydi: raqam guruhlari ajralmaydi, kerak bo‘lsa "so‘m" keyingi qatorga o‘tadi */}
+          <div data-testid="catalog-price" className="min-w-0 flex-1 leading-tight">
+            <p className={`break-words font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[13px]'}`}>
+              {keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))}
+            </p>
+            {card.oldPrice ? <s className="block text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
+          </div>
           {card.cart ? (
             <button type="button" onClick={(e) => { e.preventDefault(); onAdd() }} aria-label={added ? 'Savatda' : 'Savatga qo‘shish'} className={`grid size-9 shrink-0 place-items-center rounded-xl active:scale-95 ${added ? 'bg-sea-50 text-sea ring-1 ring-sea/40' : 'bg-sea text-white'}`}>
               {added ? <Check className="size-[18px]" strokeWidth={2.4} /> : <ShoppingCart className="size-[17px]" />}
