@@ -9,8 +9,8 @@ const routes = {
   '/api/auth/phone/start': 'api/auth/phone/start.js',
   '/api/auth/phone/verify': 'api/auth/phone/verify.js',
   '/api/telegram/webhook': 'api/telegram/webhook.js',
-  '/api/og-listing': 'api/og-listing.js',
-}
+  '/api/image-search': 'api/image-search.js',
+  }
 
 function localApi(env) {
   return {
@@ -24,7 +24,7 @@ function localApi(env) {
         if (bot) {
           const m = pathname.match(/^\/(elonlar|ortiqcha)\/([^/]+)\/?$/)
           if (m) {
-            req.url = `/api/og-listing?kind=${m[1] === 'elonlar' ? 'ad' : 'surplus'}&id=${encodeURIComponent(m[2])}`
+            req.url = `/api/image-search?og=1&kind=${m[1] === 'elonlar' ? 'ad' : 'surplus'}&id=${encodeURIComponent(m[2])}`
           }
         }
         const pathOnly = (req.url || '').split('?')[0]

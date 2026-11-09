@@ -9,6 +9,7 @@
 import { generateObject } from 'ai'
 import { z } from 'zod'
 import { clientIp, readJson, requirePost, send } from './_lib/http.js'
+import { fetchPublicListing, listingMetaFromRow, renderOgHtml, siteOrigin } from './_lib/ogListing.js'
 
 const MODEL = process.env.IMAGE_SEARCH_MODEL || 'google/gemini-2.5-flash-lite'
 const MAX_BYTES = 1.5 * 1024 * 1024 // decoded image
@@ -50,7 +51,50 @@ function cleanList(a) {
   return (a || []).map((s) => String(s).trim()).filter((s) => s && s.length <= 40 && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase())).slice(0, 8)
 }
 
+async function handleOg(req, res) {
+  try {
+    const u = new URL(req.url || '/', 'http://local')
+    const kind = u.searchParams.get('kind') || ''
+    const id = u.searchParams.get('id') || ''
+    const origin = siteOrigin(req)
+    const sendHtml = (status, html) => {
+      res.statusCode = status
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+      res.end(html)
+    }
+    if (!['ad', 'surplus'].includes(kind) || !id) {
+      return sendHtml(400, renderOgHtml({
+        title: 'StomaHub',
+        description: 'Stomatologik marketplace',
+        image: `${origin}/icons/favicon-256.png`,
+        url: origin,
+      }))
+    }
+    let row = null
+    try { row = await fetchPublicListing(kind, id) } catch { row = null }
+    if (!row) {
+      return sendHtml(404, renderOgHtml({
+        title: 'E’lon topilmadi',
+        description: 'Bu e’lon ommaviy emas yoki o‘chirilgan.',
+        image: `${origin}/icons/favicon-256.png`,
+        url: `${origin}${kind === 'ad' ? '/elonlar' : '/ortiqcha'}`,
+      }))
+    }
+    return sendHtml(200, renderOgHtml(listingMetaFromRow(kind, row, origin)))
+  } catch {
+    res.statusCode = 500
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.end('OG xato')
+  }
+}
+
 export default async function handler(req, res) {
+  const pathQ = (req.url || '').split('?')[1] || ''
+  const qs = new URLSearchParams(pathQ)
+  if (req.method === 'GET' && (qs.get('og') === '1' || qs.get('kind'))) {
+    return handleOg(req, res)
+  }
   res.setHeader('Cache-Control', 'no-store')
   if (!requirePost(req, res)) return
   if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
