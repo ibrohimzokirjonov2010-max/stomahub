@@ -398,9 +398,9 @@ export function CatalogPage({ section }) {
       {vis ? (
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
       ) : <HeroSlider slides={slides} desktop={desktop} />}
-      {/* Siz uchun — poster slayderi ostida, mahsulotlar panjarasi ustida */}
-      {section.top && !q.trim() && !vis ? section.top : null}
+      {/* Tartib: poster → kategoriyalar → Siz uchun → mahsulotlar (barcha bo‘limlar, mobil+desktop). */}
       {cats.length > 0 && <CategoryChips cats={cats} value={cat} onChange={setCat} desktop={desktop} />}
+      {section.top && !q.trim() && !vis ? section.top : null}
       {catRow.length > 0 && (
         <section data-testid="ad-cat-row" className="mt-3">
           <div className="mb-2 flex items-center gap-2"><h2 className={`font-extrabold text-[#0d2a4a] ${desktop ? 'text-[17px]' : 'text-[15px]'}`}>Tavsiya etiladi</h2><span className="rounded-full bg-sea-50 px-2 py-0.5 text-[10px] font-semibold text-sea">Reklama</span></div>
