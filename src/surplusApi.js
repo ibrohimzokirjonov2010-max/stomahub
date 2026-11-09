@@ -43,7 +43,12 @@ export async function postSurplus(data, file) {
     qty: Math.max(1, Number(data.qty) || 1),
     image,
     images: [image],
-    seller: { name: prof.name || '', avatar: prof.avatar || '' },
+    seller: {
+      name: prof.name || '',
+      avatar: prof.avatar || '',
+      phone: prof.phone || '',
+      telegram: prof.telegram || '',
+    },
   }
   await upsertCatalogItem('surplus', item, -Date.now(), { hidden: true, hidden_reason: 'moderatsiya' })
   return item

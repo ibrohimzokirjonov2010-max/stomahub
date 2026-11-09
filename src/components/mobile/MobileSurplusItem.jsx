@@ -2,24 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Heart, Share2, PackageCheck, CalendarDays, Box, MapPin, Star, BadgeCheck, MessageCircle,
-  ShieldCheck, ShoppingCart, X, CalendarCheck, MessageSquare, Lock, Clock,
+  ShieldCheck, ShoppingCart, X, CalendarCheck, MessageSquare, Lock, Clock, Phone, Send,
 } from 'lucide-react'
 import { getSurplusDetail, similarFor } from '../../surplusData'
 import { som } from '../../marketData'
 import { useCart } from '../../cart'
 import { MobileToast, QtyStepper } from './parts'
-import { SellerChat } from './MobileProduct'
+import { telegramUrl } from '../../elonApi'
 import { condLabel, expiryLabel } from './MobileSurplus'
 import MobileTabBar from './MobileTabBar'
 
 const SAFETY = [
-  { icon: ShieldCheck, title: 'Tekshirilgan sotuvchilar', text: 'Har bir sotuvchi shifokor sifatida tasdiqlangan' },
-  { icon: CalendarCheck, title: 'Yaroqlilik muddati ko‘rsatilgan', text: 'Muddati o‘tgan mahsulotlar joylanmaydi' },
-  { icon: MessageSquare, title: 'Muloqot platforma orqali', text: 'Barcha kelishuvlar yozishmada saqlanadi' },
-  { icon: Lock, title: 'To‘lov himoyalangan', text: 'Pul mahsulotni olganingizdan keyin sotuvchiga o‘tadi' },
+  { icon: ShieldCheck, title: 'Ehtiyotkor bo‘ling', text: 'Mahsulotni ko‘rib oling, yaroqlilik muddatini tekshiring' },
+  { icon: CalendarCheck, title: 'Yaroqlilik muddati ko‘rsatilgan', text: 'Muddati o‘tgan mahsulotlar joylanmasligi kerak' },
+  { icon: Phone, title: 'To‘g‘ridan-to‘g‘ri bog‘laning', text: 'Sotuvchi bilan telefon yoki Telegram orqali kelishing' },
+  { icon: Lock, title: 'Platforma to‘lovi yo‘q', text: 'Ortiqcha material uchun StomaHub orqali to‘lov/escrow hozircha yo‘q — naqd yoki o‘zaro kelishuv' },
 ]
-const QUICK = ['Hali sotuvdami?', 'Narxi kelishiladimi?', 'Qayerdan olib ketsam bo‘ladi?']
-
 export default function MobileSurplusItem() {
   const { id } = useParams()
   return <SurplusView key={id} id={id} />
@@ -171,16 +169,16 @@ function SurplusView({ id }) {
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted"><MapPin className="size-3" /> {s.city}</p>
           </div>
-          <button type="button" onClick={() => setSheet('chat')} className="flex h-10 shrink-0 items-center gap-1 rounded-xl border border-sea/70 px-2 text-[11px] font-semibold text-sea active:bg-sea-50">
-            <MessageCircle className="size-4" /> Sotuvchiga yozish
+          <button type="button" onClick={() => setSheet('contact')} className="flex h-10 shrink-0 items-center gap-1 rounded-xl border border-sea/70 px-2 text-[11px] font-semibold text-sea active:bg-sea-50">
+            <Phone className="size-4" /> Bog‘lanish
           </button>
         </div>
 
         <button type="button" onClick={() => setSheet('safety')} className="mt-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-[#e9f6f1] p-2.5 text-left">
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-ok"><ShieldCheck className="size-5" strokeWidth={1.8} /></span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[12.5px] font-semibold text-ink">Xavfsiz savdo</span>
-            <span className="block text-[10.5px] leading-snug text-ink-2">To‘lovni platforma orqali amalga oshiring va o‘zingizni himoya qiling.</span>
+            <span className="block text-[12.5px] font-semibold text-ink">Ehtiyotkor savdo</span>
+            <span className="block text-[10.5px] leading-snug text-ink-2">Platforma to‘lovi yo‘q — telefon/Telegram orqali kelishing, mahsulotni ko‘rib oling.</span>
           </span>
           <ChevronRight className="size-4 shrink-0 text-ink-2" />
         </button>
@@ -214,19 +212,16 @@ function SurplusView({ id }) {
             <ShoppingCart className="size-[19px]" /> Savatga qo‘shish
           </button>
         )}
-        <button type="button" onClick={() => setSheet('chat')} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
-          <MessageCircle className="size-[19px]" /> Sotuvchiga yozish
+        <button type="button" onClick={() => setSheet('contact')} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
+          <Phone className="size-[19px]" /> Bog‘lanish
         </button>
       </div>
 
-      {sheet === 'chat' && (
-        <SellerChat
+      {sheet === 'contact' && (
+        <ContactSheet
           seller={s}
-          product={d}
-          quick={QUICK}
-          reply={s.reply}
           onClose={() => setSheet(null)}
-          onSent={() => { setSheet(null); setToast('Xabar sotuvchiga yuborildi') }}
+          onToast={setToast}
         />
       )}
       {sheet === 'safety' && <SafetySheet onClose={() => setSheet(null)} />}
@@ -238,6 +233,36 @@ function SurplusView({ id }) {
         action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
       />
       <MobileTabBar />
+    </div>
+  )
+}
+
+function ContactSheet({ seller, onClose, onToast }) {
+  const phone = (seller?.phone || '').replace(/\s/g, '')
+  const tg = telegramUrl(seller?.telegram)
+  const d = { name: seller?.name || 'Sotuvchi', phone: seller?.phone || '', clinic: seller?.role || 'Sotuvchi', city: '', online: true }
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-ink/45" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label="Bog‘lanish" onClick={(e) => e.stopPropagation()} className="rounded-t-3xl bg-white px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[17px] font-bold text-ink">Sotuvchi bilan bog‘lanish</h2>
+          <button type="button" onClick={onClose} aria-label="Yopish" className="grid size-8 place-items-center rounded-full bg-page"><X className="size-4" /></button>
+        </div>
+        <p className="mt-1 text-[12px] text-muted">{seller?.name || 'Sotuvchi'}</p>
+        <div className="mt-3 grid grid-cols-1 gap-2 pb-2">
+          {phone ? (
+            <a href={`tel:${phone}`} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white"><Phone className="size-[18px]" /> Qo‘ng‘iroq qilish</a>
+          ) : (
+            <p className="rounded-xl bg-page px-3 py-3 text-center text-[12.5px] text-muted">Telefon raqami ko‘rsatilmagan</p>
+          )}
+          {tg ? (
+            <a href={tg} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-sea/40 bg-[#e6f4f3] text-[14px] font-semibold text-sea"><Send className="size-[18px]" /> Telegram’da yozish</a>
+          ) : null}
+          {phone ? (
+            <button type="button" onClick={() => { navigator.clipboard?.writeText(phone).catch(() => {}); onToast?.('Raqam nusxalandi'); onClose() }} className="flex h-11 items-center justify-center rounded-xl border border-line text-[13px] font-semibold text-ink">Raqamni nusxalash</button>
+          ) : null}
+        </div>
+      </div>
     </div>
   )
 }
@@ -262,7 +287,7 @@ function SafetySheet({ onClose }) {
           ))}
         </ul>
         <p className="mt-4 flex items-start gap-2 rounded-xl bg-page p-3 text-[11.5px] leading-snug text-ink-2">
-          <Clock className="mt-px size-4 shrink-0 text-sea" /> Oldindan to‘lov so‘ralsa yoki platformadan tashqariga chaqirilsa, ehtiyot bo‘ling va bizga xabar bering.
+          <Clock className="mt-px size-4 shrink-0 text-sea" /> Oldindan to‘lov so‘ralsa yoki shubhali taklif bo‘lsa, ehtiyot bo‘ling.
         </p>
         <button type="button" onClick={onClose} className="mt-4 h-12 w-full rounded-xl bg-sea text-[14px] font-semibold text-white">Tushunarli</button>
       </div>
