@@ -74,7 +74,7 @@ export default function MobileTabBar() {
       aria-label="Asosiy menyu"
       className="app-tabbar liquid-tabbar pointer-events-none fixed inset-x-0 bottom-0 z-40 md:hidden"
     >
-      <div className="pointer-events-auto mx-3.5 overflow-hidden rounded-[28px] border border-white/70 bg-white/55 shadow-[0_8px_32px_rgb(11_31_58/0.14),inset_0_1px_0_rgb(255_255_255/0.75)] backdrop-blur-[22px] backdrop-saturate-[180%] [-webkit-backdrop-filter:blur(22px)_saturate(180%)]">
+      <div className="liquid-tabbar-pill relative pointer-events-auto mx-3.5 overflow-hidden rounded-[28px] border border-white/80 bg-white/[0.76] shadow-[0_8px_28px_rgb(11_31_58/0.16),inset_0_1px_0_rgb(255_255_255/0.92),inset_0_-0.5px_0_rgb(255_255_255/0.35)] backdrop-blur-[24px] backdrop-saturate-[180%] [-webkit-backdrop-filter:blur(24px)_saturate(180%)]">
         <ul ref={listRef} className="relative grid h-[var(--bottom-nav-h)] grid-cols-5 px-0.5">
           <span
             aria-hidden="true"
