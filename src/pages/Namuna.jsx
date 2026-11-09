@@ -90,7 +90,7 @@ export default function Namuna() {
         <b>Namuna</b> — bu sahifa StomaHub’da qanday ko‘rinishingizni ko‘rsatish uchun ochiq manbalardagi ma’lumotlardan tayyorlangan.
         Buyurtma va ro‘yxatdan o‘tish o‘chirilgan.
       </div>
-      <div className="mx-auto w-full max-w-[1120px] px-3.5 pb-[calc(var(--bottom-nav-h)+max(env(safe-area-inset-bottom,0px),var(--safe-bottom-sim,0px))+28px)] pt-2.5 lg:px-0 lg:pb-10">
+      <div className="mx-auto w-full max-w-[1120px] px-3.5 pb-[calc(var(--bottom-nav-h)+var(--bottom-nav-float,14px)+max(env(safe-area-inset-bottom,0px),var(--safe-bottom-sim,0px))+28px)] pt-2.5 lg:px-0 lg:pb-10">
         <header className="mb-3 flex items-center gap-3">
           <button type="button" aria-label="Orqaga" onClick={() => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/'))} className={iconBtn}>
             <ChevronLeft className="size-6" />
@@ -119,7 +119,7 @@ export default function Namuna() {
           onToast={setToast}
         />
       </div>
-      <MobileToast text={toast} onClose={() => setToast('')} bottom={mobile ? 'calc(var(--bottom-nav-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim, 0px)) + 12px)' : 24} />
+      <MobileToast text={toast} onClose={() => setToast('')} bottom={mobile ? 'calc(var(--bottom-nav-h) + var(--bottom-nav-float, 14px) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim, 0px)) + 12px)' : 24} />
       {mobile && <MobileTabBar />}
     </div>
   )
