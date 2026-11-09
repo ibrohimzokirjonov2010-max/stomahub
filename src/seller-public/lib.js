@@ -52,3 +52,63 @@ export function orderProducts(products, featuredIds) {
   const set = new Set(top)
   return [...top, ...(products || []).filter((p) => !set.has(p))]
 }
+
+// ---- Namuna (demo) adapters: get_demo → SellerProfileView shape. No invented ratings/sales. ----
+const DEMO_KIND_LABEL = { shop: 'Do‘kon', organizer: 'Seminar tashkilotchisi', bookseller: 'Kitob sotuvchisi' }
+export const demoProductsLabel = (kind) => (kind === 'organizer' ? 'Seminarlar' : kind === 'bookseller' ? 'Kitoblar' : 'Mahsulotlar')
+export const demoProfileTitle = (kind) => (kind === 'organizer' ? 'Tashkilotchi profili' : 'Sotuvchi profili')
+export const demoEmptyCopy = (kind) => (
+  kind === 'organizer'
+    ? { title: 'Hozircha seminar yo‘q', hint: 'Seminarlar qo‘shilganda shu yerda ko‘rinadi.' }
+    : kind === 'bookseller'
+      ? { title: 'Hozircha kitob yo‘q', hint: 'Kitoblar qo‘shilganda shu yerda ko‘rinadi.' }
+      : { title: 'Hozircha sotuvda mahsulot yo‘q', hint: 'Mahsulotlar qo‘shilganda shu yerda ko‘rinadi.' }
+)
+// Entity → public info. verified always false (namuna ≠ tasdiqlangan sotuvchi). rating/sales omitted on purpose.
+export function demoEntityToInfo(entity) {
+  if (!entity || typeof entity !== 'object') return null
+  return {
+    shop_name: entity.name || '',
+    description: entity.description || '',
+    shop_type: DEMO_KIND_LABEL[entity.kind] || '',
+    city: entity.city || '',
+    address: entity.address || '',
+    phone: entity.phone || '',
+    website: entity.website || '',
+    telegram: entity.telegram || '',
+    avatar_url: entity.logo_url || '',
+    verified: false,
+    reviews: [],
+    featured_ids: [],
+    categories: [],
+    demo_kind: entity.kind || 'shop',
+  }
+}
+// Items → product cards. price null stays null (no "0 so‘m"). Cart/nav disabled by demo mode in the view.
+export function demoItemsToCards(items, entityName = '') {
+  return (Array.isArray(items) ? items : []).map((it) => {
+    const extra = it?.extra && typeof it.extra === 'object' ? it.extra : {}
+    let meta = ''
+    if (it?.kind === 'seminar') {
+      meta = [extra.date_text || extra.start_date, extra.location || extra.place, extra.speaker ? `Ma’ruzachi: ${extra.speaker}` : ''].filter(Boolean).join(' · ')
+    } else if (it?.kind === 'book' && extra.author) {
+      meta = String(extra.author)
+    }
+    const price = it?.price == null || it?.price === '' ? null : Number(it.price)
+    return {
+      id: it.id,
+      name: it.name || '',
+      price: Number.isFinite(price) ? price : null,
+      priceText: it.price_text || '',
+      image: it.image_url || '',
+      category: '',
+      seller: entityName || '',
+      sellerId: null,
+      kind: it.kind || 'product',
+      sourceUrl: it.source_url || '',
+      meta,
+      description: it.description || '',
+      stock: 0,
+    }
+  })
+}
