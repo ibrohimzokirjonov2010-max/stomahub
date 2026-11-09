@@ -12,7 +12,6 @@ const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avg
 const since = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-yil ${d.getDate()}-${MONTHS[d.getMonth()]}` }
 const dateUz = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}` }
 const initials = (name) => String(name || 'S').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'S'
-const TABS = [['products', 'Mahsulotlar'], ['reviews', 'Sharhlar'], ['info', 'Ma’lumot']]
 
 function Stars({ value, size = 'size-3.5' }) {
   return (
@@ -38,48 +37,68 @@ function Stat({ icon: Icon, label, value, muted }) {
   )
 }
 
-function ProductCard({ p, onAdded }) {
+function ProductCard({ p, onAdded, demo = false }) {
   const { add } = useCart()
   const navigate = useNavigate()
-  const own = isOwnProduct(p)
+  const own = !demo && isOwnProduct(p)
   const hasVariants = Array.isArray(p.variants) && p.variants.length > 0
   const out = !hasVariants && p.stock != null && Number(p.stock) < 1
-  const off = offPercent(p)
+  const off = demo ? 0 : offPercent(p)
+  const noPrice = p.price == null || p.price === ''
   const onCart = (e) => {
     e.preventDefault()
     e.stopPropagation()
+    if (demo) return
     // Variantli mahsulotda variantni mahsulot sahifasida tanlaydi (savatga noto‘g‘ri variant tushmasin).
     if (hasVariants) { navigate(`/product/${p.id}`); return }
     const ok = add({ id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }, Math.max(1, Number(p.minQty) || 1))
     if (ok) onAdded?.(`${p.name} savatga qo‘shildi`)
   }
-  return (
-    <Link to={`/product/${p.id}`} className={`@container/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e3eef0] bg-white p-1.5 transition hover:shadow-md ${shadow}`}>
+  const cartDisabled = demo || out
+  const cartLabel = demo
+    ? (p.kind === 'seminar' ? 'Ro‘yxatdan o‘tish o‘chirilgan' : 'Savatchaga qo‘shib bo‘lmaydi')
+    : (out ? 'Tugagan' : 'Savatga qo‘shish')
+  const priceBlock = noPrice ? (
+    <span className="block text-[12.5px] font-semibold leading-tight text-muted">{p.priceText || 'Narx ko‘rsatilmagan'}</span>
+  ) : (
+    <span className="min-w-0 leading-tight">
+      {p.oldPrice > p.price && <span className="block truncate text-[11px] text-muted line-through">{som(p.oldPrice)}</span>}
+      <span className={`flex flex-wrap items-baseline gap-x-1 font-bold leading-tight tracking-[-0.01em] ${p.oldPrice > p.price ? 'text-sale' : 'text-[#0b4f54]'}`}>
+        <span className="whitespace-nowrap text-[14.5px] @[176px]/card:text-[15px]">{som(p.price).replace(/\s*so‘m$/, '')}</span><span className="text-[13px]">so‘m</span>
+      </span>
+    </span>
+  )
+  const body = (
+    <>
       {off > 0 && <span className="absolute left-3 top-3 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
+      {demo && <span className="absolute left-2 top-2 z-10 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400E]">Namuna</span>}
       <span className="block aspect-[4/3] overflow-hidden rounded-xl bg-[#f3f7f8]">
-        <img src={p.image} alt="" loading="lazy" className="size-full object-contain p-3" />
+        {p.image ? <img src={p.image} alt="" loading="lazy" className="size-full object-contain p-3" /> : null}
       </span>
       <span className="flex flex-1 flex-col px-1 pb-0.5 pt-2">
         <span className="line-clamp-2 min-h-[2.6em] text-[13px] font-medium leading-[1.3] text-ink">{p.name}</span>
+        {p.meta ? <span className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted">{p.meta}</span> : null}
         <span className="mt-auto flex items-end justify-between gap-1 pt-1.5">
-          <span className="min-w-0 leading-tight">
-            {p.oldPrice > p.price && <span className="block truncate text-[11px] text-muted line-through">{som(p.oldPrice)}</span>}
-            <span className={`flex flex-wrap items-baseline gap-x-1 font-bold leading-tight tracking-[-0.01em] ${p.oldPrice > p.price ? 'text-sale' : 'text-[#0b4f54]'}`}>
-              <span className="whitespace-nowrap text-[14.5px] @[176px]/card:text-[15px]">{som(p.price).replace(/\s*so‘m$/, '')}</span><span className="text-[13px]">so‘m</span>
-            </span>
-          </span>
+          {priceBlock}
           {own ? (
             <span className="shrink-0 rounded-lg bg-[#eef4f4] px-1.5 py-1 text-[9.5px] font-semibold leading-tight text-[#0b6d73]">Sizniki</span>
           ) : (
-            <button type="button" onClick={onCart} disabled={out} aria-label={out ? 'Tugagan' : 'Savatga qo‘shish'} title={out ? 'Tugagan' : 'Savatga qo‘shish'}
+            <button type="button" onClick={onCart} disabled={cartDisabled} aria-label={cartLabel} title={cartLabel}
               className="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-[#0b6d73] text-white transition active:scale-95 disabled:bg-[#c9d6d8]">
               <ShoppingCart className="size-[18px]" strokeWidth={2} />
             </button>
           )}
         </span>
+        {demo && p.sourceUrl ? (
+          <a href={p.sourceUrl} target="_blank" rel="noreferrer nofollow" onClick={(e) => e.stopPropagation()}
+            className="mt-1.5 text-[11px] text-muted underline">Manba</a>
+        ) : null}
       </span>
-    </Link>
+    </>
   )
+  const cls = `@container/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e3eef0] bg-white p-1.5 transition hover:shadow-md ${shadow}`
+  if (demo) return <div className={cls}>{body}</div>
+  return <Link to={`/product/${p.id}`} className={cls}>{body}</Link>
 }
 
 function InfoRow({ icon: Icon, label, children, href }) {
@@ -98,10 +117,11 @@ function InfoRow({ icon: Icon, label, children, href }) {
 // The buyer-facing seller profile body (v2 design). Used by /dokon/:id AND the Sozlamalar live preview,
 // so preview == real page. Responsive via container queries, so it also renders inside a narrow preview frame.
 // Hamma ko‘rsatkich bazadan: yo‘q maydon — yashiriladi, hech narsa to‘qib chiqarilmaydi.
-export default function SellerProfileView({ info, products, loading = false, infoLoading = false, onToast }) {
+export default function SellerProfileView({ info, products, loading = false, infoLoading = false, onToast, demo = false, productsLabel = 'Mahsulotlar' }) {
   const sk = (w) => <span aria-hidden="true" className={`inline-block h-[1em] ${w} animate-pulse rounded bg-[#e8eef2] align-middle`} />
   const [tab, setTab] = useState('products')
   const [cat, setCat] = useState('')
+  const tabsDef = [['products', productsLabel], ['reviews', 'Sharhlar'], ['info', 'Ma’lumot']]
   const ordered = useMemo(() => orderProducts(products, info?.featured_ids), [products, info?.featured_ids])
   const cats = useMemo(() => categoriesOf(products), [products])
   const list = useMemo(() => ordered.filter((p) => !cat || p.category === cat), [ordered, cat])
@@ -146,7 +166,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
   const stats = (
     <div className={`mt-3 grid gap-2 ${sales === null ? 'grid-cols-2' : 'grid-cols-3'}`}>
       <Stat icon={Star} label="Reyting" value={rating === null ? 'Yangi' : rating.toFixed(1)} muted={rating === null} />
-      <Stat icon={Package} label="Mahsulotlar" value={loading ? sk('w-8') : products.length} />
+      <Stat icon={Package} label={productsLabel} value={loading ? sk('w-8') : products.length} />
       {sales !== null && <Stat icon={ShoppingCart} label="Sotuvlar" value={sales} />}
     </div>
   )
@@ -181,7 +201,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
 
   const tabs = (
     <div role="tablist" aria-label="Sotuvchi bo‘limlari" className="grid grid-cols-3 gap-2">
-      {TABS.map(([k, l]) => (
+      {tabsDef.map(([k, l]) => (
         <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
           className={`h-11 min-w-0 truncate rounded-full px-2 text-[14px] font-semibold transition ${tab === k ? 'bg-[#0b6d73] text-white shadow-[0_4px_12px_rgb(11_109_115/0.25)]' : `border border-[#e3eef0] bg-white text-ink ${shadow}`}`}>
           {l}{k === 'reviews' && reviews.length > 0 ? ` (${info?.reviews_count || reviews.length})` : ''}
@@ -204,13 +224,13 @@ export default function SellerProfileView({ info, products, loading = false, inf
       {!loading && !list.length && (
         <div className="mt-3 rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center">
           <Store className="mx-auto size-9 text-[#0b6d73]/50" strokeWidth={1.5} />
-          <p className="mt-2 text-[14px] font-semibold text-ink">Hozircha sotuvda mahsulot yo‘q</p>
-          <p className="mt-1 text-[12.5px] text-muted">Sotuvchi mahsulot qo‘shganda shu yerda ko‘rinadi.</p>
+          <p className="mt-2 text-[14px] font-semibold text-ink">{productsLabel === 'Seminarlar' ? 'Hozircha seminar yo‘q' : productsLabel === 'Kitoblar' ? 'Hozircha kitob yo‘q' : 'Hozircha sotuvda mahsulot yo‘q'}</p>
+          <p className="mt-1 text-[12.5px] text-muted">{demo ? `${productsLabel} qo‘shilganda shu yerda ko‘rinadi.` : 'Sotuvchi mahsulot qo‘shganda shu yerda ko‘rinadi.'}</p>
         </div>
       )}
       {!loading && list.length > 0 && (
         <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @4xl:gap-3 @6xl:grid-cols-4">
-          {list.map((p) => <ProductCard key={p.id} p={p} onAdded={onToast} />)}
+          {list.map((p) => <ProductCard key={p.id} p={p} onAdded={onToast} demo={demo} />)}
         </div>
       )}
     </div>
@@ -222,7 +242,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
         <div className="rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center">
           <MessageSquareText className="mx-auto size-9 text-[#0b6d73]/50" strokeWidth={1.5} />
           <p className="mt-2 text-[14px] font-semibold text-ink">Hozircha sharhlar yo‘q</p>
-          <p className="mt-1 text-[12.5px] text-muted">Xaridorlar buyurtmani olgandan keyin baho va sharh qoldira oladi.</p>
+          <p className="mt-1 text-[12.5px] text-muted">{demo ? 'Namuna sahifada sharhlar ko‘rsatilmaydi.' : 'Xaridorlar buyurtmani olgandan keyin baho va sharh qoldira oladi.'}</p>
         </div>
       ) : (
         <div className={`rounded-2xl border border-[#e3eef0] bg-white p-4 ${shadow}`}>

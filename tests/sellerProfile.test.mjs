@@ -52,3 +52,42 @@ test('v2: work time, categories, featured order', () => {
   const ps = ['a', 'b', 'c'].map((id) => ({ id }))
   assert.deepEqual(orderProducts(ps, ['c']).map((p) => p.id), ['c', 'a', 'b'])
 })
+
+import { demoEntityToInfo, demoItemsToCards, demoProductsLabel } from '../src/seller-public/lib.js'
+test('demo: labels by kind', () => {
+  assert.equal(demoProductsLabel('shop'), 'Mahsulotlar')
+  assert.equal(demoProductsLabel('organizer'), 'Seminarlar')
+  assert.equal(demoProductsLabel('bookseller'), 'Kitoblar')
+})
+test('demo: entity → info never invents rating/sales/verified', () => {
+  const info = demoEntityToInfo({
+    kind: 'shop', name: 'Dentashop', description: 'D', city: 'Toshkent',
+    phone: '+998 90 000 00 00', telegram: 'https://t.me/x', logo_url: 'https://x/l.png', address: 'A',
+  })
+  assert.equal(info.shop_name, 'Dentashop')
+  assert.equal(info.avatar_url, 'https://x/l.png')
+  assert.equal(info.verified, false)
+  assert.equal(info.shop_type, 'Do‘kon')
+  assert.ok(!('rating' in info))
+  assert.ok(!('sales_count' in info))
+  assert.ok(!('reviews_count' in info))
+  assert.deepEqual(info.reviews, [])
+  assert.equal(demoEntityToInfo(null), null)
+})
+test('demo: items → cards keep null price and seminar meta', () => {
+  const cards = demoItemsToCards([
+    { id: '1', kind: 'product', name: 'A', price: 1000, price_text: '1 000', image_url: '/a.jpg', source_url: 'https://s' },
+    { id: '2', kind: 'seminar', name: 'Kurs', price: null, price_text: null, image_url: '', source_url: 'https://s2',
+      extra: { date_text: '2026-yil 28–29-noyabr', location: 'DK Study', speaker: 'Ali' } },
+    { id: '3', kind: 'book', name: 'Kitob', price: '', price_text: 'so‘ralganda', image_url: '', source_url: 'https://s3', extra: { author: 'BB' } },
+  ], 'Shop')
+  assert.equal(cards[0].price, 1000)
+  assert.equal(cards[0].image, '/a.jpg')
+  assert.equal(cards[1].price, null)
+  assert.match(cards[1].meta, /2026-yil/)
+  assert.match(cards[1].meta, /Ma’ruzachi: Ali/)
+  assert.equal(cards[2].price, null)
+  assert.equal(cards[2].priceText, 'so‘ralganda')
+  assert.equal(cards[2].meta, 'BB')
+  assert.equal(cards[2].kind, 'book')
+})
