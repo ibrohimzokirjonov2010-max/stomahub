@@ -113,7 +113,7 @@ function ProductBody({ p }) {
         <div>
           <div className="relative aspect-[380/244] overflow-hidden rounded-xl bg-[#eef3f8]">
             <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
-              <img src={p.images[img]} alt={p.name} className="size-full object-cover" />
+              <img src={p.images[img]} alt={p.name} className="size-full object-contain p-4" />
             </button>
             {n > 1 && <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{img + 1} / {n}</span>}
             {n > 1 && <GalleryArrow side="left" onClick={() => setImg((img - 1 + n) % n)} />}
@@ -128,7 +128,7 @@ function ProductBody({ p }) {
                 onClick={() => setImg(i)}
                 className={`aspect-[70/55] w-[calc((100%-2rem)/5)] shrink-0 overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
               >
-                <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-cover" />
+                <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-contain p-1" />
               </button>
             ))}
           </div>

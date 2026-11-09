@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, ChevronDown, Bookmark, Share2, CalendarDays, MapPin, Wallet, ArrowRight, Check, CircleCheck, Ticket,
-  LayoutGrid, ListChecks, Target, Layers, MessageCircle, BookOpen, Users, Gift, RotateCcw, Send, Phone, FileText, CreditCard, BadgeCheck, User, Clock, Award, Package,
+  LayoutGrid, ListChecks, Target, Layers, MessageCircle, BookOpen, Users, Gift, RotateCcw, Send, Phone, FileText, CreditCard, BadgeCheck, User, Clock, Award, Package, Pencil,
 } from 'lucide-react'
 import { buildSeminarPage, som } from '../../seminarsData'
 import { publicRecord, useHub } from '../../hubStore'
@@ -12,6 +12,7 @@ import { IMG } from '../../organizer/data'
 import { splitAddress, joinAddress, telegramHandle, formatPhone } from '../../seminarAddress'
 import { MobileToast } from './parts'
 import { useSeminarStore, toggleSaved } from './seminarStore'
+import { useSession } from '../../sessionStore'
 
 const PLACEHOLDERS = new Set(Object.values(IMG))
 const TEAL = '#0F766E'
@@ -72,6 +73,12 @@ function Page({ id }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const session = useSession()
+  const uid = session.user?.id || session.profile?.id || ''
+  const isOwner = !!(uid && rec?.organizerId && uid === rec.organizerId)
+  const participantsTo = rec ? `/tashkilotchi/ishtirokchilar?seminar=${encodeURIComponent(rec.id)}` : '/tashkilotchi/ishtirokchilar'
+  const editTo = rec ? `/tashkilotchi/seminarlar/yangi?tahrir=${encodeURIComponent(rec.id)}` : '/tashkilotchi/seminarlar'
+
   if (!v) {
     return (
       <div className="px-4 py-16 text-center">
@@ -124,7 +131,7 @@ function Page({ id }) {
       else { await navigator.clipboard?.writeText(url); setToast('Havola nusxalandi') }
     } catch { /* bekor qilindi */ }
   }
-  const register = () => navigate(`/seminarlar/${rec.id}/royxat`)
+  const register = () => navigate(isOwner ? participantsTo : `/seminarlar/${rec.id}/royxat`)
   const sec = (key) => (el) => { refs.current[key] = el }
 
   return (
@@ -160,10 +167,16 @@ function Page({ id }) {
           {(v.venueShort || v.city) && <Fact icon={MapPin} text={v.venueShort || v.city} sub={v.venueShort && v.city !== v.venueShort ? v.city : ''} />}
           <Fact icon={Wallet} text={v.price ? som(v.price) : 'Bepul'} sub={v.oldPrice ? `${som(v.oldPrice)} o‘rniga` : ''} />
         </div>
-        {reg && <p className="mt-3.5 flex h-12 items-center justify-center gap-2 rounded-xl bg-[#CCFBF1] text-[15px] font-semibold text-[#0F766E]"><CircleCheck className="size-5" /> Ro‘yxatdan o‘tgansiz</p>}
-        {!reg && !v.regClosed && (
+        {isOwner ? (
+          <div className="mt-3.5 grid gap-2">
+            <button type="button" onClick={() => navigate(participantsTo)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0F766E] text-[16px] font-semibold text-white"><Users className="size-5" /> Ishtirokchilarni ko‘rish</button>
+            <button type="button" onClick={() => navigate(editTo)} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#CCFBF1] text-[14px] font-semibold text-[#0F766E]"><Pencil className="size-4" /> Tahrirlash</button>
+          </div>
+        ) : reg ? (
+          <p className="mt-3.5 flex h-12 items-center justify-center gap-2 rounded-xl bg-[#CCFBF1] text-[15px] font-semibold text-[#0F766E]"><CircleCheck className="size-5" /> Ro‘yxatdan o‘tgansiz</p>
+        ) : !v.regClosed ? (
           <button type="button" onClick={register} className="mt-3.5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0F766E] text-[16px] font-semibold text-white">Ro‘yxatdan o‘tish <ArrowRight className="size-5" /></button>
-        )}
+        ) : null}
       </section>
 
       {/* Ma’ruzachi */}
@@ -303,7 +316,12 @@ function Page({ id }) {
 
       {/* Pastki panel */}
       <div className="app-action-bar fixed inset-x-0 bottom-0 z-30 border-t border-[#CCFBF1] bg-white px-3.5 pb-2 pt-2.5 shadow-[0_-6px_18px_rgb(15_118_110/0.08)]">
-        {reg ? (
+        {isOwner ? (
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => navigate(editTo)} className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#CCFBF1] text-[14px] font-semibold text-[#0F766E]"><Pencil className="size-4" /> Tahrirlash</button>
+            <button type="button" onClick={() => navigate(participantsTo)} className="flex h-12 flex-[1.4] items-center justify-center gap-1.5 rounded-xl bg-[#0F766E] text-[14px] font-semibold text-white"><Users className="size-4" /> Ishtirokchilar</button>
+          </div>
+        ) : reg ? (
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1 text-[15px] font-bold text-[#0F766E]"><CircleCheck className="size-4" /> Ro‘yxatdan o‘tgansiz</p>

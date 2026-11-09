@@ -107,13 +107,18 @@ function AdSlide({ s, desktop }) {
 }
 
 function Slide({ s, desktop }) {
-  const imgs = (s.images || []).filter(Boolean).slice(0, 2)
+  // Hero tor: bitta rasm object-contain — 2 ta yonma-yon poster telefonda "ST POSTER" bo‘lib qirqilardi.
+  const imgs = (s.images || []).filter(Boolean).slice(0, 1)
   const Btn = s.href ? Link : 'button'
   return (
     <div className="relative h-full w-full shrink-0 bg-gradient-to-r from-[#e3f3f4] via-[#eaf5f7] to-[#d7ecf0]">
       {imgs.length > 0 && (
-        <div className={`absolute inset-y-0 right-0 flex ${desktop ? 'w-[46%]' : 'w-[50%]'}`}>
-          {imgs.map((src) => <img key={src} src={src} alt="" className={`h-full ${imgs.length > 1 ? 'w-1/2' : 'w-full'} object-cover object-[50%_15%]`} />)}
+        <div className={`absolute inset-y-0 right-0 flex items-center ${desktop ? 'w-[42%] p-3' : 'w-[46%] p-2'}`}>
+          {imgs.map((src) => (
+            <div key={src} className="relative h-full w-full overflow-hidden rounded-xl bg-white/85 ring-1 ring-white/70">
+              <img src={src} alt="" className="size-full object-contain p-2" />
+            </div>
+          ))}
         </div>
       )}
       <div className="absolute inset-y-0 left-0 w-[64%] bg-gradient-to-r from-[#e6f4f5] via-[#e6f4f5]/95 to-transparent" />
@@ -230,8 +235,8 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
   const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea' }
   return (
     <Link to={card.href} data-testid="catalog-card" className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
-      <div className={`relative bg-[#eef3f6] ${desktop ? 'h-[190px]' : 'h-[150px]'}`}>
-        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-2' : 'object-cover object-[50%_18%]'}`} /> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
+      <div className={`relative ${card.fit === 'contain' ? 'bg-white' : 'bg-[#eef3f6]'} ${desktop ? 'h-[190px]' : 'h-[150px]'}`}>
+        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-3' : 'object-cover object-[50%_18%]'}`} /> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
         {card.badge && <span data-testid="catalog-badge" className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${badgeCls[card.badge.tone] || badgeCls.info}`}>{card.badge.text}</span>}
         {onLike && (
           <button type="button" onClick={(e) => { e.preventDefault(); onLike() }} aria-label="Sevimlilarga" aria-pressed={liked} className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/95 shadow-[0_1px_4px_rgb(11_31_58/0.15)]">

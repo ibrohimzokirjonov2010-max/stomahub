@@ -49,7 +49,7 @@ const priceBand = (bands) => ({ key: 'price', label: 'Narx', options: bands.map(
 /** Hero slides from real items only (their own images, titles); no invented promos. */
 const slidesFor = ({ title, accent, text, items, image, href, scroll }) => {
   const withImg = items.filter((x) => image(x))
-  const intro = { id: 'intro', title, accent, text, images: withImg.slice(0, 2).map(image), cta: 'Barchasini ko‘rish', onClick: scroll }
+  const intro = { id: 'intro', title, accent, text, images: withImg.slice(0, 1).map(image), cta: 'Barchasini ko‘rish', onClick: scroll }
   const owned = withImg.filter((x) => x.__owned)
   const feat = (owned.length ? owned : []).slice(0, 3).map((x) => ({ id: `f-${x.id}`, title: x.__title, text: x.__sub, images: [image(x)], cta: 'Ko‘rish', href: href(x) }))
   return [intro, ...feat].filter((s) => s.images.length || s.id === 'intro')
@@ -110,7 +110,7 @@ export function useMarketSection() {
       sorts: PRICE_SORTS(),
       text: (p) => `${p.name} ${p.brand} ${p.category} ${p.seller}`,
       card: (p) => ({
-        id: p.id, href: `/product/${p.id}`, image: p.image, kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
+        id: p.id, href: `/product/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
         badge: p.stock <= 0 ? { text: 'Tugagan', tone: 'info' } : null, rating: p.reviews > 0 ? { value: p.rating, count: p.reviews } : null,
         cart: p.stock > 0 ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
       }),
@@ -137,7 +137,7 @@ export function useSeminarsSection() {
       sorts: [['default', 'Sana bo‘yicha', (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : (a.past ? -1 : 1) * String(a.startIso || a.dateKey).localeCompare(String(b.startIso || b.dateKey), undefined, { numeric: true }))], ...PRICE_SORTS().slice(1)],
       text: (s) => `${s.title} ${s.speaker?.name || s.speaker || ''} ${s.city} ${s.placeLabel}`,
       // seminarCard().off is derived from an invented plan oldPrice — not shown.
-      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
+      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, fit: 'contain', kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
       slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: (() => { const n = list.filter((s) => !s.past && !s.cancelled).length; return n ? `${n} ta yaqinlashayotgan seminar` : 'Yaqinlashayotgan seminarlar tez orada' })(), items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
     }
   }, [hub])

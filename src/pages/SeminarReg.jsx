@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, Download, Info, Mail, MapPin, UserRound, X,
+  ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, Download, Info, Mail, MapPin, UserRound, Users, X,
 } from 'lucide-react'
 import { buildSeminarPage } from '../seminarsData'
 import { addMessage, checkPromo, publicRecord, useHub } from '../hubStore'
@@ -10,6 +10,7 @@ import { som } from '../marketData'
 import LiveQr from '../components/LiveQr'
 import { tashkentWhen } from '../time'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
+import { useSession } from '../sessionStore'
 
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Gigiyenist', 'Boshqa']
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', "Farg‘ona", 'Nukus']
@@ -17,6 +18,7 @@ const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', "Farg�
 export default function SeminarReg() {
   const { id } = useParams()
   const hub = useHub()
+  const session = useSession()
   const rec = publicRecord(id, hub)
   const seminar = rec ? buildSeminarPage(rec) : null
   const view = useMemo(() => (seminar ? profile(seminar) : null), [seminar])
@@ -48,6 +50,24 @@ export default function SeminarReg() {
         <p className="text-[18px] font-bold text-ink">{seminar.cancelled ? 'Seminar bekor qilingan' : 'Seminar yakunlangan'}</p>
         <p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p>
         <Link to={`/seminarlar/${id}`} className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminar sahifasi</Link>
+      </div>
+    )
+  }
+  const uid = session.user?.id || session.profile?.id || ''
+  if (uid && (seminar.organizerId || rec.organizerId) && uid === (seminar.organizerId || rec.organizerId)) {
+    return (
+      <div className="mx-auto max-w-lg py-10">
+        <div className="rounded-2xl bg-white p-6 text-center shadow-card">
+          <span className="mx-auto grid size-14 place-items-center rounded-full bg-sea-50 text-sea"><Users className="size-7" /></span>
+          <p className="mt-3 text-[18px] font-bold text-ink">Bu sizning seminaringiz</p>
+          <p className="mt-1.5 text-[13px] leading-snug text-muted">O‘z seminaringizga ro‘yxatdan o‘ta olmaysiz. Ishtirokchilarni tashkilotchi kabinetida ko‘rasiz.</p>
+          <Link to={`/tashkilotchi/ishtirokchilar?seminar=${encodeURIComponent(id)}`} className="mt-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white">
+            <Users className="size-4" /> Ishtirokchilarni ko‘rish
+          </Link>
+          <Link to={`/seminarlar/${id}`} className="mt-2 flex h-11 items-center justify-center rounded-xl bg-sea-50 text-[14px] font-semibold text-sea">
+            Seminar sahifasiga qaytish
+          </Link>
+        </div>
       </div>
     )
   }

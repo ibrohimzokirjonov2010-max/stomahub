@@ -14,6 +14,7 @@ import { seminarPrice } from '../seminarsData'
 import { formatPhone, telegramHandle } from '../seminarAddress'
 import { dateRangeLabel } from '../programDays'
 import { IMG } from '../organizer/data'
+import { useSession } from '../sessionStore'
 
 const PLACEHOLDERS = new Set(Object.values(IMG))
 
@@ -160,6 +161,11 @@ export function SeminarView({ d, similar = null, preview = false }) {
   if (preview) v.similar = []
   const cancelled = !!d.cancelled || !!v.regClosed
   const left = v.seats - v.taken
+  const session = useSession()
+  const uid = session.user?.id || session.profile?.id || ''
+  const isOwner = !!(uid && d.organizerId && uid === d.organizerId)
+  const participantsTo = `/tashkilotchi/ishtirokchilar?seminar=${encodeURIComponent(d.id)}`
+  const editTo = `/tashkilotchi/seminarlar/yangi?tahrir=${encodeURIComponent(d.id)}`
   const regTo = `/seminarlar/${d.id}/royxat`
   const dateLabel = (d.startIso && dateRangeLabel(d.startIso, d.endIso)) || v.dayShort
   const sp = d.organizer ? (d.speakersAll || [])[0] : null
@@ -196,6 +202,11 @@ export function SeminarView({ d, similar = null, preview = false }) {
   }
   const RegButton = ({ className = '' }) => (preview
     ? <button type="button" disabled title="Ko‘rib chiqish rejimi" className={`flex cursor-not-allowed items-center justify-center gap-1.5 rounded-xl bg-sea font-semibold text-white opacity-60 ${className}`}>Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></button>
+    : isOwner
+      ? <div className={`flex flex-col gap-2 ${className.includes('w-full') || className.includes('flex-1') ? 'w-full' : ''}`}>
+          <Link to={participantsTo} className={`flex items-center justify-center gap-1.5 rounded-xl bg-sea font-semibold text-white ${className}`}>Ishtirokchilarni ko‘rish <Users className="size-4" /></Link>
+          <Link to={editTo} className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-sea-50 text-[13px] font-semibold text-sea">Tahrirlash</Link>
+        </div>
     : cancelled
       ? <span className={`flex items-center justify-center rounded-xl bg-[#fde8e8] font-semibold text-[#dc2626] ${className}`}>Ro‘yxat yopiq</span>
       : <Link to={regTo} className={`flex items-center justify-center gap-1.5 rounded-xl bg-sea font-semibold text-white ${className}`}>Ro‘yxatdan o‘tish <ArrowRight className="size-4" /></Link>)

@@ -128,7 +128,7 @@ function ProductView({ id }) {
         <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto px-3.5">
           {thumbs.map((t, i) => (
             <button key={`${i}-${t}`} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[60px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-[#f3f6f9] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
-              <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-cover" />
+              <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-contain p-1" />
             </button>
           ))}
         </div>

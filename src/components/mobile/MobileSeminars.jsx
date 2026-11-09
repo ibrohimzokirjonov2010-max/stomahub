@@ -71,6 +71,8 @@ export default function MobileSeminars() {
   const location = useLocation()
   const store = useSeminarStore()
   const hub = useHub()
+  const session = useSession()
+  const uid = session.user?.id || session.profile?.id || ''
   const cards = useMemo(() => publicRecords(hub).map(seminarCard), [hub])
   const [cat, setCat] = useState('all')
   const [q, setQ] = useState('')
@@ -141,7 +143,7 @@ export default function MobileSeminars() {
 
       <div className="mt-2 flex flex-col gap-2.5 px-3.5">
         {list.map((s) => (
-          <SeminarCard key={s.id} s={s} saved={store.saved.includes(s.id)} registered={!!store.registered[s.id]} onSave={() => save(s.id)} onRegister={() => navigate(`/seminarlar/${s.id}/royxat`)} />
+          <SeminarCard key={s.id} s={s} saved={store.saved.includes(s.id)} registered={!!store.registered[s.id]} isOwner={!!(uid && s.organizerId && uid === s.organizerId)} onSave={() => save(s.id)} onRegister={() => navigate(uid && s.organizerId && uid === s.organizerId ? `/tashkilotchi/ishtirokchilar?seminar=${encodeURIComponent(s.id)}` : `/seminarlar/${s.id}/royxat`)} />
         ))}
         {!list.length && (
           <div className="grid place-items-center rounded-2xl bg-white px-6 py-10 text-center">
@@ -163,7 +165,7 @@ export default function MobileSeminars() {
   )
 }
 
-function SeminarCard({ s, saved, registered, onSave, onRegister }) {
+function SeminarCard({ s, saved, registered, isOwner, onSave, onRegister }) {
   const TagIcon = s.online ? Video : UserRound
   return (
     <article className="relative flex gap-2.5 rounded-2xl bg-white p-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
@@ -204,7 +206,7 @@ function SeminarCard({ s, saved, registered, onSave, onRegister }) {
               <span className="flex h-8 items-center gap-1 rounded-lg bg-[#e5f6ec] px-2 text-[10px] font-semibold text-ok"><CircleCheck className="size-3.5" /> Ro‘yxatdasiz</span>
             ) : (
               <button type="button" onClick={onRegister} className="flex h-8 items-center gap-1 rounded-lg bg-sea px-2 text-[10px] font-semibold text-white active:scale-[0.97]">
-                Ro‘yxatdan o‘tish <ArrowRight className="size-3" />
+                {isOwner ? 'Ishtirokchilar' : <>Ro‘yxatdan o‘tish <ArrowRight className="size-3" /></>}
               </button>
             )}
           </div>
