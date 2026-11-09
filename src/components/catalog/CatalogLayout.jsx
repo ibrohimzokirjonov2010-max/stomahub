@@ -481,7 +481,7 @@ export function CatalogPage({ section }) {
     )
   }
   return (
-    <div data-testid={`catalog-${section.key}`} className="min-h-screen bg-[#f6f9fb] pb-[calc(var(--bottom-nav-h,64px)+env(safe-area-inset-bottom,0px)+24px)]">
+    <div data-testid={`catalog-${section.key}`} className="min-h-screen bg-[#f6f9fb] pb-[calc(var(--bottom-nav-h,58px)+var(--bottom-nav-float,14px)+max(env(safe-area-inset-bottom,0px),var(--safe-bottom-sim,0px))+24px)]">
       <div className="px-3.5 pt-3">
         <MobileTopBar onSearch={() => searchRef.current?.focus()} onBell={() => setToast('Yangi bildirishnomalar yo‘q')} />
         {body}

@@ -53,7 +53,7 @@ export default function SellerPage() {
 
   return (
     <div className={mobile ? 'min-h-[100dvh] overflow-x-clip bg-gradient-to-b from-[#e8f5f3] via-[#f2f8f8] to-page' : ''}>
-      <div className="mx-auto w-full max-w-[1120px] px-3.5 pb-[calc(var(--bottom-nav-h)+max(env(safe-area-inset-bottom,0px),var(--safe-bottom-sim,0px))+28px)] pt-2.5 lg:px-0 lg:pb-10 lg:pt-3">
+      <div className="mx-auto w-full max-w-[1120px] px-3.5 pb-[calc(var(--bottom-nav-h)+var(--bottom-nav-float,14px)+max(env(safe-area-inset-bottom,0px),var(--safe-bottom-sim,0px))+28px)] pt-2.5 lg:px-0 lg:pb-10 lg:pt-3">
         <header className="mb-3 flex items-center gap-3">
           <button type="button" aria-label="Orqaga" onClick={() => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/marketplace'))} className={iconBtn}>
             <ChevronLeft className="size-6" />
@@ -75,7 +75,7 @@ export default function SellerPage() {
           <SellerProfileView info={info} products={products} loading={loading} infoLoading={!info && infoStatus === 'loading'} onToast={setToast} />
         )}
       </div>
-      <MobileToast text={toast} onClose={closeToast} bottom={mobile ? 'calc(var(--bottom-nav-h) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim, 0px)) + 12px)' : 24} />
+      <MobileToast text={toast} onClose={closeToast} bottom={mobile ? 'calc(var(--bottom-nav-h) + var(--bottom-nav-float, 14px) + max(env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim, 0px)) + 12px)' : 24} />
       {mobile && <MobileTabBar />}
     </div>
   )
