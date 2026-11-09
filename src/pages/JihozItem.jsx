@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Star, Heart, ShoppingCart, Minus, Plus, ChevronRight, X, BadgeCheck, Truck, Check, MapPin } from 'lucide-react'
+import { Star, Heart, ShoppingCart, ChevronRight, X, BadgeCheck, Truck, Check, MapPin } from 'lucide-react'
 import { useCart } from '../cart'
 import {
   getJihoz, products, similarIds, money, catName, statusName, specsOf, kitOf, coverOf, installer, shipping,
@@ -11,7 +11,6 @@ export default function JihozItem() {
   const { id } = useParams()
   const product = getJihoz(id)
   const [shot, setShot] = useState(0)
-  const [qty, setQty] = useState(1)
   const [tab, setTab] = useState('about')
   const [saved, setSaved] = useState(false)
   const [ask, setAsk] = useState(false)
@@ -26,7 +25,7 @@ export default function JihozItem() {
 
   const gallery = product.gallery?.length ? product.gallery : [product.image]
   const inCart = items.some((it) => it.id === product.id)
-  const put = () => { if (!inCart) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty) }
+  const put = () => { if (!inCart) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1) }
   const similar = similarIds.map((sid) => products.find((p) => p.id === sid)).filter((p) => p && p.id !== product.id)
   const points = product.points || [product.feature, 'Kafolat va servis', 'Original yetkazib berish', product.lizing ? 'Bo‘lib to‘lash mumkin' : 'Ombordan jo‘natish']
   const specs = specsOf(product)
@@ -82,11 +81,6 @@ export default function JihozItem() {
                 <ChevronRight className="size-4 text-muted" />
               </button>
               <div className="mt-3 flex items-center gap-2">
-                <div className="flex h-10 items-center rounded-full bg-[#f3f6fa] px-1">
-                  <button aria-label="Kamaytirish" onClick={() => setQty((n) => Math.max(1, n - 1))} className="grid size-8 place-items-center"><Minus className="size-3.5" /></button>
-                  <span className="w-6 text-center text-[13px] font-bold">{qty}</span>
-                  <button aria-label="Ko‘paytirish" onClick={() => setQty((n) => n + 1)} className="grid size-8 place-items-center"><Plus className="size-3.5" /></button>
-                </div>
                 <button onClick={put} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
                   <ShoppingCart className="size-4" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}
                 </button>
@@ -94,7 +88,7 @@ export default function JihozItem() {
                   <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
                 </button>
               </div>
-              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty, 'jihoz')} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600">Hozir sotib olish</button>
+              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1, 'jihoz')} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600">Hozir sotib olish</button>
               <button onClick={() => setAsk(true)} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Konsultatsiya so‘rash</button>
             </div>
           </div>

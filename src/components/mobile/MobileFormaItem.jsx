@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, Ruler, Minus, Plus, Leaf, WashingMachine, Truck, ShoppingCart,
+  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, Ruler, Leaf, WashingMachine, Truck, ShoppingCart,
 } from 'lucide-react'
 import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../../formaData'
 import { useCart } from '../../cart'
@@ -31,7 +31,6 @@ function FormaView({ id }) {
   const [color, setColor] = useState(p?.colors[0])
   const [size, setSize] = useState(p ? defaultSize(p) : 'M')
   const [logo, setLogo] = useState(false)
-  const [pick, setPick] = useState(1)
   const [liked, setLiked] = useState(false)
   const [chart, setChart] = useState(false)
   const [toast, setToast] = useState('')
@@ -62,14 +61,14 @@ function FormaView({ id }) {
   const sku = `${p.brand.slice(0, 2).toUpperCase()}-${String(p.rank + 1).padStart(3, '0')}`
   const cartId = formaCartId(p, color, size, logo)
   const inCart = items.find((it) => it.id === cartId)?.qty || 0
-  const qty = inCart || pick
+  const qty = inCart || 1
   const similar = similarIds.map((sid) => products.find((x) => x.id === sid)).filter((x) => x && x.id !== p.id)
   const story = p.story || `${p.brand} ${p.title.toLowerCase()}. ${p.about} Klinika va shifoxonada kiyish uchun mos.`
   const [mat1, mat2] = MATERIAL[p.fabric] || MATERIAL.cotton
 
   const changeQty = (next) => {
-    if (!inCart) return setPick(Math.min(99, Math.max(1, next)))
-    if (next < 1) { remove(cartId); setPick(1); setToast('Savatdan olib tashlandi') }
+    if (!inCart) return
+    if (next < 1) { remove(cartId); setToast('Savatdan olib tashlandi') }
     else setCartQty(cartId, Math.min(99, next))
   }
   const addToCart = () => {
@@ -79,8 +78,8 @@ function FormaView({ id }) {
       type: p.brand,
       price: unit,
       image: p.image,
-    }, qty)
-    setToast(`${qty} ta ${p.title} savatga qo‘shildi`)
+    }, 1)
+    setToast(`1 ta ${p.title} savatga qo‘shildi`)
   }
   const share = async () => {
     const url = window.location.href
@@ -180,14 +179,6 @@ function FormaView({ id }) {
           </span>
         </label>
 
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-[13px] text-ink-2">Miqdor</span>
-          <div className="flex h-10 items-center rounded-xl bg-[#f0f3f7] p-1">
-            <button type="button" onClick={() => changeQty(qty - 1)} disabled={!inCart && qty <= 1} aria-label="Kamaytirish" className="grid size-8 place-items-center rounded-lg text-ink disabled:text-muted/50"><Minus className="size-4" /></button>
-            <span className="w-9 text-center text-[14px] font-semibold text-ink">{qty}</span>
-            <button type="button" onClick={() => changeQty(qty + 1)} aria-label="Ko‘paytirish" className="grid size-8 place-items-center rounded-lg text-ink"><Plus className="size-4" /></button>
-          </div>
-        </div>
 
         <div className="mt-3 grid grid-cols-[1fr_1fr_1.2fr] gap-1.5">
           {[
