@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { VARIANT_TYPE_LABEL } from '../../config/productCatalog'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, ChevronDown, Heart, Share2, BadgeCheck, Star, MessageSquareText, Package, Truck, Minus, Plus,
+  ChevronLeft, ChevronRight, ChevronDown, Heart, Share2, BadgeCheck, Star, MessageSquareText, Package, Truck,
   MessageCircle, MapPin, ShoppingCart, X, Send,
 } from 'lucide-react'
 import { useCart } from '../../cart'
@@ -52,7 +52,6 @@ function ProductView({ id }) {
   const [zoom, setZoom] = useState(false)
   const [variant, setVariant] = useState(0)
   const minQty = Math.max(1, p.minQty || 1)
-  const [pick, setPick] = useState(minQty)
   const profile = useProfile()
   const liked = (profile.favProducts || []).map(String).includes(String(p.id))
   const [moreText, setMoreText] = useState(false)
@@ -68,14 +67,13 @@ function ProductView({ id }) {
   const v = variants[variant]
   const cartId = variant ? `${p.id}-${variant}` : p.id
   const inCart = items.find((it) => it.id === cartId)?.qty || 0
-  const qty = inCart || pick
   const maxQty = Math.max(minQty, Math.min(99, Number.isFinite(Number(v.stock)) && p.variants ? Number(v.stock) : Number(p.stock) || 0))
+  const addQty = Math.min(maxQty, minQty)
   const changeQty = (next) => {
+    if (!inCart) return
     if (next > maxQty) setToast(`Omborda faqat ${maxQty} ${p.uom || 'dona'} bor`)
-    if (!inCart) return setPick(Math.min(maxQty, Math.max(minQty, next)))
     if (next < 1) {
       remove(cartId)
-      setPick(1)
       setToast(`${p.name} savatdan olib tashlandi`)
     } else setCartQty(cartId, Math.min(maxQty, next))
   }
@@ -92,8 +90,9 @@ function ProductView({ id }) {
   }
 
   const addToCart = () => {
-    const ok = add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0], minQty: p.minQty, priceTiers: variant ? [] : p.priceTiers, uom: p.uom, stock: p.variants ? v.stock : p.stock }, qty)
-    if (ok) setToast(`${qty} ta ${p.name} savatga qo‘shildi`)
+    const q = Math.max(1, addQty)
+    const ok = add({ id: cartId, productId: p.id, variant: p.variants ? (v.sku || '') : '', sellerId: p.sellerId, name: variant ? `${p.name} (${v.label})` : p.name, type: v.label, price: v.price, image: p.thumbs[0], minQty: p.minQty, priceTiers: variant ? [] : p.priceTiers, uom: p.uom, stock: p.variants ? v.stock : p.stock }, q)
+    if (ok) setToast(`${q} ta ${p.name} savatga qo‘shildi`)
   }
 
   return (
@@ -171,30 +170,18 @@ function ProductView({ id }) {
           </span>
         </button>
 
-        {/* Variant va miqdor */}
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {variants.length > 1 ? <label className="block">
+        {/* Variant (miqdor — faqat savatda) */}
+        {variants.length > 1 && (
+          <label className="mt-3 block">
             <span className="text-[12px] text-ink-2">{VARIANT_TYPE_LABEL[p.variantType] || 'Variant'}</span>
             <span className="relative mt-1 flex h-11 items-center rounded-xl border border-line">
-              <select value={variant} onChange={(e) => setVariant(Number(e.target.value))} disabled={variants.length < 2} className="h-full w-full appearance-none rounded-xl bg-transparent pl-3 pr-8 text-[13.5px] font-medium text-ink outline-none disabled:opacity-100">
+              <select value={variant} onChange={(e) => setVariant(Number(e.target.value))} className="h-full w-full appearance-none rounded-xl bg-transparent pl-3 pr-8 text-[13.5px] font-medium text-ink outline-none">
                 {variants.map((x, i) => <option key={x.label} value={i}>{x.label}</option>)}
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 size-4 text-ink-2" />
             </span>
-          </label> : <div />}
-          <div>
-            <span className="text-[12px] text-ink-2">Miqdori</span>
-            <div className="mt-1 flex h-11 items-center justify-between rounded-xl border border-line px-1">
-              <button type="button" onClick={() => changeQty(qty - 1)} disabled={!inCart && qty <= minQty} aria-label="Kamaytirish" className="grid size-9 place-items-center rounded-lg text-ink disabled:text-muted/50">
-                <Minus className="size-4" />
-              </button>
-              <span className="text-[14px] font-semibold text-ink">{qty}</span>
-              <button type="button" onClick={() => changeQty(qty + 1)} aria-label="Ko‘paytirish" className="grid size-9 place-items-center rounded-lg text-ink">
-                <Plus className="size-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+          </label>
+        )}
 
         {/* Tavsif */}
         <h2 className="mt-4 text-[16px] font-bold text-ink">Tavsif</h2>
@@ -272,10 +259,10 @@ function ProductView({ id }) {
         ) : (
           <>
             <div className="min-w-0">
-              <p className="whitespace-nowrap text-[17px] font-extrabold leading-tight text-ink">{som(v.price * qty)}</p>
+              <p className="whitespace-nowrap text-[17px] font-extrabold leading-tight text-ink">{som(v.price * addQty)}</p>
               {off > 0 && (
                 <p className="flex items-center gap-1.5 text-[11.5px]">
-                  <span className="text-muted line-through">{som(v.oldPrice * qty)}</span>
+                  <span className="text-muted line-through">{som(v.oldPrice * addQty)}</span>
                   <span className="rounded-md bg-[#fde7ea] px-1.5 font-bold text-sale">-{off}%</span>
                 </p>
               )}

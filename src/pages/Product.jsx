@@ -12,7 +12,6 @@ import { marketProducts, productById, similarTo, som } from '../marketData'
 import { useMarket } from '../buyerApi'
 import { BirgaOlishadi, useTrackView } from '../personal/PersonalBlocks'
 import { useCart } from '../cart'
-import { QtyStepper } from '../components/market/CartPanel'
 import { SaleBadge, LikeButton, Rating, AddButton } from '../components/market/ProductCard'
 import { ToothIcon } from '../components/icons'
 import Lightbox from '../components/Lightbox'
@@ -79,13 +78,12 @@ function ProductBody({ p }) {
   const [img, setImg] = useState(0)
   const [zoom, setZoom] = useState(false)
   const minQty = Math.max(1, p.minQty || 1)
-  const [qty, setQty] = useState(minQty)
   const [tab, setTab] = useState(0)
   const { add } = useCart()
   const navigate = useNavigate()
   const n = p.images.length
 
-  useEffect(() => { setImg(0); setQty(minQty); setTab(0) }, [id, minQty])
+  useEffect(() => { setImg(0); setTab(0) }, [id, minQty])
 
   const facts = [
     { icon: PackageOpen, label: 'Holati', value: 'Yangi (yopiq)' },
@@ -201,19 +199,16 @@ function ProductBody({ p }) {
             <LikeButton productId={p.id} className="size-7 bg-[#f3f6fa]" />
           </div>
 
-          <div className="mt-3 flex items-center gap-4">
-            <QtyStepper value={qty} onChange={(q) => setQty(Math.max(minQty, Math.min(Math.max(p.stock, minQty) || 1, q)))} size="lg" />
-            <span className="text-[10px] text-muted">{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</span>
-          </div>
+          <p className="mt-3 text-[10px] text-muted">{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</p>
 
           {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : block?.code === 'own' ? <BlockNotice className="mt-2.5" text={block.text} /> : <>
           <button
-            disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(qty, p.stock))}
+            disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(Math.max(1, minQty), Math.max(p.stock, 1)))}
             className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShoppingCart className="size-4" /> {p.stock < 1 ? 'Tugagan' : 'Savatga qo‘shish'}
           </button>
-          <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, Math.min(qty, p.stock), 'market')} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
+          <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, Math.min(Math.max(1, minQty), Math.max(p.stock, 1)), 'market')} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
             Hozir xarid qilish
           </button>
           </>}

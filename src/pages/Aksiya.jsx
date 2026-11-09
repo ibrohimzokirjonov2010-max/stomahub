@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Clock, Heart, MapPin, Minus, Plus, RotateCcw, ShieldCheck,
+  ChevronLeft, ChevronRight, Clock, Heart, MapPin, RotateCcw, ShieldCheck,
   ShoppingCart, Star, Store, Timer, Truck, Wallet, X, Zap,
 } from 'lucide-react'
 import { useCart } from '../cart'
@@ -16,7 +16,6 @@ export default function Aksiya() {
   const sec = useCountdown(deal?.left ?? 0)
   const { add } = useCart()
   const [photo, setPhoto] = useState(0)
-  const [qty, setQty] = useState(1)
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState('tavsif')
   const [added, setAdded] = useState(false)
@@ -28,7 +27,6 @@ export default function Aksiya() {
 
   useEffect(() => {
     setPhoto(0)
-    setQty(1)
     setTab('tavsif')
     setAdded(false)
     setBought(false)
@@ -49,7 +47,7 @@ export default function Aksiya() {
   const more = others(deal.id)
 
   const addCart = () => {
-    add({ id: deal.id, name: deal.name, type: deal.brand, price: deal.price, image: deal.image }, qty)
+    add({ id: deal.id, name: deal.name, type: deal.brand, price: deal.price, image: deal.image }, 1)
     setAdded(true)
   }
 
@@ -108,14 +106,7 @@ export default function Aksiya() {
             <span className="text-ink-2">Aksiya tugashiga:</span>
             <span className="font-bold text-sea">{clock(sec)}</span>
           </div>}
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex h-9 items-center rounded-lg border border-line bg-white">
-              <button onClick={() => setQty((n) => Math.max(1, n - 1))} className="grid size-9 place-items-center" aria-label="Kamaytirish"><Minus className="size-3.5" /></button>
-              <span className="w-6 text-center text-[13px] font-semibold">{qty}</span>
-              <button onClick={() => setQty((n) => Math.min(deal.stock, n + 1))} className="grid size-9 place-items-center" aria-label="Ko‘paytirish"><Plus className="size-3.5" /></button>
-            </div>
-            <span className="text-[12.5px] text-muted">Soni: {deal.stock} dona</span>
-          </div>
+          <p className="mt-3 text-[12.5px] text-muted">Soni: {deal.stock} dona</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={addCart} className="inline-flex h-11 items-center gap-2 rounded-xl bg-sea px-5 text-[13.5px] font-semibold text-white">
               <ShoppingCart className="size-4" /> {added ? 'Savatga qo‘shildi' : 'Savatga qo‘shish'}

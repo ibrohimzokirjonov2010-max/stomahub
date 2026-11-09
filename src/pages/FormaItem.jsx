@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Star, Heart, ShoppingCart, Minus, Plus, Truck, ShieldCheck, CreditCard, ChevronRight, X } from 'lucide-react'
+import { Star, Heart, ShoppingCart, Truck, ShieldCheck, CreditCard, ChevronRight, X } from 'lucide-react'
 import { useCart } from '../cart'
 import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../formaData'
 import { payPromo } from '../payments/paymentService'
@@ -23,7 +23,6 @@ export default function FormaItem() {
   const [shot, setShot] = useState(0)
   const [color, setColor] = useState(product?.colors[0] || 'teal')
   const [size, setSize] = useState(sizesOf(product).includes('M') ? 'M' : sizesOf(product)[0])
-  const [qty, setQty] = useState(1)
   const [tab, setTab] = useState('about')
   const [saved, setSaved] = useState(false)
   const [ask, setAsk] = useState(false)
@@ -37,7 +36,7 @@ export default function FormaItem() {
 
   const gallery = product.gallery?.length ? product.gallery : [product.image]
   const inCart = items.some((it) => it.id === product.id)
-  const put = () => { if (!inCart) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty) }
+  const put = () => { if (!inCart) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1) }
   const similar = similarIds.map((sid) => products.find((p) => p.id === sid)).filter((p) => p && p.id !== product.id)
   const story = product.story || `${product.brand} ${product.title.toLowerCase()}. ${product.about} Klinika va shifoxonada kiyish uchun mos.`
 
@@ -89,11 +88,6 @@ export default function FormaItem() {
                 ))}
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <div className="flex h-10 items-center rounded-full bg-[#f3f6fa] px-1">
-                  <button aria-label="Kamaytirish" onClick={() => setQty((n) => Math.max(1, n - 1))} className="grid size-8 place-items-center"><Minus className="size-3.5" /></button>
-                  <span className="w-6 text-center text-[13px] font-bold">{qty}</span>
-                  <button aria-label="Ko‘paytirish" onClick={() => setQty((n) => n + 1)} className="grid size-8 place-items-center"><Plus className="size-3.5" /></button>
-                </div>
                 <button onClick={put} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
                   <ShoppingCart className="size-4" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}
                 </button>
@@ -101,7 +95,7 @@ export default function FormaItem() {
                   <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
                 </button>
               </div>
-              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, qty, 'forma')} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
+              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1, 'forma')} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {perks.map(([t, d], i) => {
                   const Icon = [ShieldCheck, Truck, CreditCard][i]
