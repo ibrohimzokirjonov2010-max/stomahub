@@ -11,6 +11,7 @@ import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { adPrice } from '../../elonlarData'
 import { fetchBonusLog, fetchNotifications, markNotificationsRead, useRemote } from '../../buyerApi'
+import { useNotifications } from '../../notificationsStore'
 import { COURSES, allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
@@ -74,7 +75,8 @@ export default function MobileProfil() {
 
   const orders = allOrders(profile)
   const [notifTick, setNotifTick] = useState(0)
-  const notifRes = useRemote(() => (profile.accountLive ? fetchNotifications() : Promise.resolve([])), [profile.accountLive, notifTick])
+  const liveNotifs = useNotifications() // yangi bildirishnoma kelsa ro‘yxat darhol yangilansin
+  const notifRes = useRemote(() => (profile.accountLive ? fetchNotifications() : Promise.resolve([])), [profile.accountLive, notifTick, liveNotifs.items.length])
   const bonusRes = useRemote(() => (profile.accountLive ? fetchBonusLog() : Promise.resolve([])), [profile.accountLive])
   const notes = notifRes.data.map(toNote)
   const readIds = [...notes.filter((n) => n.readAt).map((n) => n.id), ...(profile.readNotifs || [])]

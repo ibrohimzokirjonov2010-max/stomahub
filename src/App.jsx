@@ -1,6 +1,7 @@
 import { LoginRedirector, RequireAuth } from './requireAuth'
 import { lazy, Suspense } from 'react'
 import FlashToast from './components/FlashToast'
+import NotificationToaster from './components/NotificationToaster'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { roleForPath, setIntendedRole, useSession } from './sessionStore'
@@ -123,6 +124,7 @@ import { adminRoutes } from './admin/routes'
 const AdsShot = import.meta.env.DEV ? lazy(() => import('./dev/AdsShot')) : null
 const ShotHarness = import.meta.env.DEV ? lazy(() => import('./admin/pages/ShotHarness')) : null
 const SellerProfileShot = import.meta.env.DEV ? lazy(() => import('./dev/SellerProfileShot')) : null
+const NotifyShot = import.meta.env.DEV ? lazy(() => import('./dev/NotifyShot')) : null
 const EscrowShot = import.meta.env.DEV ? lazy(() => import('./dev/EscrowShot')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
@@ -155,6 +157,7 @@ export default function App() {
         <MobileChrome />
         <IntakeDialog />
         <FlashToast />
+        <NotificationToaster />
         <LoginRedirector />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -184,6 +187,7 @@ export default function App() {
           {AdsShot && <Route path="/ads-shot/seller" element={<Suspense fallback={null}><AdsShot /></Suspense>} />}
           {SellerProfileShot && <Route path="/seller-profile-shot/:sec" element={<Suspense fallback={null}><SellerProfileShot /></Suspense>} />}
           {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
+          {NotifyShot && <Route path="/notify-shot/:mode" element={<Suspense fallback={null}><NotifyShot /></Suspense>} />}
           {EscrowShot && <Route path="/escrow-shot/:who" element={<Suspense fallback={null}><EscrowShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />

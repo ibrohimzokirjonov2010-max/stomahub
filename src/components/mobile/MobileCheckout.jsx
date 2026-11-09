@@ -8,6 +8,7 @@ import {
   Store, Truck, UserRound, X,
 } from 'lucide-react'
 import { useCart } from '../../cart'
+import NotificationBell from '../NotificationBell'
 import { currentUid } from '../../recordSync'
 import { som } from '../../marketData'
 import { createOrder } from '../../buyerApi'
@@ -780,7 +781,7 @@ function Done({ order }) {
             <ShoppingCart className="size-[21px]" />
             {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
           </button>
-          <button type="button" onClick={() => setToast('Yangi bildirishnomalar yo‘q')} aria-label="Bildirishnomalar" className="grid size-10 place-items-center rounded-full text-[#0d2a4a]"><Bell className="size-[21px]" /></button>
+          <NotificationBell className="relative grid size-10 place-items-center rounded-full text-[#0d2a4a]" iconClass="size-[21px]" />
         </div>
       </header>
 
