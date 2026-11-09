@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, ShoppingCart, Check, X, LayoutGrid, Tag } from 'lucide-react'
+import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, Check, X, LayoutGrid, Tag } from 'lucide-react'
 import CardQtyStepper from '../CardQtyStepper'
 import { useMobile } from '../../useMobile'
 import { ensureLogin } from '../../loginPrompt'
