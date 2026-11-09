@@ -4,7 +4,8 @@ import { BadgeCheck, BookOpen, CalendarDays, Clock, Globe, GraduationCap, Info, 
 import { MapPreview, parseGeo } from '../components/MapPicker'
 import { ReviewCard } from '../components/ReviewList'
 import { som } from '../marketData'
-import { useCart, isOwnProduct } from '../cart'
+import { isOwnProduct } from '../cart'
+import CardQtyStepper from '../components/CardQtyStepper'
 import { offPercent } from '../lib/discounts'
 import { categoriesOf, contactOf, orderProducts, ratingOf, salesOf, verifiedOf, workTimeOf } from './lib'
 
@@ -66,7 +67,6 @@ function Thumb({ p }) {
 }
 
 function ProductCard({ p, onAdded, demo = false }) {
-  const { add } = useCart()
   const navigate = useNavigate()
   const own = !demo && isOwnProduct(p)
   const hasVariants = Array.isArray(p.variants) && p.variants.length > 0
@@ -74,15 +74,6 @@ function ProductCard({ p, onAdded, demo = false }) {
   const off = demo ? 0 : offPercent(p)
   const noPrice = p.price == null || p.price === ''
   const isSeminar = p.kind === 'seminar'
-  const onCart = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (demo || isSeminar) return
-    // Variantli mahsulotda variantni mahsulot sahifasida tanlaydi (savatga noto‘g‘ri variant tushmasin).
-    if (hasVariants) { navigate(`/product/${p.id}`); return }
-    const ok = add({ id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }, Math.max(1, Number(p.minQty) || 1))
-    if (ok) onAdded?.(`${p.name} savatga qo‘shildi`)
-  }
   const cartDisabled = demo || out
   const cartLabel = demo ? 'Savatchaga qo‘shib bo‘lmaydi' : (out ? 'Tugagan' : 'Savatga qo‘shish')
   const priceBlock = noPrice ? (
@@ -95,6 +86,7 @@ function ProductCard({ p, onAdded, demo = false }) {
       </span>
     </span>
   )
+  const cartLine = { id: p.id, productId: p.id, sellerId: p.sellerId, name: p.name, type: p.type, price: p.price, image: p.image, minQty: p.minQty, priceTiers: p.priceTiers, uom: p.uom, stock: p.stock, rx: p.rx }
   const action = own ? (
     <span className="shrink-0 rounded-lg bg-[#eef4f4] px-1.5 py-1 text-[9.5px] font-semibold leading-tight text-[#0b6d73]">Sizniki</span>
   ) : isSeminar ? (
@@ -102,10 +94,17 @@ function ProductCard({ p, onAdded, demo = false }) {
       <span className="mt-1.5 block w-full cursor-not-allowed rounded-lg bg-[#E2E8F0] py-2 text-center text-[11.5px] font-semibold text-[#94A3B8]">Ro‘yxatdan o‘tish o‘chirilgan</span>
     ) : null
   ) : (
-    <button type="button" onClick={onCart} disabled={cartDisabled} aria-label={cartLabel} title={cartLabel}
-      className="grid size-[34px] shrink-0 place-items-center rounded-[10px] bg-[#0b6d73] text-white transition active:scale-95 disabled:bg-[#c9d6d8]">
-      <ShoppingCart className="size-[18px]" strokeWidth={2} />
-    </button>
+    <CardQtyStepper
+      product={cartLine}
+      disabled={cartDisabled}
+      disabledTitle={cartLabel}
+      onAdded={() => onAdded?.(`${p.name} savatga qo‘shildi`)}
+      onBeforeAdd={() => {
+        if (demo || isSeminar) return false
+        if (hasVariants) { navigate(`/product/${p.id}`); return false }
+        return true
+      }}
+    />
   )
   const body = (
     <>

@@ -1,8 +1,9 @@
 import { offPercent } from '../../lib/discounts'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingCart, Star, CircleCheck } from 'lucide-react'
-import { useCart, isOwnProduct } from '../../cart'
+import { Heart, Star, CircleCheck } from 'lucide-react'
+import { isOwnProduct } from '../../cart'
+import CardQtyStepper from '../CardQtyStepper'
 import { som } from '../../marketData'
 import { flushProfile, profileStore, useProfile } from '../../profileStore'
 
@@ -53,23 +54,8 @@ export function Rating({ rating, reviews }) {
 }
 
 export function AddButton({ product, className = '' }) {
-  const { add } = useCart()
-  const [done, setDone] = useState(false)
   if (isOwnProduct(product)) return <span title="Sizning mahsulotingiz" className={`shrink-0 rounded-md bg-[#eef4f4] px-1.5 py-1 text-[9px] font-semibold leading-none text-sea ${className}`}>Sizning mahsulotingiz</span>
-  return (
-    <button
-      onClick={(e) => {
-        e.preventDefault()
-        add(product)
-        setDone(true)
-        setTimeout(() => setDone(false), 900)
-      }}
-      aria-label="Savatga qo‘shish"
-      className={`grid h-[22px] w-[46px] shrink-0 place-items-center rounded-md text-white transition ${done ? 'bg-ok' : 'bg-sea hover:bg-sea-600'} ${className}`}
-    >
-      <ShoppingCart className="size-3.5" strokeWidth={2} />
-    </button>
-  )
+  return <CardQtyStepper product={product} className={className} />
 }
 
 export default function ProductCard({ product }) {

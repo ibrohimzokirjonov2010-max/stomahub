@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   LayoutGrid, List, Scale, BadgeCheck, ShieldCheck, CreditCard, Wrench, Truck, Headset,
-  ShoppingCart, X, ChevronDown,
+  X, ChevronDown,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
-import { useCart } from '../cart'
+import CardQtyStepper from '../components/CardQtyStepper'
 import {
   products, catList, catName, statusList, statusName, primaryBrands, warranties, cities, sorts,
   money, why, compareSeed, engineer,
@@ -298,12 +298,13 @@ function Row({ p, onOffer }) {
 }
 
 function Buy({ p, wide }) {
-  const { add, items } = useCart()
-  const inCart = items.some((it) => it.id === p.id)
   return (
-    <button onClick={() => { if (!inCart) add({ id: p.id, name: p.title, type: p.brand, price: p.price, image: p.image }) }} className={`flex items-center justify-center gap-1 rounded-lg font-semibold text-white ${wide ? 'h-8 text-[11px]' : 'h-7 flex-1 text-[9px]'} ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
-      <ShoppingCart className="size-3" /> {inCart ? 'Savatda' : 'Savatga'}
-    </button>
+    <CardQtyStepper
+      variant="bar"
+      label="Savatga"
+      className={wide ? '' : 'flex-1'}
+      product={{ id: p.id, name: p.title, type: p.brand, price: p.price, image: p.image }}
+    />
   )
 }
 

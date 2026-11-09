@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock, Heart, Search, ShoppingCart, Star } from 'lucide-react'
+import { Clock, Heart, Search, Star } from 'lucide-react'
+import CardQtyStepper from '../components/CardQtyStepper'
 import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
-import { useCart } from '../cart'
 import { getCatalog, clock, som, useCountdown } from '../aksiyaData'
 import { useMarket } from '../buyerApi'
 import { offPercent } from '../lib/discounts'
@@ -90,7 +90,6 @@ export default function Aksiyalar() {
 
 
 function Card({ deal, saved, onSave }) {
-  const { add } = useCart()
   const sec = useCountdown(deal.left)
   return (
     <article className="relative flex min-w-0 flex-col rounded-xl bg-white p-2.5 shadow-card">
@@ -120,13 +119,9 @@ function Card({ deal, saved, onSave }) {
           <p className="truncate text-[14px] font-bold text-ink">{som(deal.price)}</p>
           <p className="text-[11px] text-muted line-through">{deal.oldPrice > deal.price ? som(deal.oldPrice) : ''}</p>
         </div>
-        <button
-          onClick={() => add({ id: deal.id, name: deal.name, type: deal.brand, price: deal.price, image: deal.image })}
-          className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea text-white"
-          aria-label="Savatga"
-        >
-          <ShoppingCart className="size-4" />
-        </button>
+        <CardQtyStepper
+          product={{ id: deal.id, name: deal.name, type: deal.brand, price: deal.price, image: deal.image }}
+        />
       </div>
     </article>
   )

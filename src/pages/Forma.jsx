@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { LayoutGrid, Shirt, UserRound, Footprints, Stethoscope, Heart, Star, ShoppingCart, List, Upload, X } from 'lucide-react'
+import { LayoutGrid, Shirt, UserRound, Footprints, Stethoscope, Heart, Star, List, Upload, X } from 'lucide-react'
+import CardQtyStepper from '../components/CardQtyStepper'
 import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
-import { useCart } from '../cart'
 import { cats, genders, allSizes, colors, fabrics, brands, sorts, tiers, products, money, colorOf, sizeChart, sizesOf } from '../formaData'
 
 const catIcon = { all: LayoutGrid, scrub: Shirt, coat: UserRound, cap: Shirt, shoe: Footprints, apron: Stethoscope, accessory: Stethoscope }
@@ -212,12 +212,13 @@ function Row({ p }) {
 }
 
 function Buy({ p }) {
-  const { add, items } = useCart()
-  const inCart = items.some((it) => it.id === p.id)
   return (
-    <button onClick={() => { if (!inCart) add({ id: p.id, name: p.title, type: p.brand, price: p.price, image: p.image }) }} className={`mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg text-[11px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
-      <ShoppingCart className="size-3.5" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}
-    </button>
+    <CardQtyStepper
+      variant="bar"
+      className="mt-2"
+      label="Savatga qo‘shish"
+      product={{ id: p.id, name: p.title, type: p.brand, price: p.price, image: p.image }}
+    />
   )
 }
 
