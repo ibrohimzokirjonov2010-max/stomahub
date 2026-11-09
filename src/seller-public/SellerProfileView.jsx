@@ -11,7 +11,6 @@ import { categoriesOf, contactOf, orderProducts, ratingOf, salesOf, verifiedOf, 
 const TEAL = '#0b6d73'
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 const since = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-yil ${d.getDate()}-${MONTHS[d.getMonth()]}` }
-const dateUz = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}` }
 const initials = (name) => String(name || 'S').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'S'
 
 function Stars({ value, size = 'size-3.5' }) {
