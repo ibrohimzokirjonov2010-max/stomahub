@@ -126,6 +126,7 @@ const ShotHarness = import.meta.env.DEV ? lazy(() => import('./admin/pages/ShotH
 const SellerProfileShot = import.meta.env.DEV ? lazy(() => import('./dev/SellerProfileShot')) : null
 const NotifyShot = import.meta.env.DEV ? lazy(() => import('./dev/NotifyShot')) : null
 const EscrowShot = import.meta.env.DEV ? lazy(() => import('./dev/EscrowShot')) : null
+const ReviewPhotosShot = import.meta.env.DEV ? lazy(() => import('./dev/ReviewPhotosShot')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -189,6 +190,7 @@ export default function App() {
           {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
           {NotifyShot && <Route path="/notify-shot/:mode" element={<Suspense fallback={null}><NotifyShot /></Suspense>} />}
           {EscrowShot && <Route path="/escrow-shot/:who" element={<Suspense fallback={null}><EscrowShot /></Suspense>} />}
+          {ReviewPhotosShot && <Route path="/review-photos-shot/:sec" element={<Suspense fallback={null}><ReviewPhotosShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />
             <Route path="seminarlar" element={<OrgVerifyGate section="Mening seminarlarim"><Seminars /></OrgVerifyGate>} />

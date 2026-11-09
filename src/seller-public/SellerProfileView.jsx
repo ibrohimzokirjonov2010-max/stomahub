@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BadgeCheck, BookOpen, CalendarDays, Clock, Globe, GraduationCap, Info, MapPin, MessageCircle, MessageSquareText, Package, Phone, Send, ShoppingCart, Star, Store, Tag } from 'lucide-react'
 import { MapPreview, parseGeo } from '../components/MapPicker'
+import { ReviewCard } from '../components/ReviewList'
 import { som } from '../marketData'
 import { useCart, isOwnProduct } from '../cart'
 import { offPercent } from '../lib/discounts'
@@ -10,7 +11,6 @@ import { categoriesOf, contactOf, orderProducts, ratingOf, salesOf, verifiedOf, 
 const TEAL = '#0b6d73'
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
 const since = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-yil ${d.getDate()}-${MONTHS[d.getMonth()]}` }
-const dateUz = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}` }
 const initials = (name) => String(name || 'S').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'S'
 
 function Stars({ value, size = 'size-3.5' }) {
@@ -40,14 +40,25 @@ function Stat({ icon: Icon, label, value, muted }) {
 function Thumb({ p }) {
   const [broken, setBroken] = useState(false)
   const show = p.image && !broken
-  const Icon = p.kind === 'seminar' ? GraduationCap : p.kind === 'book' ? BookOpen : Package
+  const isSeminar = p.kind === 'seminar'
+  const Icon = isSeminar ? GraduationCap : p.kind === 'book' ? BookOpen : Package
+  // Marketplace CatalogCard uslubi: oq fon + object-contain (mahsulot/kitob), posterlar — object-cover.
+  // absolute inset-0: aspect-square ichida rasm barqaror to‘ldi (grid+%-height ba’zan poster balandligini ushlamaydi).
   return (
-    <span className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-xl bg-[#e8f3f3]">
+    <span className={`relative block aspect-square overflow-hidden rounded-[14px] ${isSeminar ? 'bg-[#eef3f6]' : 'bg-white'}`}>
       {show ? (
-        <img src={p.image} alt="" loading="lazy" onError={() => setBroken(true)} className="size-full object-contain p-3" />
+        <img
+          src={p.image}
+          alt=""
+          loading="lazy"
+          onError={() => setBroken(true)}
+          className={`absolute inset-0 size-full ${isSeminar ? 'object-cover' : 'object-contain p-[7px]'}`}
+        />
       ) : (
-        <span className="grid size-14 place-items-center rounded-2xl bg-[#0b6d73]/12 text-[#0b6d73]" aria-hidden="true">
-          <Icon className="size-7" strokeWidth={1.6} />
+        <span className="absolute inset-0 grid place-items-center" aria-hidden="true">
+          <span className="grid size-14 place-items-center rounded-2xl bg-[#0b6d73]/12 text-[#0b6d73]">
+            <Icon className="size-7" strokeWidth={1.6} />
+          </span>
         </span>
       )}
     </span>
@@ -98,10 +109,10 @@ function ProductCard({ p, onAdded, demo = false }) {
   )
   const body = (
     <>
-      {off > 0 && <span className="absolute left-3 top-3 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
+      {off > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[10.5px] font-bold text-white">-{off}%</span>}
       {demo && <span className="absolute left-2 top-2 z-10 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400E]">Namuna</span>}
       <Thumb p={p} />
-      <span className="flex flex-1 flex-col px-1 pb-0.5 pt-2">
+      <span className="flex flex-1 flex-col px-1.5 pb-1 pt-1.5">
         <span className="line-clamp-2 min-h-[2.6em] text-[13px] font-medium leading-[1.3] text-ink">{p.name}</span>
         {p.meta ? <span className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted">{p.meta}</span> : null}
         {isSeminar && demo ? (
@@ -122,7 +133,7 @@ function ProductCard({ p, onAdded, demo = false }) {
       </span>
     </>
   )
-  const cls = `@container/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e3eef0] bg-white p-1.5 transition hover:shadow-md ${shadow}`
+  const cls = `@container/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e3eef0] bg-white p-1 transition hover:shadow-md ${shadow}`
   if (demo) return <div className={cls}>{body}</div>
   return <Link to={`/product/${p.id}`} className={cls}>{body}</Link>
 }
@@ -143,9 +154,9 @@ function InfoRow({ icon: Icon, label, children, href }) {
 // The buyer-facing seller profile body (v2 design). Used by /dokon/:id AND the Sozlamalar live preview,
 // so preview == real page. Responsive via container queries, so it also renders inside a narrow preview frame.
 // Hamma ko‘rsatkich bazadan: yo‘q maydon — yashiriladi, hech narsa to‘qib chiqarilmaydi.
-export default function SellerProfileView({ info, products, loading = false, infoLoading = false, onToast, demo = false, productsLabel = 'Mahsulotlar' }) {
+export default function SellerProfileView({ info, products, loading = false, infoLoading = false, onToast, demo = false, productsLabel = 'Mahsulotlar', initialTab }) {
   const sk = (w) => <span aria-hidden="true" className={`inline-block h-[1em] ${w} animate-pulse rounded bg-[#e8eef2] align-middle`} />
-  const [tab, setTab] = useState('products')
+  const [tab, setTab] = useState(initialTab || 'products')
   const [cat, setCat] = useState('')
   const tabsDef = [['products', productsLabel], ['reviews', 'Sharhlar'], ['info', 'Ma’lumot']]
   const ordered = useMemo(() => orderProducts(products, info?.featured_ids), [products, info?.featured_ids])
@@ -246,7 +257,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
           ))}
         </div>
       )}
-      {loading && <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @6xl:grid-cols-4" aria-label="Yuklanmoqda">{Array.from({ length: 4 }, (_, i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-[#e9f0f2]" />)}</div>}
+      {loading && <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @6xl:grid-cols-4" aria-label="Yuklanmoqda">{Array.from({ length: 4 }, (_, i) => <div key={i} className="aspect-[5/6] animate-pulse rounded-2xl bg-[#e9f0f2]" />)}</div>}
       {!loading && !list.length && (
         <div className="mt-3 rounded-2xl border border-[#e3eef0] bg-white px-5 py-10 text-center">
           <Store className="mx-auto size-9 text-[#0b6d73]/50" strokeWidth={1.5} />
@@ -255,7 +266,7 @@ export default function SellerProfileView({ info, products, loading = false, inf
         </div>
       )}
       {!loading && list.length > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @4xl:gap-3 @6xl:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2.5 @2xl:grid-cols-3 @4xl:grid-cols-3 @4xl:gap-2.5 @6xl:grid-cols-4">
           {list.map((p) => <ProductCard key={p.id} p={p} onAdded={onToast} demo={demo} />)}
         </div>
       )}
@@ -275,12 +286,12 @@ export default function SellerProfileView({ info, products, loading = false, inf
           {rating !== null && <div className="flex items-center gap-2 border-b border-[#eef3f4] pb-3"><span className="text-[26px] font-bold text-ink">{rating.toFixed(1)}</span><div><Stars value={rating} size="size-4" /><p className="text-[12px] text-muted">{info?.reviews_count} ta baho</p></div></div>}
           <ul className="divide-y divide-[#eef3f4]">
             {reviews.map((r, i) => (
-              <li key={`${r.created_at}-${i}`} className="py-3">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px]"><Stars value={r.rating} /> <b className="text-ink">{r.author}</b> <span className="text-muted">{dateUz(r.created_at)}</span></div>
-                {r.product_id && productName(r.product_id) && <Link to={`/product/${r.product_id}`} className="mt-1 block truncate text-[12px] font-medium text-[#0b6d73]">{productName(r.product_id)}</Link>}
-                {r.body && <p className="mt-1 text-[13.5px] text-ink-2">{r.body}</p>}
-                {r.reply && <p className="mt-1.5 rounded-xl bg-[#f3f8f8] px-3 py-2 text-[12.5px] text-ink-2"><b>Sotuvchi javobi:</b> {r.reply}</p>}
-              </li>
+              <ReviewCard
+                key={r.id || `${r.created_at}-${i}`}
+                review={r}
+                productName={r.product_id ? productName(r.product_id) : ''}
+                productLink={r.product_id ? `/product/${r.product_id}` : undefined}
+              />
             ))}
           </ul>
         </div>
