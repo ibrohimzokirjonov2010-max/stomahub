@@ -14,6 +14,7 @@ import { CallSheet } from './MobileMutaxassislar'
 import { AdCard, adsStore, allAds, findAd, sellerOf, useAds, myAds } from './MobileElonlar'
 import { useCatalogVersion, isOwned } from '../../recordSync'
 import { telegramUrl } from '../../elonApi'
+import { openTelegramWithListingMessage } from '../../lib/telegramShare'
 import { setAdStatus } from '../../elonApi'
 import { friendlyError } from '../../lib/friendlyError'
 import { ensureLogin } from '../../loginPrompt'
@@ -170,9 +171,9 @@ function AdView({ id }) {
       {!isOwner && (a.status || 'active') === 'active' && !a._pending && (
         <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur">
           {tg ? (
-            <a href={tg} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] text-[13.5px] font-semibold text-[#0b6d73]">
+            <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast })} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] text-[13.5px] font-semibold text-[#0b6d73]">
               <Send className="size-5" /> Telegram’da yozish
-            </a>
+            </button>
           ) : (
             <button type="button" disabled className="flex h-12 items-center justify-center gap-2 rounded-xl border border-line bg-page text-[13px] font-semibold text-muted">Telegram yo‘q</button>
           )}
@@ -182,7 +183,7 @@ function AdView({ id }) {
         </div>
       )}
 
-      {sheet === 'call' && phone && <CallSheet d={contact} onClose={() => setSheet(null)} onChat={() => { setSheet(null); if (tg) window.open(tg, '_blank') }} onToast={setToast} />}
+      {sheet === 'call' && phone && <CallSheet d={contact} onClose={() => setSheet(null)} onChat={() => { setSheet(null); if (tg) openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast }) }} onToast={setToast} />}
       {sheet === 'seller' && (
         <BottomSheet title={isJob ? 'Ish beruvchi' : 'Sotuvchi'} onClose={() => setSheet(null)}>
           <div className="mt-2 flex items-center gap-3 rounded-2xl bg-[#f2f8f8] p-3">
@@ -195,7 +196,7 @@ function AdView({ id }) {
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {tg ? (
-              <a href={tg} target="_blank" rel="noreferrer" className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><Send className="size-4" /> Telegram</a>
+              <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast })} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><Send className="size-4" /> Telegram</button>
             ) : (
               <span className="flex h-11 items-center justify-center rounded-xl bg-page text-[12px] text-muted">Telegram yo‘q</span>
             )}

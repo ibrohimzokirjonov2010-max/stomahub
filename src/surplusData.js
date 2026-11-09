@@ -1,4 +1,5 @@
 import { UZ_CITIES } from './lib/uzRegions'
+import { isValidTelegram } from './elonValidate'
 import { tashkentToday } from './tashkentDate'
 const img = (n) => `/images/surplus/${n}.jpg`
 
@@ -45,7 +46,7 @@ export const surplusItems = raw.map(([id, name, type, brand, cat, expiry, city, 
  * Ortiqcha material e’lonini tekshiradi. Xatolar obyektini qaytaradi (bo‘sh — hammasi joyida).
  * expiry: "YYYY-MM" (input type=month). Server (0048 trigger) ham shu qoidalarni tekshiradi.
  */
-export function validateSurplus({ name, price, oldPrice, expiry, image, city }) {
+export function validateSurplus({ name, price, oldPrice, expiry, image, city, phone, telegram }) {
   const errs = {}
   if (!String(name || '').trim()) errs.name = 'Nomini kiriting'
   if (!(Number(price) > 0)) errs.price = 'Narxni kiriting'
@@ -54,6 +55,11 @@ export function validateSurplus({ name, price, oldPrice, expiry, image, city }) 
   else if (expiry < tashkentToday().slice(0, 7)) errs.expiry = 'Yaroqlilik muddati o‘tgan mahsulotni joylab bo‘lmaydi'
   if (!image) errs.image = 'Kamida bitta rasm yuklang'
   if (!city) errs.city = 'Shaharni tanlang'
+  const phoneDigits = String(phone || '').replace(/\D/g, '')
+  if (phoneDigits.length !== 12) errs.phone = 'Telefon raqamini to‘liq kiriting (+998…)'
+  if (telegram != null && String(telegram).trim() && !isValidTelegram(telegram)) {
+    errs.telegram = 'Telegram username noto‘g‘ri (masalan: doctor_ali)'
+  }
   return errs
 }
 
@@ -105,8 +111,8 @@ function fromItem(item) {
       city: item.city || '',
       place: '',
       reply: '',
-      telegram: '',
-      phone: item.phone || '',
+      telegram: item.seller?.telegram || item.telegram || '',
+      phone: item.seller?.phone || item.phone || '',
     },
   }
 }

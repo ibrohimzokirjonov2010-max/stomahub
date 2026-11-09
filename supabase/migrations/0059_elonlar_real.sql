@@ -87,3 +87,7 @@ create trigger catalog_items_ad_guard
   for each row execute function public.ad_guard();
 
 -- Seed ads with owner_id IS NULL are intentionally left untouched (Ibrohim approval required to delete).
+
+-- Contact (phone / telegram) for ads and surplus lives in payload JSON
+-- (payload.sellerInfo.phone / telegram, payload.seller.phone / telegram).
+-- No extra columns required.

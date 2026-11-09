@@ -2,20 +2,22 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Star, Boxes, Droplet, MapPin, Building2, Send, Phone, CircleCheck, Clock, ArrowRight,
-  SquareCheck, ShieldCheck, CalendarCheck, MessageSquare, Lock,
+  SquareCheck, ShieldCheck, CalendarCheck, Lock,
 } from 'lucide-react'
 import { getSurplusDetail, similarFor } from '../surplusData'
 import { som } from '../marketData'
 import { LikeButton } from '../components/market/ProductCard'
 import { ConditionBadge } from './Surplus'
+import { telegramUrl } from '../elonApi'
+import { openTelegramWithListingMessage } from '../lib/telegramShare'
 
 const factIcons = { qty: Boxes, vol: Droplet, city: MapPin, place: MapPin }
 
 const safety = [
-  { icon: ShieldCheck, label: 'Tekshirilgan sotuvchilar' },
+  { icon: ShieldCheck, label: 'Ehtiyotkor bo‘ling — mahsulotni ko‘rib oling' },
   { icon: CalendarCheck, label: 'Yaroqlilik muddati ko‘rsatilgan' },
-  { icon: MessageSquare, label: 'Muloqot platforma orqali' },
-  { icon: Lock, label: 'Shaxsiy ma’lumotlar himoyalangan' },
+  { icon: Phone, label: 'Telefon yoki Telegram orqali kelishing' },
+  { icon: Lock, label: 'Platforma to‘lovi/escrow yo‘q' },
 ]
 
 const card = 'rounded-xl bg-white shadow-card'
@@ -25,14 +27,19 @@ export default function SurplusItem() {
   const d = getSurplusDetail(id)
   const related = similarFor(id)
   const [img, setImg] = useState(0)
-  const [showPhone, setShowPhone] = useState(false)
+  const [toast, setToast] = useState('')
   const n = d?.images?.length || 0
   const s = d?.seller
   const off = d?.oldPrice ? Math.round((1 - d.price / d.oldPrice) * 100) : 0
 
   useEffect(() => {
+    if (!toast) return
+    const tmr = setTimeout(() => setToast(''), 2200)
+    return () => clearTimeout(tmr)
+  }, [toast])
+
+  useEffect(() => {
     setImg(0)
-    setShowPhone(false)
   }, [id])
 
   if (!d) {
@@ -134,29 +141,32 @@ export default function SurplusItem() {
             </>
           )}
 
-          <a
-            href={s.telegram}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 flex h-[39px] items-center justify-center gap-3 rounded-lg bg-sea text-white transition hover:bg-sea-600"
-          >
-            <Send className="size-[18px]" />
-            <span className="leading-tight">
-              <span className="block text-[11px] font-semibold">Sotuvchiga yozish</span>
-              <span className="block text-[8.5px] text-white/80">Telegram orqali</span>
-            </span>
-          </a>
-          <div className="mt-2 flex gap-2">
-            <a
-              href={showPhone ? `tel:${s.phone}` : undefined}
-              onClick={() => setShowPhone(true)}
-              className="flex h-[34px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100"
-            >
-              <Phone className="size-3.5" /> {showPhone ? s.phone : 'Qo‘ng‘iroq qilish'}
-            </a>
-            <LikeButton className="!size-[34px] rounded-lg border border-line" />
-          </div>
+          {(() => {
+            const phone = (s?.phone || '').replace(/\s/g, '')
+            const tg = telegramUrl(s?.telegram)
+            if (!phone && !tg) {
+              return <p className="mt-3 rounded-lg bg-page px-3 py-3 text-center text-[12px] font-medium text-muted">Aloqa ma’lumoti ko‘rsatilmagan</p>
+            }
+            return (
+              <div className="mt-3 flex flex-col gap-2">
+                {tg && (
+                  <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: d.name, price: d.price, itemPath: `/ortiqcha/${d.id}`, onToast: setToast })} className="flex h-[42px] items-center justify-center gap-2 rounded-lg border border-[#bfe3df] bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73] transition hover:bg-[#d8f0ed]">
+                    <Send className="size-4" /> Telegram’da yozish
+                  </button>
+                )}
+                {phone && (
+                  <a href={`tel:${phone}`} className="flex h-[42px] items-center justify-center gap-2 rounded-lg bg-sea text-[13px] font-semibold text-white transition hover:bg-sea-600">
+                    <Phone className="size-4" /> Qo‘ng‘iroq qilish
+                  </a>
+                )}
+                <div className="flex justify-end"><LikeButton className="!size-[34px] rounded-lg border border-line" /></div>
+              </div>
+            )
+          })()}
         </aside>
+        {toast && (
+          <div role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-white shadow-lg">{toast}</div>
+        )}
       </div>
 
       {/* 2-qator: xususiyatlar · sotuvchi */}

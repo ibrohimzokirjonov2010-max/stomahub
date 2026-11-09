@@ -8,6 +8,7 @@ import { getSurplusDetail, similarFor } from '../../surplusData'
 import { som } from '../../marketData'
 import { MobileToast } from './parts'
 import { telegramUrl } from '../../elonApi'
+import { openTelegramWithListingMessage } from '../../lib/telegramShare'
 import { condLabel, expiryLabel } from './MobileSurplus'
 import MobileTabBar from './MobileTabBar'
 
@@ -155,9 +156,6 @@ function SurplusView({ id }) {
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted"><MapPin className="size-3" /> {s.city}</p>
           </div>
-          <button type="button" onClick={() => setSheet('contact')} className="flex h-10 shrink-0 items-center gap-1 rounded-xl border border-sea/70 px-2 text-[11px] font-semibold text-sea active:bg-sea-50">
-            <Phone className="size-4" /> Bog‘lanish
-          </button>
         </div>
 
         <button type="button" onClick={() => setSheet('safety')} className="mt-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-[#e9f6f1] p-2.5 text-left">
@@ -189,20 +187,11 @@ function SurplusView({ id }) {
         ))}
       </div>
 
-      {/* Pastki panel — faqat bog‘lanish (savat yo‘q) */}
+      {/* Pastki panel — Telegram + Qo‘ng‘iroq (E’lonlar kabi) */}
       <div className="fixed inset-x-0 bottom-[62px] z-30 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
-        <button type="button" onClick={() => setSheet('contact')} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
-          <Phone className="size-[19px]" /> Bog‘lanish
-        </button>
+        <SurplusContactLinks seller={s} listing={d} onToast={setToast} />
       </div>
 
-      {sheet === 'contact' && (
-        <ContactSheet
-          seller={s}
-          onClose={() => setSheet(null)}
-          onToast={setToast}
-        />
-      )}
       {sheet === 'safety' && <SafetySheet onClose={() => setSheet(null)} />}
 
       <MobileToast text={toast} onClose={closeToast} bottom={140} />
@@ -211,32 +200,38 @@ function SurplusView({ id }) {
   )
 }
 
-function ContactSheet({ seller, onClose, onToast }) {
+/** E’lonlar detail bilan bir xil: Telegram’da yozish + Qo‘ng‘iroq qilish */
+export function SurplusContactLinks({ seller, listing, onToast, compact = false }) {
   const phone = (seller?.phone || '').replace(/\s/g, '')
   const tg = telegramUrl(seller?.telegram)
-  const d = { name: seller?.name || 'Sotuvchi', phone: seller?.phone || '', clinic: seller?.role || 'Sotuvchi', city: '', online: true }
+  const h = compact ? 'h-10 text-[11px]' : 'h-12 text-[13.5px]'
+  if (!phone && !tg) {
+    return (
+      <p className={`grid ${compact ? 'h-10 px-2' : 'h-12'} place-items-center rounded-xl bg-page text-[12px] font-medium text-muted`}>
+        Aloqa ma’lumoti ko‘rsatilmagan
+      </p>
+    )
+  }
+  const cols = phone && tg ? 'grid-cols-2' : 'grid-cols-1'
+  const openTg = () => openTelegramWithListingMessage({
+    tgUrl: tg,
+    title: listing?.name || listing?.title || 'Ortiqcha',
+    price: listing?.price,
+    itemPath: `/ortiqcha/${listing?.id || ''}`,
+    onToast,
+  })
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-ink/45" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label="Bog‘lanish" onClick={(e) => e.stopPropagation()} className="rounded-t-3xl bg-white px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-bold text-ink">Sotuvchi bilan bog‘lanish</h2>
-          <button type="button" onClick={onClose} aria-label="Yopish" className="grid size-8 place-items-center rounded-full bg-page"><X className="size-4" /></button>
-        </div>
-        <p className="mt-1 text-[12px] text-muted">{seller?.name || 'Sotuvchi'}</p>
-        <div className="mt-3 grid grid-cols-1 gap-2 pb-2">
-          {phone ? (
-            <a href={`tel:${phone}`} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white"><Phone className="size-[18px]" /> Qo‘ng‘iroq qilish</a>
-          ) : (
-            <p className="rounded-xl bg-page px-3 py-3 text-center text-[12.5px] text-muted">Telefon raqami ko‘rsatilmagan</p>
-          )}
-          {tg ? (
-            <a href={tg} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-sea/40 bg-[#e6f4f3] text-[14px] font-semibold text-sea"><Send className="size-[18px]" /> Telegram’da yozish</a>
-          ) : null}
-          {phone ? (
-            <button type="button" onClick={() => { navigator.clipboard?.writeText(phone).catch(() => {}); onToast?.('Raqam nusxalandi'); onClose() }} className="flex h-11 items-center justify-center rounded-xl border border-line text-[13px] font-semibold text-ink">Raqamni nusxalash</button>
-          ) : null}
-        </div>
-      </div>
+    <div className={`grid ${cols} gap-2`}>
+      {tg && (
+        <button type="button" onClick={openTg} className={`flex ${h} items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] font-semibold text-[#0b6d73]`}>
+          <Send className={compact ? 'size-4' : 'size-5'} /> Telegram’da yozish
+        </button>
+      )}
+      {phone && (
+        <a href={`tel:${phone}`} className={`flex ${h} items-center justify-center gap-2 rounded-xl bg-sea font-semibold text-white ${compact ? '' : 'shadow-[0_6px_16px_rgb(11_138_149/0.3)]'}`}>
+          <Phone className={compact ? 'size-4' : 'size-5'} /> Qo‘ng‘iroq qilish
+        </a>
+      )}
     </div>
   )
 }
