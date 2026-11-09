@@ -11,6 +11,7 @@ import ProductThumb from '../components/bosh-sahifa/ProductThumb'
 import { Stars } from '../components/bosh-sahifa/Desktop'
 import { initials } from '../components/mijozlar/constants'
 import { masked } from './Mijozlar'
+import { reviewImageList } from '../../lib/reviewPhotos'
 
 const TEMPLATES = [
   ['Rahmat', 'Ijobiy fikr uchun minnatdorchilik', 'Fikringiz uchun katta rahmat! Doim sifatli mahsulotlar bilan xizmat qilishga harakat qilamiz.'],
@@ -120,6 +121,15 @@ export default function Sharhlar() {
       <div className="rounded-xl border border-[#E6EEF0] p-3">
         <div className="flex gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F0FDFA] text-[15px] font-bold text-[#0F766E]">{initials(r.who)}</span><div className="min-w-0 flex-1"><div className="flex justify-between gap-2"><b className="truncate text-[14px]">{r.who}</b><span className="shrink-0 text-[12px] text-[#5C6E80]">{dmy(r.created_at)} {hm(r.created_at)}</span></div><div className="text-[12px] text-[#5C6E80]">{r.city}{r.o ? ` · ${r.o.code}` : ''}</div><Stars value={r.rating} size="size-[17px]" /></div></div>
         <p className="mt-2 whitespace-pre-line text-[13.5px] text-[#3D4E5F]">{r.body || '—'}</p>
+        {reviewImageList(r.images).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {reviewImageList(r.images).map((src) => (
+              <a key={src} href={src} target="_blank" rel="noreferrer" className="size-16 overflow-hidden rounded-lg bg-[#eef3f4] ring-1 ring-[#E6EEF0]">
+                <img src={src} alt="" className="size-full object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
         {mobile && r.p && <button type="button" onClick={() => navigate(`/sotuvchi/mahsulotlar/${r.p.id}`)} className="mt-3 flex w-full items-center gap-3 rounded-xl border border-[#E6EEF0] p-2 text-left"><ProductThumb src={r.p.image_url} className="h-12 w-16" /><div className="min-w-0 flex-1 text-[13px]"><b className="block truncate">{r.p.name}</b>{som(r.p.price)}</div><ChevronRight className="size-4" /></button>}
       </div>
       {r.reply && <div className="rounded-xl border border-[#E6EEF0] p-3"><div className="flex justify-between text-[13px] font-bold"><span className="flex items-center gap-2"><Store className="size-4 text-[#0F766E]" />Sizning javobingiz</span><span className="text-[12px] font-normal text-[#5C6E80]">{r.replied_at ? `${dmy(r.replied_at)} ${hm(r.replied_at)}` : ''}</span></div><p className="mt-2 rounded-lg bg-[#F0FDFA] p-2.5 text-[13px] text-[#3D4E5F]">{r.reply}</p>{!r.reply_public && <div className="mt-1 text-[11.5px] text-[#5C6E80]">Faqat mijozga ko‘rinadi</div>}</div>}

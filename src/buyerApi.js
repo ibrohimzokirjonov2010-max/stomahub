@@ -4,6 +4,9 @@ import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
 import { normCategory } from './config/productCatalog'
 import { applyDiscount, applyPromotion } from './lib/discounts'
+import {
+  REVIEW_MEDIA_BUCKET, REVIEW_PHOTO_MAX, compressReviewImage, normalizeReviewPhotoUrls, reviewImageList, reviewPhotoPath,
+} from './lib/reviewPhotos'
 
 // ---- marketplace feed (active seller products) -------------------------------------
 let marketState = { status: 'idle', error: '' }
@@ -235,17 +238,35 @@ export async function fetchMyReviews(uid) {
   return out
 }
 export { revKey }
-export async function submitReview({ uid, authorName, order, item, rating, body }) {
+
+export async function uploadReviewPhoto(file, uid) {
+  if (!supabase || !uid) throw new Error('Rasm yuklash uchun hisobga kiring')
+  if (!file || !String(file.type || '').startsWith('image/')) throw new Error('Faqat rasm yuklash mumkin')
+  if (file.size > 12 * 1024 * 1024) throw new Error('Rasm 12 MB dan katta')
+  const blob = await compressReviewImage(file)
+  const ext = (blob.type || '').includes('webp') ? 'webp' : (blob.type || '').includes('png') ? 'png' : 'jpg'
+  const path = reviewPhotoPath(uid, ext)
+  const { error } = await supabase.storage.from(REVIEW_MEDIA_BUCKET).upload(path, blob, {
+    contentType: blob.type || 'image/jpeg', upsert: false,
+  })
+  if (error) throw new Error(friendlySupabaseError(error))
+  return supabase.storage.from(REVIEW_MEDIA_BUCKET).getPublicUrl(path).data.publicUrl
+}
+
+export async function submitReview({ uid, authorName, order, item, rating, body, images }) {
   if (!supabase || !uid) throw new Error('Baho qoldirish uchun hisobga kiring')
   if (!order?.dbId || !order?.sellerId) throw new Error('Buyurtma topilmadi')
   if (order.dbStatus !== 'yetkazildi') throw new Error('Faqat yetkazilgan buyurtmani baholash mumkin')
   const r = Math.round(Number(rating))
   if (!(r >= 1 && r <= 5)) throw new Error('Yulduzcha bilan baho tanlang')
   const productId = isUuid(item?.id) ? item.id : null
-  const { error } = await supabase.from('seller_reviews').insert({
+  const photos = normalizeReviewPhotoUrls(images, uid).slice(0, REVIEW_PHOTO_MAX)
+  const row = {
     seller_id: order.sellerId, order_id: order.dbId, product_id: productId, author_id: uid,
     author_name: String(authorName || '').trim().slice(0, 80), rating: r, body: String(body || '').trim().slice(0, 1000),
-  })
+    images: photos,
+  }
+  const { error } = await supabase.from('seller_reviews').insert(row)
   if (error) {
     if (error.code === '23505') throw new Error('Bu mahsulotga allaqachon baho bergansiz')
     throw new Error(friendlySupabaseError(error))
@@ -253,6 +274,29 @@ export async function submitReview({ uid, authorName, order, item, rating, body 
   const map = localReviewed(uid); map[revKey(order.dbId, productId)] = r
   try { localStorage.setItem(REV_KEY(uid), JSON.stringify(map)) } catch { /* private mode */ }
   return r
+}
+
+/** Mahsulot sahifasidagi Sharhlar: yashirilmagan baholar + rasmlar. */
+export async function fetchProductReviews(productId) {
+  if (!supabase || !isUuid(productId)) return []
+  const { data, error } = await supabase
+    .from('seller_reviews')
+    .select('id,rating,body,reply,created_at,author_name,images,product_id')
+    .eq('product_id', productId)
+    .eq('hidden', false)
+    .order('created_at', { ascending: false })
+    .limit(40)
+  if (error) return []
+  return (data || []).map((r) => ({
+    id: r.id,
+    rating: Number(r.rating) || 0,
+    body: r.body || '',
+    reply: r.reply || '',
+    created_at: r.created_at,
+    author: String(r.author_name || 'Xaridor').trim().split(/\s+/)[0] || 'Xaridor',
+    images: reviewImageList(r.images),
+    product_id: r.product_id,
+  }))
 }
 
 export async function cancelMyOrder(dbId, reason = '') {
