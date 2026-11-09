@@ -5,6 +5,7 @@ import { Plus, Search, SlidersHorizontal, LayoutGrid, ChevronDown, Heart, MapPin
 import { ensureLogin } from '../../loginPrompt'
 import { surplusChips, surplusItems, cities, validateSurplus } from '../../surplusData'
 import { postSurplus } from '../../surplusApi'
+import PhoneInput from '../PhoneInput'
 import { friendlyError } from '../../lib/friendlyError'
 import { som } from '../../marketData'
 import { MobileTopBar, MobileToast } from './parts'
@@ -269,7 +270,7 @@ const field = 'h-11 w-full rounded-xl border border-line bg-white px-3 text-[13.
 
 export function PostSheet({ onClose, onSubmit }) {
   const fileRef = useRef(null)
-  const [f, setF] = useState({ name: '', brand: '', cat: 'komp', type: '', price: '', oldPrice: '', city: '', condition: 'Yopiq', expiry: '', qty: 1, image: '' })
+  const [f, setF] = useState({ name: '', brand: '', cat: 'komp', type: '', price: '', oldPrice: '', city: '', condition: 'Yopiq', expiry: '', qty: 1, image: '', phone: '+998 ', telegram: '' })
   const [file, setFile] = useState(null)
   const [tried, setTried] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -277,7 +278,7 @@ export function PostSheet({ onClose, onSubmit }) {
   const patch = (p) => setF((x) => ({ ...x, ...p }))
   const num = (v) => Number(String(v).replace(/\D/g, '')) || 0
   const money = (v) => (num(v) ? num(v).toLocaleString('ru-RU') : '')
-  const errors = validateSurplus({ name: f.name, price: num(f.price), oldPrice: num(f.oldPrice), expiry: f.expiry, image: file || f.image, city: f.city })
+  const errors = validateSurplus({ name: f.name, price: num(f.price), oldPrice: num(f.oldPrice), expiry: f.expiry, image: file || f.image, city: f.city, phone: f.phone, telegram: f.telegram })
   const invalid = Object.keys(errors).length > 0
   const err = (k) => (tried && errors[k] ? 'border-sale' : '')
 
@@ -378,6 +379,19 @@ export function PostSheet({ onClose, onSubmit }) {
         </div>
       </div>
       {tried && errors.expiry && <p className="mt-1 text-[11px] text-sale">{errors.expiry}</p>}
+
+      <div className="mt-4 grid grid-cols-1 gap-2">
+        <div>
+          <p className="text-[12px] font-semibold text-ink">Telefon *</p>
+          <PhoneInput value={f.phone} onChange={(v) => patch({ phone: v })} valueMode="e164" className={`mt-1 ${field} ${err('phone')}`} invalid={tried && !!errors.phone} />
+          {tried && errors.phone && <p className="mt-1 text-[11px] text-sale">{errors.phone}</p>}
+        </div>
+        <div>
+          <p className="text-[12px] text-ink-2">Telegram (ixtiyoriy)</p>
+          <input value={f.telegram} onChange={(e) => patch({ telegram: e.target.value })} placeholder="@username" autoCapitalize="off" autoCorrect="off" className={`mt-1 ${field} ${err('telegram')}`} />
+          {tried && errors.telegram && <p className="mt-1 text-[11px] text-sale">{errors.telegram}</p>}
+        </div>
+      </div>
 
       <p className="mt-4 text-[13px] font-semibold text-ink">Shahar</p>
       <div className="mt-2 flex flex-wrap gap-2">

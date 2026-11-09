@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Heart, ChevronRight, Tag, Briefcase, Settings, CalendarDays, Ruler, MapPin, Clock, GraduationCap, Layers, FileText, CheckCircle2,
-  Store, MessageCircle, Phone, Star, Eye, Flag, Package,
+  Store, Phone, Star, Eye, Package, Send,
 } from 'lucide-react'
 import { adCatName, adPrice } from '../../elonlarData'
 import { MobileToast } from './parts'
@@ -10,16 +10,16 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import { Lightbox } from './MobileCommunity'
-import { ChatSheet, CallSheet } from './MobileMutaxassislar'
-import { AdCard, adsStore, allAds, findAd, sellerOf, useAds } from './MobileElonlar'
-import { useCatalogVersion } from '../../recordSync'
+import { CallSheet } from './MobileMutaxassislar'
+import { AdCard, adsStore, allAds, findAd, sellerOf, useAds, myAds } from './MobileElonlar'
+import { useCatalogVersion, isOwned } from '../../recordSync'
+import { telegramUrl } from '../../elonApi'
+import { openTelegramWithListingMessage } from '../../lib/telegramShare'
+import { setAdStatus } from '../../elonApi'
+import { friendlyError } from '../../lib/friendlyError'
+import { ensureLogin } from '../../loginPrompt'
 
 const SPEC_ICONS = { brand: Tag, size: Briefcase, cond: Settings, year: CalendarDays, area: Ruler, place: MapPin, time: Clock, exp: GraduationCap, cat: Layers }
-const QUICK = {
-  sale: ['Hali sotuvdami?', 'Narxi kelishiladimi?', 'Yetkazib berasizmi?', 'Qayerda ko‘rsa bo‘ladi?'],
-  rent: ['Hali bo‘shmi?', 'Qachondan olsa bo‘ladi?', 'Zalog kerakmi?', 'Ko‘rib chiqsa bo‘ladimi?'],
-  job: ['Vakansiya ochiqmi?', 'Suhbat qachon?', 'Ish grafigi qanday?', 'Rezyume yuborsam bo‘ladimi?'],
-}
 
 export default function MobileElon() {
   const { id } = useParams()
@@ -29,57 +29,65 @@ export default function MobileElon() {
 function AdView({ id }) {
   const navigate = useNavigate()
   const { saved } = useAds()
-  // Katalog (catalog_items) asinxron yuklanadi — versiya o‘zgarganda qayta chizamiz.
   useCatalogVersion()
   const a = findAd(id)
   const [cur, setCur] = useState(0)
   const [zoom, setZoom] = useState(null)
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState('')
+  const [busy, setBusy] = useState(false)
   const closeToast = useCallback(() => setToast(''), [])
-
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [])
 
   if (!a) {
     return (
-      <div className="grid min-h-screen place-items-center bg-white px-6 text-center">
-        <div>
-          <p className="text-[15px] font-semibold text-ink">E’lon topilmadi</p>
-          <Link to="/elonlar" className="mt-3 inline-block text-[13px] font-semibold text-sea">E’lonlarga qaytish</Link>
-        </div>
+      <div className="px-4 py-16 text-center">
+        <p className="text-[16px] font-bold text-ink">E’lon topilmadi</p>
+        <button type="button" onClick={() => navigate('/elonlar')} className="mt-3 text-[13px] font-semibold text-sea">E’lonlarga qaytish</button>
       </div>
     )
   }
 
   const seller = sellerOf(a)
-  const contact = { ...seller, clinic: seller.type, city: a.city, online: true }
-  const isSaved = saved.has(a.id)
   const isJob = a.deal === 'job'
-  const images = a.images?.length ? a.images : []
-  const thumbs = images.slice(0, 3)
-  const extra = images.length - 3
-  const list = allAds()
-  const similar = list.filter((x) => x.id !== a.id && (x.cat === a.cat || x.deal === a.deal)).slice(0, 3)
-  const sellerAds = a.seller ? list.filter((x) => x.seller === a.seller && x.id !== a.id) : []
+  const images = a.images?.length ? a.images : ['/images/market/p3.jpg']
+  const thumbs = images.slice(0, 4)
+  const extra = images.length - 4
+  const isSaved = saved.has(a.id)
+  const isOwner = isOwned('ad', a.id)
+  const tg = telegramUrl(seller.telegram || a.telegram)
+  const phone = (seller.phone || '').replace(/\s/g, '')
+  const contact = { ...seller, clinic: seller.type, city: a.city, online: true, phone: seller.phone || '' }
+  const similar = allAds().filter((x) => x.id !== a.id && x.cat === a.cat && !x._pending && (x.status || 'active') === 'active').slice(0, 4)
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/elonlar'))
-  const chatText = isJob ? `Assalomu alaykum! "${a.title}" vakansiyasi bo‘yicha yozyapman.` : `Assalomu alaykum! "${a.title}" e’loni hali dolzarbmi?`
+
+  const mark = async (status) => {
+    if (!ensureLogin() || busy) return
+    setBusy(true)
+    try {
+      await setAdStatus(a.id, status)
+      setToast(status === 'sold' ? 'E’lon «Sotilgan» deb belgilandi' : 'E’lon yopildi')
+    } catch (e) {
+      setToast(friendlyError(e, 'Amarni bajarib bo‘lmadi'))
+    } finally { setBusy(false) }
+  }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#eef8f7_0%,#f6faf9_30%)] pb-[150px]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#eef8f7_0%,#f6faf9_40%,#f6faf9_100%)] pb-[150px]">
       <div className="px-3.5 pt-3">
-        <HubTopBar onBack={back} onBell={() => setToast('Yangi bildirishnomalar yo‘q')} />
-
-        <div className="mt-2.5 grid h-[236px] grid-cols-[1fr_72px] grid-rows-[minmax(0,1fr)] gap-2 overflow-hidden">
-          <div className="relative overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-            <button type="button" onClick={() => setZoom(cur)} aria-label="Kattalashtirish" className="size-full">
-              <img src={images[cur]} alt={a.title} className={`size-full ${a.cat === 'material' || a.cat === 'asbob' ? 'object-contain p-2' : 'object-cover'}`} />
+        <HubTopBar onBack={back} onBell={() => setToast('Bildirishnomalar tez orada')} />
+        <div className="mt-3 grid grid-cols-[1fr_88px] gap-2">
+          <div className="relative min-h-[220px] overflow-hidden rounded-2xl bg-white">
+            <button type="button" onClick={() => setZoom(cur)} className="size-full">
+              <img src={images[cur]} alt="" className={`size-full ${a.cat === 'material' || a.cat === 'asbob' ? 'object-contain p-2' : 'object-cover'}`} />
             </button>
             <button type="button" onClick={() => setToast(adsStore.toggleSave(a.id) ? 'Saqlanganlarga qo‘shildi' : 'Saqlanganlardan olib tashlandi')} aria-label="Saqlash" aria-pressed={isSaved} className="absolute right-2.5 top-2.5 grid size-10 place-items-center rounded-full bg-white shadow-[0_1px_4px_rgb(11_31_58/0.15)]">
               <Heart className={`size-5 ${isSaved ? 'fill-sale text-sale' : 'text-[#0b6d73]'}`} />
             </button>
             <span className="absolute bottom-2 left-2 rounded-md bg-ink/55 px-1.5 py-0.5 text-[10.5px] font-medium text-white">{cur + 1} / {Math.max(images.length, 1)}</span>
+            {a._pending && <span className="absolute left-2 top-2 rounded-md bg-[#fff8e6] px-2 py-1 text-[10px] font-semibold text-[#7a5200]">Moderatsiyada</span>}
+            {(a.status === 'sold' || a.status === 'closed') && (
+              <span className="absolute left-2 top-2 rounded-md bg-ink/70 px-2 py-1 text-[10px] font-semibold text-white">{a.status === 'sold' ? 'Sotilgan' : 'Yopilgan'}</span>
+            )}
           </div>
           <div className="grid min-h-0 grid-rows-4 gap-2">
             {thumbs.map((src, i) => (
@@ -138,10 +146,16 @@ function AdView({ id }) {
           </button>
 
           <div className="mt-3 flex items-center gap-3 text-[11px] text-muted">
-            <span className="flex items-center gap-1"><Eye className="size-3.5" /> {a.views} ko‘rildi</span>
+            <span className="flex items-center gap-1"><Eye className="size-3.5" /> {a.views || 0} ko‘rildi</span>
             <span className="flex items-center gap-1"><CalendarDays className="size-3.5" /> {a.date}</span>
-            <button type="button" onClick={() => setToast('Shikoyatingiz moderatorga yuborildi')} className="ml-auto flex items-center gap-1 text-sale"><Flag className="size-3.5" /> Shikoyat</button>
           </div>
+
+          {isOwner && (a.status || 'active') === 'active' && !a._pending && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" disabled={busy} onClick={() => mark('sold')} className="h-10 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white disabled:opacity-50">Sotildi</button>
+              <button type="button" disabled={busy} onClick={() => mark('closed')} className="h-10 rounded-xl border border-line text-[13px] font-semibold text-ink disabled:opacity-50">Yopish</button>
+            </div>
+          )}
         </section>
 
         {similar.length > 0 && (
@@ -154,13 +168,22 @@ function AdView({ id }) {
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur">
-        <button type="button" onClick={() => setSheet('chat')} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] text-[13.5px] font-semibold text-[#0b6d73]"><MessageCircle className="size-5" /> {isJob ? 'Ish beruvchiga yozish' : 'Sotuvchi bilan chat'}</button>
-        <button type="button" onClick={() => setSheet('call')} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[13.5px] font-semibold text-white"><Phone className="size-5" /> Qo‘ng‘iroq qilish</button>
-      </div>
+      {!isOwner && (a.status || 'active') === 'active' && !a._pending && (
+        <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur">
+          {tg ? (
+            <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast })} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] text-[13.5px] font-semibold text-[#0b6d73]">
+              <Send className="size-5" /> Telegram’da yozish
+            </button>
+          ) : (
+            <button type="button" disabled className="flex h-12 items-center justify-center gap-2 rounded-xl border border-line bg-page text-[13px] font-semibold text-muted">Telegram yo‘q</button>
+          )}
+          <button type="button" onClick={() => (phone ? setSheet('call') : setToast('Telefon ko‘rsatilmagan'))} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[13.5px] font-semibold text-white">
+            <Phone className="size-5" /> Qo‘ng‘iroq qilish
+          </button>
+        </div>
+      )}
 
-      {sheet === 'chat' && <ChatSheet d={contact} initial={chatText} quick={QUICK[a.deal]} onClose={() => setSheet(null)} onSent={() => { setSheet(null); setToast('Xabar yuborildi') }} />}
-      {sheet === 'call' && <CallSheet d={contact} onClose={() => setSheet(null)} onChat={() => setSheet('chat')} onToast={setToast} />}
+      {sheet === 'call' && phone && <CallSheet d={contact} onClose={() => setSheet(null)} onChat={() => { setSheet(null); if (tg) openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast }) }} onToast={setToast} />}
       {sheet === 'seller' && (
         <BottomSheet title={isJob ? 'Ish beruvchi' : 'Sotuvchi'} onClose={() => setSheet(null)}>
           <div className="mt-2 flex items-center gap-3 rounded-2xl bg-[#f2f8f8] p-3">
@@ -172,22 +195,14 @@ function AdView({ id }) {
             </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setSheet('chat')} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><MessageCircle className="size-4" /> Yozish</button>
-            <a href={seller.phone ? `tel:${seller.phone.replace(/\s/g, '')}` : undefined} aria-disabled={!seller.phone} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white"><Phone className="size-4" /> {seller.phone || 'Raqam ko‘rsatilmagan'}</a>
+            {tg ? (
+              <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast })} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><Send className="size-4" /> Telegram</button>
+            ) : (
+              <span className="flex h-11 items-center justify-center rounded-xl bg-page text-[12px] text-muted">Telegram yo‘q</span>
+            )}
+            <a href={phone ? `tel:${phone}` : undefined} aria-disabled={!phone} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white"><Phone className="size-4" /> {seller.phone || 'Raqam yo‘q'}</a>
           </div>
-          <p className="mt-4 text-[13px] font-semibold text-ink">Boshqa e’lonlari ({sellerAds.length})</p>
-          <div className="mt-2 flex flex-col gap-2 pb-3">
-            {sellerAds.length ? sellerAds.map((x) => (
-              <Link key={x.id} to={`/elonlar/${x.id}`} className="flex items-center gap-2.5 rounded-xl border border-line/70 p-1.5">
-                <img src={x.images?.[0]} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
-                <span className="min-w-0 flex-1">
-                  <b className="block truncate text-[12.5px] font-semibold text-ink">{x.title}</b>
-                  <span className="block truncate text-[12px] font-bold text-[#0b8a95]">{adPrice(x)}</span>
-                </span>
-                <ChevronRight className="size-4 shrink-0 text-muted" />
-              </Link>
-            )) : <p className="text-[12px] text-muted">Hozircha boshqa e’lon yo‘q</p>}
-          </div>
+          <p className="mt-4 text-[13px] font-semibold text-ink">Boshqa e’lonlari ({myAds().filter((x) => x.id !== a.id && (x.sellerInfo?.id === seller.id || x.seller === a.seller)).length})</p>
         </BottomSheet>
       )}
       {zoom !== null && <Lightbox images={images} index={zoom} onClose={() => setZoom(null)} />}
@@ -199,6 +214,6 @@ function AdView({ id }) {
 }
 
 function SellerPic({ s }) {
-  if (s.photo) return <img src={s.photo} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+  if (s.photo || s.avatar) return <img src={s.photo || s.avatar} alt="" className="size-12 shrink-0 rounded-full object-cover" />
   return <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#e6f4f3] text-[#0b6d73]"><ToothIcon className="size-7" strokeWidth={1.6} /></span>
 }

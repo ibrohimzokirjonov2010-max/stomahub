@@ -212,20 +212,42 @@ export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)
 
 export async function loadCatalog() {
   if (!supabase) return
-  const { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden').limit(5000)
+  ownedRows.clear()
+  let { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden,status').limit(5000)
+  // status ustuni migratsiyadan oldin bo‘lmasa — eski select
+  if (error && /status/i.test(error.message || '')) {
+    ;({ data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden').limit(5000))
+  }
   // Real-data: successful fetch (even empty) replaces seed arrays so UI shows empty, not mocks.
   if (error) {
     syncError = error.message
     return
   }
+  const today = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
   const grouped = new Map()
   ;(data || []).forEach((r0) => {
     let row = r0
     // Ownerless seed rows (demo courses/certificates/books) are not real content.
     if (!row.owner_id && SEED_KINDS.has(row.kind)) return
-    // Yashirin (moderatsiyadagi/admin yashirgan) yozuvlar faqat egasiga, «moderatsiyada» belgisi bilan ko‘rinadi
-    if (row.hidden) {
-      if (!uid || row.owner_id !== uid) return
+    const isOwner = Boolean(uid && row.owner_id === uid)
+    if (row.kind === 'ad') {
+      const status = row.status || row.payload?.status || 'active'
+      const payload = { ...row.payload, status }
+      // sold/closed: faqat egaga; muddati o‘tgan: faqat egaga
+      if (status !== 'active' && !isOwner) return
+      if (payload.expires && String(payload.expires) < today && !isOwner) return
+      if (row.hidden) {
+        if (!isOwner) return
+        row = { ...row, payload: { ...payload, _pending: true } }
+      } else {
+        row = { ...row, payload }
+      }
+    } else if (row.hidden) {
+      // Yashirin (moderatsiyadagi/admin yashirgan) yozuvlar faqat egasiga, «moderatsiyada» belgisi bilan ko‘rinadi
+      if (!isOwner) return
       row = { ...row, payload: { ...row.payload, _pending: true } }
     }
     if (row.owner_id) ownedRows.add(`${row.kind}:${row.id}`)

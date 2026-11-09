@@ -4,12 +4,16 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Search, X, Plus, Filter, LayoutGrid, Armchair, Building2, BriefcaseBusiness, Wrench, Heart, MapPin, CalendarDays, Check, ImagePlus } from 'lucide-react'
 import { ADS, DEALS, AD_CATS, AD_CITIES, SELLERS, dealName, adPrice } from '../../elonlarData'
-import { bindBlob, touchBlob } from '../../recordSync'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { HubTopBar } from './MobileKategoriyalar'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
+import { postAd, setAdStatus } from '../../elonApi'
+import { validateAd, isAdPublic } from '../../elonValidate'
+import { ensureLogin } from '../../loginPrompt'
+import { bindBlob, touchBlob, isOwned, useCatalogVersion } from '../../recordSync'
+import { friendlyError } from '../../lib/friendlyError'
 
 const CAT_ICONS = { all: LayoutGrid, uskuna: Armchair, material: ToothIcon, klinika: Building2, ish: BriefcaseBusiness, asbob: Wrench }
 const SORTS = [['new', 'Eng yangi'], ['cheap', 'Arzonroq'], ['rich', 'Qimmatroq'], ['views', 'Ko‘p ko‘rilgan']]
@@ -26,11 +30,12 @@ const emit = (next) => {
 }
 bindBlob('saved_ads', {
   seed: DEMO_ADS,
-  get: () => ({ added: store.added, saved: [...store.saved] }),
+  get: () => ({ added: [], saved: [...store.saved] }),
   empty: () => ({ added: [], saved: [] }),
   set: (payload) => {
+    // Eski lokal 'added' e'lonlarni saqlamaymiz (crash bo'lmasin), faqat sevimlilar.
     store = {
-      added: Array.isArray(payload?.added) ? payload.added : [],
+      added: [],
       saved: new Set(Array.isArray(payload?.saved) ? payload.saved : []),
     }
     subs.forEach((f) => f())
@@ -47,14 +52,26 @@ export const adsStore = {
     emit({ saved: s })
     return s.has(id)
   },
-  add: (a) => emit({ added: [a, ...store.added] }),
+  /** @deprecated Yangi e'lonlar catalog_items orqali — lokal qo'shish yo'q */
+  add: () => {},
 }
-export const allAds = () => [...store.added, ...ADS]
+/** Katalogdagi e'lonlar (loadCatalog). Public filter UI da. */
+export const allAds = () => [...ADS]
 export const findAd = (id) => allAds().find((a) => a.id === id) || null
+export const myAds = () => allAds().filter((a) => isOwned('ad', a.id))
+export const publicAds = () => allAds().filter((a) => isAdPublic(a))
 // Katalogdagi e’lonlarda sotuvchi ma’lumoti bo‘lmasligi mumkin — sahifa yiqilmasligi uchun xavfsiz qiymat.
 export const sellerOf = (a) => {
   const s = SELLERS[a?.seller] || a?.sellerInfo || {}
-  return { ...s, name: s.name || 'Sotuvchi', type: s.type || 'Xususiy shaxs', phone: s.phone || '', rating: s.rating ?? null, since: s.since || '' }
+  return {
+    ...s,
+    name: s.name || 'Sotuvchi',
+    type: s.type || 'Xususiy shaxs',
+    phone: s.phone || '',
+    telegram: s.telegram || a?.telegram || '',
+    rating: s.rating ?? null,
+    since: s.since || '',
+  }
 }
 
 export default function MobileElonlar() {
@@ -99,7 +116,7 @@ export default function MobileElonlar() {
             <h1 className="text-[27px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">E’lonlar</h1>
             <p className="text-[12.5px] text-[#7d8fa9]">Stomatologiya sohasidagi e’lonlar</p>
           </div>
-          <button type="button" onClick={() => setSheet('post')} className="mt-1 flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[#0b6d73] px-3 text-[12.5px] font-semibold text-white shadow-[0_6px_14px_rgb(11_109_115/0.25)]">
+          <button type="button" onClick={() => { if (ensureLogin()) setSheet('post') }} className="mt-1 flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[#0b6d73] px-3 text-[12.5px] font-semibold text-white shadow-[0_6px_14px_rgb(11_109_115/0.25)]">
             <Plus className="size-[18px]" /> E’lon joylash
           </button>
         </div>
@@ -150,7 +167,7 @@ export default function MobileElonlar() {
       </div>
 
       {sheet === 'filter' && <FilterSheet initial={f} count={(x) => base.filter((a) => (!deal || a.deal === deal) && match(a, x)).length} savedCount={saved.size} onClose={() => setSheet(null)} onApply={(x) => { setF(x); setSheet(null) }} />}
-      {sheet === 'post' && <PostAdSheet onClose={() => setSheet(null)} onDone={(a) => { adsStore.add(a); setSheet(null); reset(); setToast('E’loningiz joylandi'); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
+      {sheet === 'post' && <PostAdSheet onClose={() => setSheet(null)} onDone={() => { setSheet(null); reset(); setToast('E’loningiz moderatsiyaga yuborildi'); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
 
       <MobileToast text={toast} onClose={closeToast} />
       <MobileTabBar />
@@ -228,41 +245,49 @@ function FilterSheet({ initial, count, savedCount, onClose, onApply }) {
 const CAT_IMG = { uskuna: '/images/jihozlar/fengdan.jpg', material: '/images/market/p3.jpg', klinika: '/images/jihozlar/fengdan-room.jpg', ish: '/images/ishlar/ish-hall.jpg', asbob: '/images/market/p5.jpg' }
 
 export function PostAdSheet({ onClose, onDone }) {
-  const [f, setF] = useState({ deal: 'sale', cat: 'material', title: '', sub: '', price: '', priceMax: '', city: 'Toshkent', cond: 'Yangi', phone: '+998 ', expires: '' })
-  const [photos, setPhotos] = useState([])
+  const [f, setF] = useState({ deal: 'sale', cat: 'material', title: '', sub: '', price: '', priceMax: '', city: 'Toshkent', cond: 'Yangi', phone: '+998 ', telegram: '', expires: '' })
+  const [files, setFiles] = useState([])
+  const [previews, setPreviews] = useState([])
   const [tried, setTried] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [saveErr, setSaveErr] = useState('')
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
-  const num = (v) => Number(String(v).replace(/\D/g, ''))
   const isJob = f.deal === 'job'
-  const errs = {
-    title: f.title.trim().length < 3,
-    price: !num(f.price) || (isJob && num(f.priceMax) < num(f.price)),
-    phone: f.phone.replace(/\D/g, '').length !== 12,
-    expires: Boolean(f.expires) && f.expires < tashkentToday(),
-  }
-  const ok = !Object.values(errs).some(Boolean)
+  const errs = validateAd({ ...f, files })
   const field = (bad) => `h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${tried && bad ? 'border-sale' : 'border-line'}`
   const addPhotos = (e) => {
-    const files = [...e.target.files].slice(0, 6 - photos.length)
-    setPhotos((p) => [...p, ...files.map((x) => URL.createObjectURL(x))])
+    const next = [...e.target.files].slice(0, 6 - files.length)
+    setFiles((p) => [...p, ...next])
+    setPreviews((p) => [...p, ...next.map((x) => URL.createObjectURL(x))])
     e.target.value = ''
   }
-  const submit = () => {
-    setTried(true)
-    if (!ok) return
-    const d = new Date()
-    onDone({
-      id: `mening-${Date.now()}`, deal: f.deal, cat: isJob ? 'ish' : f.cat, title: f.title.trim(), sub: f.sub.trim() || 'Yangi e’lon',
-      price: num(f.price), priceMax: isJob ? num(f.priceMax) : undefined, city: f.city, date: `${d.getDate()} ${['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'][d.getMonth()]} ${d.getFullYear()}`,
-      cond: isJob ? 'To‘liq stavka' : f.cond, expires: f.expires || undefined, original: false, views: 0,
-      images: photos.length ? photos : [CAT_IMG[isJob ? 'ish' : f.cat]],
-      specs: [['cat', 'Turi', dealName[f.deal]], ['place', 'Shahar', f.city], ['cond', isJob ? 'Bandlik' : 'Holati', isJob ? 'To‘liq stavka' : f.cond]],
-      about: f.sub.trim() || 'Batafsil ma’lumot uchun qo‘ng‘iroq qiling.', features: [],
-      seller: '', sellerInfo: { id: 'me', name: 'Siz', type: 'Xususiy shaxs', phone: f.phone, rating: 5, since: String(d.getFullYear()) },
+  const removePhoto = (i) => {
+    setFiles((p) => p.filter((_, j) => j !== i))
+    setPreviews((p) => {
+      const url = p[i]
+      if (url) URL.revokeObjectURL(url)
+      return p.filter((_, j) => j !== i)
     })
   }
+  const submit = async () => {
+    setTried(true)
+    setSaveErr('')
+    if (Object.keys(errs).length || busy) return
+    if (!ensureLogin()) return
+    if (!files.length) { setSaveErr('Kamida bitta rasm yuklang'); return }
+    setBusy(true)
+    try {
+      const item = await postAd(f, files)
+      onDone?.(item)
+    } catch (e) {
+      setSaveErr(friendlyError(e, 'E’lonni saqlab bo‘lmadi. Qayta urinib ko‘ring.'))
+    } finally {
+      setBusy(false)
+    }
+  }
   return (
-    <BottomSheet centered title="E’lon joylash" onClose={onClose} footer={<button type="button" onClick={submit} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white">E’lonni joylash</button>}>
+    <BottomSheet centered title="E’lon joylash" onClose={onClose} footer={<button type="button" disabled={busy} onClick={submit} className="h-12 flex-1 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white disabled:opacity-60">{busy ? 'Yuborilmoqda…' : 'Moderatsiyaga yuborish'}</button>}>
+      <p className="mt-1 text-[12px] text-muted">E’lon admin tasdiqlagach hamkasblarga ko‘rinadi</p>
       <div className="mt-2 grid grid-cols-3 gap-1.5">
         {DEALS.map(([k, l]) => <button key={k} type="button" aria-pressed={f.deal === k} onClick={() => setF((s) => ({ ...s, deal: k }))} className={`h-10 rounded-xl text-[12.5px] font-semibold ${f.deal === k ? 'bg-[#0b8a95] text-white' : 'border border-line text-ink'}`}>{l}</button>)}
       </div>
@@ -272,21 +297,22 @@ export function PostAdSheet({ onClose, onDone }) {
         </div>
       )}
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {photos.map((src, i) => (
+        {previews.map((src, i) => (
           <span key={src} className="relative size-16 shrink-0 overflow-hidden rounded-xl">
             <img src={src} alt="" className="size-full object-cover" />
-            <button type="button" onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))} aria-label="Rasmni o‘chirish" className="absolute right-0.5 top-0.5 grid size-5 place-items-center rounded-full bg-ink/60 text-white"><X className="size-3" /></button>
+            <button type="button" onClick={() => removePhoto(i)} aria-label="Rasmni o‘chirish" className="absolute right-0.5 top-0.5 grid size-5 place-items-center rounded-full bg-ink/60 text-white"><X className="size-3" /></button>
           </span>
         ))}
-        {photos.length < 6 && (
+        {files.length < 6 && (
           <label className="grid size-16 shrink-0 cursor-pointer place-items-center rounded-xl border border-dashed border-sea/50 bg-sea-50 text-sea">
             <ImagePlus className="size-6" />
             <input type="file" accept="image/*" multiple onChange={addPhotos} className="hidden" />
           </label>
         )}
       </div>
+      {tried && errs.image && <p className="mt-1 text-[11px] text-sale">{errs.image}</p>}
       <div className="mt-2 flex flex-col gap-2 pb-2">
-        <AdLabel text={isJob ? 'Lavozim' : 'Sarlavha'} required><input value={f.title} onChange={set('title')} placeholder={isJob ? 'Masalan, Stomatolog kerak' : 'Masalan, Kompozit A2'} className={field(errs.title)} /></AdLabel>
+        <AdLabel text={isJob ? 'Lavozim' : 'Sarlavha'} required><input value={f.title} onChange={set('title')} placeholder={isJob ? 'Masalan, Stomatolog kerak' : 'Masalan, Endomotor'} className={field(errs.title)} /></AdLabel>
         <AdLabel text="Qisqacha tavsif"><textarea value={f.sub} onChange={set('sub')} rows={2} placeholder="Qisqacha tavsif" className="w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] outline-none focus:border-sea" /></AdLabel>
         <div className="grid grid-cols-2 gap-2">
           <AdLabel text={isJob ? 'Maosh (dan)' : f.deal === 'rent' ? 'Narx / oy, so‘m' : 'Narx, so‘m'} required><input value={priceFmt(f.price)} onChange={(e) => setF((s) => ({ ...s, price: priceDigits(e.target.value) }))} inputMode="numeric" placeholder={isJob ? 'Maosh dan' : f.deal === 'rent' ? 'Narx / oy' : 'Narx, so‘m'} className={field(errs.price)} /></AdLabel>
@@ -294,11 +320,66 @@ export function PostAdSheet({ onClose, onDone }) {
             ? <AdLabel text="Maosh (gacha)" required><input value={priceFmt(f.priceMax)} onChange={(e) => setF((s) => ({ ...s, priceMax: priceDigits(e.target.value) }))} inputMode="numeric" placeholder="Maosh gacha" className={field(errs.price)} /></AdLabel>
             : <AdLabel text="Holati"><select value={f.cond} onChange={set('cond')} aria-label="Holati" className={field(false)}><option>Yangi</option><option>Ishlatilgan</option></select></AdLabel>}
           <AdLabel text="Shahar"><select value={f.city} onChange={set('city')} aria-label="Shahar" className={field(false)}>{AD_CITIES.map((c) => <option key={c}>{c}</option>)}</select></AdLabel>
-          <AdLabel text="Telefon" required><PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={errs.phone} placeholder="+998 90 123 45 67" /></AdLabel>
+          <AdLabel text="Telefon" required><PhoneInput value={f.phone} onChange={(v) => set('phone')({ target: { value: toE164(v) || extractUzLocalDigits(v) } })} valueMode="e164" className={field(errs.phone)} invalid={!!errs.phone} placeholder="+998 90 123 45 67" /></AdLabel>
         </div>
+        <AdLabel text="Telegram (ixtiyoriy)"><input value={f.telegram} onChange={set('telegram')} placeholder="@username" className={field(errs.telegram)} autoCapitalize="off" autoCorrect="off" /></AdLabel>
+        {tried && errs.telegram && <p className="text-[11px] text-sale">{errs.telegram}</p>}
         <AdLabel text="E’lon amal qilish muddati (ixtiyoriy)"><input type="date" value={f.expires} min={tashkentToday()} onChange={set('expires')} className={field(errs.expires)} /></AdLabel>
-        {tried && !ok && <p className="text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
+        {tried && Object.keys(errs).length > 0 && <p className="text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
+        {saveErr && <p role="alert" className="text-[12px] text-sale">{saveErr}</p>}
       </div>
+    </BottomSheet>
+  )
+}
+
+
+export function MyAdsSheet({ onClose }) {
+  useCatalogVersion()
+  const [busy, setBusy] = useState('')
+  const [err, setErr] = useState('')
+  const [toast, setToast] = useState('')
+  const list = myAds()
+  const act = async (id, status) => {
+    setBusy(id + status); setErr('')
+    try {
+      await setAdStatus(id, status)
+      setToast(status === 'sold' ? 'E’lon «Sotilgan» deb belgilandi' : status === 'closed' ? 'E’lon yopildi' : 'Yangilandi')
+    } catch (e) {
+      setErr(friendlyError(e, 'Amarni bajarib bo‘lmadi'))
+    } finally { setBusy('') }
+  }
+  return (
+    <BottomSheet title="Mening e’lonlarim" onClose={onClose}>
+      <p className="mt-1 text-[12px] text-muted">Moderatsiyadagi, faol va sotilgan e’lonlaringiz</p>
+      {err && <p role="alert" className="mt-2 text-[12px] text-sale">{err}</p>}
+      <div className="mt-3 flex flex-col gap-2 pb-3">
+        {!list.length && <p className="rounded-xl bg-page px-3 py-6 text-center text-[13px] text-muted">Hozircha e’loningiz yo‘q</p>}
+        {list.map((a) => {
+          const pending = !!a._pending
+          const status = a.status || (pending ? 'pending' : 'active')
+          return (
+            <div key={a.id} className="rounded-2xl border border-line/70 p-2.5">
+              <div className="flex gap-2.5">
+                <img src={a.images?.[0]} alt="" className="size-14 shrink-0 rounded-xl object-cover bg-page" />
+                <div className="min-w-0 flex-1">
+                  <Link to={`/elonlar/${a.id}`} className="block truncate text-[13.5px] font-bold text-ink">{a.title}</Link>
+                  <p className="text-[12px] font-semibold text-[#0b6d73]">{adPrice(a)}</p>
+                  <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${pending ? 'bg-[#fff8e6] text-[#7a5200]' : status === 'sold' ? 'bg-[#eef2f6] text-[#475569]' : status === 'closed' ? 'bg-[#f1f5f9] text-muted' : 'bg-[#e3f8ec] text-[#16a05a]'}`}>
+                    {pending ? 'Moderatsiyada' : status === 'sold' ? 'Sotilgan' : status === 'closed' ? 'Yopilgan' : 'Faol'}
+                  </span>
+                </div>
+              </div>
+              {!pending && status === 'active' && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button type="button" disabled={!!busy} onClick={() => act(a.id, 'sold')} className="h-9 rounded-xl bg-[#0b6d73] text-[12px] font-semibold text-white disabled:opacity-50">Sotildi</button>
+                  <button type="button" disabled={!!busy} onClick={() => act(a.id, 'closed')} className="h-9 rounded-xl border border-line text-[12px] font-semibold text-ink disabled:opacity-50">Yopish</button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {toast && <p role="status" className="pb-2 text-center text-[12px] text-sea">{toast}</p>}
     </BottomSheet>
   )
 }

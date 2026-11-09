@@ -9,6 +9,7 @@ const routes = {
   '/api/auth/phone/start': 'api/auth/phone/start.js',
   '/api/auth/phone/verify': 'api/auth/phone/verify.js',
   '/api/telegram/webhook': 'api/telegram/webhook.js',
+  '/api/og-listing': 'api/og-listing.js',
 }
 
 function localApi(env) {
@@ -18,7 +19,16 @@ function localApi(env) {
       Object.assign(process.env, env)
       server.middlewares.use(async (req, res, next) => {
         const pathname = (req.url || '').split('?')[0]
-        const file = routes[pathname]
+        const ua = req.headers['user-agent'] || ''
+        const bot = /TelegramBot|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|vkShare/i.test(ua)
+        if (bot) {
+          const m = pathname.match(/^\/(elonlar|ortiqcha)\/([^/]+)\/?$/)
+          if (m) {
+            req.url = `/api/og-listing?kind=${m[1] === 'elonlar' ? 'ad' : 'surplus'}&id=${encodeURIComponent(m[2])}`
+          }
+        }
+        const pathOnly = (req.url || '').split('?')[0]
+        const file = routes[pathOnly]
         if (!file) return next()
         try {
           const mod = await import(pathToFileURL(path.resolve(file)).href)

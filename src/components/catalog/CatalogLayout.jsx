@@ -15,18 +15,25 @@ import { ImageSearchButton, ImageSearchDialog, ImageSearchBanner, rankByTerms, t
 
 /* ---------- building blocks ---------- */
 
-export function CatalogHeader({ title, subtitle, desktop, action, onAction }) {
+export function CatalogHeader({ title, subtitle, desktop, action, onAction, secondary, onSecondary }) {
   return (
     <div className="flex items-end justify-between gap-3">
      <div className="min-w-0">
       <h1 data-testid="catalog-title" className={`${desktop ? 'text-[30px]' : 'mt-2.5 text-[24px]'} font-extrabold leading-tight tracking-tight text-[#0d2a4a]`}>{title}</h1>
       {subtitle && <p className={`${desktop ? 'text-[14px]' : 'text-[12px]'} text-ink-2`}>{subtitle}</p>}
      </div>
-      {action && (
-        <button type="button" onClick={() => { if (ensureLogin()) onAction?.() }} className={`flex shrink-0 items-center gap-1 rounded-xl bg-sea font-semibold text-white active:scale-[0.97] ${desktop ? 'h-11 px-4 text-[14px]' : 'h-9 px-3 text-[12px]'}`}>
-          <Plus className="size-4" strokeWidth={2.4} /> {action}
-        </button>
-      )}
+      <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center">
+        {secondary && (
+          <button type="button" onClick={() => { if (ensureLogin()) onSecondary?.() }} className={`rounded-xl border border-sea/40 bg-white font-semibold text-sea active:scale-[0.97] ${desktop ? 'h-11 px-3 text-[13px]' : 'h-9 px-2.5 text-[11.5px]'}`}>
+            {secondary}
+          </button>
+        )}
+        {action && (
+          <button type="button" onClick={() => { if (ensureLogin()) onAction?.() }} className={`flex items-center gap-1 rounded-xl bg-sea font-semibold text-white active:scale-[0.97] ${desktop ? 'h-11 px-4 text-[14px]' : 'h-9 px-3 text-[12px]'}`}>
+            <Plus className="size-4" strokeWidth={2.4} /> {action}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -318,6 +325,7 @@ export function CatalogPage({ section }) {
   const [toast, setToast] = useState('')
   const [allSheet, setAllSheet] = useState(false)
   const [posting, setPosting] = useState(false)
+  const [mineOpen, setMineOpen] = useState(false)
   // /elonlar?joylash=1 kabi havola (bo‘sh bo‘lim posterlaridan) — shu bo‘limning e’lon oynasini ochadi.
   useEffect(() => {
     if (!section.action || !new URLSearchParams(window.location.search).get('joylash')) return
@@ -385,7 +393,7 @@ export function CatalogPage({ section }) {
 
   const body = (
     <>
-      <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => setPosting(true)} />
+      <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => setPosting(true)} secondary={section.secondaryAction?.label} onSecondary={() => setMineOpen(true)} />
       <CatalogSearch value={q} onChange={setQ} placeholder={section.placeholder} onFilter={() => setAllSheet(true)} active={active} inputRef={searchRef} desktop={desktop} onImage={section.imageSearch ? () => setImgOpen(true) : undefined} />
       {vis ? (
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
@@ -458,7 +466,8 @@ export function CatalogPage({ section }) {
       {allSheet && (
         <AllFilters filters={filters} values={values} desktop={desktop} count={(v) => section.items.filter((it) => (cat === 'all' || [].concat(section.catOf(it) || []).includes(cat)) && filters.every((f) => !v[f.key] || f.match(it, v[f.key]))).length} onClose={() => setAllSheet(false)} onApply={(v) => { setValues(v); setAllSheet(false) }} />
       )}
-      {posting && section.action.render({ close: () => setPosting(false), done: (msg) => { setPosting(false); setQ(''); setCat('all'); setValues({}); setToast(msg || 'E’loningiz joylandi'); window.scrollTo({ top: 0, behavior: 'smooth' }) } })}
+      {posting && section.action.render({ close: () => setPosting(false), done: (msg) => { setPosting(false); setQ(''); setCat('all'); setValues({}); setToast(msg || 'E’loningiz moderatsiyaga yuborildi'); window.scrollTo({ top: 0, behavior: 'smooth' }) } })}
+      {mineOpen && section.secondaryAction?.render?.({ close: () => setMineOpen(false) })}
       {imgOpen && <ImageSearchDialog desktop={desktop} onClose={() => setImgOpen(false)} onResult={(r) => { setImgOpen(false); setQ(''); setCat('all'); setValues({}); setVis({ name: r.found ? r.name : '', brand: r.brand, category: r.category, terms: r.found ? termsFrom(r) : [], thumb: r.thumb }); window.scrollTo({ top: 0, behavior: 'smooth' }) }} />}
       <MobileToast text={toast} onClose={() => setToast('')} bottom={desktop ? 24 : 76} />
     </>

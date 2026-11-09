@@ -1,6 +1,28 @@
 {
   "rewrites": [
     {
+      "source": "/elonlar/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|vkShare).*"
+        }
+      ],
+      "destination": "/api/og-listing?kind=ad&id=:id"
+    },
+    {
+      "source": "/ortiqcha/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|vkShare).*"
+        }
+      ],
+      "destination": "/api/og-listing?kind=surplus&id=:id"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

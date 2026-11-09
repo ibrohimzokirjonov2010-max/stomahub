@@ -13,13 +13,22 @@ import { recordInterest } from './personal/interestStore'
 export const isOwnProduct = (p) => { const u = currentUid(); return !!u && !!p && (p.sellerId || p.seller_id) === u }
 export const OWN_LABEL = 'Sizning mahsulotingiz'
 
+/** Ortiqcha material C2C — savatga tushmasligi kerak (eski lokal qatorlarni ham tozalaymiz). */
+export const isSurplusCartLine = (it) => {
+  if (!it) return false
+  const id = String(it.id || it.productId || '')
+  if (id.startsWith('surplus-')) return true
+  const typ = String(it.type || '')
+  return /Ortiqcha material/i.test(typ)
+}
+
 const CartContext = createContext(null)
 
 export const GUEST_CART_KEY = 'stomahub:guest-cart'
 export function loadGuestCart() {
   try {
     const raw = JSON.parse(localStorage.getItem(GUEST_CART_KEY) || '[]')
-    return Array.isArray(raw) ? raw.filter((it) => it && isUuid(it.productId || it.id) && Number(it.qty) > 0) : []
+    return Array.isArray(raw) ? raw.filter((it) => it && isUuid(it.productId || it.id) && Number(it.qty) > 0 && !isSurplusCartLine(it)) : []
   } catch { return [] }
 }
 function saveGuestCart(items) {
@@ -64,7 +73,7 @@ export function CartProvider({ children }) {
     const payload = await loadBlob('cart')
     // Eski demo (uuid bo‘lmagan) mahsulotlarni tashlab yuboramiz — ularni buyurtma qilib bo‘lmaydi
     let list
-    if (Array.isArray(payload?.items)) list = payload.items.filter((it) => isUuid(it.productId || it.id))
+    if (Array.isArray(payload?.items)) list = payload.items.filter((it) => isUuid(it.productId || it.id) && !isSurplusCartLine(it))
     else if (isDemoUser()) list = initialCart
     else list = []
     // Kirishdan oldin mehmon sifatida qo‘shilganlarni hisob savatiga qo‘shamiz (takrorlarsiz)
@@ -103,6 +112,10 @@ export function CartProvider({ children }) {
   // Server qoidasi (0038 + buyer_create_order) bilan bir xil: cheklangan mahsulot faqat tasdiqlangan shifokorga,
   // o'z mahsulotini sotuvchi buyurtma qila olmaydi, ombordan ko'p qo'shib bo'lmaydi.
   const add = (product, qty = 1) => {
+    if (isSurplusCartLine(product)) {
+      setCartNotice('Ortiqcha material savatga qo‘shilmaydi — sotuvchi bilan bog‘laning')
+      return false
+    }
     const live = liveById.get(product.productId || product.id)
     const probe = { ...product, stock: liveStock(product) ?? product.stock, sellerId: product.sellerId || live?.sellerId, rx: product.rx || live?.rx }
     const block = purchaseBlock(probe, { uid, verified: doctorOk })

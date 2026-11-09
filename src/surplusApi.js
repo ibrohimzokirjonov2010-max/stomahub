@@ -3,6 +3,7 @@ import { currentUid } from './recordSync'
 import { upsertCatalogItem } from './catalogApi'
 import { profileStore } from './profileStore'
 import { validateSurplus } from './surplusData'
+import { normalizeTelegram } from './elonValidate'
 
 /**
  * Ortiqcha material e’lonini bazaga saqlaydi (catalog_items, kind='surplus').
@@ -43,7 +44,14 @@ export async function postSurplus(data, file) {
     qty: Math.max(1, Number(data.qty) || 1),
     image,
     images: [image],
-    seller: { name: prof.name || '', avatar: prof.avatar || '' },
+    phone: data.phone,
+    telegram: normalizeTelegram(data.telegram) || undefined,
+    seller: {
+      name: prof.name || '',
+      avatar: prof.avatar || '',
+      phone: data.phone || '',
+      telegram: normalizeTelegram(data.telegram) || '',
+    },
   }
   await upsertCatalogItem('surplus', item, -Date.now(), { hidden: true, hidden_reason: 'moderatsiya' })
   return item

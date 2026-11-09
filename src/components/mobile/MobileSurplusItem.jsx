@@ -2,24 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Heart, Share2, PackageCheck, CalendarDays, Box, MapPin, Star, BadgeCheck, MessageCircle,
-  ShieldCheck, ShoppingCart, X, CalendarCheck, MessageSquare, Lock, Clock,
+  ShieldCheck, X, CalendarCheck, MessageSquare, Lock, Clock, Phone, Send,
 } from 'lucide-react'
 import { getSurplusDetail, similarFor } from '../../surplusData'
 import { som } from '../../marketData'
-import { useCart } from '../../cart'
-import { MobileToast, QtyStepper } from './parts'
-import { SellerChat } from './MobileProduct'
+import { MobileToast } from './parts'
+import { telegramUrl } from '../../elonApi'
+import { openTelegramWithListingMessage } from '../../lib/telegramShare'
 import { condLabel, expiryLabel } from './MobileSurplus'
 import MobileTabBar from './MobileTabBar'
 
 const SAFETY = [
-  { icon: ShieldCheck, title: 'Tekshirilgan sotuvchilar', text: 'Har bir sotuvchi shifokor sifatida tasdiqlangan' },
-  { icon: CalendarCheck, title: 'Yaroqlilik muddati ko‘rsatilgan', text: 'Muddati o‘tgan mahsulotlar joylanmaydi' },
-  { icon: MessageSquare, title: 'Muloqot platforma orqali', text: 'Barcha kelishuvlar yozishmada saqlanadi' },
-  { icon: Lock, title: 'To‘lov himoyalangan', text: 'Pul mahsulotni olganingizdan keyin sotuvchiga o‘tadi' },
+  { icon: ShieldCheck, title: 'Ehtiyotkor bo‘ling', text: 'Mahsulotni ko‘rib oling, yaroqlilik muddatini tekshiring' },
+  { icon: CalendarCheck, title: 'Yaroqlilik muddati ko‘rsatilgan', text: 'Muddati o‘tgan mahsulotlar joylanmasligi kerak' },
+  { icon: Phone, title: 'To‘g‘ridan-to‘g‘ri bog‘laning', text: 'Sotuvchi bilan telefon yoki Telegram orqali kelishing' },
+  { icon: Lock, title: 'Platforma to‘lovi yo‘q', text: 'Ortiqcha material uchun StomaHub orqali to‘lov/escrow hozircha yo‘q — naqd yoki o‘zaro kelishuv' },
 ]
-const QUICK = ['Hali sotuvdami?', 'Narxi kelishiladimi?', 'Qayerdan olib ketsam bo‘ladi?']
-
 export default function MobileSurplusItem() {
   const { id } = useParams()
   return <SurplusView key={id} id={id} />
@@ -38,7 +36,6 @@ function SurplusView({ id }) {
     )
   }
   const s = d.seller
-  const { items, add, setQty, remove } = useCart()
   const [shot, setShot] = useState(0)
   const [liked, setLiked] = useState(false)
   const [sheet, setSheet] = useState(null)
@@ -57,18 +54,6 @@ function SurplusView({ id }) {
   const stock = Number(fact('qty').match(/\d+/)?.[0]) || 1
   const turi = d.specs.find(([k]) => k === 'Turi')?.[1] || ''
   const subtitle = turi.includes('(') || !fact('vol') ? turi : `${turi}, ${fact('vol').replace(/\s*\(.*\)/, '')}`
-
-  const cartId = `surplus-${d.id}`
-  const inCart = items.find((it) => it.id === cartId)?.qty || 0
-  const addToCart = () => {
-    add({ id: cartId, name: d.name, type: `${d.brand} · Ortiqcha material`, price: d.price, image: d.thumbs[0] })
-    setToast(`${d.name} savatga qo‘shildi`)
-  }
-  const changeQty = (next) => {
-    if (next < 1) { remove(cartId); setToast('Savatdan olib tashlandi') }
-    else if (next > stock) setToast(`Sotuvchida faqat ${stock} ta bor`)
-    else setQty(cartId, next)
-  }
 
   const share = async () => {
     const url = window.location.href
@@ -171,16 +156,13 @@ function SurplusView({ id }) {
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted"><MapPin className="size-3" /> {s.city}</p>
           </div>
-          <button type="button" onClick={() => setSheet('chat')} className="flex h-10 shrink-0 items-center gap-1 rounded-xl border border-sea/70 px-2 text-[11px] font-semibold text-sea active:bg-sea-50">
-            <MessageCircle className="size-4" /> Sotuvchiga yozish
-          </button>
         </div>
 
         <button type="button" onClick={() => setSheet('safety')} className="mt-2.5 flex w-full items-center gap-2.5 rounded-2xl bg-[#e9f6f1] p-2.5 text-left">
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-ok"><ShieldCheck className="size-5" strokeWidth={1.8} /></span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[12.5px] font-semibold text-ink">Xavfsiz savdo</span>
-            <span className="block text-[10.5px] leading-snug text-ink-2">To‘lovni platforma orqali amalga oshiring va o‘zingizni himoya qiling.</span>
+            <span className="block text-[12.5px] font-semibold text-ink">Ehtiyotkor savdo</span>
+            <span className="block text-[10.5px] leading-snug text-ink-2">Platforma to‘lovi yo‘q — telefon/Telegram orqali kelishing, mahsulotni ko‘rib oling.</span>
           </span>
           <ChevronRight className="size-4 shrink-0 text-ink-2" />
         </button>
@@ -205,39 +187,51 @@ function SurplusView({ id }) {
         ))}
       </div>
 
-      {/* Pastki panel */}
-      <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2.5 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
-        {inCart ? (
-          <QtyStepper big value={inCart} onDec={() => changeQty(inCart - 1)} onInc={() => changeQty(inCart + 1)} className="h-12" />
-        ) : (
-          <button type="button" onClick={addToCart} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-sea text-[14px] font-semibold text-sea active:bg-sea-50">
-            <ShoppingCart className="size-[19px]" /> Savatga qo‘shish
-          </button>
-        )}
-        <button type="button" onClick={() => setSheet('chat')} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
-          <MessageCircle className="size-[19px]" /> Sotuvchiga yozish
-        </button>
+      {/* Pastki panel — Telegram + Qo‘ng‘iroq (E’lonlar kabi) */}
+      <div className="fixed inset-x-0 bottom-[62px] z-30 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
+        <SurplusContactLinks seller={s} listing={d} onToast={setToast} />
       </div>
 
-      {sheet === 'chat' && (
-        <SellerChat
-          seller={s}
-          product={d}
-          quick={QUICK}
-          reply={s.reply}
-          onClose={() => setSheet(null)}
-          onSent={() => { setSheet(null); setToast('Xabar sotuvchiga yuborildi') }}
-        />
-      )}
       {sheet === 'safety' && <SafetySheet onClose={() => setSheet(null)} />}
 
-      <MobileToast
-        text={toast}
-        onClose={closeToast}
-        bottom={140}
-        action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
-      />
+      <MobileToast text={toast} onClose={closeToast} bottom={140} />
       <MobileTabBar />
+    </div>
+  )
+}
+
+/** E’lonlar detail bilan bir xil: Telegram’da yozish + Qo‘ng‘iroq qilish */
+export function SurplusContactLinks({ seller, listing, onToast, compact = false }) {
+  const phone = (seller?.phone || '').replace(/\s/g, '')
+  const tg = telegramUrl(seller?.telegram)
+  const h = compact ? 'h-10 text-[11px]' : 'h-12 text-[13.5px]'
+  if (!phone && !tg) {
+    return (
+      <p className={`grid ${compact ? 'h-10 px-2' : 'h-12'} place-items-center rounded-xl bg-page text-[12px] font-medium text-muted`}>
+        Aloqa ma’lumoti ko‘rsatilmagan
+      </p>
+    )
+  }
+  const cols = phone && tg ? 'grid-cols-2' : 'grid-cols-1'
+  const openTg = () => openTelegramWithListingMessage({
+    tgUrl: tg,
+    title: listing?.name || listing?.title || 'Ortiqcha',
+    price: listing?.price,
+    itemPath: `/ortiqcha/${listing?.id || ''}`,
+    onToast,
+  })
+  return (
+    <div className={`grid ${cols} gap-2`}>
+      {tg && (
+        <button type="button" onClick={openTg} className={`flex ${h} items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] font-semibold text-[#0b6d73]`}>
+          <Send className={compact ? 'size-4' : 'size-5'} /> Telegram’da yozish
+        </button>
+      )}
+      {phone && (
+        <a href={`tel:${phone}`} className={`flex ${h} items-center justify-center gap-2 rounded-xl bg-sea font-semibold text-white ${compact ? '' : 'shadow-[0_6px_16px_rgb(11_138_149/0.3)]'}`}>
+          <Phone className={compact ? 'size-4' : 'size-5'} /> Qo‘ng‘iroq qilish
+        </a>
+      )}
     </div>
   )
 }
@@ -262,7 +256,7 @@ function SafetySheet({ onClose }) {
           ))}
         </ul>
         <p className="mt-4 flex items-start gap-2 rounded-xl bg-page p-3 text-[11.5px] leading-snug text-ink-2">
-          <Clock className="mt-px size-4 shrink-0 text-sea" /> Oldindan to‘lov so‘ralsa yoki platformadan tashqariga chaqirilsa, ehtiyot bo‘ling va bizga xabar bering.
+          <Clock className="mt-px size-4 shrink-0 text-sea" /> Oldindan to‘lov so‘ralsa yoki shubhali taklif bo‘lsa, ehtiyot bo‘ling.
         </p>
         <button type="button" onClick={onClose} className="mt-4 h-12 w-full rounded-xl bg-sea text-[14px] font-semibold text-white">Tushunarli</button>
       </div>

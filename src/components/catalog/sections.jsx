@@ -27,7 +27,7 @@ import { surplusItems } from '../../surplusData'
 import { DOCTORS } from '../../mutaxassislarData'
 import { ADS } from '../../elonlarData'
 import { products as uniforms } from '../../formaData'
-import { allAds, adsStore, useAds, PostAdSheet } from '../mobile/MobileElonlar'
+import { allAds, myAds, publicAds, useAds, PostAdSheet, MyAdsSheet } from '../mobile/MobileElonlar'
 import { PostSheet } from '../mobile/MobileSurplus'
 import { imgIcon } from '../tealIcons'
 import { usePersonal } from '../../personal/usePersonal'
@@ -326,9 +326,10 @@ export function useDoctorsSection() {
 const AD_ICONS = { uskuna: Armchair, material: Sparkles, klinika: Building2, ish: BriefcaseBusiness, asbob: Wrench }
 export function useElonlarSection() {
   const v = useCatalogVersion()
-  const { added } = useAds()
+  useAds()
   return useMemo(() => {
-    const items = tag('ad', allAds(), (a) => a.title, (a) => a.sub)
+    const pub = publicAds()
+    const items = tag('ad', pub, (a) => a.title, (a) => a.sub)
     return {
       key: 'elonlar', shopActive: 'elonlar', title: 'E’lonlar', subtitle: 'Sotish, ijaraga berish va ish e’lonlari', placeholder: 'E’lon, uskuna yoki shahar qidiring...',
       items, cats: chipsFrom(AD_CATS, AD_ICONS), catOf: (a) => a.cat,
@@ -338,10 +339,33 @@ export function useElonlarSection() {
         { key: 'cond', label: 'Holati', options: opts(items.map((a) => a.cond)), match: (a, c) => a.cond === c },
       ],
       sorts: PRICE_SORTS(),
-      action: { label: 'E’lon joylash', render: ({ close, done }) => <PostAdSheet onClose={close} onDone={(a) => { adsStore.add(a); done() }} /> },
+      action: {
+        label: 'E’lon joylash',
+        render: ({ close, done }) => (
+          <PostAdSheet
+            onClose={close}
+            onDone={() => done('E’loningiz moderatsiyaga yuborildi')}
+          />
+        ),
+      },
+      secondaryAction: {
+        label: 'Mening e’lonlarim',
+        render: ({ close }) => <MyAdsSheet onClose={close} />,
+      },
       text: (a) => `${a.title} ${a.sub} ${a.city} ${dealName[a.deal] || ''}`,
-      card: (a) => ({ id: a.id, href: `/elonlar/${a.id}`, image: a.images?.[0], kicker: [a.city, a.date].filter(Boolean).join(' · '), title: a.title, meta: [a.sub], priceText: a.price ? adPrice(a) : 'Kelishiladi', badge: { text: dealName[a.deal] || 'E’lon', tone: a.deal === 'sale' ? 'new' : 'info' } }),
+      card: (a) => ({
+        id: a.id,
+        href: `/elonlar/${a.id}`,
+        image: a.images?.[0],
+        kicker: [a.city, a.date].filter(Boolean).join(' · '),
+        title: a.title,
+        meta: [a.sub],
+        priceText: a.price ? adPrice(a) : 'Kelishiladi',
+        badge: a._pending
+          ? { text: 'Moderatsiyada', tone: 'info' }
+          : { text: dealName[a.deal] || 'E’lon', tone: a.deal === 'sale' ? 'new' : 'info' },
+      }),
       slides: (list, ctx) => slidesFor({ key: 'elonlar', icon: PMegaphone, items: list, image: (a) => a.images?.[0], href: (a) => `/elonlar/${a.id}`, ctx }),
     }
-  }, [v, added])
+  }, [v])
 }
