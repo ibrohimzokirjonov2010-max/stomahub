@@ -2,12 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Heart, Share2, PackageCheck, CalendarDays, Box, MapPin, Star, BadgeCheck, MessageCircle,
-  ShieldCheck, ShoppingCart, X, CalendarCheck, MessageSquare, Lock, Clock, Phone, Send,
+  ShieldCheck, X, CalendarCheck, MessageSquare, Lock, Clock, Phone, Send,
 } from 'lucide-react'
 import { getSurplusDetail, similarFor } from '../../surplusData'
 import { som } from '../../marketData'
-import { useCart } from '../../cart'
-import { MobileToast, QtyStepper } from './parts'
+import { MobileToast } from './parts'
 import { telegramUrl } from '../../elonApi'
 import { condLabel, expiryLabel } from './MobileSurplus'
 import MobileTabBar from './MobileTabBar'
@@ -36,7 +35,6 @@ function SurplusView({ id }) {
     )
   }
   const s = d.seller
-  const { items, add, setQty, remove } = useCart()
   const [shot, setShot] = useState(0)
   const [liked, setLiked] = useState(false)
   const [sheet, setSheet] = useState(null)
@@ -55,18 +53,6 @@ function SurplusView({ id }) {
   const stock = Number(fact('qty').match(/\d+/)?.[0]) || 1
   const turi = d.specs.find(([k]) => k === 'Turi')?.[1] || ''
   const subtitle = turi.includes('(') || !fact('vol') ? turi : `${turi}, ${fact('vol').replace(/\s*\(.*\)/, '')}`
-
-  const cartId = `surplus-${d.id}`
-  const inCart = items.find((it) => it.id === cartId)?.qty || 0
-  const addToCart = () => {
-    add({ id: cartId, name: d.name, type: `${d.brand} · Ortiqcha material`, price: d.price, image: d.thumbs[0] })
-    setToast(`${d.name} savatga qo‘shildi`)
-  }
-  const changeQty = (next) => {
-    if (next < 1) { remove(cartId); setToast('Savatdan olib tashlandi') }
-    else if (next > stock) setToast(`Sotuvchida faqat ${stock} ta bor`)
-    else setQty(cartId, next)
-  }
 
   const share = async () => {
     const url = window.location.href
@@ -203,16 +189,9 @@ function SurplusView({ id }) {
         ))}
       </div>
 
-      {/* Pastki panel */}
-      <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2.5 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
-        {inCart ? (
-          <QtyStepper big value={inCart} onDec={() => changeQty(inCart - 1)} onInc={() => changeQty(inCart + 1)} className="h-12" />
-        ) : (
-          <button type="button" onClick={addToCart} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-sea text-[14px] font-semibold text-sea active:bg-sea-50">
-            <ShoppingCart className="size-[19px]" /> Savatga qo‘shish
-          </button>
-        )}
-        <button type="button" onClick={() => setSheet('contact')} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
+      {/* Pastki panel — faqat bog‘lanish (savat yo‘q) */}
+      <div className="fixed inset-x-0 bottom-[62px] z-30 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
+        <button type="button" onClick={() => setSheet('contact')} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
           <Phone className="size-[19px]" /> Bog‘lanish
         </button>
       </div>
@@ -226,12 +205,7 @@ function SurplusView({ id }) {
       )}
       {sheet === 'safety' && <SafetySheet onClose={() => setSheet(null)} />}
 
-      <MobileToast
-        text={toast}
-        onClose={closeToast}
-        bottom={140}
-        action={toast.includes('savatga') ? <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} className="shrink-0 text-[12.5px] font-semibold text-[#5fe0c8]">Savat</button> : null}
-      />
+      <MobileToast text={toast} onClose={closeToast} bottom={140} />
       <MobileTabBar />
     </div>
   )
