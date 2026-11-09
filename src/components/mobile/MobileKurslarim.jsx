@@ -6,6 +6,7 @@ import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { SubTopBar } from './MobileManzillar'
+import { formatDateUz } from '../../lib/dateUz'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
@@ -216,7 +217,7 @@ function certOf(course, name) {
     name,
     speaker: course.author,
     role: course.role,
-    date: course.certDate || new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' }),
+    date: course.certDate || formatDateUz(new Date()),
     hours: course.hours,
     cme: course.cme,
   }

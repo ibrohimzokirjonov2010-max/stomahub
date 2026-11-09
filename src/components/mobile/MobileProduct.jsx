@@ -11,11 +11,12 @@ import {
 import { useCart } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { productById, som } from '../../marketData'
-import { useMarket } from '../../buyerApi'
+import { fetchProductReviews, useMarket } from '../../buyerApi'
 import { BirgaOlishadi, useTrackView } from '../../personal/PersonalBlocks'
 import MobileTabBar from './MobileTabBar'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
 import Lightbox from '../Lightbox'
+import ReviewList from '../ReviewList'
 
 export default function MobileProduct() {
   const { id } = useParams()
@@ -40,6 +41,12 @@ function ProductGate({ id }) {
 function ProductView({ id }) {
   const p = productById(id)
   useTrackView(p)
+  const [reviews, setReviews] = useState([])
+  useEffect(() => {
+    let alive = true
+    fetchProductReviews(p.id).then((rows) => alive && setReviews(rows)).catch(() => {})
+    return () => { alive = false }
+  }, [p.id])
   const verified = useDoctorVerified()
   const uid = useSession()?.user?.id || ''
   const block = purchaseBlock(p, { uid, verified })
@@ -145,7 +152,7 @@ function ProductView({ id }) {
         <div className="mt-1.5 flex items-center gap-2 text-[12.5px] text-muted">
           {p.stock > 0 ? `Omborda ${p.stock} ${p.uom || 'dona'}` : 'Tugagan'}
           <span className="mx-1 h-3 w-px bg-line" />
-          <MessageSquareText className="size-4" /> {Number(p.rating) > 0 ? `${p.rating} · ${p.reviews || 0} ta sharh` : 'Hali baho yo‘q'}
+          <MessageSquareText className="size-4" /> {reviews.length ? `${(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)} · ${reviews.length} ta sharh` : (Number(p.rating) > 0 ? `${p.rating} · ${p.reviews || 0} ta sharh` : 'Hali baho yo‘q')}
         </div>
 
         {/* Narx */}
@@ -229,6 +236,17 @@ function ProductView({ id }) {
         ))}
 
         <BirgaOlishadi product={p} />
+
+        {/* Sharhlar */}
+        <h2 className="mt-4 text-[16px] font-bold text-ink">Sharhlar{reviews.length ? ` (${reviews.length})` : ''}</h2>
+        <div className="mt-2 rounded-2xl border border-line bg-white px-3.5">
+          <ReviewList
+            reviews={reviews}
+            emptyTitle="Hozircha sharhlar yo‘q"
+            emptyText="Yetkazilgan buyurtmani baholagan xaridorlarning fikrlari shu yerda chiqadi."
+            className="!border-0 !px-0 !py-2"
+          />
+        </div>
 
         {/* Sotuvchi */}
         <h2 className="mt-4 text-[16px] font-bold text-ink">Sotuvchi</h2>

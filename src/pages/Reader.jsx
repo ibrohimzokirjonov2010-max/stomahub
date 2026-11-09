@@ -6,6 +6,7 @@ import ShopSidebar from '../components/market/ShopSidebar'
 import { getBook } from '../booksData'
 import { useCatalogVersion } from '../recordSync'
 import { PageView, ZOOM_MAX, ZOOM_MIN, bookFacts, sectionAt, useReaderAccess, useReaderPrefs } from '../components/reader/bookReader'
+import { formatDateUz } from '../lib/dateUz'
 
 export default function Reader() {
   const { id } = useParams()
@@ -36,7 +37,7 @@ function DesktopReader({ book }) {
 
   const saveNote = (e) => {
     e.preventDefault()
-    setNotes((list) => [{ id: `n-${Date.now()}`, page, title: section?.title || '', text: draft, when: new Date().toLocaleDateString('uz-UZ') }, ...list])
+    setNotes((list) => [{ id: `n-${Date.now()}`, page, title: section?.title || '', text: draft, when: formatDateUz(new Date()) }, ...list])
     setDraft(''); setNote(false); setTab('notes')
   }
 

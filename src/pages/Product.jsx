@@ -9,12 +9,13 @@ import {
   ShoppingCart, RefreshCw, MapPin, Package, ArrowRight, CircleCheck,
 } from 'lucide-react'
 import { marketProducts, productById, similarTo, som } from '../marketData'
-import { useMarket } from '../buyerApi'
+import { fetchProductReviews, useMarket } from '../buyerApi'
 import { BirgaOlishadi, useTrackView } from '../personal/PersonalBlocks'
 import { useCart } from '../cart'
 import { SaleBadge, LikeButton, Rating, AddButton } from '../components/market/ProductCard'
 import { ToothIcon } from '../components/icons'
 import Lightbox from '../components/Lightbox'
+import ReviewList from '../components/ReviewList'
 
 export default function Product() {
   const { id } = useParams()
@@ -75,6 +76,12 @@ function ProductBody({ p }) {
   const id = p.id
   const similarProducts = similarTo(p)
   useTrackView(p)
+  const [reviews, setReviews] = useState([])
+  useEffect(() => {
+    let alive = true
+    fetchProductReviews(p.id).then((rows) => alive && setReviews(rows)).catch(() => {})
+    return () => { alive = false }
+  }, [p.id])
   const [img, setImg] = useState(0)
   const [zoom, setZoom] = useState(false)
   const minQty = Math.max(1, p.minQty || 1)
@@ -277,6 +284,18 @@ function ProductBody({ p }) {
           </>
         )}
       </div>
+
+      <section id="product-reviews" className="mt-4 rounded-xl bg-white p-3.5 shadow-card">
+        <h2 className="text-[14px] font-bold text-ink">Sharhlar{reviews.length ? ` (${reviews.length})` : ''}</h2>
+        <div className="mt-1">
+          <ReviewList
+            reviews={reviews}
+            emptyTitle="Hozircha sharhlar yo‘q"
+            emptyText="Yetkazilgan buyurtmani baholagan xaridorlarning fikrlari shu yerda chiqadi."
+            className="!border-0 !shadow-none !px-0"
+          />
+        </div>
+      </section>
 
       <BirgaOlishadi product={p} desktop />
 
