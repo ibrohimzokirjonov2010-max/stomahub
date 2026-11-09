@@ -8,6 +8,7 @@ import { isRestricted } from './restricted.jsx'
 import { useProfile } from './profileStore'
 import { tierPrice } from './config/productCatalog'
 import { currentUid, isDemoUser, loadBlob, onAccount, saveBlob } from './recordSync'
+import { recordInterest } from './personal/interestStore'
 // Sotuvchi o‘z mahsulotini sotib ololmaydi — kartochkalarda savat o‘rniga belgi ko‘rsatiladi
 export const isOwnProduct = (p) => { const u = currentUid(); return !!u && !!p && (p.sellerId || p.seller_id) === u }
 export const OWN_LABEL = 'Sizning mahsulotingiz'
@@ -114,6 +115,7 @@ export function CartProvider({ children }) {
       if (inCart >= s) return false
     }
     addLine(probe, qty)
+    if (isUuid(product.productId || product.id)) recordInterest('cart', { productId: product.productId || product.id, category: live?.rawCategory || live?.category || '' })
     return true
   }
   const addLine = (product, qty) =>

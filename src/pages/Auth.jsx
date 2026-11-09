@@ -8,7 +8,7 @@ import { flashToast } from '../components/FlashToast'
 import { ensureProfile, intendedRole, setIntendedRole, useSession, profileName } from '../sessionStore'
 import PhoneInput, { extractUzLocalDigits, toE164 } from '../components/PhoneInput'
 
-const SPECS = ['Stomatolog', 'Talaba', 'Klinika egasi', 'Tish texnigi', 'Implantolog', 'Ortodont', 'Endodontist', 'Terapevt']
+import { SPECIALTIES as SPECS } from '../personal/specialtyMap.js'
 
 const COPY = {
   uz: {

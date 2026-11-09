@@ -23,7 +23,7 @@ import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession
 import { dateLabel, useMySeminars } from '../components/mobile/MobileSeminarlarim'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
-const SPECS = ['Ortoped stomatolog', 'Stomatolog', 'Terapevt', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba', 'Klinika egasi']
+import { specialtyOptions } from '../personal/specialtyMap.js'
 const YEARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '15', '20', '25', '30']
 const LANGS = [['uz', 'O‘zbekcha'], ['ru', 'Русский'], ['en', 'English']]
 const NAV = [
@@ -532,7 +532,7 @@ function PersonalCard({ draft, editing, setEditing, setForm, onSave, busy }) {
         <label className="block text-[12.5px] font-semibold text-[#12263a]">Mutaxassislik
           <select disabled={!editing} className={field} value={draft.role} onChange={set('role')}>
             <option value="">Tanlang</option>
-            {SPECS.map((s) => <option key={s}>{s}</option>)}
+            {specialtyOptions(draft.role).map((s) => <option key={s}>{s}</option>)}
           </select>
         </label>
         <label className="block text-[12.5px] font-semibold text-[#12263a]">Tajriba (yil)

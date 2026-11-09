@@ -25,7 +25,7 @@ import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_M
 const card = 'rounded-2xl bg-white shadow-[0_1px_6px_rgb(11_31_58/0.06)]'
 const navy = 'text-[#0d2a4a]'
 const LANGS = [['uz', 'O‘zbekcha'], ['ru', 'Русский'], ['en', 'English']]
-const ROLES = ['Stomatolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Implantolog', 'Endodontist', 'Gigiyenist', 'Talaba']
+import { specialtyOptions } from '../../personal/specialtyMap.js'
 
 const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
 const when = (iso) => { const d = new Date(iso); return `${d.getDate()} ${MON[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
@@ -347,7 +347,7 @@ function EditSheet({ profile, onPick, onClose, onSaved }) {
       </div>
       <Field label="Ism va familiya" err={tried && errors.name}><input value={f.name} onChange={set('name')} className={input(tried && errors.name)} /></Field>
       <Field label="Mutaxassislik">
-        <select value={f.role} onChange={set('role')} className={input()}>{ROLES.map((r) => <option key={r}>{r}</option>)}</select>
+        <select value={f.role} onChange={set('role')} className={input()}><option value="">Tanlang</option>{specialtyOptions(f.role).map((r) => <option key={r}>{r}</option>)}</select>
       </Field>
       <Field label="Klinika"><input value={f.clinic} onChange={set('clinic')} placeholder="Klinika nomi" className={input()} /></Field>
       <div className="grid grid-cols-2 gap-2">
