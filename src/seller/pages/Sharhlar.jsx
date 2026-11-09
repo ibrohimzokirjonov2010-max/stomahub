@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MessageSquare, Flag, Check, Star, Filter, X, Store, FileText, EyeOff, Eye, User, Building2, Phone, CalendarDays, ChevronRight, CornerDownRight, Send } from 'lucide-react'
 import { useSellerData, updateRow } from '../api'
-import { dmy, hm, som } from '../format'
+import { hm, som, formatDateUz } from '../format'
 import { useMobile } from '../../useMobile'
 import { card, PageHead, Btn, Select, Tabs, Chips, Badge, Checkbox, Pager, usePaged, Menu, Th, Td, toast, Textarea, Input } from '../components/ui'
 import Empty from '../components/shell/Empty'
@@ -39,7 +39,7 @@ function ReplyModal({ r, onClose }) {
       footer={<div className="grid grid-cols-2 gap-3"><Btn variant="outline" onClick={onClose}>Bekor qilish</Btn><Btn icon={Send} disabled={busy} onClick={save}>Javobni yuborish</Btn></div>}>
       <div className="rounded-xl bg-[#F0FDFA] p-3">
         <div className="text-[12.5px] font-semibold text-[#0F766E]">Mijoz sharhi</div>
-        <div className="mt-2 flex gap-3"><ProductThumb src={r.p?.image_url} className="h-11 w-14 shrink-0" /><div className="min-w-0 flex-1 text-[13px]"><div className="flex justify-between gap-2"><b className="truncate">{r.p?.name || 'Mahsulot'}</b><span className="shrink-0 text-[12px] text-[#5C6E80]">{dmy(r.created_at)} {hm(r.created_at)}</span></div><div className="mt-1 flex items-center justify-between"><span className="text-[12.5px]">{r.who}</span><Stars value={r.rating} /></div></div></div>
+        <div className="mt-2 flex gap-3"><ProductThumb src={r.p?.image_url} className="h-11 w-14 shrink-0" /><div className="min-w-0 flex-1 text-[13px]"><div className="flex justify-between gap-2"><b className="truncate">{r.p?.name || 'Mahsulot'}</b><span className="shrink-0 text-[12px] text-[#5C6E80]">{formatDateUz(r.created_at)} {hm(r.created_at)}</span></div><div className="mt-1 flex items-center justify-between"><span className="text-[12.5px]">{r.who}</span><Stars value={r.rating} /></div></div></div>
         <p className="mt-2 whitespace-pre-line text-[13px] text-[#3D4E5F]">{r.body || '—'}</p>
       </div>
       <div className="mt-4 flex items-center gap-2 text-[14px] font-bold"><Store className="size-4 text-[#0F766E]" />Tayyor javob shablonlari</div>
@@ -119,7 +119,7 @@ export default function Sharhlar() {
     <div className="space-y-3">
       {!mobile && <div className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-2.5"><ProductThumb src={r.p?.image_url} className="h-11 w-16 shrink-0" /><div className="min-w-0 flex-1"><div className="truncate text-[13.5px] font-bold">{r.p?.name || 'Mahsulot o‘chirilgan'}</div><div className="text-[12px] text-[#5C6E80]">{r.p?.unit || ''}</div></div>{r.p && <Btn size="sm" variant="outline" onClick={() => navigate(`/sotuvchi/mahsulotlar/${r.p.id}`)}>Mahsulotga o‘tish</Btn>}</div>}
       <div className="rounded-xl border border-[#E6EEF0] p-3">
-        <div className="flex gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F0FDFA] text-[15px] font-bold text-[#0F766E]">{initials(r.who)}</span><div className="min-w-0 flex-1"><div className="flex justify-between gap-2"><b className="truncate text-[14px]">{r.who}</b><span className="shrink-0 text-[12px] text-[#5C6E80]">{dmy(r.created_at)} {hm(r.created_at)}</span></div><div className="text-[12px] text-[#5C6E80]">{r.city}{r.o ? ` · ${r.o.code}` : ''}</div><Stars value={r.rating} size="size-[17px]" /></div></div>
+        <div className="flex gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F0FDFA] text-[15px] font-bold text-[#0F766E]">{initials(r.who)}</span><div className="min-w-0 flex-1"><div className="flex justify-between gap-2"><b className="truncate text-[14px]">{r.who}</b><span className="shrink-0 text-[12px] text-[#5C6E80]">{formatDateUz(r.created_at)} {hm(r.created_at)}</span></div><div className="text-[12px] text-[#5C6E80]">{r.city}{r.o ? ` · ${r.o.code}` : ''}</div><Stars value={r.rating} size="size-[17px]" /></div></div>
         <p className="mt-2 whitespace-pre-line text-[13.5px] text-[#3D4E5F]">{r.body || '—'}</p>
         {reviewImageList(r.images).length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -132,10 +132,10 @@ export default function Sharhlar() {
         )}
         {mobile && r.p && <button type="button" onClick={() => navigate(`/sotuvchi/mahsulotlar/${r.p.id}`)} className="mt-3 flex w-full items-center gap-3 rounded-xl border border-[#E6EEF0] p-2 text-left"><ProductThumb src={r.p.image_url} className="h-12 w-16" /><div className="min-w-0 flex-1 text-[13px]"><b className="block truncate">{r.p.name}</b>{som(r.p.price)}</div><ChevronRight className="size-4" /></button>}
       </div>
-      {r.reply && <div className="rounded-xl border border-[#E6EEF0] p-3"><div className="flex justify-between text-[13px] font-bold"><span className="flex items-center gap-2"><Store className="size-4 text-[#0F766E]" />Sizning javobingiz</span><span className="text-[12px] font-normal text-[#5C6E80]">{r.replied_at ? `${dmy(r.replied_at)} ${hm(r.replied_at)}` : ''}</span></div><p className="mt-2 rounded-lg bg-[#F0FDFA] p-2.5 text-[13px] text-[#3D4E5F]">{r.reply}</p>{!r.reply_public && <div className="mt-1 text-[11.5px] text-[#5C6E80]">Faqat mijozga ko‘rinadi</div>}</div>}
+      {r.reply && <div className="rounded-xl border border-[#E6EEF0] p-3"><div className="flex justify-between text-[13px] font-bold"><span className="flex items-center gap-2"><Store className="size-4 text-[#0F766E]" />Sizning javobingiz</span><span className="text-[12px] font-normal text-[#5C6E80]">{r.replied_at ? `${formatDateUz(r.replied_at)} ${hm(r.replied_at)}` : ''}</span></div><p className="mt-2 rounded-lg bg-[#F0FDFA] p-2.5 text-[13px] text-[#3D4E5F]">{r.reply}</p>{!r.reply_public && <div className="mt-1 text-[11.5px] text-[#5C6E80]">Faqat mijozga ko‘rinadi</div>}</div>}
       <div className="rounded-xl border border-[#E6EEF0] p-3 text-[13px]">
         <div className="mb-1 font-bold">Sharh ma’lumotlari</div>
-        {[[MessageSquare, 'Holati', <Badge key="b" tone={status(r)[1]}>{status(r)[0]}</Badge>], [User, 'Mijoz', r.who], [Building2, 'Shahar', r.city || '—'], [Phone, 'Telefon', masked(r.phone)], [CalendarDays, 'Sana', `${dmy(r.created_at)} ${hm(r.created_at)}`], r.reported && [Flag, 'Shikoyat', r.report_reason || 'Yuborilgan']].filter(Boolean).map(([I, l, v]) => <div key={l} className="flex items-center justify-between gap-2 border-b border-[#EEF3F4] py-2 last:border-0"><span className="flex items-center gap-2 text-[#5C6E80]"><I className="size-4 text-[#0F766E]" />{l}</span><span className="text-right">{v}</span></div>)}
+        {[[MessageSquare, 'Holati', <Badge key="b" tone={status(r)[1]}>{status(r)[0]}</Badge>], [User, 'Mijoz', r.who], [Building2, 'Shahar', r.city || '—'], [Phone, 'Telefon', masked(r.phone)], [CalendarDays, 'Sana', `${formatDateUz(r.created_at)} ${hm(r.created_at)}`], r.reported && [Flag, 'Shikoyat', r.report_reason || 'Yuborilgan']].filter(Boolean).map(([I, l, v]) => <div key={l} className="flex items-center justify-between gap-2 border-b border-[#EEF3F4] py-2 last:border-0"><span className="flex items-center gap-2 text-[#5C6E80]"><I className="size-4 text-[#0F766E]" />{l}</span><span className="text-right">{v}</span></div>)}
       </div>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <Btn icon={MessageSquare} onClick={() => setReply(r)} className="md:order-2">{r.reply ? 'Javobni tahrirlash' : 'Javob yozish'}</Btn>
@@ -155,7 +155,7 @@ export default function Sharhlar() {
       {pg.rows.length ? pg.rows.map((r) => (
         <div key={r.id} className={`${card} p-3 ${r.hidden ? 'opacity-60' : ''}`}>
           <div className="flex gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#F0FDFA] text-[15px] font-bold text-[#0F766E]">{initials(r.who)}</span>
-            <button type="button" onClick={() => openDetail(r)} className="min-w-0 flex-1 text-left"><div className="truncate text-[15px] font-bold">{r.who}</div><div className="text-[12.5px] text-[#0F766E]">{r.city || r.o?.code || ''}</div><div className="flex items-center justify-between"><Stars value={r.rating} size="size-[16px]" /><span className="text-[12px] text-[#5C6E80]">{dmy(r.created_at)}</span></div><p className="mt-1 line-clamp-3 text-[13.5px] text-[#3D4E5F]">{r.body}</p></button>
+            <button type="button" onClick={() => openDetail(r)} className="min-w-0 flex-1 text-left"><div className="truncate text-[15px] font-bold">{r.who}</div><div className="text-[12.5px] text-[#0F766E]">{r.city || r.o?.code || ''}</div><div className="flex items-center justify-between"><Stars value={r.rating} size="size-[16px]" /><span className="text-[12px] text-[#5C6E80]">{formatDateUz(r.created_at)}</span></div><p className="mt-1 line-clamp-3 text-[13.5px] text-[#3D4E5F]">{r.body}</p></button>
             <Menu items={items(r)} /></div>
           {r.reply && <div className="ml-14 mt-2 rounded-lg bg-[#F0FDFA] p-2 text-[12.5px] text-[#3D4E5F]"><CornerDownRight className="mr-1 inline size-3.5 text-[#0F766E]" />{r.reply}</div>}
           <div className="mt-2 flex items-center gap-3 border-t border-[#EEF3F4] pt-2"><ProductThumb src={r.p?.image_url} className="h-11 w-16 shrink-0" /><div className="min-w-0 flex-1 text-[13px]"><div className="truncate">{r.p?.name || '—'}</div><div className="text-[#5C6E80]">{r.p ? som(r.p.price) : ''}</div></div>{r.reply ? <span className="flex items-center gap-1 text-[12.5px] text-[#0F766E]"><Check className="size-4" />Javob berilgan</span> : <Btn size="sm" variant="outline" icon={MessageSquare} onClick={() => setReply(r)}>Javob yozish</Btn>}</div>
@@ -189,7 +189,7 @@ export default function Sharhlar() {
               <Td><div className="truncate text-[12.5px] font-semibold">{r.who}</div><div className="text-[11.5px] text-[#5C6E80]">{r.city}</div></Td>
               <Td><Stars value={r.rating} size="size-[14px]" /></Td>
               <Td><p className="line-clamp-2 text-[12.5px] text-[#3D4E5F]">{r.body || '—'}</p>{r.reply && <div className="mt-1.5 rounded-lg bg-[#F0FDFA] p-2 text-[11.5px]"><div className="flex items-center gap-1 font-semibold text-[#0F766E]"><CornerDownRight className="size-3.5" />Sizning javobingiz</div><p className="line-clamp-2 text-[#3D4E5F]">{r.reply}</p></div>}</Td>
-              <Td className="text-[12px] text-[#5C6E80]">{dmy(r.created_at)}<br />{hm(r.created_at)}</Td>
+              <Td className="text-[12px] text-[#5C6E80]">{formatDateUz(r.created_at)}<br />{hm(r.created_at)}</Td>
               <Td><div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                 {r.reply ? <span className="flex h-8 items-center gap-1 rounded-lg bg-[#F0FDFA] px-2.5 text-[12px] text-[#0F766E]"><Check className="size-4" />Javob berilgan</span> : <Btn size="sm" variant={r === pg.rows.find((x) => !x.reply) ? 'primary' : 'outline'} icon={MessageSquare} onClick={() => setReply(r)}>Javob yozish</Btn>}
                 <Btn size="sm" variant="outline" icon={Flag} disabled={r.reported} onClick={() => setReport(r)}>{r.reported ? 'Yuborilgan' : 'Shikoyat'}</Btn>

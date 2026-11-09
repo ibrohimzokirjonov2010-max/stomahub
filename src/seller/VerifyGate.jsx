@@ -5,6 +5,7 @@ import { canUseSeller, useSession } from '../sessionStore'
 import StepForm from '../apply/StepForm'
 import { SELLER_APPLICATION } from '../apply/sellerConfig'
 import { loadPrefill, myApplication, removeDocs, submitApplication, uploadDoc } from '../apply/api'
+import { formatDateUz } from '../lib/dateUz'
 
 /**
  * Stage 2 gate. Approved sellers and admins see the section. Registered or unverified sellers
@@ -108,7 +109,7 @@ const Reject = ({ reason }) => reason ? <div data-testid="reject-reason" classNa
 const Summary = ({ app, label }) => (
   <dl className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-[#F4FBFA] p-3 text-left text-[13px]">
     <dt className="text-[#5C6E80]">{label}</dt><dd className="font-semibold text-[#10283F]">{app.shop_name}</dd>
-    <dt className="text-[#5C6E80]">Yuborilgan</dt><dd className="font-semibold text-[#10283F]">{new Date(app.created_at).toLocaleDateString('uz-UZ')}</dd>
+    <dt className="text-[#5C6E80]">Yuborilgan</dt><dd className="font-semibold text-[#10283F]">{formatDateUz(app.created_at)}</dd>
     <dt className="text-[#5C6E80]">Holat</dt><dd className="font-semibold text-[#B45309]">Ko‘rib chiqilmoqda</dd>
   </dl>
 )

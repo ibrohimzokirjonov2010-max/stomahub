@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { MessageSquareText, Star } from 'lucide-react'
 import Lightbox from './Lightbox'
 import { reviewImageList } from '../lib/reviewPhotos'
+import { formatDateUz } from '../lib/dateUz'
 
 function Stars({ value, size = 'size-3.5' }) {
   const n = Math.round(Number(value) || 0)
@@ -15,12 +16,6 @@ function Stars({ value, size = 'size-3.5' }) {
   )
 }
 
-function dateUz(iso) {
-  if (!iso) return ''
-  try {
-    return new Date(iso).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short', year: 'numeric' })
-  } catch { return '' }
-}
 
 /** Bitta sharh kartasi: yulduz, matn, rasmlar (bosilsa Lightbox). */
 export function ReviewCard({ review, productName, productLink }) {
@@ -31,7 +26,7 @@ export function ReviewCard({ review, productName, productLink }) {
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px]">
         <Stars value={review.rating} />
         <b className="text-ink">{review.author || 'Xaridor'}</b>
-        <span className="text-muted">{dateUz(review.created_at)}</span>
+        <span className="text-muted">{formatDateUz(review.created_at)}</span>
       </div>
       {productLink && productName && (
         <Link to={productLink} className="mt-1 block truncate text-[12px] font-medium text-[#0b6d73]">{productName}</Link>
