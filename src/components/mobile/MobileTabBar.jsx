@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Presentation, ShoppingBag, Shirt } from 'lucide-react'
+import { Presentation, ShoppingBag } from 'lucide-react'
 import { NavIcons, SectionIcons } from '../tealIcons'
 import { useCart } from '../../cart'
 import { TAB_MATCH, isTabActive } from './tabbarMatch'
@@ -15,35 +15,58 @@ const TABS = [
   { to: '/profil', label: 'Profil', icon: NavIcons.profil, match: TAB_MATCH.profil },
 ]
 
-const spring = 'left 420ms cubic-bezier(0.32, 0.72, 0, 1), width 420ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease'
+const spring =
+  'transform 420ms cubic-bezier(0.32, 0.72, 0, 1), width 420ms cubic-bezier(0.32, 0.72, 0, 1), opacity 220ms ease'
 
 export default function MobileTabBar() {
   const { pathname } = useLocation()
   const { count } = useCart()
   const listRef = useRef(null)
   const itemRefs = useRef([])
+  const labelRefs = useRef([])
   const activeIdx = useMemo(() => TABS.findIndex(({ match }) => isTabActive(pathname, match)), [pathname])
-  const [blob, setBlob] = useState({ left: 0, width: 0, ready: false })
+  const [blob, setBlob] = useState({ x: 0, width: 0, ready: false })
 
   useEffect(() => {
     const measure = () => {
       const root = listRef.current
       const el = itemRefs.current[activeIdx]
+      const labelEl = labelRefs.current[activeIdx]
       if (!root || !el || activeIdx < 0) {
         setBlob((b) => ({ ...b, ready: false, width: 0 }))
         return
       }
       const rr = root.getBoundingClientRect()
       const er = el.getBoundingClientRect()
-      // Pill ichida biroz qisqaroq "suv" — icon+label atrofida
-      const pad = 6
-      setBlob({ left: er.left - rr.left + pad, width: Math.max(44, er.width - pad * 2), ready: true })
+      // Label content width (no truncate) + icon; blob wraps both with pad
+      const labelW = labelEl ? Math.ceil(labelEl.scrollWidth) : 0
+      const iconEl = el.querySelector('[data-tab-icon]')
+      const iconW = iconEl ? Math.ceil(iconEl.getBoundingClientRect().width) : 22
+      const contentW = Math.max(labelW, iconW)
+      // Comfortable horizontal pad; shrink slightly on very narrow cells
+      const cellW = er.width
+      const padX = cellW < 64 ? 6 : 8
+      let width = contentW + padX * 2
+      // Prefer fitting label fully; at 360 may nearly touch pill edge
+      const edge = 2
+      const maxW = rr.width - edge * 2
+      width = Math.min(Math.max(width, 48), maxW)
+      // Center under the tab cell, then clamp into pill
+      let x = er.left - rr.left + (cellW - width) / 2
+      x = Math.max(edge, Math.min(x, rr.width - edge - width))
+      setBlob({ x, width, ready: true })
     }
     measure()
+    // Re-measure after fonts/layout settle
+    const t = requestAnimationFrame(measure)
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
     if (listRef.current && ro) ro.observe(listRef.current)
     window.addEventListener('resize', measure)
-    return () => { ro?.disconnect(); window.removeEventListener('resize', measure) }
+    return () => {
+      cancelAnimationFrame(t)
+      ro?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
   }, [activeIdx, pathname])
 
   return (
@@ -52,15 +75,16 @@ export default function MobileTabBar() {
       className="app-tabbar liquid-tabbar pointer-events-none fixed inset-x-0 bottom-0 z-40 md:hidden"
     >
       <div className="pointer-events-auto mx-3.5 overflow-hidden rounded-[28px] border border-white/70 bg-white/55 shadow-[0_8px_32px_rgb(11_31_58/0.14),inset_0_1px_0_rgb(255_255_255/0.75)] backdrop-blur-[22px] backdrop-saturate-[180%] [-webkit-backdrop-filter:blur(22px)_saturate(180%)]">
-        <ul ref={listRef} className="relative grid h-[var(--bottom-nav-h)] grid-cols-5 px-1">
+        <ul ref={listRef} className="relative grid h-[var(--bottom-nav-h)] grid-cols-5 px-0.5">
           <span
             aria-hidden="true"
-            className="liquid-tabbar-blob pointer-events-none absolute top-1.5 bottom-1.5 rounded-[22px] bg-[#0F766E]/14 shadow-[inset_0_1px_0_rgb(255_255_255/0.55),0_1px_8px_rgb(15_118_110/0.12)]"
+            className="liquid-tabbar-blob pointer-events-none absolute top-1.5 bottom-1.5 left-0 rounded-[20px] bg-[#0F766E]/14 shadow-[inset_0_1px_0_rgb(255_255_255/0.55),0_1px_8px_rgb(15_118_110/0.12)]"
             style={{
-              left: blob.left,
               width: blob.width,
+              transform: `translateX(${blob.x}px)`,
               opacity: blob.ready ? 1 : 0,
               transition: spring,
+              willChange: 'transform, width',
             }}
           />
           {TABS.map(({ to, label, icon: Icon, match, badge }, i) => {
@@ -71,10 +95,10 @@ export default function MobileTabBar() {
                 <Link
                   to={to}
                   aria-current={active ? 'page' : undefined}
-                  className="relative flex h-full flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium transition-colors duration-200"
+                  className="relative flex h-full w-full flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium leading-tight tracking-[-0.03em] transition-colors duration-200"
                   style={{ color: active ? TEAL : '#64748B' }}
                 >
-                  <span className="relative grid place-items-center">
+                  <span data-tab-icon className="relative grid place-items-center">
                     {Icon.raster ? (
                       <Icon className={`size-[22px] transition duration-200 ${active ? 'opacity-100' : 'opacity-60 grayscale-[30%]'}`} />
                     ) : (
@@ -91,7 +115,12 @@ export default function MobileTabBar() {
                       </span>
                     )}
                   </span>
-                  <span className={`truncate ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+                  <span
+                    ref={(n) => { labelRefs.current[i] = n }}
+                    className={`whitespace-nowrap ${active ? 'font-semibold' : 'font-medium'}`}
+                  >
+                    {label}
+                  </span>
                 </Link>
               </li>
             )
