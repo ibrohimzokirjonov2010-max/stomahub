@@ -13,6 +13,8 @@ export function loginHref(next) {
 export function RequireAuth({ children }) {
   const session = useSession()
   const location = useLocation()
+  // Playwright skrinshotlari uchun (window.__STOMAHUB_SHOT_OWNER__)
+  if (typeof window !== 'undefined' && window.__STOMAHUB_SHOT_OWNER__) return children
   if (session.status === 'loading') {
     return <div className="grid min-h-[40vh] place-items-center text-[13px] text-ink-2" role="status">Yuklanmoqda…</div>
   }

@@ -46,41 +46,68 @@ const TAG_TEXT = { oldin: 'Oldin', keyin: 'Keyin' }
 
 export function PostImages({ p, onOpen }) {
   const im = p.images || []
-  const img = (i, cls) => (
-    <button key={im[i] + i} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} className={`relative overflow-hidden rounded-xl bg-page ${cls}`}>
-      <img src={im[i]} alt={TAG_TEXT[labelOf(p, i)] || ''} loading="lazy" className="size-full object-cover" />
-      {TAG_TEXT[labelOf(p, i)] && <span className={`absolute bottom-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${labelOf(p, i) === 'oldin' ? 'bg-[#c2410c]/85' : 'bg-[#047857]/85'}`}>{TAG_TEXT[labelOf(p, i)]}</span>}
+  if (!im.length) return null
+  // absolute img + min-h-0: panjara balandligi kontent bilan yorilib ketmasin
+  const cell = (i, cls, overlay = null) => (
+    <button key={`${im[i]}-${i}`} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} className={`relative min-h-0 min-w-0 overflow-hidden rounded-xl bg-page ${cls}`}>
+      <img src={im[i]} alt={TAG_TEXT[labelOf(p, i)] || ''} loading="lazy" className="absolute inset-0 size-full object-cover" />
+      {TAG_TEXT[labelOf(p, i)] && <span className={`absolute bottom-1.5 left-1.5 z-[1] rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${labelOf(p, i) === 'oldin' ? 'bg-[#c2410c]/85' : 'bg-[#047857]/85'}`}>{TAG_TEXT[labelOf(p, i)]}</span>}
+      {overlay}
     </button>
   )
-  if (!im.length) return null
   const idx = im.map((_, i) => i)
   const before = idx.filter((i) => labelOf(p, i) === 'oldin')
   const after = idx.filter((i) => labelOf(p, i) === 'keyin')
   if (before.length && after.length) {
     const rest = idx.filter((i) => !before.includes(i) && !after.includes(i))
-    const col = (title, list, tone) => (
-      <div className="min-w-0">
-        <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${tone}`}>{title}</p>
-        <div className="grid gap-1.5">{list.map((i) => img(i, list.length > 1 ? 'h-[84px]' : 'h-[132px]'))}</div>
-      </div>
-    )
+    const shownRest = rest.slice(0, 3)
+    const moreRest = rest.length - shownRest.length
+    const col = (title, list, tone) => {
+      const shown = list.slice(0, 2)
+      const more = list.length - shown.length
+      return (
+        <div className="min-w-0 overflow-hidden">
+          <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${tone}`}>{title}</p>
+          <div className="grid gap-1.5 overflow-hidden">
+            {shown.map((i, k) => cell(i, list.length > 1 ? 'aspect-[4/3]' : 'aspect-[4/3]', more > 0 && k === shown.length - 1 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[16px] font-bold text-white">+{more}</span> : null))}
+          </div>
+        </div>
+      )
+    }
     return (
-      <div>
-        <div className="grid grid-cols-2 gap-2">{col('Oldin', before, 'text-[#c2410c]')}{col('Keyin', after, 'text-[#047857]')}</div>
-        {rest.length > 0 && <div className="mt-1.5 grid grid-cols-3 gap-1.5">{rest.map((i) => img(i, 'h-[84px]'))}</div>}
+      <div className="overflow-hidden">
+        <div className="grid grid-cols-2 gap-2 overflow-hidden">{col('Oldin', before, 'text-[#c2410c]')}{col('Keyin', after, 'text-[#047857]')}</div>
+        {shownRest.length > 0 && (
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5 overflow-hidden">
+            {shownRest.map((i, k) => cell(i, 'aspect-square', moreRest > 0 && k === shownRest.length - 1 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[16px] font-bold text-white">+{moreRest}</span> : null))}
+          </div>
+        )}
       </div>
     )
   }
-  if (im.length === 2) return <div className="grid grid-cols-2 gap-1.5">{[0, 1].map((i) => img(i, 'h-[118px]'))}</div>
-  if (im.length >= 3) {
+  if (im.length === 1) return <div className="overflow-hidden">{cell(0, 'block aspect-[4/3] w-full')}</div>
+  if (im.length === 2) {
     return (
-      <div className="grid h-[150px] grid-cols-[1.25fr_1fr] gap-1.5">
-        {img(0, 'h-full')}
-        <div className="grid grid-rows-2 gap-1.5">{[1, 2].map((i) => img(i, 'h-full'))}</div>
+      <div className="grid grid-cols-2 gap-1.5 overflow-hidden">
+        {[0, 1].map((i) => cell(i, 'aspect-square'))}
       </div>
     )
   }
-  return img(0, 'block h-[170px] w-full')
+  if (im.length === 3) {
+    return (
+      <div className="grid h-[168px] grid-cols-[1.3fr_1fr] gap-1.5 overflow-hidden">
+        {cell(0, 'h-full')}
+        <div className="grid min-h-0 grid-rows-2 gap-1.5">{[1, 2].map((i) => cell(i, 'h-full'))}</div>
+      </div>
+    )
+  }
+  // 4+: 2×2, ortiqchasi "+N"
+  const more = im.length - 4
+  return (
+    <div className="grid grid-cols-2 gap-1.5 overflow-hidden">
+      {[0, 1, 2, 3].map((i) => cell(i, 'aspect-square', more > 0 && i === 3 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[18px] font-bold text-white">+{more}</span> : null))}
+    </div>
+  )
 }
 
 // To‘liq ekranli ko‘rish: barmoq bilan kattalashtirish (pinch), +/− tugmalar, ikki marta bosish,
@@ -230,14 +257,19 @@ export default function MobileCommunity() {
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase()
-    const rows = posts.filter((p) =>
+    let rows = posts.filter((p) =>
       !hidden.has(p.id) &&
       (tab === 'all' || p.kind === tab) &&
       (tab !== 'savol' || solved === 'all' || (solved === 'yes') === !!p.solved) &&
       (!onlySaved || saved.has(p.id)) &&
       (!s || `${p.title} ${p.body} ${p.author} ${p.tags.map((t) => t?.t || t).join(' ')}`.toLowerCase().includes(s)))
-    if (sort === 'top') return [...rows].sort((a, b) => b.likes - a.likes)
-    if (sort === 'talk') return [...rows].sort((a, b) => countComments(b) - countComments(a))
+    if (sort === 'top') rows = [...rows].sort((a, b) => b.likes - a.likes)
+    else if (sort === 'talk') rows = [...rows].sort((a, b) => countComments(b) - countComments(a))
+    // Playwright: 5 ta rasmli panjara skrinshoti (overflow regressiyasi)
+    if (typeof window !== 'undefined' && window.__STOMAHUB_SHOT_GRID__) {
+      const imgs = ['/images/seminars/teeth.jpg', '/images/hero-implant.jpg', '/images/hero-main.jpg', '/images/market/p2.jpg', '/images/market/g-main.jpg']
+      rows = [{ id: '__shot_grid__', author: 'Dr. Jasur Murodov', role: 'Jarroh', time: '27.10.2026', kind: 'keys', title: 'Peri-implantitda birinchi chora: konservativmi yoki jarrohlikmi?', body: 'So‘nggi kuzatuvlarda regenerativ yondashuv bilan boshlangan holatlar.', images: imgs, labels: [], likes: 12, tags: [], comments: [] }, ...rows]
+    }
     return rows
   }, [posts, hidden, tab, solved, onlySaved, saved, q, sort])
 

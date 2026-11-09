@@ -76,7 +76,7 @@ export default function Namuna() {
           {items.map((it) => (
             <div key={it.id} className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm">
               <div className="relative aspect-square bg-[#F1F5F9]">
-                {it.image_url && <img src={it.image_url} alt={it.name} loading="lazy" className="h-full w-full object-cover" />}
+                {it.image_url && <img src={it.image_url} alt={it.name} loading="lazy" className="h-full w-full object-contain p-2.5" />}
                 <span className="absolute left-2 top-2 rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-semibold text-[#92400E]">Namuna</span>
               </div>
               <div className="flex flex-1 flex-col p-3">

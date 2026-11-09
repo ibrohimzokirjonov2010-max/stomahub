@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import {Link, useSearchParams} from 'react-router-dom'
 import {
   Building2, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, CreditCard,
   Download, House, Mail, MapPin, MoreVertical, Plus, QrCode, SlidersHorizontal, Ticket,
@@ -177,8 +177,9 @@ export default function Participants() {
 function DesktopParticipants() {
   const { query, notify } = useOrg()
   const hub = useHub()
+  const [params] = useSearchParams()
   const SEMINARS = hub.seminars
-  const [seminar, setSeminar] = useState('all')
+  const [seminar, setSeminar] = useState(() => params.get('seminar') || 'all')
   const [semOpen, setSemOpen] = useState(false)
   const semRef = useRef(null)
   useDismiss(semRef, () => setSemOpen(false))
@@ -660,7 +661,8 @@ function MobileParticipants() {
   const [tab, setTab] = useState('people')
   const [chip, setChip] = useState('all')
   const [sheet, setSheet] = useState(null)
-  const [seminar, setSeminar] = useState('all')
+  const [params] = useSearchParams()
+  const [seminar, setSeminar] = useState(() => params.get('seminar') || 'all')
   const head = seminar === 'all' ? newestSeminar(hub.seminars) : (hub.seminars.find((s) => s.id === seminar) || newestSeminar(hub.seminars))
   const seats = seminar === 'all' ? hub.seminars.reduce((n, s) => n + (Number(s.seats) || 0), 0) : (head?.seats || 0)
 

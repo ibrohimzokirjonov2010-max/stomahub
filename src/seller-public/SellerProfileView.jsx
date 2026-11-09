@@ -19,7 +19,7 @@ function Stars({ value, size = 'size-3.5' }) {
 
 const Card = ({ p }) => (
   <Link to={`/product/${p.id}`} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white transition hover:shadow-card">
-    <span className="aspect-square bg-[#f3f6f9]"><img src={p.image} alt="" loading="lazy" className="size-full object-cover" /></span>
+    <span className="aspect-square bg-white"><img src={p.image} alt="" loading="lazy" className="size-full object-contain p-2.5" /></span>
     <span className="flex flex-1 flex-col p-2.5">
       <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-ink">{p.name}</span>
       <span className="mt-0.5 truncate text-[11.5px] text-muted">{p.category}</span>

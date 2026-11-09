@@ -52,12 +52,38 @@ function RegGate({ id, seminar }) {
   const navigate = useNavigate()
   const uid = session.user?.id || session.profile?.id || ''
   // Tashkilotchi o‘z seminariga ro‘yxatdan o‘ta olmaydi (do‘kondagi kabi). Server ham tekshiradi (0060).
-  if (uid && seminar.organizerId && uid === seminar.organizerId) {
+  // window.__STOMAHUB_SHOT_OWNER__ — faqat Playwright skrinshoti uchun.
+  const forceOwnerShot = typeof window !== 'undefined' && window.__STOMAHUB_SHOT_OWNER__
+  const isOwner = (uid && seminar.organizerId && uid === seminar.organizerId) || forceOwnerShot
+  // /royxat odatda data-chrome=bar (tabbar yashirin); egasi ekranida pastki nav kerak.
+  useEffect(() => {
+    if (!isOwner) return undefined
+    const root = document.documentElement
+    const prev = root.dataset.chrome
+    root.dataset.chrome = 'app'
+    return () => { root.dataset.chrome = prev || 'app' }
+  }, [isOwner])
+  if (isOwner) {
     return (
-      <div className="px-4 py-16 text-center">
-        <p className="text-[15px] font-bold text-[#0d2a4a]">Bu sizning seminaringiz</p>
-        <p className="mt-1 text-[13px] text-muted">O‘z seminaringizga ro‘yxatdan o‘ta olmaysiz. Ishtirokchilarni tashkilotchi kabinetida ko‘rasiz.</p>
-        <button type="button" onClick={() => navigate(`/seminarlar/${id}`)} className="mt-3 text-[14px] font-semibold text-sea">Seminar sahifasiga qaytish</button>
+      <div className={`min-h-dvh ${page} pb-[86px]`}>
+        <div className="px-3.5 pt-3">
+          <header className="flex items-center gap-2">
+            <button type="button" aria-label="Orqaga" onClick={() => navigate(`/seminarlar/${id}`)} className="grid size-10 place-items-center rounded-full bg-white text-sea shadow-[0_1px_4px_rgb(11_31_58/0.08)]"><ArrowLeft className="size-5" /></button>
+            <BrandLogo />
+          </header>
+          <div className={`${card} mx-auto mt-8 max-w-md p-5 text-center`}>
+            <span className="mx-auto grid size-14 place-items-center rounded-full bg-sea-50 text-sea"><Users className="size-7" /></span>
+            <p className="mt-3 text-[16px] font-bold text-[#0d2a4a]">Bu sizning seminaringiz</p>
+            <p className="mt-1.5 text-[13px] leading-snug text-muted">O‘z seminaringizga ro‘yxatdan o‘ta olmaysiz. Ishtirokchilarni tashkilotchi kabinetida ko‘rasiz.</p>
+            <button type="button" onClick={() => navigate(`/tashkilotchi/ishtirokchilar?seminar=${encodeURIComponent(id)}`)} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white">
+              <Users className="size-4" /> Ishtirokchilarni ko‘rish
+            </button>
+            <button type="button" onClick={() => navigate(`/seminarlar/${id}`)} className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-sea-50 text-[14px] font-semibold text-sea">
+              Seminar sahifasiga qaytish
+            </button>
+          </div>
+        </div>
+        <MobileTabBar />
       </div>
     )
   }

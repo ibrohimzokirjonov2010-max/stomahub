@@ -166,7 +166,7 @@ export default function MobileMarketplace() {
                 <Link to={`/product/${p.id}`} className="block">
                   <div className="relative h-[118px] overflow-hidden rounded-xl bg-[#f6f8fb]">
                     {offPercent(p) > 0 && <span className="absolute left-1.5 top-1.5 rounded-md bg-sale px-1.5 py-0.5 text-[10px] font-bold text-white">-{offPercent(p)}%</span>}
-                    <img src={p.image} alt={p.name} className="size-full object-contain mix-blend-multiply" />
+                    <img src={p.image} alt={p.name} className="size-full object-contain p-2.5 mix-blend-multiply" />
                   </div>
                   <p className="mt-2 text-[11px] text-muted">{p.brand}</p>
                   <p className="truncate text-[14px] font-bold text-ink">{p.name}</p>
@@ -198,7 +198,7 @@ export default function MobileMarketplace() {
             {list.map((p) => (
               <article key={p.id} className="relative flex gap-3 rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
                 <Link to={`/product/${p.id}`} className="relative h-[104px] w-[104px] shrink-0 overflow-hidden rounded-xl bg-[#f6f8fb]">
-                  <img src={p.image} alt={p.name} className="size-full object-contain mix-blend-multiply" />
+                  <img src={p.image} alt={p.name} className="size-full object-contain p-2.5 mix-blend-multiply" />
                   <Discount p={p} className="absolute left-1.5 top-1.5" />
                 </Link>
                 <div className="min-w-0 flex-1">
