@@ -10,6 +10,7 @@ import MobileTabBar from '../mobile/MobileTabBar'
 import ShopLayout from '../market/ShopLayout'
 import { som } from '../../marketData'
 import { useAdPlacements, trackAd, joinAds } from '../../adsApi'
+import { recordInterest } from '../../personal/interestStore'
 import { ImageSearchButton, ImageSearchDialog, ImageSearchBanner, rankByTerms, termsFrom } from './ImageSearch'
 
 /* ---------- building blocks ---------- */
@@ -343,6 +344,15 @@ export function CatalogPage({ section }) {
     }
     return fn ? [...out].sort(fn) : out
   }, [section, cat, q, values, sort, filters, vis])
+  // Qiziqish signallari (faqat Marketplace): kategoriya tanlash va qidiruv (1,2 s to‘xtagandan keyin; natija soni bilan).
+  useEffect(() => { if (section.track && cat !== 'all') recordInterest('view', { category: cat }) }, [section.track, cat])
+  const listLen = list.length
+  useEffect(() => {
+    const t = q.trim()
+    if (!section.track || t.length < 2 || vis) return undefined
+    const h = setTimeout(() => recordInterest('search', { query: t, results: listLen }), 1200)
+    return () => clearTimeout(h)
+  }, [section.track, q, vis]) // eslint-disable-line react-hooks/exhaustive-deps
   const inCat = (it) => cat === 'all' || [].concat(section.catOf(it) || []).includes(cat)
   // Qidiruvda: so‘rovga mos ko‘pi bilan 2 ta homiy mahsulot tepada
   const sponsored = useMemo(() => (adOn && q.trim() && !vis ? joinAds(adSearch, section.items, (it) => inCat(it) && norm(section.text(it)).includes(norm(q.trim())), 2) : []), [adOn, adSearch, section, q, cat, vis]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -361,6 +371,7 @@ export function CatalogPage({ section }) {
     <>
       <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => setPosting(true)} />
       <CatalogSearch value={q} onChange={setQ} placeholder={section.placeholder} onFilter={() => setAllSheet(true)} active={active} inputRef={searchRef} desktop={desktop} onImage={section.imageSearch ? () => setImgOpen(true) : undefined} />
+      {section.top && !q.trim() && !vis ? section.top : null}
       {vis ? (
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />
       ) : <HeroSlider slides={slides} desktop={desktop} />}

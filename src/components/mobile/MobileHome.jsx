@@ -20,6 +20,7 @@ import { initialsOf, looksLikeDemoName } from '../../demoPurge'
 import { pickDisplayName, useSession } from '../../sessionStore'
 import { SectionIcons, MenuIcons } from '../tealIcons'
 import UserAvatar, { realAvatar } from '../UserAvatar'
+import { SizUchun, SpecialtyPicker } from '../../personal/PersonalBlocks'
 
 const QUICK = [
   { to: '/seminarlar', label: 'Seminarlar', icon: SectionIcons.seminarlar, color: '#14a39a', bg: '#e3f6f3' },
@@ -182,6 +183,10 @@ export default function MobileHome() {
             </Link>
           ))}
         </nav>
+
+        {/* Shaxsiy: yo‘nalish tanlash (bir marta) va "Siz uchun" */}
+        <SpecialtyPicker />
+        <SizUchun />
 
 
         {/* Bugungi seminarlar */}

@@ -22,6 +22,7 @@ const SEARCH_TARGETS = [
   { q: ['tasdiq', 'moderatsiya'], to: '/admin/tasdiqlashlar', label: 'Tasdiqlashlar' },
   { q: ['moliya', 'komissiya'], to: '/admin/moliya', label: 'Moliya va komissiya' },
   { q: ['shikoyat', 'complaint'], to: '/admin/shikoyatlar', label: 'Shikoyatlar' },
+  { q: ['qiziqish', 'interest', 'qidiruv'], to: '/admin/qiziqishlar', label: 'Mijozlar qiziqishi' },
   { q: ['hisobot', 'report'], to: '/admin/hisobotlar', label: 'Hisobotlar' },
   { q: ['sozlama', 'setting'], to: '/admin/sozlamalar', label: 'Sozlamalar' },
   { q: ['mahsulot', 'product'], to: '/admin/mahsulotlar', label: 'Mahsulotlar' },

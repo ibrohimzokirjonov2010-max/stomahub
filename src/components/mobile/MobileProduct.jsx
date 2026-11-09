@@ -12,6 +12,7 @@ import { useCart } from '../../cart'
 import { profileStore, useProfile } from '../../profileStore'
 import { productById, som } from '../../marketData'
 import { useMarket } from '../../buyerApi'
+import { BirgaOlishadi, useTrackView } from '../../personal/PersonalBlocks'
 import MobileTabBar from './MobileTabBar'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
 import Lightbox from '../Lightbox'
@@ -38,6 +39,7 @@ function ProductGate({ id }) {
 
 function ProductView({ id }) {
   const p = productById(id)
+  useTrackView(p)
   const verified = useDoctorVerified()
   const uid = useSession()?.user?.id || ''
   const block = purchaseBlock(p, { uid, verified })
@@ -238,6 +240,8 @@ function ProductView({ id }) {
             ))}</dl>}
           </section>
         ))}
+
+        <BirgaOlishadi product={p} />
 
         {/* Sotuvchi */}
         <h2 className="mt-4 text-[16px] font-bold text-ink">Sotuvchi</h2>

@@ -30,6 +30,11 @@ import { products as uniforms } from '../../formaData'
 import { allAds, adsStore, useAds, PostAdSheet } from '../mobile/MobileElonlar'
 import { PostSheet } from '../mobile/MobileSurplus'
 import { imgIcon } from '../tealIcons'
+import { usePersonal } from '../../personal/usePersonal'
+import { orderForMarketplace } from '../../personal/rank.js'
+import { seminarMatches } from '../../personal/specialtyMap.js'
+import { SizUchun, SpecialtyPicker } from '../../personal/PersonalBlocks'
+import { useMobile } from '../../useMobile'
 
 /* ---- helpers ---- */
 const chipsFrom = (pairs, icons) => pairs.filter(([k]) => k !== 'all').map(([key, label]) => ({ key, label, icon: icons[key] }))
@@ -96,10 +101,15 @@ export function useFormaSection() {
 const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiyena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
 export function useMarketSection() {
   const { products, status } = useMarket()
+  const me = usePersonal()
+  const desktop = !useMobile()
   return useMemo(() => {
-    const items = products.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.seller }))
+    // Kirgan foydalanuvchi: qiziqish (ko‘rgan/qidirgan/savat/xarid) va yo‘nalish bo‘yicha standart tartib.
+    const ordered = me.authed ? orderForMarketplace(products, { signals: me.signals, specialty: me.specialty }) : products
+    const items = ordered.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.seller }))
     return {
-      key: 'marketplace', shopActive: 'market', imageSearch: true, ads: true, title: 'Marketplace', subtitle: 'Stomatologiya materiallari va asboblari — tasdiqlangan sotuvchilardan', placeholder: 'Mahsulot, brend yoki sotuvchi qidiring...',
+      key: 'marketplace', shopActive: 'market', imageSearch: true, ads: true, track: true,
+      top: me.authed ? <><SpecialtyPicker desktop={desktop} /><SizUchun desktop={desktop} /></> : null, title: 'Marketplace', subtitle: 'Stomatologiya materiallari va asboblari — tasdiqlangan sotuvchilardan', placeholder: 'Mahsulot, brend yoki sotuvchi qidiring...',
       items, loading: status === 'loading' || status === 'idle', emptyText: 'Hozircha sotuvdagi mahsulotlar yo‘q',
       cats: uniq(items.map((p) => p.category)).map((c) => ({ key: c, label: c, icon: MARKET_ICONS[c] || Package })), catOf: (p) => p.category,
       filters: [
@@ -116,15 +126,19 @@ export function useMarketSection() {
       }),
       slides: (list, scroll) => slidesFor({ title: 'Klinikangiz uchun', accent: 'hamma narsa bir joyda', text: `${list.length} ta mahsulot sotuvda`, items: list, image: (p) => p.image, href: (p) => `/product/${p.id}`, scroll }),
     }
-  }, [products, status])
+  }, [products, status, me.authed, me.signals, me.specialty, desktop])
 }
 
 const SEM_ICONS = { impl: imgIcon('seminarlar', 'implantologiya'), endo: imgIcon('seminarlar', 'endodontiya'), orto: imgIcon('seminarlar', 'ortodontiya'), estet: Sparkles, paro: Heart, surg: imgIcon('seminarlar', 'jarrohlik'), other: GraduationCap }
 const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
 export function useSeminarsSection() {
   const hub = useHub()
+  const me = usePersonal()
+  const spec = me.authed ? me.specialty : ''
   return useMemo(() => {
-    const items = publicRecords(hub).map(seminarCard).map((s) => Object.assign({}, s, { __owned: false, __title: s.title, __sub: s.dateLabel }))
+    // Yo‘nalishga mos (yakunlanmagan) seminarlar oldinda + "Sizning yo‘nalishingiz" belgisi; qolganlari o‘zgarishsiz.
+    const items = publicRecords(hub).map(seminarCard).map((s) => Object.assign({}, s, { __owned: false, __title: s.title, __sub: s.dateLabel, __mine: !!spec && !s.past && !s.cancelled && seminarMatches(s, spec) }))
+    const byDate = (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : (a.past ? -1 : 1) * String(a.startIso || a.dateKey).localeCompare(String(b.startIso || b.dateKey), undefined, { numeric: true }))
     return {
       key: 'seminarlar', shopActive: 'seminars', title: 'Seminarlar', subtitle: 'Amaliy seminarlar va master-klasslar', placeholder: 'Seminar, spiker yoki shahar qidiring...',
       items, cats: seminarChips.filter((c) => c.key !== 'all').map((c) => ({ ...c, icon: SEM_ICONS[c.key] })), catOf: (s) => s.cat,
@@ -134,13 +148,13 @@ export function useSeminarsSection() {
         { key: 'month', label: 'Oy', options: uniq(items.map((s) => s.monthKey)).sort().map((m) => [m, `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`]), match: (s, m) => s.monthKey === m },
       ],
       // Yaqinlashayotganlar sana bo‘yicha oldinda, yakunlanganlar oxirida (eng yangisi birinchi)
-      sorts: [['default', 'Sana bo‘yicha', (a, b) => (a.past !== b.past ? (a.past ? 1 : -1) : (a.past ? -1 : 1) * String(a.startIso || a.dateKey).localeCompare(String(b.startIso || b.dateKey), undefined, { numeric: true }))], ...PRICE_SORTS().slice(1)],
+      sorts: [['default', 'Sana bo‘yicha', (a, b) => (Number(b.__mine) - Number(a.__mine)) || byDate(a, b)], ...PRICE_SORTS().slice(1)],
       text: (s) => `${s.title} ${s.speaker?.name || s.speaker || ''} ${s.city} ${s.placeLabel}`,
       // seminarCard().off is derived from an invented plan oldPrice — not shown.
-      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, fit: 'contain', kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
+      card: (s) => ({ id: s.id, href: `/seminarlar/${s.id}`, image: s.image, fit: 'contain', kicker: s.tag, title: s.title, meta: [s.dateLabel, s.placeLabel], price: s.price, badge: s.past ? { text: 'Yakunlangan', tone: 'info' } : s.cancelled ? { text: 'Bekor qilingan', tone: 'info' } : s.__mine ? { text: 'Sizning yo‘nalishingiz', tone: 'new' } : s.online ? { text: 'Onlayn', tone: 'info' } : null }),
       slides: (list, scroll) => slidesFor({ title: 'Bilimingizni', accent: 'amaliyotda oshiring', text: (() => { const n = list.filter((s) => !s.past && !s.cancelled).length; return n ? `${n} ta yaqinlashayotgan seminar` : 'Yaqinlashayotgan seminarlar tez orada' })(), items: list, image: (s) => s.image, href: (s) => `/seminarlar/${s.id}`, scroll }),
     }
-  }, [hub])
+  }, [hub, spec])
 }
 
 const BOOK_ICONS = { terapiya: imgIcon('kitoblar', 'terapevtik'), endo: Syringe, impl: Bone, ortoped: imgIcon('kitoblar', 'ortopedik'), orto: imgIcon('kitoblar', 'ortodontik'), surgery: imgIcon('kitoblar', 'jarrohlik'), anatomy: Stethoscope, atlas: imgIcon('kitoblar', 'atlaslar') }

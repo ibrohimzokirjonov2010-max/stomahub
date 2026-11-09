@@ -22,6 +22,8 @@ import {
   chairsFromSettings, shiftIso, weekday, label, avatarOf,
 } from '../klinikaData'
 import { scrubClinicBoard } from '../demoPurge'
+import { SizUchun, SpecialtyPicker } from '../personal/PersonalBlocks'
+import { useMobile } from '../useMobile'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
@@ -238,6 +240,8 @@ export default function Klinika() {
             <button type="button" onClick={() => setBooking({})} className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#0F766E] px-4 text-[12.5px] font-semibold text-white hover:bg-[#0c625b]"><CalendarPlus className="size-4" /> Qabulga yozish</button>
           </div>
         </section>
+
+        <PersonalHome />
 
         <section className="klk-stats">
           <Stat icon={CalendarDays} title="Bugungi qabullar" value={todayCount} hint={chairs.length ? `${totalSlots} ta slotdan · ${load}%` : 'Kreslo sozlanmagan'} />
@@ -828,5 +832,16 @@ function OrderDialog({ item, onClose, onSave }) {
       </div>
       {item.price > 0 && <p className="mt-2 text-right text-[13px]">Taxminiy summa: <b>{som(item.price * qty)}</b></p>}
     </Dialog>
+  )
+}
+
+// Kompyuterdagi bosh sahifa (kirgan shifokor /klinika ga tushadi): yo‘nalish tanlash va "Siz uchun".
+function PersonalHome() {
+  const desktop = !useMobile()
+  return (
+    <div className="min-w-0 [&>section:first-child]:mt-0">
+      <SpecialtyPicker desktop={desktop} />
+      <SizUchun desktop={desktop} />
+    </div>
   )
 }

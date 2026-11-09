@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { marketProducts, productById, similarTo, som } from '../marketData'
 import { useMarket } from '../buyerApi'
+import { BirgaOlishadi, useTrackView } from '../personal/PersonalBlocks'
 import { useCart } from '../cart'
 import { QtyStepper } from '../components/market/CartPanel'
 import { SaleBadge, LikeButton, Rating, AddButton } from '../components/market/ProductCard'
@@ -74,6 +75,7 @@ function ProductBody({ p }) {
   const rxBlocked = block?.code === 'rx'
   const id = p.id
   const similarProducts = similarTo(p)
+  useTrackView(p)
   const [img, setImg] = useState(0)
   const [zoom, setZoom] = useState(false)
   const minQty = Math.max(1, p.minQty || 1)
@@ -280,6 +282,8 @@ function ProductBody({ p }) {
           </>
         )}
       </div>
+
+      <BirgaOlishadi product={p} desktop />
 
       {/* O'xshash mahsulotlar */}
       <div className="mb-2 mt-4 flex items-center justify-between">
