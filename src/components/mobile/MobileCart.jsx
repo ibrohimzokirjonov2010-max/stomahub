@@ -4,6 +4,7 @@ import {
   ArrowRight, Bell, ChevronLeft, FileText, Heart, Minus, Plus, ShoppingBag, ShoppingCart, Store, Trash2, Truck,
 } from 'lucide-react'
 import { useCart } from '../../cart'
+import NotificationBell from '../NotificationBell'
 import { som } from '../../marketData'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -60,10 +61,7 @@ export default function MobileCart() {
             <ShoppingCart className="size-[19px]" />
             {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
           </span>
-          <button type="button" onClick={() => setToast({ text: 'Yangi bildirishnomalar yo‘q' })} aria-label="Bildirishnomalar" className="relative grid size-10 place-items-center rounded-full bg-white text-[#0d2a4a] shadow-[0_1px_4px_rgb(11_31_58/0.08)]">
-            <Bell className="size-[19px]" />
-            <CountBadge>3</CountBadge>
-          </button>
+          <NotificationBell className="relative grid size-10 place-items-center rounded-full bg-white text-[#0d2a4a] shadow-[0_1px_4px_rgb(11_31_58/0.08)]" iconClass="size-[19px]" />
         </div>
       </header>
 

@@ -3,6 +3,7 @@ import MobileMenu, { MenuButton } from './MobileMenu'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, Bell, Check, Minus, Plus, ShoppingBag, AlertTriangle } from 'lucide-react'
 import { useCart } from '../../cart'
+import NotificationBell from '../NotificationBell'
 
 export function BrandLogo({ className = 'h-8', to = '/' }) {
   const img = <img src="/images/logo.png" alt="" className={`block w-auto object-contain ${className}`} />
@@ -36,9 +37,7 @@ export function MobileTopBar({ onSearch, onBell, search = true }) {
           <ShoppingCart className="size-[21px]" />
           {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
         </button>
-        <button type="button" onClick={onBell} aria-label="Bildirishnomalar" className="relative grid size-10 place-items-center rounded-full text-ink">
-          <Bell className="size-[21px]" />
-        </button>
+        <NotificationBell className="relative grid size-10 place-items-center rounded-full text-ink" iconClass="size-[21px]" badgeClass="ring-[#eef7f8]" />
       </div>
     </header>
   )

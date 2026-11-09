@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Bell, Menu, Camera, LogIn, LogOut, X } from 'lucide-react'
+import { Search, ChevronDown, MapPin, Heart, ShoppingCart, Menu, Camera, LogIn, LogOut, X } from 'lucide-react'
 import { Logo } from './icons'
 import { useCart } from '../cart'
 import { useProfile } from '../profileStore'
-import { fetchNotifications } from '../buyerApi'
+import NotificationBell from './NotificationBell'
 import { pickDisplayName, signOut, useSession, profileName } from '../sessionStore'
 import { looksLikeDemoName } from '../demoPurge'
 import UserAvatar, { realAvatar } from './UserAvatar'
@@ -30,19 +30,6 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
   const { pathname } = useLocation()
   const cartFrom = pathname.startsWith('/forma') ? 'forma' : pathname.startsWith('/jihoz') ? 'jihoz' : 'market'
   const [text, setText] = useState('')
-  const [unread, setUnread] = useState(0)
-  useEffect(() => {
-    let alive = true
-    if (session.status === 'authed') {
-      fetchNotifications().then((rows) => {
-        if (!alive) return
-        const n = (rows || []).filter((r) => !r.read_at && !(profile.readNotifs || []).includes(r.id)).length
-        setUnread(n)
-      }).catch(() => {})
-    } else setUnread(0)
-    return () => { alive = false }
-  }, [session.status, profile.readNotifs])
-
   useEffect(() => { setText(''); onQuery?.('') }, [placeholder])
 
   return (
@@ -113,10 +100,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
               <ShoppingCart className="size-[17px]" />
               {items.length > 0 && <Badge className="bg-sea">{items.length}</Badge>}
             </IconBtn>
-            <IconBtn label="Bildirishnomalar" onClick={() => navigate('/profil')}>
-              <Bell className="size-[17px]" />
-              {unread > 0 && <Badge className="bg-[#e11d48]">{unread > 9 ? '9+' : unread}</Badge>}
-            </IconBtn>
+            <NotificationBell className="relative grid size-8 place-items-center rounded-lg text-ink-2 transition hover:bg-page" iconClass="size-[17px]" badgeClass="!-right-1 !-top-1 !h-[15px] !min-w-[15px] !text-[9px]" />
             <IconBtn label="Sevimlilar" className="hidden sm:grid" onClick={() => navigate('/profil/sevimlilar')}><Heart className="size-[17px]" /></IconBtn>
           </>
         ) : (
@@ -126,9 +110,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
               <ShoppingCart className="size-[17px]" />
               {count > 0 && <Badge className="bg-brand">{count}</Badge>}
             </IconBtn>
-            <IconBtn label="Bildirishnomalar">
-              <Bell className="size-[17px]" />
-            </IconBtn>
+            <NotificationBell className="relative grid size-8 place-items-center rounded-lg text-ink-2 transition hover:bg-page" iconClass="size-[17px]" badgeClass="!-right-1 !-top-1 !h-[15px] !min-w-[15px] !text-[9px]" />
           </>
         )}
 

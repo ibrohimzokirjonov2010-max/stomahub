@@ -1,4 +1,5 @@
 import { useMarket } from '../buyerApi'
+import { useNotifications } from '../notificationsStore'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import MapPicker, { MapPreview } from '../components/MapPicker'
@@ -139,8 +140,9 @@ function Board({ initial }) {
   const [walletForm, setWalletForm] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notifTick, setNotifTick] = useState(0)
+  const liveNotifs = useNotifications() // yangi bildirishnoma kelsa ro‘yxat darhol yangilansin
 
-  const notifRes = useRemote(() => (profile.accountLive ? fetchNotifications() : Promise.resolve([])), [profile.accountLive, notifTick])
+  const notifRes = useRemote(() => (profile.accountLive ? fetchNotifications() : Promise.resolve([])), [profile.accountLive, notifTick, liveNotifs.items.length])
   const unread = (notifRes.data || []).filter((n) => !n.read_at && !(profile.readNotifs || []).includes(n.id)).length
 
   useEffect(() => { setTab(initial) }, [initial])

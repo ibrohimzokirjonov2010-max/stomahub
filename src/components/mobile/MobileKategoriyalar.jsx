@@ -6,6 +6,7 @@ import {
   BriefcaseBusiness, LayoutGrid, Store, Tag, BadgePercent, Package, CalendarDays, BookOpen, Wrench, Users, Newspaper, Briefcase, Award, ArrowLeft, Stethoscope, Megaphone, UserRound, CalendarClock, Wallet, Warehouse,
 } from 'lucide-react'
 import { useCart } from '../../cart'
+import NotificationBell from '../NotificationBell'
 import { BrandLogo, CountBadge, MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
@@ -192,9 +193,7 @@ export function HubTopBar({ onBell, onBack }) {
             <ShoppingCart className="size-[22px]" />
             {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
           </button>
-          <button type="button" onClick={onBell} aria-label="Bildirishnomalar" className={iconBtn}>
-            <Bell className="size-[22px]" />
-          </button>
+          <NotificationBell className={iconBtn} iconClass="size-[22px]" />
         </div>
       </header>
       {menu && <MenuDrawer onClose={() => setMenu(false)} />}

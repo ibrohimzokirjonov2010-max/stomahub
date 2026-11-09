@@ -9,6 +9,7 @@ import { seminarChips, seminarCard, seminarPrice, som } from '../../seminarsData
 import { publicRecords, useHub } from '../../hubStore'
 import HubNotice from '../HubNotice'
 import { useCart } from '../../cart'
+import NotificationBell from '../NotificationBell'
 import { BrandLogo, MobileToast, CountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { SHOWCASE_SAVED, useSeminarStore, toggleSaved } from './seminarStore'
@@ -58,9 +59,7 @@ export function SeminarTopBar({ onCalendar, onBell }) {
           <ShoppingCart className="size-[19px]" />
           {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
         </button>
-        <button type="button" onClick={onBell} aria-label="Bildirishnomalar" className={btn}>
-          <Bell className="size-[19px]" />
-        </button>
+        <NotificationBell className={btn} iconClass="size-[19px]" />
       </div>
     </header>
   )
