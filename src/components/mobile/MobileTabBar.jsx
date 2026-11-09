@@ -5,7 +5,7 @@ import { NavIcons, SectionIcons } from '../tealIcons'
 const TABS = [
   { to: '/', label: 'Bosh sahifa', icon: NavIcons.home, match: ['/', '/ishlar', '/ustalar'] },
   { to: '/seminarlar', label: 'Seminarlar', icon: Presentation, match: ['/seminarlar'] },
-  { to: '/marketplace', label: 'Marketplace', icon: ShoppingBag, match: ['/marketplace', '/product', '/ortiqcha', '/jihozlar', '/kategoriyalar', '/brendlar', '/kitoblar', '/sertifikatlar', '/mutaxassislar', '/elonlar', '/buyurtma'] },
+  { to: '/marketplace', label: 'Marketplace', icon: ShoppingBag, match: ['/marketplace', '/product', '/dokon', '/ortiqcha', '/jihozlar', '/kategoriyalar', '/brendlar', '/kitoblar', '/sertifikatlar', '/mutaxassislar', '/elonlar', '/buyurtma'] },
   { to: '/forma', label: 'Forma', icon: SectionIcons.forma, match: ['/forma'] },
   { to: '/profil', label: 'Profil', icon: NavIcons.profil, match: ['/profil', '/klinika', '/community', '/bemorlar', '/uchrashuvlar', '/tolovlar', '/ombor'] },
 ]
