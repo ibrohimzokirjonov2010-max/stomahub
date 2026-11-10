@@ -172,6 +172,19 @@ export const setOrderStatus = (id, status, reason = '') =>
 export const setTrackingUrl = (id, url) =>
   run(supabase.rpc('seller_set_tracking_url', { p_order: id, p_url: url || '' }))
 
+// 0067: yetkazib berish xizmati, kuzatuv linki, kuryer (sotuvchi kiritadi). Tekshiruv — bazada.
+export const setDelivery = (id, v) =>
+  run(supabase.rpc('seller_set_delivery', {
+    p_order: id, p_service: v.service, p_url: (v.url || '').trim(),
+    p_courier_name: (v.name || '').trim(), p_courier_phone: (v.phone || '').trim(), p_eta: (v.eta || '').trim(),
+  }))
+/** «Yetkazilmoqda»: avval yetkazish ma’lumoti, so‘ng holat (holat tekshiruvlari odatdagidek guard’da). */
+export async function shipOrder(id, v) {
+  const r = await setDelivery(id, v)
+  if (!r.ok) return r
+  return setOrderStatus(id, 'yetkazilmoqda')
+}
+
 export const addProduct = (v) => run(supabase.from('seller_products').insert({
   seller_id: uid(), name: v.name.trim(), sku: v.sku || '', category: v.category || '', price: Number(v.price) || 0, stock: Number(v.stock) || 0, image_url: v.image_url || '',
 }).select().single())

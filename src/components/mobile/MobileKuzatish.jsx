@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Bell, CalendarDays, Check, ChevronRight, CircleX, Headset, House, Menu, MessageCircleMore, MessagesSquare, Phone, ReceiptText,
-  ExternalLink, SendHorizontal, ShoppingBag, ShoppingCart, Star, Store, Truck, UserRound,
+  SendHorizontal, ShoppingBag, ShoppingCart, Star, Store, Truck, UserRound,
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
@@ -12,6 +12,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { MenuDrawer } from './MobileKategoriyalar'
 import { DetailSheet, timeline } from './MobileBuyurtmalar'
+import CourierCard from '../CourierCard'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
@@ -139,7 +140,7 @@ export default function MobileKuzatish() {
   const time = at.split(' ').pop()
   const own = profile.orders.some((o) => o.id === order.id)
   const canCancel = own && order.dbStatus === 'yangi'
-  const contact = pickup ? SHOP : order.status === 'shipping' || order.status === 'delivered' ? COURIER : OPERATOR
+  const contact = pickup ? SHOP : !order.live && (order.status === 'shipping' || order.status === 'delivered') ? COURIER : OPERATOR
   const ContactIcon = contact.icon || Headset
   const extra = order.items.length - 5
 
@@ -216,22 +217,11 @@ export default function MobileKuzatish() {
           </ol>
         </section>
 
-        <MapCard order={order} p={order.status === 'delivered' ? 1 : p} minutes={minutes} live={live} />
+        <CourierCard order={order} className="mt-2.5" />
 
-        {order.trackingUrl ? (
-          <section className={`${card} mt-2.5 p-3`}>
-            <p className={`text-[14px] font-bold ${navy}`}>Yandex yetkazish</p>
-            <p className="mt-1 text-[12px] text-[#7a8a9c]">Sotuvchi Yandex Go / Delivery kuzatuv havolasini joylashtirdi.</p>
-            <a
-              href={order.trackingUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white"
-            >
-              <ExternalLink className="size-4" /> Yandexda kuzatish
-            </a>
-          </section>
-        ) : null}
+        {/* Haqiqiy yo‘ldagi buyurtma: jonli joylashuv faqat kuzatuv linkida — taxminiy animatsion xarita ko‘rsatilmaydi */}
+        {!(order.live && live) && <MapCard order={order} p={order.status === 'delivered' ? 1 : p} minutes={minutes} live={live} />}
+
 
         <section className={`${card} mt-2.5 flex items-center gap-2.5 p-3`}>
           {contact.photo

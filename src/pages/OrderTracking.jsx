@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Check, ExternalLink, Package, Truck } from 'lucide-react'
+import { Check, Package, Truck } from 'lucide-react'
 import { som } from '../marketData'
 import { allOrders, profileStore, useProfile } from '../profileStore'
 import { timeline } from '../components/mobile/MobileBuyurtmalar'
+import CourierCard from '../components/CourierCard'
 
 const STATUS = { new: 'Qabul qilindi', shipping: 'Yo‘lda', delivered: 'Yetkazildi', cancelled: 'Bekor qilindi' }
 
@@ -57,10 +58,8 @@ export default function OrderTracking() {
               ))}
             </ol>
           )}
-          {order.trackingUrl && (
-            <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sea">Yetkazib berish xizmatida kuzatish <ExternalLink className="size-4" /></a>
-          )}
-          <p className="mt-4 text-[12px] text-muted">Yetkazib berish: sotuvchi bilan kelishiladi</p>
+          <CourierCard order={order} className="mt-4" />
+          {order.status !== 'shipping' && <p className="mt-4 text-[12px] text-muted">Yetkazib berish: sotuvchi bilan kelishiladi</p>}
         </section>
         <aside className="rounded-xl bg-white p-5 shadow-card">
           <h2 className="text-[15px] font-bold">Mahsulotlar</h2>

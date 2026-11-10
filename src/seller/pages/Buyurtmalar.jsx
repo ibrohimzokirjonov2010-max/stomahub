@@ -1,6 +1,7 @@
 import { tashkentToday } from '../../tashkentDate'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { needsDeliveryForm } from '../../lib/deliveryTracking'
 import { Plus, Filter, Eye, CalendarDays, SlidersHorizontal, ChevronRight, UserRound, Phone, ShoppingCart, ClipboardList, Truck, Box, FileText, CircleCheck, CircleX, Download } from 'lucide-react'
 import { useSellerData, setOrderStatus, netOf, csvDownload } from '../api'
 import { num, som, dmy, hm, itemVariantText } from '../format'
@@ -65,9 +66,15 @@ export default function Buyurtmalar() {
   const allSel = pg.rows.length > 0 && pg.rows.every((o) => sel.has(o.id))
 
   async function bulkNext() {
-    let ok = 0; const ids = [...sel]
-    for (const id of ids) { const o = orders.find((x) => x.id === id); if (o && O_NEXT[o.status]) { const r = await setOrderStatus(id, O_NEXT[o.status][0]); if (r.ok) ok++ } }
-    toast(`${ok} ta buyurtma keyingi bosqichga o‘tkazildi`); setSel(new Set())
+    let ok = 0; let skip = 0; const ids = [...sel]
+    for (const id of ids) {
+      const o = orders.find((x) => x.id === id)
+      if (!o || !O_NEXT[o.status]) continue
+      // «Yetkazilmoqda» uchun har bir buyurtmaga kuzatuv linki/kuryer alohida kiritiladi
+      if (O_NEXT[o.status][0] === 'yetkazilmoqda' && needsDeliveryForm(o)) { skip++; continue }
+      const r = await setOrderStatus(id, O_NEXT[o.status][0]); if (r.ok) ok++
+    }
+    toast(`${ok} ta buyurtma keyingi bosqichga o‘tkazildi${skip ? `. ${skip} tasini yetkazishga topshirish uchun kuzatuv linkini buyurtma ichida kiriting` : ''}`); setSel(new Set())
   }
   const exportCsv = () => csvDownload('buyurtmalar.csv', [['Raqam', 'Sana', 'Xaridor', 'Telefon', 'Mahsulotlar', 'Summa', 'Komissiya', 'Sizga', 'Holat'],
     ...list.map((o) => [o.code, `${dmy(o.created_at)} ${hm(o.created_at)}`, o.customer_name, phoneOf(o), o.items.reduce((s, i) => s + i.qty, 0), total(o), o.commission, o.payout, O_LABEL[o.status]])])
@@ -83,7 +90,7 @@ export default function Buyurtmalar() {
   const exportBtns = (size = 'sm') => <div className="flex gap-2"><Btn size={size} variant="gray" icon={Download} onClick={exportXlsx}>Excel</Btn><Btn size={size} variant="gray" icon={Download} onClick={export1C}>1C (CSV)</Btn><Btn size={size} variant="gray" icon={Download} onClick={exportCsv}>CSV</Btn></div>
   const items = (o) => [
     ['Ko‘rish', () => navigate(`/sotuvchi/buyurtmalar/${o.id}`), Eye],
-    O_NEXT[o.status] && [O_NEXT[o.status][1], async () => { const r = await setOrderStatus(o.id, O_NEXT[o.status][0]); toast(r.ok ? `Holat: ${O_LABEL[O_NEXT[o.status][0]]}` : r.error) }, ChevronRight],
+    O_NEXT[o.status] && [O_NEXT[o.status][1], async () => { if (O_NEXT[o.status][0] === 'yetkazilmoqda' && needsDeliveryForm(o)) { navigate(`/sotuvchi/buyurtmalar/${o.id}?ship=1`); return } const r = await setOrderStatus(o.id, O_NEXT[o.status][0]); toast(r.ok ? `Holat: ${O_LABEL[O_NEXT[o.status][0]]}` : r.error) }, ChevronRight],
     o.status !== 'bekor_qilindi' && o.status !== 'yetkazildi' && ['Bekor qilish', () => navigate(`/sotuvchi/buyurtmalar/${o.id}?cancel=1`), CircleX],
   ]
 
