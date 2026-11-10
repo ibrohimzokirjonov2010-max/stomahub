@@ -129,6 +129,7 @@ const NotifyShot = import.meta.env.DEV ? lazy(() => import('./dev/NotifyShot')) 
 const EscrowShot = import.meta.env.DEV ? lazy(() => import('./dev/EscrowShot')) : null
 const ReviewPhotosShot = import.meta.env.DEV ? lazy(() => import('./dev/ReviewPhotosShot')) : null
 const FormaShot = import.meta.env.DEV ? lazy(() => import('./dev/FormaShot')) : null
+const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -195,6 +196,7 @@ export default function App() {
           {NotifyShot && <Route path="/notify-shot/:mode" element={<Suspense fallback={null}><NotifyShot /></Suspense>} />}
           {EscrowShot && <Route path="/escrow-shot/:who" element={<Suspense fallback={null}><EscrowShot /></Suspense>} />}
           {FormaShot && <Route path="/forma-shot/:sec/:id?" element={<Suspense fallback={null}><FormaShot /></Suspense>} />}
+          {IconSheet && <Route path="/icon-sheet" element={<Suspense fallback={null}><IconSheet /></Suspense>} />}
           {ReviewPhotosShot && <Route path="/review-photos-shot/:sec" element={<Suspense fallback={null}><ReviewPhotosShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />

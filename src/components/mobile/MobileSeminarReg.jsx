@@ -18,6 +18,7 @@ import { downloadIcs } from './MobileSeminar'
 import { register, useSeminarStore } from './seminarStore'
 import { useSession, profileName } from '../../sessionStore'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
+import SeminarPosterFrame from '../SeminarPosterFrame'
 
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', 'Farg‘ona', 'Qarshi', 'Nukus', 'Urganch', 'Termiz']
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Endodontist', 'Parodontolog', 'Bolalar stomatologi', 'Gigiyenist', 'Talaba']
@@ -441,10 +442,11 @@ function Steps({ step }) {
 }
 
 function SeminarCard({ s, m }) {
+  const meta = [s.speaker?.name, m.when, m.place].filter(Boolean).join(' · ')
   return (
-    <div className={`${card} mt-2 flex gap-3 p-2.5`}>
-      <div className="relative w-[40%] shrink-0 self-stretch overflow-hidden rounded-xl bg-[#f1f5f7]"><img src={s.image} alt="" className="absolute inset-0 h-full w-full object-cover" /></div>
-      <div className="min-w-0 flex-1">
+    <div className={`${card} mt-2 overflow-hidden p-2.5`}>
+      <SeminarPosterFrame src={s.image} alt="" imgClassName="max-h-[200px]" />
+      <div className="min-w-0 pt-2">
         <div className="flex flex-wrap items-center gap-1">
           <span className="rounded-full bg-[#e3f4f1] px-2 py-0.5 text-[9.5px] font-medium text-[#0b6d73]">{s.catName}</span>
           <span className="ml-auto flex gap-1">
@@ -453,14 +455,10 @@ function SeminarCard({ s, m }) {
           </span>
         </div>
         <p className="mt-1 line-clamp-2 text-[14.5px] font-bold leading-tight text-[#0d2a4a]">{s.title}</p>
-        <p className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-ink-2"><UserRound className="size-3.5 shrink-0" /> <span className="truncate">{s.speaker.name}</span></p>
-        <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-2"><CalendarDays className="size-3.5 shrink-0" /> {m.when}</p>
-        <div className="mt-0.5 flex items-end justify-between gap-1">
-          <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-2"><MapPin className="size-3.5 shrink-0" /> <span className="truncate">{m.place}</span></p>
-        </div>
-        <div className="mt-1 text-right">
-          <p className="text-[14.5px] font-extrabold leading-none text-[#0b6d73]">{seminarPrice(s.price)}</p>
+        <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-ink-2">{meta}</p>
+        <div className="mt-1.5 flex items-baseline justify-between gap-2">
           <p className="text-[9.5px] text-muted">Boshlang‘ich narx</p>
+          <p className="shrink-0 text-[14.5px] font-extrabold leading-none text-[#0b6d73]">{seminarPrice(s.price)}</p>
         </div>
       </div>
     </div>

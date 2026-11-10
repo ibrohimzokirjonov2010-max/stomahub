@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, Check, X, LayoutGrid, Tag } from 'lucide-react'
+import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, Check, X, Tag } from 'lucide-react'
 import CardQtyStepper, { useCardQty } from '../CardQtyStepper'
 import { useMobile } from '../../useMobile'
 import { ensureLogin } from '../../loginPrompt'
@@ -13,6 +13,8 @@ import { useAdPlacements, trackAd, joinAds } from '../../adsApi'
 import { recordInterest } from '../../personal/interestStore'
 import { ImageSearchButton, ImageSearchDialog, ImageSearchBanner, rankByTerms, termsFrom } from './ImageSearch'
 import { demoCard } from '../../demoContent'
+import { CategoryTile, iconById } from '../../icons/categoryIcons'
+import { FALLBACK_ICON } from '../../icons/categoryIconMap'
 
 /* ---------- building blocks ---------- */
 
@@ -147,20 +149,16 @@ function Slide({ s, desktop }) {
 
 /** cats: [{ key, label, icon }] — 'all' (Barchasi) is always prepended. */
 export function CategoryChips({ cats, value, onChange, desktop }) {
-  const all = [{ key: 'all', label: 'Barchasi', icon: LayoutGrid }, ...cats]
+  const all = [{ key: 'all', label: 'Barchasi', icon: iconById('all') }, ...cats]
   return (
     <div data-testid="catalog-chips" className={`mt-3 flex gap-2.5 overflow-x-auto pb-1 no-scrollbar ${desktop ? '' : '-mx-3.5 px-3.5'}`}>
-      {all.map(({ key, label, icon: Icon = Tag }) => {
+      {all.map(({ key, label, icon }) => {
         const on = value === key
-        const raster = !!Icon.raster
-        const tone = raster
-          ? (on ? 'bg-[#e6f4f1] ring-2 ring-sea shadow-[0_6px_14px_-6px_rgb(11_138_149/0.7)]' : 'border border-line/70 bg-white')
-          : (on ? 'bg-sea text-white shadow-[0_6px_14px_-6px_rgb(11_138_149/0.7)]' : 'border border-line/70 bg-white text-[#1f5fa8]')
+        // Yagona uslub: barcha bo‘limlarda bir xil teal plitka (src/icons/categoryIcons.jsx)
+        const Icon = icon && !icon.raster ? icon : iconById(FALLBACK_ICON)
         return (
-          <button key={key} type="button" aria-pressed={on} onClick={() => onChange(on && key !== 'all' ? 'all' : key)} className={`flex shrink-0 flex-col items-center gap-1 ${desktop ? 'w-[92px]' : 'w-[64px]'}`}>
-            <span className={`grid place-items-center rounded-2xl transition ${desktop ? 'size-[64px]' : 'size-[54px]'} ${tone}`}>
-              <Icon className={raster ? (desktop ? 'size-[40px]' : 'size-[36px]') : (desktop ? 'size-[28px]' : 'size-[26px]')} strokeWidth={1.5} />
-            </span>
+          <button key={key} type="button" aria-pressed={on} title={label} onClick={() => onChange(on && key !== 'all' ? 'all' : key)} className={`flex shrink-0 flex-col items-center gap-1 ${desktop ? 'w-[92px]' : 'w-[64px]'}`}>
+            <CategoryTile icon={Icon} active={on} size={desktop ? 'lg' : 'md'} />
             <span className={`w-full truncate text-center ${desktop ? 'text-[12px]' : 'text-[10.5px]'} ${on ? 'font-semibold text-sea' : 'text-ink-2'}`}>{label}</span>
           </button>
         )
