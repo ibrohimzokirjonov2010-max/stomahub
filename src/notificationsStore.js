@@ -107,6 +107,9 @@ export function getNotifications() {
 export function __setNotificationsForDemo(items, uid = 'demo') {
   commit({ uid, items, loaded: true, live: true })
 }
+export function __setLoadingForDemo(uid = 'demo') {
+  commit({ uid, items: [], loaded: false, live: false })
+}
 export function __announceForDemo(row) {
   commit({ items: mergeNotification(state.items, row) })
   toastListeners.forEach((l) => l(row, 1))
