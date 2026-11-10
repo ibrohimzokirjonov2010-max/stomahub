@@ -22,7 +22,7 @@ import { cats as FORMA_KINDS, genders as FORMA_GENDERS, fabrics as FORMA_FABRICS
 const NEW_COLS = ['clinical_use', 'delivery_info', 'reorder', 'variant_type', 'uom', 'min_qty', 'price_tiers', 'reg_cert_no', 'lot_no', 'storage_temp', 'forma', 'jihoz']
 const FORMA_BLANK = { cat: 'scrub', gender: 'uni', fabric: '', size_type: 'clothing', kashta_on: false, kashta_price: '' }
 // 0065: Jihozlar bo‘limi (faqat yangi uskunalar — holat maydoni yo‘q)
-const JIHOZ_BLANK = { cat: 'unit', model: '', year: '', warranty: '12', city: 'Toshkent', install: false, lizing: false }
+const JIHOZ_BLANK = { cat: 'unit', model: '', year: '', warranty: '12', city: 'Toshkent', install: false }
 const blank = {
   name: '', category: '', brand: '', country: '', description: '', price: '', stock: '', sku: '', expires_on: '', unit: '', images: [], variants: [], documents: [],
   specs: [], clinical_use: '', delivery_info: '', reorder_enabled: false, reorder_days: 30, variant_type: 'rang', uom: 'dona', min_qty: '1', price_tiers: [],
@@ -61,7 +61,7 @@ export function fromProduct(product) {
 
 function fromJihoz(j) {
   const x = j && typeof j === 'object' ? j : {}
-  return { ...JIHOZ_BLANK, cat: x.cat || 'unit', model: x.model || '', year: x.year ? String(x.year) : '', warranty: String(x.warranty ?? 12), city: x.city || 'Toshkent', install: !!x.install, lizing: !!x.lizing }
+  return { ...JIHOZ_BLANK, cat: x.cat || 'unit', model: x.model || '', year: x.year ? String(x.year) : '', warranty: String(x.warranty ?? 12), city: x.city || 'Toshkent', install: !!x.install }
 }
 
 function fromForma(f) {
@@ -108,7 +108,7 @@ export function toRow(v) {
     // 0065: Jihozlar bo‘limi ma’lumoti (faqat «Stomatologik jihozlar» kategoriyasida; hammasi yangi)
     jihoz: isJihozCategory(v.category) ? {
       cat: v.jihoz?.cat || 'unit', model: String(v.jihoz?.model || '').trim(), year: Math.round(toNum(v.jihoz?.year)) || null,
-      warranty: Math.max(0, Math.round(toNum(v.jihoz?.warranty))), city: v.jihoz?.city || '', install: !!v.jihoz?.install, lizing: !!v.jihoz?.lizing,
+      warranty: Math.max(0, Math.round(toNum(v.jihoz?.warranty))), city: v.jihoz?.city || '', install: !!v.jihoz?.install,
     } : {},
   }
 }
@@ -391,10 +391,6 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
             <div className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
               <Toggle checked={!!jz.install} onChange={setJ('install')} />
               <div className="flex-1"><div className="text-[13.5px] font-semibold text-[#10283F]">O‘rnatish narxga kiradi</div><div className={sub}>Klinikada o‘rnatish va sozlashni o‘zingiz bajarasiz</div></div>
-            </div>
-            <div className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
-              <Toggle checked={!!jz.lizing} onChange={setJ('lizing')} />
-              <div className="flex-1"><div className="text-[13.5px] font-semibold text-[#10283F]">Bo‘lib to‘lash mumkin</div><div className={sub}>Xaridor shartlarni siz bilan Telegram orqali kelishadi</div></div>
             </div>
           </div>
         </div>

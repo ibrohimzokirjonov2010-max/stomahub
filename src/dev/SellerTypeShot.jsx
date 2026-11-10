@@ -25,7 +25,7 @@ const JIHOZ_ROW = {
   description: 'Yangi, zavod qadoqida. Gigiyena tizimi, LED chiroq, 5 ta asbob uchun panel. O‘rnatish va xodimlarni o‘qitish narxga kiradi.',
   specs: [['Quvvat', '1,4 kVt'], ['Kuchlanish', '220 V'], ['Og‘irligi', '180 kg']], variants: [], uom: 'dona', minQty: 1, priceTiers: [], live: true,
   deliveryInfo: 'Toshkent bo‘ylab 3 kun ichida yetkazib, o‘rnatib beramiz. Viloyatlarga — kelishuv asosida.',
-  jihoz: { cat: 'unit', model: 'Intego', year: 2025, warranty: 24, city: 'Toshkent', install: true, lizing: true },
+  jihoz: { cat: 'unit', model: 'Intego', year: 2025, warranty: 24, city: 'Toshkent', install: true },
 }
 const P = (name, category, price, image, status = 'active', stock = 12) => ({ id: crypto.randomUUID?.() || name, seller_id: SID, name, category, price, stock, status, image_url: image, images: [image], variants: [] })
 const PRODUCTS = [P('Kompozit Filtek Z250 (4 g)', 'Plomba materiallari', 185000, '/images/market/p1.jpg'), P('Nitril qo‘lqop (100 dona)', 'Gigiyena vositalari', 65000, '/images/market/p2.jpg', 'active', 3), P('Endomotor X-Smart', 'Endodontiya', 4200000, '/images/market/p3.jpg', 'review')]
@@ -40,7 +40,7 @@ const DRAFTS = {
   forma: { ...COMMON, name: 'Ayollar skrab to‘plami Comfort', category: 'Tibbiy forma', brand: 'MedStyle', country: 'O‘zbekiston', description: 'Cho‘ziluvchan stretch mato, V-yoqa va 5 ta cho‘ntak.', price: '320000', sku: 'MS-COMFORT', images: ['/images/demo/forma/f1.webp'], variant_type: 'forma',
     forma: { cat: 'scrub', gender: 'female', fabric: 'stretch', size_type: 'clothing', kashta_on: true, kashta_price: '35000' } },
   jihozlar: { ...COMMON, name: 'Stomatologik ustanovka Sirona Intego', category: 'Stomatologik jihozlar', brand: 'Sirona', country: 'Germaniya', description: 'Yangi, zavod qadoqida. O‘rnatish va o‘qitish narxga kiradi.', price: '245000000', stock: '2', sku: 'SIR-INTEGO', images: ['/images/jihozlar/sirona.jpg', '/images/jihozlar/kavo.jpg'], reg_cert_no: 'TV/X 04512/03/25',
-    specs: [['Quvvat', '1,4 kVt'], ['Kuchlanish', '220 V']], jihoz: { cat: 'unit', model: 'Intego', year: '2025', warranty: '24', city: 'Toshkent', install: true, lizing: true } },
+    specs: [['Quvvat', '1,4 kVt'], ['Kuchlanish', '220 V']], jihoz: { cat: 'unit', model: 'Intego', year: '2025', warranty: '24', city: 'Toshkent', install: true } },
 }
 
 export default function SellerTypeShot() {

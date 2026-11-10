@@ -57,7 +57,7 @@ export const toMarketProduct = (row) => ({
   expiresOn: row.expires_on || '',
   // 0064: Forma (category = 'Tibbiy forma') — toifa, jins, mato, o‘lcham turi, kashta narxi
   forma: row.forma && typeof row.forma === 'object' && !Array.isArray(row.forma) ? row.forma : null,
-  // 0065: Jihozlar (category = 'Stomatologik jihozlar') — turi, model, yil, kafolat, shahar, o‘rnatish, bo‘lib to‘lash
+  // 0065: Jihozlar (category = 'Stomatologik jihozlar') — turi, model, yil, kafolat, shahar, o‘rnatish
   jihoz: row.jihoz && typeof row.jihoz === 'object' && !Array.isArray(row.jihoz) ? row.jihoz : null,
   rating: 0,
   reviews: 0,

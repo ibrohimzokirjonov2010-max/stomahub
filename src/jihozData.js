@@ -39,13 +39,11 @@ export const sorts = {
 export const perks = [
   ['Rasmiy distribyutorlar', 'BadgeCheck'],
   ['Kafolat va servis', 'ShieldCheck'],
-  ['Lizing / bo‘lib to‘lash', 'CreditCard'],
   ['O‘rnatish xizmati', 'Wrench'],
 ]
 export const why = [
   ['Rasmiy distribyutorlar', 'Original mahsulotlar'],
   ['Kafolat va servis', 'Butun O‘zbekiston bo‘ylab'],
-  ['Lizing / bo‘lib to‘lash', 'Qulay to‘lov shartlari'],
   ['O‘rnatish va trening', 'Mutaxassislar tomonidan'],
   ['Klinikangizga yetkazish', 'Texnik qo‘llab-quvvatlash'],
   ['24/7 maslahat', 'Muhandis doim aloqada'],
@@ -55,7 +53,6 @@ const base = (p) => ({
   status: 'new',
   year: 2024,
   warranty: 24,
-  lizing: true,
   install: true,
   official: true,
   city: 'Toshkent',

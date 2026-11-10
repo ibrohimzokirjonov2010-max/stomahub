@@ -4,7 +4,7 @@
 --      Mahsuloti bor eski sotuvchilar 'stomatologik' bo‘ladi — ular uchun hech narsa o‘zgarmaydi.
 --   2) seller_products.jihoz jsonb — Jihozlar bo‘limi ma’lumoti (category = 'Stomatologik jihozlar'):
 --        { cat: unit|cbct|scan|autoclave|micro|compressor|handpiece|lamp, model, year, warranty (oy),
---          city, install (bool), lizing (bool) }  — Jihozlar bo‘limida faqat YANGI uskunalar (holat maydoni yo‘q).
+--          city, install (bool) }  — Jihozlar bo‘limida faqat YANGI uskunalar (holat maydoni yo‘q).
 --   3) seller_category_type(category) — kategoriya qaysi yo‘nalishga tegishli.
 --   4) seller_products_type_gate — sotuvchi faqat o‘z yo‘nalishi kategoriyasida mahsulot qo‘sha oladi
 --      (insert, kategoriya/egasi/holati o‘zgarganda). Admin va servis (auth.uid() null) — cheklovsiz.

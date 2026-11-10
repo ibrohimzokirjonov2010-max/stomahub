@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, BadgeCheck, ShieldCheck, Truck, Package, ShoppingCart, CreditCard,
+  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, BadgeCheck, ShieldCheck, Truck, Package, ShoppingCart,
   Zap, Sun, Armchair, Monitor, PenTool, Activity, Droplets, Wind, Weight, Calendar, Settings, MapPin, Tag, Lightbulb, FileText, Wrench, Send, Phone,
 } from 'lucide-react'
 import { getJihoz, allJihoz, specsOf, kitOf, money } from '../../jihozData'
@@ -176,13 +176,6 @@ function JihozView({ id }) {
             </>
           )}
         </div>
-        {p.lizing && (contact?.telegram || contact?.phone) && (
-          <button type="button" onClick={() => ask('Bo‘lib to‘lash shartlari qanday?')} className="mt-2.5 flex h-10 w-full items-center gap-2 rounded-xl bg-[#e6f4f3] px-3 text-left text-[12.5px] text-sea-600">
-            <CreditCard className="size-4 shrink-0" />
-            <span className="min-w-0 flex-1 truncate"><b className="font-semibold">Bo‘lib to‘lash mumkin</b> — shartlarni sotuvchidan so‘rang</span>
-            <ChevronRight className="size-4 shrink-0" />
-          </button>
-        )}
 
         <div className="mt-3 grid grid-cols-3 divide-x divide-line rounded-2xl border border-line py-2.5">
           {[
@@ -285,7 +278,6 @@ function JihozView({ id }) {
       <div className="fixed inset-x-0 bottom-[62px] z-30 flex items-center gap-1.5 border-t border-line bg-white px-3 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
         <div className="min-w-0 flex-1">
           <p className="whitespace-nowrap text-[14.5px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{money(p.price * (inCart || 1))}</p>
-          {p.lizing && <p className="truncate text-[10px] text-sea-600">Bo‘lib to‘lash mumkin</p>}
         </div>
         {inCart ? (
           <>
@@ -294,11 +286,6 @@ function JihozView({ id }) {
           </>
         ) : (
           <>
-            {p.lizing && (contact?.telegram || contact?.phone) && (
-              <button type="button" onClick={() => ask('Bo‘lib to‘lash shartlari qanday?')} className="flex h-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#e6f4f3] px-2 text-[10.5px] font-semibold leading-tight text-sea-600">
-                <CreditCard className="size-4" /> Bo‘lib to‘lash
-              </button>
-            )}
             <button type="button" disabled={!inStock} onClick={addToCart} className="flex h-12 shrink-0 disabled:opacity-40 items-center justify-center gap-1 rounded-xl bg-sea px-2 text-[12px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
               <ShoppingCart className="size-4" /> Savatga qo‘shish
             </button>

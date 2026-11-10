@@ -46,7 +46,7 @@ test('type change blocked by active products of another type', () => {
 const live = {
   id: '11111111-1111-1111-1111-111111111111', sellerId: 's1', seller: 'Dental Tech', name: 'Sirona Intego Pro', category: JIHOZ_CATEGORY,
   brand: 'Sirona', price: 250000000, stock: 2, image: '/a.jpg', images: ['/a.jpg', '/b.jpg'], description: 'Yangi ustanovka.',
-  specs: [['Quvvat', '1.2 kVt'], ['Kafolat', '99 oy']], jihoz: { cat: 'unit', model: 'Intego Pro', year: 2025, warranty: 24, city: 'Toshkent', install: true, lizing: true },
+  specs: [['Quvvat', '1.2 kVt'], ['Kafolat', '99 oy']], jihoz: { cat: 'unit', model: 'Intego Pro', year: 2025, warranty: 24, city: 'Toshkent', install: true },
 }
 
 test('marketToJihoz maps seller product; always new', () => {
@@ -71,9 +71,10 @@ test('jihoz cart line uses real product uuid; demo not purchasable', () => {
   assert.equal(line.sellerId, 's1')
   assert.equal(line.price, 250000000)
   assert.equal(jihozCartLine({ id: 'demo', live: false }), null)
-  const t = jihozQuestionText({ p: marketToJihoz(live), topic: 'Bo‘lib to‘lash?', url: 'https://x/jihozlar/1' })
+  const t = jihozQuestionText({ p: marketToJihoz(live), topic: 'Kafolat qanday?', url: 'https://x/jihozlar/1' })
   assert.match(t, /Sirona Intego Pro \(Intego Pro\)/)
-  assert.match(t, /Bo‘lib to‘lash\?/)
+  assert.match(t, /Kafolat qanday\?/)
+  assert.equal('lizing' in marketToJihoz(live), false, 'bo‘lib to‘lash olib tashlangan')
 })
 
 test('migration 0065 is safe and enforces type server-side', () => {

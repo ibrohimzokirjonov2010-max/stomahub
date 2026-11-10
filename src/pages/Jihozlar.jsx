@@ -35,7 +35,6 @@ function Catalog({ query }) {
   const [brand, setBrand] = useState(params.get('brand') ? [params.get('brand')] : [])
   const [warranty, setWarranty] = useState([])
   const [priceTo, setPriceTo] = useState(600000000)
-  const [lizing, setLizing] = useState(true)
   const [install, setInstall] = useState(true)
   const [official, setOfficial] = useState(true)
   const [city, setCity] = useState('')
@@ -62,7 +61,6 @@ function Catalog({ query }) {
       if (brand.length && !brand.some((b) => b.toLowerCase() === p.brand.toLowerCase())) return false
       if (warranty.length && !warranty.includes(p.warranty)) return false
       if (p.price > priceTo) return false
-      if (lizing && !p.lizing) return false
       if (install && !p.install) return false
       if (official && !p.official) return false
       if (city && p.city !== city) return false
@@ -74,11 +72,11 @@ function Catalog({ query }) {
     else if (sort === 'fresh') rows = [...rows].sort((a, b) => b.year - a.year)
     else if (sort === 'rating') rows = [...rows].sort((a, b) => b.rating - a.rating || b.reviews - a.reviews)
     return rows
-  }, [cat, status, brand, warranty, priceTo, lizing, install, official, city, sort, query])
+  }, [cat, status, brand, warranty, priceTo, install, official, city, sort, query])
 
   const reset = () => {
     setCat('all'); setStatus([]); setBrand([]); setWarranty([]); setPriceTo(600000000)
-    setLizing(true); setInstall(true); setOfficial(true); setCity('')
+    setInstall(true); setOfficial(true); setCity('')
   }
   const toggle = (list, set, value) => set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
   const togglePick = (id) => setPicked((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= 3 ? cur : [...cur, id])
@@ -93,7 +91,7 @@ function Catalog({ query }) {
           <p className="mt-1 text-[12px] leading-snug text-muted">Klinikangiz uchun zamonaviy va ishonchli uskunalar. Yangi va ishlatilgan, kafolat va servis bilan.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-          {[['BadgeCheck', 'Rasmiy distribyutorlar'], ['ShieldCheck', 'Kafolat va servis'], ['CreditCard', 'Lizing / bo‘lib to‘lash'], ['Wrench', 'O‘rnatish xizmati']].map(([key, label]) => {
+          {[['BadgeCheck', 'Rasmiy distribyutorlar'], ['ShieldCheck', 'Kafolat va servis'], ['Wrench', 'O‘rnatish xizmati']].map(([key, label]) => {
             const Icon = perkIcon[key]
             return <span key={label} className="flex items-center gap-1 text-[10px] font-medium text-ink-2"><Icon className="size-3.5 text-sea" />{label}</span>
           })}
@@ -134,7 +132,6 @@ function Catalog({ query }) {
             ))}
           </Block>
           <div className="mt-3 flex flex-col gap-1 border-t border-line pt-2">
-            <Switch on={lizing} onClick={() => setLizing((v) => !v)} label="Lizing mavjud" />
             <Switch on={install} onClick={() => setInstall((v) => !v)} label="O‘rnatish xizmati" />
             <Switch on={official} onClick={() => setOfficial((v) => !v)} label="Rasmiy distribyutor" />
           </div>
@@ -201,7 +198,7 @@ function Catalog({ query }) {
             <p className="mt-0.5 text-[10px] text-muted">Jihoz tanlashda yordam beramiz</p>
             <img src={engineer} alt="" className="mx-auto mt-2 size-16 rounded-full object-cover" />
             <ul className="mt-2 space-y-1 text-[11px] text-ink-2">
-              {['Mutaxassis maslahati', 'Lizing va moliyalashtirish', 'Klinikangizga to‘g‘ri variant'].map((t) => <li key={t}>• {t}</li>)}
+              {['Mutaxassis maslahati', 'Klinikangizga to‘g‘ri variant'].map((t) => <li key={t}>• {t}</li>)}
             </ul>
             <button onClick={() => setConsult(true)} className="mt-2 h-9 w-full rounded-lg bg-sea text-[12px] font-semibold text-white">Muhandis bilan bog‘lanish</button>
           </div>

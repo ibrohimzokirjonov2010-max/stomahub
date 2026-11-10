@@ -31,7 +31,7 @@ export default function JihozItem() {
   const inStock = !!line && product.stock > 0
   const put = () => { if (!inCart && inStock) add(line, 1) }
   const similar = allJihoz().filter((p) => p.cat === product.cat && p.id !== product.id).slice(0, 8)
-  const points = [product.install ? 'O‘rnatish narxga kiradi' : '', product.lizing ? 'Bo‘lib to‘lash mumkin — shartlarni sotuvchidan so‘rang' : '', ...(product.points || [])].filter(Boolean)
+  const points = [product.install ? 'O‘rnatish narxga kiradi' : '', ...(product.points || [])].filter(Boolean)
   const specs = specsOf(product)
   const canAsk = !!(contact?.telegram || contact?.phone)
   const ask = (topic = '') => {
@@ -79,15 +79,6 @@ export default function JihozItem() {
                 {product.city ? <span className="inline-flex items-center gap-1"><Truck className="size-3.5 text-sea" /> {product.city}</span> : null}
                 {product.install ? <span className="inline-flex items-center gap-1"><Wrench className="size-3.5 text-sea" /> O‘rnatish narxga kiradi</span> : null}
               </p>
-              {product.lizing && canAsk ? (
-                <button onClick={() => ask('Bo‘lib to‘lash shartlari qanday?')} className="mt-2 flex w-full items-center justify-between rounded-xl border border-line px-3 py-2 text-left hover:border-sea">
-                  <span>
-                    <span className="block text-[11px] font-bold text-ink">Bo‘lib to‘lash mumkin</span>
-                    <span className="text-[12px] text-ink-2">Shartlarni sotuvchidan so‘rang</span>
-                  </span>
-                  <ChevronRight className="size-4 text-muted" />
-                </button>
-              ) : null}
               <div className="mt-3 flex items-center gap-2">
                 <button onClick={put} disabled={!inStock} className={`flex h-10 flex-1 disabled:opacity-40 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
                   <ShoppingCart className="size-4" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}

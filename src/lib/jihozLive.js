@@ -44,7 +44,6 @@ export function marketToJihoz(p) {
     warranty,
     city: j.city || '',
     install: !!j.install,
-    lizing: !!j.lizing,
     official: false,
     price,
     oldPrice: Number(p.oldPrice) > price ? Number(p.oldPrice) : 0,
@@ -70,7 +69,7 @@ export function jihozCartLine(p) {
   return { id: p.id, productId: p.id, sellerId: p.sellerId, seller: p.seller, name: p.title, type: p.brand, price: p.price, image: p.image, stock: p.stock }
 }
 
-/** «Sotuvchiga yozish» / «Bo‘lib to‘lash» — Telegram’da oldindan to‘ldiriladigan matn. */
+/** «Sotuvchiga yozish» — Telegram’da oldindan to‘ldiriladigan matn. */
 export function jihozQuestionText({ p, url, topic = '' }) {
   return [
     'Assalomu alaykum! StomaHub’dagi jihozingiz haqida savolim bor:',
