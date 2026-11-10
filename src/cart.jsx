@@ -169,6 +169,9 @@ export function CartProvider({ children }) {
         ...(isRestricted(product) ? { rx: true } : {}),
         // Forma: kashta matni (narxga kashta narxi qo‘shilgan; server ham shunday hisoblaydi — 0064)
         ...(product.kashta ? { kashta: String(product.kashta) } : {}),
+        // 0066: logo tikish — buyurtmachi yuklagan logo fayli (Storage yo‘li)
+        ...(product.logoOn || product.logo ? { logoOn: true } : {}),
+        ...(product.logo ? { logo: String(product.logo), logoName: String(product.logoName || ''), logoSize: Number(product.logoSize) || 0 } : {}),
       }, qty)]
     })
 
@@ -181,7 +184,7 @@ export function CartProvider({ children }) {
     if (!live) return it
     // Narx ham jonli (sotuvchi chegirmasi yoqilsa/tugasa savat narxi yangilanadi; server baribir o‘zi hisoblaydi)
     const lv = it.variant && Array.isArray(live.variants) ? live.variants.find((x) => (x.sku || '') === it.variant) : null
-    const kashtaFee = it.kashta ? Math.max(0, Number(live.forma?.kashta_price) || 0) : 0
+    const kashtaFee = it.kashta || it.logo || it.logoOn ? Math.max(0, Number(live.forma?.kashta_price) || 0) : 0
     const livePrice = it.tiers?.length ? tierPrice(live.price, live.priceTiers?.length ? live.priceTiers : it.tiers, it.qty) : (Number(lv ? lv.price : live.price) ? Number(lv ? lv.price : live.price) + kashtaFee : it.price)
     return { ...it, price: livePrice, ...(live.oldPrice > live.price ? { oldPrice: lv?.oldPrice || live.oldPrice } : {}), stock: liveStock(it), sellerId: it.sellerId || live.sellerId, rx: it.rx || live.rx || undefined }
   })

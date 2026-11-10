@@ -6,6 +6,7 @@ import { useCart } from '../cart'
 import { getForma, allForma, similarIds, money, colorOf, sizesOf, cats, genders, fabrics } from '../formaData'
 import { useMarket } from '../buyerApi'
 import { sizeChartFor, sizeTypeOf, chartKey } from '../lib/formaSizes'
+import LogoUpload from '../components/forma/LogoUpload'
 import { pickVariant, sizeInStock, formaCartLine, formaQuestionText, cleanKashta, KASHTA_MAX } from '../lib/formaLive'
 import { useSellerContact } from '../lib/useSellerContact'
 import { telegramChatUrl, openExternal } from '../ustaContact'
@@ -34,6 +35,7 @@ export default function FormaItem() {
   const [sizeSel, setSize] = useState(sizesOf(product).includes('M') ? 'M' : sizesOf(product)[0])
   const [kashtaOn, setKashtaOn] = useState(false)
   const [kashtaText, setKashtaText] = useState('')
+  const [logoFile, setLogoFile] = useState(null)
   const [note, setNote] = useState('')
   const contact = useSellerContact(product?.live ? product.sellerId : null)
   const [tab, setTab] = useState('about')
@@ -51,10 +53,13 @@ export default function FormaItem() {
   const gallery = product.gallery?.length ? product.gallery : [product.image]
   const live = !!product.live
   const variant = live ? pickVariant(product, size, color) : null
+  // Logo tikish: haqiqiy mahsulotda sotuvchi kashta narxini belgilagan bo‘lsa; namunada — faqat ko‘rinish (kiyim uchun)
+  const canLogo = live ? product.kashtaPrice > 0 : sizeTypeOf(product) === 'clothing'
+  const logoFee = live ? product.kashtaPrice : 25000
   const kashta = live && kashtaOn ? cleanKashta(kashtaText) : ''
-  const line = live ? formaCartLine(product, variant, kashta) : null
+  const line = live ? formaCartLine(product, variant, kashta, kashtaOn && canLogo, logoFile) : null
   const soldOut = live && (!variant || Number(variant.stock) <= 0)
-  const shownPrice = live ? (Number(variant?.price) || product.price) + (kashta ? product.kashtaPrice : 0) : product.price
+  const shownPrice = live ? (Number(variant?.price) || product.price) + (kashtaOn && canLogo ? product.kashtaPrice : 0) : product.price + (kashtaOn && canLogo ? logoFee : 0)
   const inCart = !!line && items.some((it) => it.id === line.id)
   // Faqat haqiqiy sotuvchi mahsuloti savatga tushadi (namuna/egasiz yozuvlarni buyurtma qilib bo‘lmaydi)
   const demo = isDemoItem(product) || !live
@@ -62,7 +67,6 @@ export default function FormaItem() {
   const flash = (t) => { setNote(t); setTimeout(() => setNote(''), 2500) }
   const ready = () => {
     if (soldOut || !line) { flash('Bu o‘lcham va rang hozir omborda yo‘q'); return false }
-    if (kashtaOn && !kashta) { flash('Kashta matnini yozing'); return false }
     return true
   }
   const put = () => { if (!inCart && buyable && ready()) add(line, 1) }
@@ -87,12 +91,12 @@ export default function FormaItem() {
             <div className="flex flex-col gap-2">
               {gallery.map((src, i) => (
                 <button key={src + i} onClick={() => setShot(i)} className={`overflow-hidden rounded-lg border ${shot === i ? 'border-sea' : 'border-transparent'}`} style={{ height: 68 }}>
-                  <img src={src} alt="" className="size-full object-cover object-top" />
+                  <img src={src} alt="" className="size-full bg-[#f4f7fb] object-contain p-1" />
                 </button>
               ))}
             </div>
             <div className="overflow-hidden rounded-2xl bg-[#f4f7fb]" style={{ height: 360 }}>
-              <img src={gallery[shot] || product.image} alt={product.title} className="size-full object-cover object-top" />
+              <img src={gallery[shot] || product.image} alt={product.title} className="size-full object-contain p-3" />
             </div>
             <div className="min-w-0">
               <h1 className="text-[22px] font-extrabold leading-tight text-ink">{product.title}</h1>
@@ -123,13 +127,19 @@ export default function FormaItem() {
                   return <button key={s} onClick={() => setSize(s)} className={`h-8 min-w-8 rounded-lg px-2 text-[11px] font-semibold ${size === s ? 'bg-sea text-white' : out ? 'bg-[#f3f6fa] text-muted line-through' : 'bg-[#f3f6fa] text-ink'}`}>{s}</button>
                 })}
               </div></>}
-              {live && product.kashtaPrice > 0 && (
+              {canLogo && (
                 <div className="mt-3 rounded-xl border border-line p-2.5">
                   <label className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold text-ink">
                     <input type="checkbox" checked={kashtaOn} onChange={(e) => setKashtaOn(e.target.checked)} style={{ accentColor: '#0b8a95' }} />
-                    Kashta (ixtiyoriy) <span className="ml-auto font-semibold text-sea">+ {money(product.kashtaPrice)}</span>
+                    Logo tikish (ixtiyoriy) <span className="ml-auto font-semibold text-sea">+ {money(logoFee)}</span>
                   </label>
-                  {kashtaOn && <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Masalan: Dr. Aliyeva M. — Stomatolog" aria-label="Kashta matni" className="mt-2 h-9 w-full rounded-lg bg-page px-3 text-[12px] outline-none" />}
+                  {kashtaOn && (
+                    <div className="mt-2 space-y-2" data-testid="logo-block">
+                      <LogoUpload value={logoFile} onChange={setLogoFile} demo={!live} />
+                      <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Izoh (ixtiyoriy): joylashuvi yoki yozuv, masalan chap ko‘krakda" aria-label="Logo bo‘yicha izoh" className="h-9 w-full rounded-lg bg-page px-3 text-[12px] outline-none" />
+                      <p className="text-[10.5px] text-muted">Logoni hozir yoki buyurtmani rasmiylashtirishda yuklashingiz mumkin — u buyurtma bilan sotuvchiga yuboriladi.</p>
+                    </div>
+                  )}
                 </div>
               )}
               {note && <p className="mt-2 text-[12px] font-semibold text-sale">{note}</p>}

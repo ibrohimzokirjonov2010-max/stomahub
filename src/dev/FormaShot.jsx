@@ -27,7 +27,7 @@ const at = (h, m) => new Date(Date.UTC(2026, 10, 10, h - 5, m)).toISOString()
 const ORDERS = [
   { id: 'o-f1', code: 'STH-00031', status: 'yangi', source: 'marketplace', payment_method: 'cash', payment_status: 'pending', customer_name: 'Dilnoza Karimova', customer_phone: '+998 90 123 45 67', city: 'Toshkent, Yunusobod', address: '19-mavze, 12-uy', subtotal: 710000, delivery_method: 'kuryer', created_at: at(14, 42),
     items: [
-      { id: 'i1', product_id: PID, name: FORMA_ROW.name, variant: 'MS-M-wine', qty: 1, price: 355000, note: 'Kashta: Dr. Karimova D. — Stomatolog', image_url: FORMA_ROW.image },
+      { id: 'i1', product_id: PID, name: FORMA_ROW.name, variant: 'MS-M-wine', qty: 1, price: 355000, note: 'Logo tikish: chap ko‘krakda, ostida «Dr. Karimova D.»', logo_path: '/images/logo.png', image_url: FORMA_ROW.image },
       { id: 'i2', product_id: PID, name: FORMA_ROW.name, variant: 'MS-S-navy', qty: 1, price: 355000, note: 'Kashta: Dr. Karimova D. — Stomatolog', image_url: FORMA_ROW.image },
     ] },
   { id: 'o-f2', code: 'STH-00029', status: 'tayyorlanmoqda', source: 'marketplace', payment_method: 'click', payment_status: 'held', customer_name: 'Jasur Aliyev', customer_phone: '+998 93 555 11 22', city: 'Samarqand', address: 'Registon ko‘chasi 4', subtotal: 640000, delivery_method: 'kuryer', created_at: at(11, 5),

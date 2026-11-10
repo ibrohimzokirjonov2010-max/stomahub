@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink, BadgeCheck } from 'lucide-react'
+import OrderLogo from '../components/buyurtma/OrderLogo'
 import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync, commissionText, payoutOf } from '../api'
 import { num, som, dmy, hm, itemVariantText } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Menu, Err } from '../components/ui'
@@ -19,7 +20,7 @@ const addrText = (a) => parseGeo(a).text
 function printWaybill(o, shop) {
   const w = window.open('', '_blank', 'width=800,height=900')
   if (!w) { toast('Brauzer yangi oynani blokladi'); return }
-  const rows = o.items.map((it, i) => `<tr><td>${i + 1}</td><td>${it.name}${it.variant ? ` (${it.variant})` : ''}${it.note ? `<br><small>${String(it.note).replace(/[<>&]/g, '')}</small>` : ''}</td><td>${it.qty}</td><td>${num(it.price)}</td><td>${num(it.price * it.qty)}</td></tr>`).join('')
+  const rows = o.items.map((it, i) => `<tr><td>${i + 1}</td><td>${it.name}${it.variant ? ` (${it.variant})` : ''}${it.note ? `<br><small>${String(it.note).replace(/[<>&]/g, '')}</small>` : ''}${it.logo_path ? '<br><small>Logo fayli biriktirilgan (kabinetdan yuklab oling)</small>' : ''}</td><td>${it.qty}</td><td>${num(it.price)}</td><td>${num(it.price * it.qty)}</td></tr>`).join('')
   w.document.write(`<html><head><title>Nakladnoy ${o.code}</title><style>body{font-family:sans-serif;padding:32px;color:#10283F}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{border:1px solid #ccd;padding:6px 8px;text-align:left;font-size:13px}h1{color:#0F766E}</style></head><body>
   <h1>Nakladnoy № ${o.code}</h1><p>Sana: ${dmy(o.created_at)} ${hm(o.created_at)}<br>Sotuvchi: ${shop || ''}<br>Xaridor: ${o.customer_name || ''} ${o.customer_phone || ''}<br>Manzil: ${addrText(o.address) || ''}</p>
   <table><tr><th>#</th><th>Mahsulot</th><th>Soni</th><th>Narx (so‘m)</th><th>Jami (so‘m)</th></tr>${rows}</table>
@@ -151,7 +152,7 @@ export default function BuyurtmaDetail() {
               <table className="mt-3 w-full min-w-[560px]">
                 <thead className="bg-[#F6FAFA]"><tr><Th>#</Th><Th>Rasm</Th><Th>Mahsulot nomi</Th><Th>SKU</Th><Th>Rang / O‘lcham</Th><Th>Soni</Th><Th className="text-right">Narx (so‘m)</Th><Th className="text-right">Jami (so‘m)</Th></tr></thead>
                 <tbody>{o.items.map((it, i) => { const p = data.products.find((x) => x.id === it.product_id); return (
-                  <tr key={it.id} className="border-t border-[#EEF3F4]"><Td>{i + 1}</Td><Td><ProductThumb src={it.image_url} className="h-9 w-11" /></Td><Td>{p ? <Link to={`/sotuvchi/mahsulotlar/${p.id}`} className="font-medium hover:text-[#0F766E]">{it.name}</Link> : it.name}</Td><Td>{p?.sku || '—'}</Td><Td>{itemVariantText(it, data.products) || '—'}{it.note ? <div className="mt-0.5 text-[12px] font-semibold text-[#B45309]">{it.note}</div> : null}</Td><Td>{it.qty}</Td><Td className="text-right">{num(it.price)}</Td><Td className="text-right">{num(it.price * it.qty)}</Td></tr>) })}</tbody>
+                  <tr key={it.id} className="border-t border-[#EEF3F4]"><Td>{i + 1}</Td><Td><ProductThumb src={it.image_url} className="h-9 w-11" /></Td><Td>{p ? <Link to={`/sotuvchi/mahsulotlar/${p.id}`} className="font-medium hover:text-[#0F766E]">{it.name}</Link> : it.name}</Td><Td>{p?.sku || '—'}</Td><Td>{itemVariantText(it, data.products) || '—'}{it.note ? <div className="mt-0.5 text-[12px] font-semibold text-[#B45309]">{it.note}</div> : null}{it.logo_path ? <OrderLogo path={it.logo_path} code={o.code} /> : null}</Td><Td>{it.qty}</Td><Td className="text-right">{num(it.price)}</Td><Td className="text-right">{num(it.price * it.qty)}</Td></tr>) })}</tbody>
               </table>
               <div className="mt-2 text-[12.5px] text-[#5C6E80]">Yetkazish: {deliv}{o.delivery_date ? `, ${dmy(o.delivery_date)}` : ''}</div>
             </div>
@@ -205,7 +206,7 @@ export default function BuyurtmaDetail() {
           <div className={`${card} p-3`}>
             <h3 className="flex items-center gap-2 text-[15px] font-bold"><ShoppingCart className="size-5 text-[#0F766E]" />Mahsulotlar ({o.items.length} ta)</h3>
             {o.items.map((it) => { const p = data.products.find((x) => x.id === it.product_id); return (
-              <div key={it.id} className="flex items-center gap-3 border-b border-[#EEF3F4] py-2.5 last:border-0"><ProductThumb src={it.image_url} className="h-[62px] w-[76px]" /><div className="min-w-0 flex-1 text-[12px] text-[#5C6E80]"><div className="truncate text-[13.5px] font-medium text-[#10283F]">{it.name}</div>SKU: {p?.sku || '—'}{it.variant ? ` · ${itemVariantText(it, data.products)}` : ''}{it.note ? <div className="mt-0.5 rounded-md bg-[#FFF7E6] px-1.5 py-0.5 text-[12px] font-semibold text-[#B45309]">{it.note}</div> : null}<div className="text-[14.5px] font-bold text-[#10283F]">{som(it.price)}</div></div><div className="text-right text-[12px] text-[#5C6E80]">Soni: {it.qty} dona<div className="text-[14px] font-bold text-[#10283F]">{som(it.price * it.qty)}</div></div></div>) })}
+              <div key={it.id} className="flex items-center gap-3 border-b border-[#EEF3F4] py-2.5 last:border-0"><ProductThumb src={it.image_url} className="h-[62px] w-[76px]" /><div className="min-w-0 flex-1 text-[12px] text-[#5C6E80]"><div className="truncate text-[13.5px] font-medium text-[#10283F]">{it.name}</div>SKU: {p?.sku || '—'}{it.variant ? ` · ${itemVariantText(it, data.products)}` : ''}{it.note ? <div className="mt-0.5 rounded-md bg-[#FFF7E6] px-1.5 py-0.5 text-[12px] font-semibold text-[#B45309]">{it.note}</div> : null}{it.logo_path ? <OrderLogo compact path={it.logo_path} code={o.code} /> : null}<div className="text-[14.5px] font-bold text-[#10283F]">{som(it.price)}</div></div><div className="text-right text-[12px] text-[#5C6E80]">Soni: {it.qty} dona<div className="text-[14px] font-bold text-[#10283F]">{som(it.price * it.qty)}</div></div></div>) })}
           </div>
           <div className={`${card} p-3`}>
             <h3 className="flex items-center gap-2 text-[15px] font-bold"><MapPin className="size-5 text-[#0F766E]" />Yetkazib berish manzili</h3>

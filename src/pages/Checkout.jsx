@@ -12,6 +12,8 @@ import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
 import { createOrder } from '../buyerApi'
+import CheckoutLogos from '../components/forma/CheckoutLogos'
+import { missingLogos, withLogos } from '../lib/formaLogo'
 import { currentUid } from '../recordSync'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../payments/paymentService'
 import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, earliestDeliveryISO, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
@@ -100,6 +102,9 @@ export default function Checkout() {
   const [delivery, setDelivery] = useState(() => (draft?.delivery?.date >= todayISO() ? draft.delivery : defaultDelivery()))
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState('')
+  // 0066: «Logo tikish» qatorlari uchun shu sahifada yuklangan/almashtirilgan logo fayllari
+  const [logos, setLogos] = useState({})
+  const [logoTried, setLogoTried] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
   const [allSaved, setAllSaved] = useState(false)
   const [zoom, setZoom] = useState(1)
@@ -156,10 +161,20 @@ export default function Checkout() {
     setPromoMsg('Promokodlar hozircha mavjud emas')
   }
 
+  const setLogo = (id, x) => {
+    setLogos((m) => ({ ...m, [id]: x }))
+    if (!buyNow) cart.setItems((list) => list.map((it) => {
+      if (it.id !== id) return it
+      const { logo: _l, logoName: _n, logoSize: _s, ...rest } = it
+      return x?.path ? { ...rest, logo: x.path, logoName: x.name || '', logoSize: Number(x.size) || 0 } : rest
+    }))
+  }
+  const logoMissing = missingLogos(items, logos).length > 0
   const next = () => {
     // Mehmon: savat saqlanadi, avval kirish kerak (forma behuda to‘ldirilmasin)
     if (!currentUid()) { saveDraft({ form, shipMode, delivery }); navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`, { state: loc.state }); return }
     if (step === 1) {
+      if (logoMissing) { setLogoTried(true); setError('Logo faylini yuklang'); return }
       const phone = form.phone.replace(/\D/g, '')
       const needAddress = shipMode === 'courier' && !form.address.trim()
       if (!form.name.trim() || phone.length < 9 || !form.city || !form.district || needAddress) {
@@ -188,6 +203,7 @@ export default function Checkout() {
     // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
     if (!currentUid()) { saveDraft({ form, shipMode, delivery }); navigate(`/kirish?next=${encodeURIComponent('/buyurtma')}`, { state: loc.state }); return }
     if (otherProblems.length) { setError(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
+    if (logoMissing) { setLogoTried(true); setError('Logo faylini yuklang'); return }
     if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (busy) return
     setError('')
@@ -196,7 +212,7 @@ export default function Checkout() {
       const paymentRef = ''
       const online = pay.id !== 'cash'
       const res = await createOrder({
-        items,
+        items: withLogos(items, logos),
         name: form.name.trim(),
         phone: form.phone,
         city: [form.city, form.district].filter(Boolean).join(', '),
@@ -270,6 +286,9 @@ export default function Checkout() {
                   </div>
                 ) : (
                   <>
+                    {(step === 1 || (step === 3 && logoMissing)) && (
+                      <CheckoutLogos items={items} logos={logos} onChange={setLogo} error={logoTried} className="mb-3 rounded-2xl bg-white p-4 shadow-card" />
+                    )}
                     {step === 1 && (
                       <StepAddress
                         form={form}

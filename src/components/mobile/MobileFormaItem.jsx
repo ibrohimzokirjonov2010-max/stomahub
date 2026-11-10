@@ -15,6 +15,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { defaultSize, formaCartId, sizeLabel } from './MobileForma'
 import { isDemoItem } from '../../demoContent'
+import LogoUpload from '../forma/LogoUpload'
 import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 
 const LOGO_PRICE = 25000
@@ -42,6 +43,7 @@ function FormaView({ id }) {
   const [sizeSel, setSize] = useState(p ? defaultSize(p) : 'M')
   const [logo, setLogo] = useState(false)
   const [kashtaText, setKashtaText] = useState('')
+  const [logoFile, setLogoFile] = useState(null)
   const contact = useSellerContact(p?.live ? p.sellerId : null)
   const [liked, setLiked] = useState(false)
   const [chart, setChart] = useState(false)
@@ -80,7 +82,7 @@ function FormaView({ id }) {
   const basePrice = live ? Number(variant?.price) || p.price : p.price
   const unit = basePrice + (logo && canKashta ? kashtaFee : 0)
   const sku = live ? variant?.sku || '—' : `${p.brand.slice(0, 2).toUpperCase()}-${String(p.rank + 1).padStart(3, '0')}`
-  const line = live ? formaCartLine(p, variant, kashta) : null
+  const line = live ? formaCartLine(p, variant, kashta, logo && canKashta, logoFile) : null
   const cartId = live ? line?.id || '' : formaCartId(p, color, size, logo)
   const soldOut = live && (!variant || Number(variant.stock) <= 0)
   const chartInfo = sizeChartFor(p)
@@ -102,8 +104,7 @@ function FormaView({ id }) {
     if (demo) return
     if (live) {
       if (!line || soldOut) { setToast('Bu o‘lcham va rang hozir omborda yo‘q'); return }
-      if (logo && !kashta) { setToast('Kashta matnini yozing'); return }
-      if (add(line, 1)) setToast(`1 ta ${p.title} savatga qo‘shildi`)
+      if (add(line, 1)) setToast(logo && canKashta && !logoFile?.path ? 'Savatga qo‘shildi. Logo faylini rasmiylashtirishda yuklang' : `1 ta ${p.title} savatga qo‘shildi`)
       return
     }
     add({
@@ -127,7 +128,7 @@ function FormaView({ id }) {
     <div className="min-h-screen bg-[#f6f9fb] pb-[150px]">
       {/* Galereya */}
       <div
-        className="relative h-[310px] overflow-hidden bg-[#eef3f6]"
+        className="relative box-content h-[330px] overflow-hidden bg-[#f1f4f7] pt-[calc(var(--safe-top)+60px)]" data-testid="forma-hero"
         onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
           if (touch.current == null || n < 2) return
@@ -136,7 +137,7 @@ function FormaView({ id }) {
           touch.current = null
         }}
       >
-        <img src={gallery[shot]} alt={p.title} className="size-full object-cover object-[50%_20%]" />
+        <img src={gallery[shot]} alt={p.title} className="size-full object-contain px-3 pb-3" />
         <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/forma'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />
         </button>
@@ -154,7 +155,7 @@ function FormaView({ id }) {
         <div className="grid grid-cols-4 gap-2 bg-white px-3.5 pt-2">
           {gallery.map((src, i) => (
             <button key={src + i} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className={`h-[70px] overflow-hidden rounded-xl bg-[#eef3f6] ${i === shot ? 'ring-2 ring-sea' : 'ring-1 ring-line'}`}>
-              <img src={src} alt="" className="size-full object-cover object-top" />
+              <img src={src} alt="" className="size-full object-contain p-1" />
             </button>
           ))}
         </div>
@@ -214,8 +215,8 @@ function FormaView({ id }) {
         {canKashta && <label className="mt-3.5 flex cursor-pointer items-center gap-2.5 rounded-2xl border border-line p-2.5">
           <ToothIcon className="size-6 shrink-0 text-[#0d2a4a]" strokeWidth={1.5} />
           <span className="min-w-0 flex-1">
-            <span className="block text-[13px] font-semibold text-ink">{live ? 'Kashta (ixtiyoriy)' : 'Logo tikish (ixtiyoriy)'}</span>
-            <span className="block text-[10.5px] text-muted">{live ? 'Ism, lavozim yoki klinika nomini tikib berish' : 'Kiyimingizga klinika logotipini tikish'}</span>
+            <span className="block text-[13px] font-semibold text-ink">Logo tikish (ixtiyoriy)</span>
+            <span className="block text-[10.5px] text-muted">Klinika yoki shaxsiy logotipingizni kiyimga tikib beramiz</span>
           </span>
           <span className="whitespace-nowrap text-[12px] font-semibold text-[#1f5fa8]">+ {money(kashtaFee)}</span>
           <input type="checkbox" checked={logo} onChange={(e) => setLogo(e.target.checked)} className="sr-only" />
@@ -223,10 +224,11 @@ function FormaView({ id }) {
             <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${logo ? 'left-[22px]' : 'left-0.5'}`} />
           </span>
         </label>}
-        {live && logo && canKashta && (
-          <div className="mt-2">
-            <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Masalan: Dr. Aliyeva M. — Stomatolog" aria-label="Kashta matni" className="h-11 w-full rounded-xl border border-line bg-white px-3 text-[14px] outline-none focus:border-sea" />
-            <p className="mt-1 text-[10.5px] text-muted">Matn buyurtma bilan sotuvchiga yuboriladi. {kashtaText.length}/{KASHTA_MAX}</p>
+        {logo && canKashta && (
+          <div className="mt-2 space-y-2" data-testid="logo-block">
+            <LogoUpload value={logoFile} onChange={setLogoFile} demo={!live} />
+            <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Izoh (ixtiyoriy): joylashuvi yoki yozuv" aria-label="Logo bo‘yicha izoh" className="h-11 w-full rounded-xl border border-line bg-white px-3 text-[13px] outline-none focus:border-sea" />
+            <p className="text-[10.5px] text-muted">Logoni hozir yoki buyurtmani rasmiylashtirishda yuklashingiz mumkin — u buyurtma bilan sotuvchiga yuboriladi.</p>
           </div>
         )}
 

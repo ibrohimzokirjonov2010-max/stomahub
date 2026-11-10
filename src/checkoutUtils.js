@@ -102,6 +102,8 @@ export function buyNowItem(product, qty = 1) {
     ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
     ...(isRestricted(product) ? { rx: true } : {}),
     ...(product.kashta ? { kashta: String(product.kashta) } : {}),
+    ...(product.logoOn || product.logo ? { logoOn: true } : {}),
+    ...(product.logo ? { logo: String(product.logo), logoName: String(product.logoName || ''), logoSize: Number(product.logoSize) || 0 } : {}),
   }
 }
 /** "Hozir xarid qilish": go to checkout with ONLY this product; cart is not touched. */

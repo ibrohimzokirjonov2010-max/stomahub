@@ -70,7 +70,7 @@ function SurplusView({ id }) {
     <div className="min-h-screen bg-white pb-[150px]">
       {/* Galereya */}
       <div
-        className="relative h-[262px] overflow-hidden bg-white"
+        className="relative box-content h-[262px] overflow-hidden bg-white pt-[calc(var(--safe-top)+60px)]"
         onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
           if (touch.current == null || n < 2) return
@@ -82,7 +82,7 @@ function SurplusView({ id }) {
         <img
           src={shots[shot]}
           alt={d.name}
-          className={`size-full ${shots[shot].endsWith('main.jpg') ? 'scale-[1.2] object-cover' : n > 1 ? 'object-cover' : 'object-contain px-8 pb-3 pt-14'}`}
+          className="size-full object-contain px-4 pb-3"
         />
         <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/ortiqcha'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />

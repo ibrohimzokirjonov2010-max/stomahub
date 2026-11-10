@@ -68,25 +68,34 @@ function hash(t) {
 }
 
 /**
- * Savat qatori (cart.add shakli). Kashta bo‘lsa — narxga kashta narxi qo‘shiladi va matn
- * buyurtma qatoriga (seller_order_items.note) yoziladi; har xil matn — alohida qator.
+ * Savat qatori (cart.add shakli). Logo tikish yoqilgan / kashta bo‘lsa — narxga sotuvchining kashta narxi
+ * qo‘shiladi; izoh matni buyurtma qatoriga (seller_order_items.note), logo fayl yo‘li — logo_path ga (0066).
+ * Logo faylini mahsulot sahifasida yoki rasmiylashtirishda yuklash mumkin (logoOn: true, logo: yo‘l | yo‘q).
+ * Har xil izoh — alohida savat qatori; logo fayli qatorni ajratmaydi (rasmiylashtirishda almashtiriladi).
  */
-export function formaCartLine(p, v, kashtaText = '') {
+export function formaCartLine(p, v, kashtaText = '', logoOn = false, file = null) {
   if (!p?.live || !v) return null
-  const kashta = p.kashtaPrice > 0 ? cleanKashta(kashtaText) : ''
+  const on = p.kashtaPrice > 0
+  const kashta = on ? cleanKashta(kashtaText) : ''
+  const wantLogo = on && !!logoOn
+  const logo = wantLogo ? String(file?.path || '').trim() : ''
+  const extra = !!(kashta || wantLogo)
   const label = [v.size, v.color && formaColorName(v.color)].filter(Boolean).join(', ')
+  const tag = wantLogo ? 'logo bilan' : kashta ? 'kashta' : ''
   return {
-    id: `${p.id}-${v.sku}${kashta ? `-k${hash(kashta)}` : ''}`,
+    id: `${p.id}-${v.sku}${extra ? `-k${hash(`${kashta}|${wantLogo ? 'L' : ''}`)}` : ''}`,
     productId: p.id,
     variant: v.sku,
     sellerId: p.sellerId,
     seller: p.seller,
-    name: `${p.title}${label ? ` (${label}${kashta ? ', kashta' : ''})` : kashta ? ' (kashta)' : ''}`,
+    name: `${p.title}${label ? ` (${label}${tag ? `, ${tag}` : ''})` : tag ? ` (${tag})` : ''}`,
     type: label,
-    price: (Number(v.price) || p.price) + (kashta ? p.kashtaPrice : 0),
+    price: (Number(v.price) || p.price) + (extra ? p.kashtaPrice : 0),
     image: p.image,
     stock: Math.max(0, Number(v.stock) || 0),
     ...(kashta ? { kashta } : {}),
+    ...(wantLogo ? { logoOn: true } : {}),
+    ...(logo ? { logo, logoName: String(file?.name || ''), logoSize: Number(file?.size) || 0 } : {}),
   }
 }
 
