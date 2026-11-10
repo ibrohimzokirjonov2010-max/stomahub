@@ -11,6 +11,7 @@ import { ConditionBadge } from './Surplus'
 import { telegramUrl } from '../elonApi'
 import { openTelegramWithListingMessage } from '../lib/telegramShare'
 import { DemoNotice, DemoActionBar, DemoChip } from '../components/DemoNotice'
+import Lightbox from '../components/Lightbox'
 
 const factIcons = { qty: Boxes, vol: Droplet, city: MapPin, place: MapPin }
 
@@ -28,6 +29,7 @@ export default function SurplusItem() {
   const d = getSurplusDetail(id)
   const related = similarFor(id)
   const [img, setImg] = useState(0)
+  const [zoom, setZoom] = useState(false)
   const [toast, setToast] = useState('')
   const n = d?.images?.length || 0
   const s = d?.seller
@@ -67,9 +69,12 @@ export default function SurplusItem() {
       <div className="mt-2.5 grid gap-4 xl:grid-cols-[minmax(0,410fr)_minmax(0,630fr)] xl:gap-x-[18px]">
       <div className="flex min-w-0 flex-col gap-3">
         <div>
-          <div className="relative aspect-[410/274] overflow-hidden rounded-xl bg-[#eef3f8]">
-            <img src={d.images[img]} alt={d.name} className="size-full object-cover" />
-            {[['left', ChevronLeft, -1], ['right', ChevronRight, 1]].map(([side, Icon, step]) => (
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-[#eef3f8]">
+            <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
+              <img src={d.images[img]} alt={d.name} className="size-full object-contain p-1" />
+            </button>
+            {n > 1 && <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{img + 1} / {n}</span>}
+            {n > 1 && [['left', ChevronLeft, -1], ['right', ChevronRight, 1]].map(([side, Icon, step]) => (
               <button
                 key={side}
                 onClick={() => setImg((img + step + n) % n)}
@@ -80,6 +85,7 @@ export default function SurplusItem() {
               </button>
             ))}
           </div>
+          {zoom && <Lightbox images={d.images} index={img} onIndex={setImg} onClose={() => setZoom(false)} alt={d.name} />}
           <div className="mt-2 grid grid-cols-5 gap-2">
             {d.thumbs.map((t, i) => (
               <button

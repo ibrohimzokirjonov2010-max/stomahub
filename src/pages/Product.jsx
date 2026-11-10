@@ -118,9 +118,9 @@ function ProductBody({ p }) {
       <div className="mt-2.5 grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] xl:gap-x-6">
         {/* Galereya */}
         <div>
-          <div className="relative aspect-[380/244] overflow-hidden rounded-xl bg-[#eef3f8]">
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-[#eef3f8]">
             <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
-              <img src={p.images[img]} alt={p.name} className="size-full object-contain p-4" />
+              <img src={p.images[img]} alt={p.name} className="size-full object-contain p-1" />
             </button>
             {n > 1 && <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{img + 1} / {n}</span>}
             {n > 1 && <GalleryArrow side="left" onClick={() => setImg((img - 1 + n) % n)} />}

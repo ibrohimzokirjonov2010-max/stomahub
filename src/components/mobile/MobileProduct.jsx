@@ -1,11 +1,11 @@
 import { RestrictedNotice, BlockNotice, useDoctorVerified } from '../../restricted.jsx'
 import { purchaseBlock } from '../../lib/purchaseGuard'
 import { useSession } from '../../sessionStore'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { VARIANT_TYPE_LABEL } from '../../config/productCatalog'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, ChevronDown, Heart, Share2, BadgeCheck, Star, MessageSquareText, Package, Truck,
+  ChevronRight, ChevronDown, MessageSquareText, Package, Truck,
   MessageCircle, MapPin, ShoppingCart, X, Send,
 } from 'lucide-react'
 import { useCart } from '../../cart'
@@ -15,7 +15,7 @@ import { fetchProductReviews, useMarket } from '../../buyerApi'
 import { BirgaOlishadi, useTrackView } from '../../personal/PersonalBlocks'
 import MobileTabBar from './MobileTabBar'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
-import Lightbox from '../Lightbox'
+import DetailHero from '../DetailHero'
 import ReviewList from '../ReviewList'
 
 export default function MobileProduct() {
@@ -56,7 +56,6 @@ function ProductView({ id }) {
   const { add, items, setQty: setCartQty, remove } = useCart()
   const variants = p.variants || [{ label: p.type.match(/\(([^)]+)\)/)?.[1] || p.type, price: p.price, oldPrice: p.oldPrice }]
   const [shot, setShot] = useState(0)
-  const [zoom, setZoom] = useState(false)
   const [variant, setVariant] = useState(0)
   const minQty = Math.max(1, p.minQty || 1)
   const profile = useProfile()
@@ -65,7 +64,6 @@ function ProductView({ id }) {
   const [chat, setChat] = useState(false)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
-  const touch = useRef(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -104,33 +102,18 @@ function ProductView({ id }) {
 
   return (
     <div className="min-h-screen bg-white pb-[150px]">
-      {/* Galereya */}
-      <div
-        className="relative box-content h-[260px] overflow-hidden bg-white pt-[calc(var(--safe-top)+56px)]"
-        onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
-        onTouchEnd={(e) => {
-          if (touch.current == null || n < 2) return
-          const dx = e.changedTouches[0].clientX - touch.current
-          if (Math.abs(dx) > 40) setShot((s) => (s + (dx < 0 ? 1 : -1) + n) % n)
-          touch.current = null
-        }}
-      >
-        <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full">
-          <img src={thumbs[shot]} alt={p.name} className="size-full bg-white object-contain px-4 pb-3" />
-        </button>
-        {n > 1 && <span className="pointer-events-none absolute bottom-3 right-3.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{shot + 1} / {n}</span>}
-        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/marketplace'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-          <ChevronLeft className="size-5" />
-        </button>
-        <div className="safe-overlay-top absolute right-3.5 flex gap-2">
-          <button type="button" onClick={() => { const r = profileStore.toggleFav('favProducts', p.id); if (r !== null) setToast(r ? 'Sevimlilarga qo‘shildi' : 'Sevimlilardan olib tashlandi') }} aria-label="Sevimlilarga qo‘shish" aria-pressed={liked} className="grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-            <Heart className={`size-[19px] ${liked ? 'fill-sale text-sale' : ''}`} />
-          </button>
-          <button type="button" onClick={share} aria-label="Ulashish" className="grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-            <Share2 className="size-[18px]" />
-          </button>
-        </div>
-      </div>
+      <DetailHero
+        testId="product-hero"
+        images={thumbs}
+        index={shot}
+        onIndex={setShot}
+        alt={p.name}
+        onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/marketplace'))}
+        liked={liked}
+        likeLabel="Sevimlilarga qo‘shish"
+        onLike={() => { const r = profileStore.toggleFav('favProducts', p.id); if (r !== null) setToast(r ? 'Sevimlilarga qo‘shildi' : 'Sevimlilardan olib tashlandi') }}
+        onShare={share}
+      />
 
       {n > 1 && (
         <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto px-3.5">
@@ -141,8 +124,6 @@ function ProductView({ id }) {
           ))}
         </div>
       )}
-
-      {zoom && <Lightbox images={thumbs} index={shot} onIndex={setShot} onClose={() => setZoom(false)} alt={p.name} />}
 
       <div className="px-3.5">
         <div className="mt-3 flex items-center gap-2 text-[11.5px]">
