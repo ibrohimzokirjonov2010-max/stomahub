@@ -8,6 +8,7 @@ import { isOwnProduct } from '../cart'
 import CardQtyStepper, { useCardQty } from '../components/CardQtyStepper'
 import { offPercent } from '../lib/discounts'
 import { categoriesOf, contactOf, orderProducts, ratingOf, salesOf, verifiedOf, workTimeOf } from './lib'
+import { CategoryIcon } from '../icons/categoryIcons'
 
 const TEAL = '#0b6d73'
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
@@ -258,7 +259,9 @@ export default function SellerProfileView({ info, products, loading = false, inf
         <div className="no-scrollbar -mx-3.5 mt-3 flex gap-2 overflow-x-auto px-3.5 @4xl:mx-0 @4xl:flex-wrap @4xl:px-0">
           {[['', 'Hammasi'], ...cats.map((c) => [c, c])].map(([k, l]) => (
             <button key={k || 'all'} type="button" aria-pressed={cat === k} onClick={() => setCat(k)}
-              className={`h-9 shrink-0 whitespace-nowrap rounded-full px-4 text-[13px] font-medium transition ${cat === k ? 'bg-[#0b6d73] text-white' : 'border border-[#cfe5e5] bg-white text-ink-2'}`}>{l}</button>
+              className={`flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full pl-2.5 pr-4 text-[13px] font-medium transition ${cat === k ? 'bg-[#0b6d73] text-white' : 'border border-[#cfe5e5] bg-white text-ink-2'}`}>
+              <CategoryIcon id={k ? undefined : 'all'} section="marketplace" cat={k} label={l} className={`size-[18px] ${cat === k ? 'text-white' : 'text-sea-600'}`} />{l}
+            </button>
           ))}
         </div>
       )}
