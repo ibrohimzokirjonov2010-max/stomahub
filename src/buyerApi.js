@@ -202,7 +202,12 @@ const fmt = (iso) => {
 export async function fetchMyOrders(uid) {
   const full = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,delivered_at,buyer_confirmed_at,dispute_status,dispute_reason,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
   const basic = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
-  let { data, error } = await supabase.from('seller_orders').select(full).eq('buyer_id', uid).order('created_at', { ascending: false })
+  // 0067: yetkazish xizmati va kuryer (sotuvchi kiritadi); migratsiya qo‘llanmagan bo‘lsa — oldingi ro‘yxat
+  const withDelivery = full.replace('tracking_url,', 'tracking_url,delivery_service,courier_name,courier_phone,delivery_eta,')
+  let { data, error } = await supabase.from('seller_orders').select(withDelivery).eq('buyer_id', uid).order('created_at', { ascending: false })
+  if (error && /delivery_service|courier_|delivery_eta/.test(error.message || '')) {
+    ;({ data, error } = await supabase.from('seller_orders').select(full).eq('buyer_id', uid).order('created_at', { ascending: false }))
+  }
   if (error && /payment_status|tracking_url|payment_ref|delivered_at|buyer_confirmed_at|dispute_/.test(error.message || '')) {
     ;({ data, error } = await supabase.from('seller_orders').select(basic).eq('buyer_id', uid).order('created_at', { ascending: false }))
   }
@@ -219,7 +224,8 @@ export async function fetchMyOrders(uid) {
       status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
       history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
       name: o.customer_name, phone: o.customer_phone, address: [o.city, String(o.address || '').replace(/\s*\[geo:[^\]]+\]/, '')].filter(Boolean).join(', '), lat: o.lat ?? (String(o.address || '').match(/\[geo:(-?[\d.]+),/) || [])[1] ?? null, lng: o.lng ?? (String(o.address || '').match(/\[geo:[^,]+,(-?[\d.]+)\]/) || [])[1] ?? null,
-      trackingUrl: o.tracking_url || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
+      trackingUrl: o.tracking_url || '', deliveryService: o.delivery_service || (o.tracking_url ? 'yandex' : ''),
+      courierName: o.courier_name || '', courierPhone: o.courier_phone || '', deliveryEta: o.delivery_eta || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
       paymentLabel: payStatusLabel(o.payment_status, o.payment_method), deliveredAt: o.delivered_at || null, confirmedAt: o.buyer_confirmed_at || null,
       dispute: o.dispute_status || '', disputeReason: o.dispute_reason || '',
       autoReleaseAt: o.delivered_at ? new Date(new Date(o.delivered_at).getTime() + ESCROW_DAYS * 864e5).toISOString() : null,

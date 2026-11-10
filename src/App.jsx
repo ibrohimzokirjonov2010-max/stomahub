@@ -129,6 +129,7 @@ const NotifyShot = import.meta.env.DEV ? lazy(() => import('./dev/NotifyShot')) 
 const EscrowShot = import.meta.env.DEV ? lazy(() => import('./dev/EscrowShot')) : null
 const ReviewPhotosShot = import.meta.env.DEV ? lazy(() => import('./dev/ReviewPhotosShot')) : null
 const FormaShot = import.meta.env.DEV ? lazy(() => import('./dev/FormaShot')) : null
+const DeliveryShot = import.meta.env.DEV ? lazy(() => import('./dev/DeliveryShot')) : null
 const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
@@ -196,6 +197,7 @@ export default function App() {
           {NotifyShot && <Route path="/notify-shot/:mode" element={<Suspense fallback={null}><NotifyShot /></Suspense>} />}
           {EscrowShot && <Route path="/escrow-shot/:who" element={<Suspense fallback={null}><EscrowShot /></Suspense>} />}
           {FormaShot && <Route path="/forma-shot/:sec/:id?" element={<Suspense fallback={null}><FormaShot /></Suspense>} />}
+          {DeliveryShot && <Route path="/delivery-shot/:sec/:id" element={<Suspense fallback={null}><DeliveryShot /></Suspense>} />}
           {/* DEV: rasmiylashtirish (logo bloki) skrinshoti — RequireAuth’siz, faqat lokal */}
           {import.meta.env.DEV && <Route path="/dev/rasmiylashtirish" element={<MobileCheckout />} />}
           {IconSheet && <Route path="/icon-sheet" element={<Suspense fallback={null}><IconSheet /></Suspense>} />}

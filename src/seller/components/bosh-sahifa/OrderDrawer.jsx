@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Store, FileText, CalendarDays, Truck, UserRound, Phone, Lock, MapPin, Check, ChevronRight, ArrowLeft, Wallet, Coins, StickyNote, Building2 } from 'lucide-react'
 import OrderLogo from '../buyurtma/OrderLogo'
+import DeliveryModal, { DeliveryInfo } from '../buyurtma/DeliveryModal'
+import { needsDeliveryForm } from '../../../lib/deliveryTracking'
+import { toast } from '../ui'
 import { COMMISSION_RATE, OPEN_STATUSES, STATUS, setOrderStatus, useAsync, useSellerData } from '../../api'
 import { dmy, hm, longDate, som, num, itemVariantText } from '../../format'
 import StatusBadge from './StatusBadge'
@@ -17,7 +20,8 @@ export default function OrderDrawer({ orderId, onClose }) {
   const { busy, error, setError, go } = useAsync()
   const [cancelling, setCancelling] = useState(false)
   const [reason, setReason] = useState('')
-  useEffect(() => { setCancelling(false); setReason(''); setError('') }, [orderId, setError])
+  const [ship, setShip] = useState(null) // yetkazish ma’lumoti formasi
+  useEffect(() => { setCancelling(false); setReason(''); setError(''); setShip(null) }, [orderId, setError])
   useEffect(() => {
     if (!orderId) return
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -34,7 +38,7 @@ export default function OrderDrawer({ orderId, onClose }) {
   const phoneVisible = order.status !== 'yangi' && order.status !== 'bekor_qilindi'
   const history = Object.fromEntries((order.status_history || []).map((h) => [h.status, h.at]))
   const mapUrl = `https://www.google.com/maps/search/${encodeURIComponent(order.address || '')}`
-  const advance = () => go(() => setOrderStatus(order.id, step.next))
+  const advance = () => (step.next === 'yetkazilmoqda' && needsDeliveryForm(order) ? setShip('ship') : go(() => setOrderStatus(order.id, step.next)))
   const cancel = () => go(async () => { const r = await setOrderStatus(order.id, 'bekor_qilindi', reason); if (r.ok) setCancelling(false); return r })
 
   return (
@@ -142,6 +146,8 @@ export default function OrderDrawer({ orderId, onClose }) {
             </ol>
           </section>
 
+          <DeliveryInfo compact order={order} onEdit={() => setShip('edit')} />
+
           {/* note */}
           <div className="flex gap-3 rounded-xl border border-[#E6EEF0] p-3.5 md:mt-1">
             <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#E3F4F2] text-[#0F766E]"><StickyNote className="size-5" /></span>
@@ -180,6 +186,7 @@ export default function OrderDrawer({ orderId, onClose }) {
           )}
         </div>
       </aside>
+      <DeliveryModal open={!!ship} mode={ship || 'ship'} order={order} onClose={() => setShip(null)} onDone={(m) => toast(m === 'ship' ? 'Buyurtma yo‘lga chiqdi — xaridor kuzatuv ma’lumotini ko‘radi' : 'Yetkazish ma’lumoti saqlandi')} />
     </div>
   )
 }

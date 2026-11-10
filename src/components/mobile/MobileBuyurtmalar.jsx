@@ -12,6 +12,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { Logo, ALL_METHODS as METHODS } from './MobileCheckout'
 import { SubTopBar } from './MobileManzillar'
+import CourierCard from '../CourierCard'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
@@ -273,6 +274,7 @@ export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onC
         <span className="text-[12px] text-muted">{order.at} · {qty} dona</span>
         <StatusBadge status={order.status} />
       </div>
+      <CourierCard order={order} className="mt-2.5" />
       <ul className="mt-2 divide-y divide-[#eef2f4]">
         {order.items.map((it) => (
           <li key={it.id}>

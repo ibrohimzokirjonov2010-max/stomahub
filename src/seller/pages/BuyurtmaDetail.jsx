@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, Link2, ExternalLink, BadgeCheck } from 'lucide-react'
+import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, BadgeCheck } from 'lucide-react'
 import OrderLogo from '../components/buyurtma/OrderLogo'
-import { useSellerData, setOrderStatus, setTrackingUrl, updateRow, netOf, useAsync, commissionText, payoutOf } from '../api'
+import DeliveryModal, { DeliveryInfo } from '../components/buyurtma/DeliveryModal'
+import { needsDeliveryForm } from '../../lib/deliveryTracking'
+import { useSellerData, setOrderStatus, updateRow, netOf, useAsync, commissionText, payoutOf } from '../api'
 import { num, som, dmy, hm, itemVariantText } from '../format'
 import { card, Btn, Crumbs, Th, Td, toast, Textarea, Menu, Err } from '../components/ui'
 import Empty from '../components/shell/Empty'
@@ -36,15 +38,17 @@ export default function BuyurtmaDetail() {
   const [sp, setSp] = useSearchParams()
   const o = data.orders.find((x) => x.id === id)
   const [note, setNote] = useState('')
-  const [trackUrl, setTrackUrl] = useState('')
+  const [ship, setShip] = useState(null) // null | 'ship' | 'edit' — yetkazish ma’lumoti formasi
   const [cancel, setCancel] = useState(false)
   const [reason, setReason] = useState(REASONS[0])
   const [other, setOther] = useState('')
   const [confirm, setConfirm] = useState(false)
   const a = useAsync()
   const { shop } = useOutletContext() || {}
-  useEffect(() => { if (o) { setNote(o.internal_note || ''); setTrackUrl(o.tracking_url || '') } }, [o?.id, o?.internal_note, o?.tracking_url]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (o) setNote(o.internal_note || '') }, [o?.id, o?.internal_note]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (sp.get('cancel')) { setCancel(true); sp.delete('cancel'); setSp(sp, { replace: true }) } }, [sp, setSp])
+  // ro‘yxat/drawer’dan «Yetkazishga topshirish» → ?ship=1 (forma shu yerda ochiladi)
+  useEffect(() => { if (sp.get('ship') && o) { setShip(o.status === 'yetkazilmoqda' ? 'edit' : 'ship'); sp.delete('ship'); setSp(sp, { replace: true }) } }, [sp, setSp, o?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (data.loading) return <div className={`${card} h-64 animate-pulse`} />
   if (!o) return <div className={card}><Empty icon={FileText} title="Buyurtma topilmadi" text="U o‘chirilgan yoki sizga tegishli emas." action={<Btn className="mt-4" onClick={() => navigate('/sotuvchi/buyurtmalar')}>Buyurtmalarga qaytish</Btn>} /></div>
@@ -57,12 +61,16 @@ export default function BuyurtmaDetail() {
   const total = netOf(o) + Number(o.delivery_fee || 0)
   const open = !cancelled && o.status !== 'yetkazildi'
   const phoneOk = showPhone(o) && o.customer_phone
-  const go = async (s, r) => a.go(() => setOrderStatus(o.id, s, r), () => toast(`Holat: ${O_LABEL[s]}`))
+  const go = async (s, r) => {
+    if (s === 'yetkazilmoqda' && needsDeliveryForm(o)) { setShip('ship'); return }
+    return a.go(() => setOrderStatus(o.id, s, r), () => toast(`Holat: ${O_LABEL[s]}`))
+  }
+  // mobil: keyingi bosqich — yetkazishga topshirishda forma, qolganida tasdiqlash oynasi
+  const advance = () => (next?.[0] === 'yetkazilmoqda' && needsDeliveryForm(o) ? setShip('ship') : setConfirm(true))
   const copy = () => { navigator.clipboard?.writeText(o.code); toast('Nusxalandi') }
   const write = () => { if (!phoneOk) { toast('Telefon raqami buyurtma tasdiqlangandan keyin ko‘rinadi'); return } location.href = `sms:${o.customer_phone.replace(/\s/g, '')}` }
   const call = () => { if (!phoneOk) { toast('Telefon raqami buyurtma tasdiqlangandan keyin ko‘rinadi'); return } location.href = `tel:${o.customer_phone.replace(/\s/g, '')}` }
   const saveNote = () => a.go(() => updateRow('seller_orders', o.id, { internal_note: note.slice(0, 500) }), () => toast('Ichki izoh saqlandi'))
-  const saveTrack = () => a.go(() => setTrackingUrl(o.id, trackUrl.trim()), () => toast(trackUrl.trim() ? 'Yandex kuzatuv havolasi saqlandi' : 'Kuzatuv havolasi olib tashlandi'))
   const doCancel = () => a.go(() => setOrderStatus(o.id, 'bekor_qilindi', reason === 'Boshqa sabab' ? other.trim() || reason : reason), () => { toast('Buyurtma bekor qilindi, qoldiq qaytarildi'); setCancel(false) })
   const deliv = DELIVERY.find((d) => d[0] === o.delivery_method)?.[1] || 'Kuryer orqali yetkazish'
 
@@ -75,7 +83,7 @@ export default function BuyurtmaDetail() {
           const isNext = !cancelled && next && next[0] === s
           const lineDone = !cancelled && i < steps.length - 1 && O_FLOW.indexOf(steps[i + 1][0]) <= idx
           return (
-            <Step key={s} tap={mobile && isNext} onTap={() => setConfirm(true)} label={l}>
+            <Step key={s} tap={mobile && isNext} onTap={advance} label={l}>
               {i < steps.length - 1 && <span className={`absolute top-[11px] left-1/2 w-full md:top-[9px] ${lineDone ? 'h-[3px] bg-[#0F766E]' : 'border-t-2 border-dashed border-[#CFDADD]'} ${mobile ? 'top-[15px]' : ''}`} />}
               <span className={`relative grid place-items-center rounded-full ${mobile ? 'size-8' : 'size-5'} ${done ? 'bg-[#0F766E] text-white' : mobile && isNext ? 'bg-white text-[#0F766E] ring-2 ring-[#0F766E] ring-offset-2 animate-pulse' : 'bg-[#E6EEF0] text-[#5C6E80]'}`}>{mobile ? <I className="size-4" /> : <Check className="size-3" strokeWidth={3} />}</span>
               <div className={`mt-1.5 ${mobile ? 'w-full min-w-0 hyphens-manual break-words px-px text-[9.5px] leading-[1.15] min-[400px]:text-[10.5px]' : 'text-[12px]'} ${done ? 'font-semibold text-[#10283F]' : 'text-[#3D4E5F]'} ${mobile && done && s !== 'yangi' ? '!text-[#0F766E]' : ''}`}>{l}</div>
@@ -167,21 +175,7 @@ export default function BuyurtmaDetail() {
           </div>
         </div>
 
-        <div className={`${card} mt-3 p-4`}>
-          <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#0F766E]"><Link2 className="size-4" />Yandex yetkazish havolasi</h3>
-          <p className="mt-1 text-[12.5px] text-[#5C6E80]">Yandex Go / Yandex Delivery kuzatuv havolasini joylashtiring. Xaridor “Buyurtmani kuzatish”da ochadi.</p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <input
-              value={trackUrl}
-              onChange={(e) => setTrackUrl(e.target.value)}
-              placeholder="https://go.yandex/... yoki https://yandex.uz/..."
-              className="h-11 flex-1 rounded-xl border border-[#DCE5E7] px-3 text-[13px] outline-none focus:border-[#0F766E]"
-              disabled={!open}
-            />
-            <Btn disabled={!open || a.busy} onClick={saveTrack}>Saqlash</Btn>
-            {trackUrl && <a href={trackUrl} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[#DCE5E7] px-3 text-[13px] font-semibold text-[#0F766E]"><ExternalLink className="size-4" />Ochish</a>}
-          </div>
-        </div>
+        <DeliveryInfo order={o} onEdit={() => setShip('edit')} />
 
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className={`${card} p-4`}><h3 className="flex items-center gap-2 text-[14px] font-bold text-[#0F766E]"><FileText className="size-4" />Izoh (xaridor)</h3><div className="mt-2 min-h-[42px] rounded-lg border border-[#E6EEF0] px-3 py-2.5 text-[13px] text-[#3D4E5F]">{o.note || 'Izoh qoldirilmagan.'}</div></div>
@@ -199,6 +193,7 @@ export default function BuyurtmaDetail() {
         <Err>{a.error}</Err>
         <div className="space-y-3">
           <div className={`${card} p-3`}>{cancelled ? <div className="text-[13px]"><OrderBadge order={o} status={o.status} /> <span className="ml-2 text-[#3D4E5F]">Sabab: {o.cancel_reason || '—'}</span></div> : <>{isLate(o) && <div className="mb-2 flex items-center gap-2 rounded-lg bg-[#FDE8EC] px-3 py-2 text-[12.5px] font-semibold text-[#BE123C]">Muddati o‘tgan — yetkazish sanasi {dmy(o.delivery_date)} edi</div>}{stepper(true)}{stepperHint}</>}</div>
+          <DeliveryInfo compact order={o} onEdit={() => setShip('edit')} />
           <div className={`${card} p-3`}>
             <div className="flex items-center justify-between"><h3 className="flex items-center gap-2 text-[15px] font-bold"><span className="grid size-8 place-items-center rounded-full bg-[#E3F4F2] text-[#0F766E]"><UserRound className="size-4" /></span>Mijoz ma’lumotlari</h3>{o.customer_id && <Link to={`/sotuvchi/mijozlar/${o.customer_id}`} className="text-[12.5px] text-[#0F766E]">Mijoz profilini ko‘rish ›</Link>}</div>
             <div className="mt-2 flex items-center gap-3"><span className="grid size-12 place-items-center rounded-full bg-[#E3F4F2] font-semibold text-[#0F766E]">{(o.customer_name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span><div className="text-[12.5px] text-[#5C6E80]"><div className="text-[14.5px] font-semibold text-[#10283F]">{o.customer_name || '—'}</div><div className="flex items-center gap-1.5"><Phone className="size-3.5 text-[#0F766E]" />{phoneOf(o)}</div><div className="flex items-center gap-1.5"><MapPin className="size-3.5 text-[#0F766E]" />{o.city || o.region || '—'}</div></div></div>
@@ -230,12 +225,13 @@ export default function BuyurtmaDetail() {
         </div>
         {showBar && (
           <div data-testid="order-action-bar" className="fixed inset-x-0 z-20 border-t border-[#E6EEF0] bg-white/95 px-4 py-2.5 shadow-[0_-4px_12px_rgba(16,40,63,0.06)] backdrop-blur bottom-[calc(max(env(safe-area-inset-bottom),8px)+58px)]">
-            <Btn className="w-full" icon={next[0] === 'tayyorlanmoqda' ? Box : next[0] === 'yetkazilmoqda' ? Truck : Check} disabled={a.busy} onClick={() => setConfirm(true)}>{next[1]}</Btn>
+            <Btn className="w-full" icon={next[0] === 'tayyorlanmoqda' ? Box : next[0] === 'yetkazilmoqda' ? Truck : Check} disabled={a.busy} onClick={advance}>{next[1]}</Btn>
           </div>
         )}
       </div>
       {cancelModal}
       {confirmModal}
+      <DeliveryModal open={!!ship} mode={ship || 'ship'} order={o} onClose={() => setShip(null)} onDone={(m) => toast(m === 'ship' ? 'Buyurtma yo‘lga chiqdi — xaridor kuzatuv ma’lumotini ko‘radi' : 'Yetkazish ma’lumoti saqlandi')} />
     </div>
   )
 }
