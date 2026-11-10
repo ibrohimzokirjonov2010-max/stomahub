@@ -5,12 +5,15 @@ export const MARKET_CATEGORIES = [
   'Restavratsion materiallar', 'Estetik stomatologiya', 'Implantlar', 'Endodontik asboblar',
   'Qolip (ottisk) materiallari', 'Sterilizatsiya', 'Izolyatsiya materiallari', 'Yordamchi materiallar',
   'Sarflanadigan materiallar', 'Instrumentlar', 'Uskunalar', 'Himoya vositalari', 'Ortodontiya',
-  'Gigiyena vositalari', 'Tibbiy forma', 'Boshqa',
+  'Gigiyena vositalari', 'Boshqa',
 ]
 
 /** Forma bo‘limiga tushadigan sotuvchi mahsulotlari kategoriyasi. */
 export const FORMA_CATEGORY = 'Tibbiy forma'
 export const isFormaCategory = (c) => String(c || '').trim() === FORMA_CATEGORY
+/** Jihozlar bo‘limiga tushadigan sotuvchi mahsulotlari kategoriyasi (0065). */
+export const JIHOZ_CATEGORY = 'Stomatologik jihozlar'
+export const isJihozCategory = (c) => String(c || '').trim() === JIHOZ_CATEGORY
 
 /** Forma ranglari (sotuvchi formasi va xaridor sahifasi uchun yagona ro‘yxat). */
 export const FORMA_COLORS = [
@@ -39,9 +42,9 @@ export const normCategory = (c) => CATEGORY_ALIASES[String(c || '').trim()] || S
 
 // Options for a category <select>: canonical list + the product's current value if it is
 // something custom, so editing never shows "— Tanlang —" and never wipes the category.
-export const categoryOptions = (current) => {
+export const categoryOptions = (current, list = MARKET_CATEGORIES) => {
   const c = normCategory(current)
-  return c && !MARKET_CATEGORIES.includes(c) ? [...MARKET_CATEGORIES, c] : MARKET_CATEGORIES
+  return c && !list.includes(c) ? [...list, c] : list
 }
 
 export const BRANDS = [

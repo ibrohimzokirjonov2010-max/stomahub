@@ -1,3 +1,5 @@
+import { marketProducts } from './marketData'
+import { isJihozMarketProduct, marketToJihoz } from './lib/jihozLive'
 const photo = (name) => `/images/jihozlar/${name}.jpg`
 
 export function money(n) {
@@ -157,8 +159,17 @@ export const products = []
 export const similarIds = similar.map((p) => p.id)
 export const compareSeed = ['sirona-intego', 'planmeca-promax']
 
+/** Sotuvchilar qo‘shgan jihozlar (0065) — Jihozlar bo‘limida faqat shular sotiladi. */
+export function liveJihoz() {
+  return marketProducts.filter(isJihozMarketProduct).map(marketToJihoz)
+}
+
+export function allJihoz() {
+  return [...liveJihoz(), ...products]
+}
+
 export function getJihoz(id) {
-  return products.find((p) => p.id === id) || null
+  return liveJihoz().find((p) => p.id === id) || products.find((p) => p.id === id) || null
 }
 
 export function specsOf(p) {

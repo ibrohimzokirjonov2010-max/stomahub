@@ -22,7 +22,8 @@ import { isFormaMarketProduct } from '../../lib/formaLive'
 import { books } from '../../booksData'
 import { courses } from '../../educationData'
 import { masters } from '../../ustalarData'
-import { products as devices } from '../../jihozData'
+import { allJihoz } from '../../jihozData'
+import { isJihozMarketProduct, jihozCartLine } from '../../lib/jihozLive'
 import { jobs } from '../../ishlarData'
 import { surplusItems } from '../../surplusData'
 import { DOCTORS } from '../../mutaxassislarData'
@@ -116,7 +117,9 @@ export function useMarketSection() {
   const desktop = !useMobile()
   return useMemo(() => {
     // Kirgan foydalanuvchi: qiziqish (ko‘rgan/qidirgan/savat/xarid) va yo‘nalish bo‘yicha standart tartib.
-    const ordered = me.authed ? orderForMarketplace(products, { signals: me.signals, specialty: me.specialty }) : products
+    // 0065: Forma va Jihozlar sotuvchilarining mahsulotlari o‘z bo‘limida — Marketplace’da faqat stomatologik mahsulotlar
+    const own = products.filter((p) => !isFormaMarketProduct(p) && !isJihozMarketProduct(p))
+    const ordered = me.authed ? orderForMarketplace(own, { signals: me.signals, specialty: me.specialty }) : own
     const items = ordered.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.category || p.seller }))
     return {
       key: 'marketplace', shopActive: 'market', imageSearch: true, catPosters: true, ads: true, track: true,
@@ -236,26 +239,27 @@ export function useUstalarSection() {
 const JIHOZ_ICONS = { unit: imgIcon('jihozlar', 'stomatologik-kreslolar'), cbct: imgIcon('jihozlar', 'rentgen-apparatlari'), scan: imgIcon('jihozlar', 'skanerlar-3d'), autoclave: imgIcon('jihozlar', 'avtoklavlar'), micro: imgIcon('jihozlar', 'mikroskoplar'), compressor: imgIcon('jihozlar', 'kompressorlar'), handpiece: Wrench, lamp: Lightbulb }
 export function useJihozSection() {
   const v = useCatalogVersion()
+  const { products: live, status: liveStatus } = useMarket()
   return useMemo(() => {
-    const items = tag('device', devices, (p) => p.title, (p) => p.brand)
+    const items = tag('device', allJihoz(), (p) => p.title, (p) => p.brand)
     return {
-      key: 'jihozlar', shopActive: 'jihozlar', title: 'Jihozlar', subtitle: 'Stomatologik uskunalar — yangi, ishlatilgan va ko‘rgazmali', placeholder: 'Uskuna, brend yoki model qidiring...',
+      key: 'jihozlar', shopActive: 'jihozlar', title: 'Jihozlar', subtitle: 'Yangi stomatologik uskunalar — tasdiqlangan sotuvchilardan', placeholder: 'Uskuna, brend yoki model qidiring...',
+      loading: !items.length && (liveStatus === 'loading' || liveStatus === 'idle'), emptyText: 'Hozircha sotuvdagi jihozlar yo‘q',
       items, cats: chipsFrom(jihozCats, JIHOZ_ICONS), catOf: (p) => p.cat,
       filters: [
         { key: 'brand', label: 'Brend', options: opts(items.map((p) => p.brand)), match: (p, b) => p.brand === b },
-        { key: 'status', label: 'Holati', options: statusList, match: (p, s) => p.status === s },
         { key: 'city', label: 'Shahar', options: opts(items.map((p) => p.city)), match: (p, c) => p.city === c },
         priceBand([['lt10', '10 mln gacha', [0, 1e7]], ['10-50', '10–50 mln', [1e7, 5e7]], ['50-150', '50–150 mln', [5e7, 1.5e8]], ['gt150', '150 mln+', [1.5e8, Infinity]]]),
       ],
       sorts: PRICE_SORTS(),
-      text: (p) => `${p.title} ${p.brand} ${p.feature || ''}`,
+      text: (p) => `${p.title} ${p.brand} ${p.model || ''} ${p.feature || ''}`,
       card: (p) => {
         const off = realDiscount('device', p)
-        return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.city, p.warranty && `Kafolat: ${p.warranty} oy`], price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
+        return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.live ? p.seller : p.city, p.warranty ? `Kafolat: ${p.warranty} oy` : ''].filter(Boolean), cart: p.live && p.stock > 0 ? { prefix: p.id, line: jihozCartLine(p) } : null, price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
       },
       slides: (list, ctx) => slidesFor({ key: 'jihozlar', icon: PMonitor, items: list, image: (p) => p.image, href: (p) => `/jihozlar/${p.id}`, ctx }),
     }
-  }, [v])
+  }, [v, live, liveStatus])
 }
 
 const JOB_ICONS = { terapevt: Sparkles, ortoped: Crown, ortodont: Smile, jarroh: Scissors, bolalar: Baby, gigiyenist: ShieldCheck, texnik: Hammer, assistent: Users, admin: BriefcaseBusiness }

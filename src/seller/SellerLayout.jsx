@@ -10,7 +10,9 @@ import QuickActions from './components/bosh-sahifa/QuickActions'
 import OrderDrawer from './components/bosh-sahifa/OrderDrawer'
 import { useSellerData, reloadSeller } from './api'
 import { onNewNotification } from '../notificationsStore'
-import { Toaster } from './components/ui'
+import { Toaster, toast } from './components/ui'
+import SellerTypePicker from './components/shell/SellerTypePicker'
+import { needsSellerTypePick, sellerTypeInfo } from '../lib/sellerType'
 
 function useShopName() {
   const session = useSession()
@@ -117,6 +119,7 @@ export default function SellerLayout() {
 
       <QuickActions open={quick} setOpen={setQuick} products={data.products} />
       <OrderDrawer orderId={orderId} onClose={() => setOrderId(null)} />
+      <SellerTypePicker open={verified && needsSellerTypePick(session.profile)} onDone={(t) => toast(`Yo‘nalish tanlandi: ${sellerTypeInfo(t).label}`)} />
       <Toaster />
     </div>
   )

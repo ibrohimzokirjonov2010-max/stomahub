@@ -9,18 +9,24 @@ import { useMobile } from '../../../useMobile'
 import {
   BRANDS, COUNTRIES, SHADES, SIZES, ENDO_SIZES, ENDO_TAPERS, ENDO_LENGTHS, VARIANT_TYPES, UOMS, DOC_TYPES, STORAGE_TEMPS,
   SPEC_PRESETS, REORDER_INTERVALS, categoryOptions, normCategory, variantLabel, cleanTiers,
-  FORMA_COLORS, isFormaCategory,
+  FORMA_COLORS, isFormaCategory, isJihozCategory,
 } from '../../../config/productCatalog'
+import { useSession } from '../../../sessionStore'
+import { sellerTypeOf, sellerTypeInfo, categoriesFor } from '../../../lib/sellerType'
+import { catList as JIHOZ_KINDS, warranties as JIHOZ_WARRANTIES, cities as JIHOZ_CITIES } from '../../../jihozData'
+import SellerTypePicker from '../shell/SellerTypePicker'
 import { SIZE_TYPES, sizeOptionsFor } from '../../../lib/formaSizes'
 import { cats as FORMA_KINDS, genders as FORMA_GENDERS, fabrics as FORMA_FABRICS } from '../../../formaData'
 
 // columns added by migration 0029 (form keeps working if it is not applied yet)
-const NEW_COLS = ['clinical_use', 'delivery_info', 'reorder', 'variant_type', 'uom', 'min_qty', 'price_tiers', 'reg_cert_no', 'lot_no', 'storage_temp', 'forma']
+const NEW_COLS = ['clinical_use', 'delivery_info', 'reorder', 'variant_type', 'uom', 'min_qty', 'price_tiers', 'reg_cert_no', 'lot_no', 'storage_temp', 'forma', 'jihoz']
 const FORMA_BLANK = { cat: 'scrub', gender: 'uni', fabric: '', size_type: 'clothing', kashta_on: false, kashta_price: '' }
+// 0065: Jihozlar bo‘limi (faqat yangi uskunalar — holat maydoni yo‘q)
+const JIHOZ_BLANK = { cat: 'unit', model: '', year: '', warranty: '12', city: 'Toshkent', install: false, lizing: false }
 const blank = {
   name: '', category: '', brand: '', country: '', description: '', price: '', stock: '', sku: '', expires_on: '', unit: '', images: [], variants: [], documents: [],
   specs: [], clinical_use: '', delivery_info: '', reorder_enabled: false, reorder_days: 30, variant_type: 'rang', uom: 'dona', min_qty: '1', price_tiers: [],
-  reg_cert_no: '', lot_no: '', storage_temp: '', forma: FORMA_BLANK,
+  reg_cert_no: '', lot_no: '', storage_temp: '', forma: FORMA_BLANK, jihoz: JIHOZ_BLANK,
 }
 const toNum = (v) => Number(String(v ?? '').replace(/\s/g, '')) || 0
 const sec = 'mt-5 border-t border-[#E6EEF0] pt-4'
@@ -49,7 +55,13 @@ export function fromProduct(product) {
     price_tiers: (product.price_tiers || []).map((t) => ({ min_qty: String(t.min_qty), price: String(t.price) })),
     reg_cert_no: product.reg_cert_no || '', lot_no: product.lot_no || '', storage_temp: product.storage_temp || '',
     forma: fromForma(product.forma),
+    jihoz: fromJihoz(product.jihoz),
   }
+}
+
+function fromJihoz(j) {
+  const x = j && typeof j === 'object' ? j : {}
+  return { ...JIHOZ_BLANK, cat: x.cat || 'unit', model: x.model || '', year: x.year ? String(x.year) : '', warranty: String(x.warranty ?? 12), city: x.city || 'Toshkent', install: !!x.install, lizing: !!x.lizing }
 }
 
 function fromForma(f) {
@@ -93,6 +105,11 @@ export function toRow(v) {
       cat: v.forma?.cat || 'scrub', gender: v.forma?.gender || 'uni', fabric: v.forma?.fabric || '', size_type: v.forma?.size_type || 'clothing',
       kashta_price: v.forma?.kashta_on ? toNum(v.forma?.kashta_price) : 0,
     } : {},
+    // 0065: Jihozlar bo‘limi ma’lumoti (faqat «Stomatologik jihozlar» kategoriyasida; hammasi yangi)
+    jihoz: isJihozCategory(v.category) ? {
+      cat: v.jihoz?.cat || 'unit', model: String(v.jihoz?.model || '').trim(), year: Math.round(toNum(v.jihoz?.year)) || null,
+      warranty: Math.max(0, Math.round(toNum(v.jihoz?.warranty))), city: v.jihoz?.city || '', install: !!v.jihoz?.install, lizing: !!v.jihoz?.lizing,
+    } : {},
   }
 }
 // Yangi mahsulot formasi uchun lokal qoralama (sahifa yopilsa ham yo‘qolmaydi)
@@ -131,6 +148,25 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const setList = (key, i, k, val) => setV((s) => ({ ...s, [key]: s[key].map((x, j) => (j === i ? (Array.isArray(x) ? x.map((y, n) => (n === k ? val : y)) : { ...x, [k]: val }) : x)) }))
   const hasVariants = v.variants.length > 0
   const isForma = isFormaCategory(v.category)
+  const isJihoz = isJihozCategory(v.category)
+  const jz = { ...JIHOZ_BLANK, ...(v.jihoz || {}) }
+  const setJ = (k) => (val) => setV((s) => ({ ...s, jihoz: { ...JIHOZ_BLANK, ...(s.jihoz || {}), [k]: val?.target ? val.target.value : val } }))
+  // 0065: do‘kon yo‘nalishi — kategoriyalar shu turga cheklanadi (server ham tekshiradi)
+  const session = useSession()
+  const stype = sellerTypeOf(session.profile)
+  const tinfo = sellerTypeInfo(stype)
+  const cats = categoriesFor(stype)
+  const fixedCat = cats.length === 1 ? cats[0] : ''
+  const [typeOpen, setTypeOpen] = useState(false)
+  useEffect(() => {
+    if (!open || product) return
+    setV((s) => {
+      const next = fixedCat || (cats.includes(s.category) ? s.category : '')
+      if (next === s.category) return s
+      const vt0 = isFormaCategory(next) ? 'forma' : s.variant_type === 'forma' ? 'olcham' : s.variant_type
+      return { ...s, category: next, variant_type: vt0, variants: [] }
+    })
+  }, [open, product, fixedCat, cats])
   const fm = { ...FORMA_BLANK, ...(v.forma || {}) }
   const setF = (k) => (val) => setV((s) => ({ ...s, forma: { ...FORMA_BLANK, ...(s.forma || {}), [k]: val } }))
   const [pickSizes, setPickSizes] = useState([])
@@ -168,6 +204,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
     if (hasVariants && v.variants.some((x) => /^-/.test(String(x.stock).trim()) || !isInt(x.stock))) errs.push('Variant qoldig‘i 0 yoki undan katta butun son bo‘lishi kerak')
     if (hasVariants && v.variants.some((x) => !isNum(x.price))) errs.push('Variant narxi faqat raqam bo‘lishi kerak')
     if (!isInt(v.min_qty) || toNum(v.min_qty) < 0) errs.push('Minimal buyurtma musbat butun son bo‘lishi kerak')
+    const yr = toNum(v.jihoz?.year)
+    if (isJihozCategory(v.category) && yr && (yr < 2000 || yr > new Date().getFullYear() + 1)) errs.push('Ishlab chiqarilgan yil noto‘g‘ri')
     if (v.expires_on && v.expires_on < tashkentToday()) errs.push('Yaroqlilik muddati o‘tgan sana bo‘lishi mumkin emas')
     if (!asDraft) {
       if (!v.category) errs.push('Kategoriyani tanlang')
@@ -176,6 +214,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       if (!v.images.length) errs.push('Kamida bitta mahsulot rasmini yuklang')
       if (hasVariants && v.variants.some((x) => !variantLabel(x, v.variant_type))) errs.push('Har bir variant uchun qiymat kiriting')
       if (isFormaCategory(v.category) && !hasVariants) errs.push('Forma uchun o‘lcham va ranglarni tanlab, variantlarni yarating')
+      if (isJihozCategory(v.category) && !v.brand.trim()) errs.push('Jihoz brendini kiriting')
+      if (isJihozCategory(v.category) && !String(v.jihoz?.model || '').trim()) errs.push('Jihoz modelini kiriting')
       if (isFormaCategory(v.category) && v.forma?.kashta_on && toNum(v.forma?.kashta_price) <= 0) errs.push('Kashta narxini kiriting')
       const stockTotal = hasVariants ? Number(sumStock(v.variants)) : toNum(v.stock)
       if (toNum(v.min_qty) > 1 && toNum(v.min_qty) > stockTotal) errs.push(`Minimal buyurtma (${toNum(v.min_qty)}) qoldiqdan (${stockTotal}) oshmasligi kerak`)
@@ -250,6 +290,11 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
           <span className="mt-1 block text-[12px] text-[#BE123C]">Kamchilikni tuzatib, qayta tekshiruvga yuboring.</span>
         </div>
       )}
+      <div data-testid="seller-type-bar" className="mb-4 flex items-center gap-2 rounded-xl bg-[#F0FDFA] px-3 py-2 text-[13px] text-[#10283F]">
+        <span className="min-w-0 flex-1 leading-snug">Yo‘nalish: <b className="font-semibold">{tinfo.label}</b> <span className="whitespace-nowrap text-[#5C6E80]">→ {tinfo.section} bo‘limi</span></span>
+        {!product && <button type="button" onClick={() => setTypeOpen(true)} className="shrink-0 font-semibold text-[#0F766E]">O‘zgartirish</button>}
+      </div>
+      <SellerTypePicker key={String(typeOpen)} open={typeOpen} current={stype} onClose={() => setTypeOpen(false)} onDone={(t) => { setTypeOpen(false); toast(`Yo‘nalish: ${sellerTypeInfo(t).label}`) }} />
       <datalist id="sh-brands">{BRANDS.map((b) => <option key={b} value={b} />)}</datalist>
       <datalist id="sh-spec-keys">{SPEC_PRESETS.map((b) => <option key={b} value={b} />)}</datalist>
       <datalist id="sh-temps">{STORAGE_TEMPS.map((b) => <option key={b} value={b} />)}</datalist>
@@ -270,14 +315,18 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
         {/* main info */}
         <div className="grid grid-cols-2 content-start gap-3 md:pl-5">
           <Field label="Mahsulot nomi" required className="col-span-2"><Input value={v.name} onChange={set('name')} placeholder="Mahsulot nomini kiriting..." /></Field>
-          <Field label="Kategoriya" required><Select value={v.category} onChange={(val) => setV((s) => {
-            const forma = isFormaCategory(val)
-            const vt0 = forma ? 'forma' : s.variant_type === 'forma' ? 'olcham' : s.variant_type
-            return { ...s, category: val, variant_type: vt0, variants: vt0 !== s.variant_type ? [] : s.variants }
-          })} options={categoryOptions(v.category)} placeholder="— Tanlang —" /></Field>
-          <Field label="Brend" hint="Ro‘yxatdan tanlang yoki o‘zingiz yozing"><Input list="sh-brands" value={v.brand} onChange={set('brand')} placeholder="Masalan: Zhermack" /></Field>
+          {fixedCat && (!product || v.category === fixedCat) ? (
+            <Field label="Bo‘lim"><div data-testid="fixed-category" className="flex h-[42px] items-center gap-2 rounded-xl border border-[#DCE5E7] bg-[#F6FAFA] px-3 text-[14px] font-semibold text-[#10283F]">{tinfo.section}<span className="truncate text-[12px] font-normal text-[#5C6E80]">· {fixedCat}</span></div></Field>
+          ) : (
+            <Field label="Kategoriya" required><Select value={v.category} onChange={(val) => setV((s) => {
+              const forma = isFormaCategory(val)
+              const vt0 = forma ? 'forma' : s.variant_type === 'forma' ? 'olcham' : s.variant_type
+              return { ...s, category: val, variant_type: vt0, variants: vt0 !== s.variant_type ? [] : s.variants }
+            })} options={categoryOptions(v.category, product ? undefined : cats)} placeholder="— Tanlang —" /></Field>
+          )}
+          <Field label="Brend" hint="Ro‘yxatdan tanlang yoki o‘zingiz yozing"><Input list="sh-brands" value={v.brand} onChange={set('brand')} placeholder={isJihoz ? 'Masalan: Sirona' : isForma ? 'Masalan: Cherokee' : 'Masalan: Zhermack'} /></Field>
           <Field label="Ishlab chiqaruvchi davlat"><Select value={v.country} onChange={set('country')} options={COUNTRIES} placeholder="— Tanlang —" /></Field>
-          <Field label="Qadoq tarkibi" hint="Masalan: 2 × 50 ml, 4 g"><Input value={v.unit} onChange={set('unit')} placeholder="2 × 50 ml" /></Field>
+          {!isForma && !isJihoz && <Field label="Qadoq tarkibi" hint="Masalan: 2 × 50 ml, 4 g"><Input value={v.unit} onChange={set('unit')} placeholder="2 × 50 ml" /></Field>}
           <Field label="Tavsif" required className="col-span-2"><Textarea value={v.description} onChange={(e) => set('description')(e.target.value.slice(0, 1000))} placeholder="Mahsulot haqida batafsil ma’lumot yozing..." /><span className="mt-1 block text-right text-[11.5px] text-[#5C6E80]">{v.description.length}/1000</span></Field>
         </div>
       </div>
@@ -327,6 +376,30 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
         </div>
       )}
 
+      {isJihoz && (
+        <div className={sec} data-testid="jihoz-block">
+          <div className={h}>Jihoz ma’lumotlari</div>
+          <div className={sub}>Jihozlar bo‘limida faqat yangi uskunalar sotiladi. Xaridor shu ma’lumotlar bo‘yicha qidiradi.</div>
+          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Field label="Jihoz turi"><Select value={jz.cat} onChange={setJ('cat')} options={JIHOZ_KINDS.filter(([k]) => k !== 'all')} /></Field>
+            <Field label="Model" required><Input value={jz.model} onChange={setJ('model')} placeholder="Masalan: Intego Pro" /></Field>
+            <Field label="Ishlab chiqarilgan yil"><Input inputMode="numeric" value={jz.year} onChange={(e) => setJ('year')(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="2025" /></Field>
+            <Field label="Kafolat"><Select value={String(jz.warranty)} onChange={setJ('warranty')} options={JIHOZ_WARRANTIES.map((m) => [String(m), m >= 12 ? `${m / 12} yil` : `${m} oy`])} /></Field>
+            <Field label="Shahar (ombor)"><Select value={jz.city} onChange={setJ('city')} options={JIHOZ_CITIES} /></Field>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
+              <Toggle checked={!!jz.install} onChange={setJ('install')} />
+              <div className="flex-1"><div className="text-[13.5px] font-semibold text-[#10283F]">O‘rnatish narxga kiradi</div><div className={sub}>Klinikada o‘rnatish va sozlashni o‘zingiz bajarasiz</div></div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
+              <Toggle checked={!!jz.lizing} onChange={setJ('lizing')} />
+              <div className="flex-1"><div className="text-[13.5px] font-semibold text-[#10283F]">Bo‘lib to‘lash mumkin</div><div className={sub}>Xaridor shartlarni siz bilan Telegram orqali kelishadi</div></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* pricing */}
       <div className={sec}>
         <div className={h}>Narx va xarid shartlari</div>
@@ -336,9 +409,9 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
           <Field label="Minimal buyurtma" hint={`${v.uom} hisobida`}><Input inputMode="numeric" value={v.min_qty} onChange={set('min_qty')} placeholder="1" /></Field>
           <Field label={`Qoldiq (${v.uom})`} required hint={hasVariants ? 'Variantlar bo‘yicha hisoblanadi' : ''}><Input inputMode="numeric" value={hasVariants ? sumStock(v.variants) : v.stock} disabled={hasVariants} onChange={set('stock')} placeholder="15" /></Field>
           <Field label="SKU" required={!mobile}><Input value={v.sku} onChange={set('sku')} placeholder="CMP-A3-001" /></Field>
-          <Field label="Yaroqlilik muddati"><Input type="date" value={v.expires_on} onChange={set('expires_on')} /></Field>
+          {!isForma && !isJihoz && <Field label="Yaroqlilik muddati"><Input type="date" value={v.expires_on} onChange={set('expires_on')} /></Field>}
         </div>
-        <div className="mt-3 rounded-xl border border-[#E6EEF0] p-3">
+        {!isJihoz && <div className="mt-3 rounded-xl border border-[#E6EEF0] p-3">
           <div className="flex items-start justify-between gap-3">
             <div><div className="text-[13.5px] font-semibold text-[#10283F]">Ulgurji narxlar</div><div className={sub}>Ko‘p olganda arzonroq narx, masalan: 10 {v.uom} va undan ko‘p — 230 000 so‘m</div></div>
             <Btn variant="soft" icon={Plus} size="sm" onClick={() => setV((s) => ({ ...s, price_tiers: [...s.price_tiers, { min_qty: '10', price: '' }] }))}>Daraja qo‘shish</Btn>
@@ -352,11 +425,11 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
               <button type="button" aria-label="O‘chirish" onClick={() => setV((s) => ({ ...s, price_tiers: s.price_tiers.filter((_, j) => j !== i) }))} className="rounded p-1 hover:bg-[#F0FDFA]"><Trash2 className="size-4" /></button>
             </div>
           ))}
-        </div>
+        </div>}
       </div>
 
       {/* variants */}
-      <div className={sec}>
+      {!isJihoz && <div className={sec}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><div className={h}>Variantlar</div><div className={sub}>Har bir variantning o‘z narxi, qoldig‘i va SKU si bo‘ladi.</div></div>
           <div className="flex items-center gap-2">
@@ -383,14 +456,14 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
             </table>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* product page tabs */}
       <div className={sec}>
         <div className={h}>Mahsulot sahifasi bo‘limlari</div>
         <div className={sub}>Xaridor mahsulot sahifasidagi tablarda ko‘radi. Bo‘sh qoldirilgan bo‘lim ko‘rsatilmaydi.</div>
         <div className="mt-3 grid gap-4 md:grid-cols-2">
-          <Field label="Klinik qo‘llanish" hint="Ko‘rsatmalar, qo‘llash tartibi, qarshi ko‘rsatmalar"><Textarea value={v.clinical_use} onChange={(e) => set('clinical_use')(e.target.value.slice(0, 2000))} placeholder="Masalan: Bir bosqichli ottisk olish uchun. Aralashtirish vaqti 30 s, og‘izda qotish 3 daqiqa..." /></Field>
+          {!isForma && <Field label={isJihoz ? 'Qo‘llanish va imkoniyatlar' : 'Klinik qo‘llanish'} hint="Ko‘rsatmalar, qo‘llash tartibi, qarshi ko‘rsatmalar"><Textarea value={v.clinical_use} onChange={(e) => set('clinical_use')(e.target.value.slice(0, 2000))} placeholder="Masalan: Bir bosqichli ottisk olish uchun. Aralashtirish vaqti 30 s, og‘izda qotish 3 daqiqa..." /></Field>}
           <Field label="Yetkazib berish shartlari" hint="Muddat, hudud, narx, qaytarish shartlari"><Textarea value={v.delivery_info} onChange={(e) => set('delivery_info')(e.target.value.slice(0, 1000))} placeholder="Masalan: Toshkent bo‘ylab 1 kunda bepul (500 000 so‘mdan). Viloyatlarga BTS orqali 2–3 kun." /></Field>
         </div>
         <div className="mt-4">
@@ -406,23 +479,23 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
             </div>
           ))}
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
+        {!isForma && !isJihoz && <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
           <Toggle checked={v.reorder_enabled} onChange={(x) => setV((s) => ({ ...s, reorder_enabled: x }))} />
           <div className="flex-1"><div className="text-[13.5px] font-semibold text-[#10283F]">Qayta buyurtma</div><div className={sub}>Xaridor bu mahsulotni muntazam (avtomatik eslatma bilan) buyurtma qila oladi</div></div>
           {v.reorder_enabled && <Select value={String(v.reorder_days)} onChange={(x) => setV((s) => ({ ...s, reorder_days: Number(x) }))} options={REORDER_INTERVALS.map(([d, l]) => [String(d), l])} className="w-[180px]" />}
-        </div>
+        </div>}
       </div>
 
       {/* medical device */}
-      <div className={sec}>
+      {!isForma && <div className={sec}>
         <div className={h}>Tibbiy buyum ma’lumotlari</div>
         <div className={sub}>O‘zbekistonda tibbiy buyum sifatida ro‘yxatdan o‘tgan mahsulotlar uchun</div>
         <div className="mt-3 grid gap-3 md:grid-cols-3 md:gap-4">
           <Field label="Ro‘yxatdan o‘tganlik guvohnomasi №" hint="O‘zbekiston tibbiy buyum guvohnomasi"><Input value={v.reg_cert_no} onChange={set('reg_cert_no')} placeholder="TV/X 01234/05/24" /></Field>
-          <Field label="Partiya (LOT) raqami"><Input value={v.lot_no} onChange={set('lot_no')} placeholder="LOT 2405123" /></Field>
-          <Field label="Saqlash harorati"><Input list="sh-temps" value={v.storage_temp} onChange={set('storage_temp')} placeholder="+5…+25 °C" /></Field>
+          {!isJihoz && <Field label="Partiya (LOT) raqami"><Input value={v.lot_no} onChange={set('lot_no')} placeholder="LOT 2405123" /></Field>}
+          {!isJihoz && <Field label="Saqlash harorati"><Input list="sh-temps" value={v.storage_temp} onChange={set('storage_temp')} placeholder="+5…+25 °C" /></Field>}
         </div>
-      </div>
+      </div>}
 
       {/* documents */}
       <div className={sec}>

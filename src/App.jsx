@@ -123,6 +123,7 @@ import { adminRoutes } from './admin/routes'
 const AdsShot = import.meta.env.DEV ? lazy(() => import('./dev/AdsShot')) : null
 const ShotHarness = import.meta.env.DEV ? lazy(() => import('./admin/pages/ShotHarness')) : null
 const SellerProfileShot = import.meta.env.DEV ? lazy(() => import('./dev/SellerProfileShot')) : null
+const SellerTypeShot = import.meta.env.DEV ? lazy(() => import('./dev/SellerTypeShot')) : null
 const ToastShot = import.meta.env.DEV ? lazy(() => import('./dev/ToastShot')) : null
 const NotifyShot = import.meta.env.DEV ? lazy(() => import('./dev/NotifyShot')) : null
 const EscrowShot = import.meta.env.DEV ? lazy(() => import('./dev/EscrowShot')) : null
@@ -187,6 +188,7 @@ export default function App() {
           {sellerRoutes}
           {adminRoutes}
           {AdsShot && <Route path="/ads-shot/seller" element={<Suspense fallback={null}><AdsShot /></Suspense>} />}
+          {SellerTypeShot && <Route path="/seller-type-shot/:sec/:id?/*" element={<Suspense fallback={null}><SellerTypeShot /></Suspense>} />}
           {SellerProfileShot && <Route path="/seller-profile-shot/:sec" element={<Suspense fallback={null}><SellerProfileShot /></Suspense>} />}
           {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
           {ToastShot && <Route path="/toast-shot/:mode" element={<Suspense fallback={null}><ToastShot /></Suspense>} />}
