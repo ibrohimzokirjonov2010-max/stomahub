@@ -52,7 +52,7 @@ extras.forEach(([id, name, role, district, years, jobs, rating, reviews, status,
 export const why = [
   ['Tekshirilgan mutaxassislar', 'Hujjat va portfolio ko‘rib chiqiladi'],
   ['Kafolatli xizmat', 'Bajarilgan ish yozma kafolat bilan'],
-  ['Tezkor javob', 'Onlayn ustalar bir necha daqiqada javob beradi'],
+  ['To‘g‘ridan-to‘g‘ri aloqa', 'Ustaga Telegram yoki telefon orqali o‘zingiz yozasiz'],
   ['Shaffof narxlar', 'Chaqiruv va ish narxi oldindan ko‘rinadi'],
 ]
 

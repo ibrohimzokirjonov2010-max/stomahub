@@ -11,20 +11,15 @@ import { BottomSheet } from './MobileSeminars'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet, CallSheet } from './MobileMutaxassislar'
 import { Pick } from './MobileIshlar'
-import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
+import PhoneInput from '../PhoneInput'
+import { OrderSheet } from '../usta/UstaOrder'
+
+export { OrderSheet }
 
 const CAT_ICONS = { all: LayoutGrid, kreslo: Armchair, rentgen: ScanLine, ornatish: Wrench, tamir: Cog, konsult: MessagesSquare }
 const PRICES = [['', 'Narx'], ['200000', '200 ming gacha'], ['300000', '300 ming gacha'], ['500000', '500 ming gacha']]
 const SORTS = [['rec', 'Tavsiya etilgan'], ['rating', 'Reyting yuqori'], ['reviews', 'Ko‘p baholangan'], ['price', 'Arzonroq'], ['years', 'Tajribaliroq']]
-const TIMES = ['09:00', '11:00', '14:00', '16:00', '18:00']
-const DAYS = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh']
 export const USTA_QUICK = ['Narxini bilmoqchiman', 'Bugun kela olasizmi?', 'Diagnostika qancha turadi?', 'Kafolat berasizmi?']
-
-export function StatusBadge({ m, className = '' }) {
-  return m.status === 'online'
-    ? <span className={`flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-[#16a05a] shadow-sm ${className}`}><span className="size-1.5 rounded-full bg-[#22c55e]" /> Onlayn</span>
-    : <span className={`flex items-center gap-1 rounded-full bg-[#334155]/80 px-2 py-0.5 text-[10px] font-semibold text-white ${className}`}><span className="size-1.5 rounded-full bg-white" /> Band</span>
-}
 
 export default function MobileUstalar() {
   const navigate = useNavigate()
@@ -135,7 +130,6 @@ function UstaCard({ m, onCall, onOrder, onWorks, onOpen }) {
     <article className="relative flex gap-2.5 rounded-2xl bg-white p-2.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
       <Link to={`/ustalar/${m.id}`} className="relative w-[104px] shrink-0 overflow-hidden rounded-xl bg-[#eef3f5]">
         <img src={m.photo} alt={m.name} loading="lazy" className="absolute inset-0 size-full object-cover" style={{ objectPosition: '30% 20%' }} />
-        <StatusBadge m={m} className="absolute left-1.5 top-1.5" />
       </Link>
       <div className="min-w-0 flex-1">
         <div className="flex gap-1.5 pr-3.5">
@@ -174,71 +168,6 @@ const chipCls = (on) => `flex h-9 items-center gap-1 rounded-xl border px-3 text
 const phoneOk = (p) => {
   const d = p.replace(/\D/g, '')
   return d.length === 12 && d.startsWith('998')
-}
-
-export function OrderSheet({ m, service, onClose, onDone }) {
-  const busy = m.status === 'busy'
-  const days = Array.from({ length: 6 }, (_, i) => {
-    const x = new Date()
-    x.setDate(x.getDate() + i + (busy ? 1 : 0))
-    return x
-  })
-  const [svc, setSvc] = useState(service?.id || m.services[0].id)
-  const [model, setModel] = useState('')
-  const [problem, setProblem] = useState('')
-  const [day, setDay] = useState(0)
-  const [time, setTime] = useState('')
-  const [address, setAddress] = useState('')
-  const [phone, setPhone] = useState('+998 ')
-  const [tried, setTried] = useState(false)
-  const picked = m.services.find((s) => s.id === svc)
-  const hour = new Date().getHours()
-  const taken = (i, t) => (i === 0 && !busy && Number(t.slice(0, 2)) <= hour) || (i * 5 + TIMES.indexOf(t) * 3 + m.reviews) % 4 === 0
-  const errs = { problem: problem.trim().length < 5, time: !time, address: address.trim().length < 3, phone: !phoneOk(phone) }
-  const ok = !Object.values(errs).some(Boolean)
-  const dayLabel = (x, i) => (i === 0 && !busy ? 'Bugun' : `${x.getDate()}.${String(x.getMonth() + 1).padStart(2, '0')}`)
-  const submit = () => {
-    setTried(true)
-    if (ok) onDone(`Buyurtma yuborildi: ${dayLabel(days[day], day)}, ${time}. ${m.name} tez orada bog‘lanadi`)
-  }
-  return (
-    <BottomSheet title="Buyurtma berish" onClose={onClose} footer={<button type="button" onClick={submit} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Buyurtma berish · {som(picked.price)}</button>}>
-      <div className="mt-2 flex items-center gap-2.5 rounded-2xl bg-[#f2f8f8] p-2.5">
-        <span className="size-11 shrink-0 overflow-hidden rounded-full"><img src={m.photo} alt="" className="size-full object-cover" style={{ objectPosition: m.face, transform: 'scale(2.4)', transformOrigin: m.face }} /></span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold text-ink">{m.name}</p>
-          <p className="truncate text-[11.5px] text-muted">{m.role}</p>
-        </div>
-        <StatusBadge m={m} />
-      </div>
-      {busy && <p className="mt-2 rounded-xl bg-[#fff6e5] px-3 py-2 text-[11.5px] text-[#a86500]">Usta bugun band — eng yaqin bo‘sh kun ertaga.</p>}
-      <p className="mt-3 text-[13px] font-semibold text-ink">Xizmat</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {m.services.map((s) => <button key={s.id} type="button" aria-pressed={svc === s.id} onClick={() => setSvc(s.id)} className={chipCls(svc === s.id)}>{svc === s.id && <Check className="size-3.5" />}{s.name}</button>)}
-      </div>
-      <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Jihoz modeli (masalan, NSK Pana-Max)" className={`mt-3 ${field(false)}`} />
-      <textarea value={problem} onChange={(e) => setProblem(e.target.value)} rows={2} placeholder="Muammoni qisqacha yozing..." className={`mt-2 w-full resize-none rounded-xl border px-3 py-2.5 text-[13.5px] outline-none focus:border-sea ${tried && errs.problem ? 'border-sale' : 'border-line'}`} />
-      <p className="mt-3 text-[13px] font-semibold text-ink">Qachon</p>
-      <div className="mt-2 grid grid-cols-6 gap-1.5">
-        {days.map((x, i) => (
-          <button key={i} type="button" aria-pressed={day === i} onClick={() => { setDay(i); setTime('') }} className={`flex h-14 flex-col items-center justify-center rounded-xl border text-[11px] ${day === i ? 'border-[#0b8a95] bg-[#0b8a95] text-white' : 'border-line text-ink-2'}`}>
-            {i === 0 && !busy ? 'Bugun' : DAYS[x.getDay()]}<b className="text-[15px]">{x.getDate()}</b>
-          </button>
-        ))}
-      </div>
-      <div className="mt-2 grid grid-cols-5 gap-1.5">
-        {TIMES.map((t) => {
-          const off = taken(day, t)
-          return <button key={t} type="button" disabled={off} aria-pressed={time === t} onClick={() => setTime(t)} className={`h-10 rounded-xl border text-[12.5px] font-semibold disabled:border-line disabled:bg-page disabled:text-muted disabled:line-through ${time === t ? 'border-[#0b8a95] bg-[#e6f4f3] text-[#0b6d73]' : 'border-line text-ink'}`}>{t}</button>
-        })}
-      </div>
-      {tried && errs.time && <p className="mt-1 text-[11.5px] text-sale">Vaqtni tanlang</p>}
-      <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Klinika manzili" className={`mt-3 ${field(tried && errs.address)}`} />
-      <PhoneInput value={phone} onChange={setPhone} valueMode="e164" className={`mt-2 ${field(tried && errs.phone)}`} invalid={tried && errs.phone} placeholder="+998 90 123 45 67" />
-      {tried && !ok && <p className="mt-1 text-[11.5px] text-sale">Qizil maydonlarni to‘ldiring</p>}
-      <div className="h-2" />
-    </BottomSheet>
-  )
 }
 
 function RequestSheet({ onClose, onDone }) {

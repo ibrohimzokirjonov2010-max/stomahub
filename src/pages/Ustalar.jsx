@@ -7,7 +7,11 @@ import {
 import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
-import { masters, cats, cities, districts, sorts, why, statusLabel } from '../ustalarData'
+import { masters, cats, cities, districts, sorts, why } from '../ustalarData'
+import { getUstaM } from '../ustalarMobileData'
+import { OrderSheet, openUstaChat } from '../components/usta/UstaOrder'
+import { ustaTelegram, ustaPhone } from '../ustaContact'
+import { isDemoItem } from '../demoContent'
 
 const catIcon = { all: LayoutGrid, unit: Wrench, handpiece: Cog, compressor: Fan, autoclave: Container, cbct: Scan, scan: Monitor, install: Hammer }
 
@@ -26,11 +30,10 @@ function Catalog({ query }) {
   const [city, setCity] = useState('Toshkent')
   const [district, setDistrict] = useState('')
   const [brand, setBrand] = useState('')
-  const [free, setFree] = useState('')
   const [rating, setRating] = useState('')
   const [sort, setSort] = useState('popular')
   const [saved, setSaved] = useState(() => new Set())
-  const [call, setCall] = useState(null)
+  const [toast, setToast] = useState('')
   const [order, setOrder] = useState(null)
   const [urgent, setUrgent] = useState(false)
   const [join, setJoin] = useState(false)
@@ -45,7 +48,6 @@ function Catalog({ query }) {
       if (city && m.city !== city) return false
       if (district && m.district !== district) return false
       if (brand && !m.brands.some((b) => b.toLowerCase() === brand.toLowerCase()) && !m.tags.some((t) => t.toLowerCase() === brand.toLowerCase())) return false
-      if (free && m.status !== free) return false
       if (rating && m.rating < Number(rating)) return false
       if (text && !`${m.name} ${m.role} ${m.tags.join(' ')} ${m.brands.join(' ')}`.toLowerCase().includes(text)) return false
       return true
@@ -54,7 +56,7 @@ function Catalog({ query }) {
     else if (sort === 'years') rows = [...rows].sort((a, b) => b.years - a.years)
     else if (sort === 'jobs') rows = [...rows].sort((a, b) => b.jobs - a.jobs)
     return rows
-  }, [cat, city, district, brand, free, rating, sort, query])
+  }, [cat, city, district, brand, rating, sort, query])
 
   return (
     <div className="pb-8 pt-3">
@@ -90,7 +92,6 @@ function Catalog({ query }) {
             <Select label="Shahar" value={city} onChange={setCity} options={[['', 'Barchasi'], ...cities.map((c) => [c, c])]} />
             <Select label="Tuman" value={district} onChange={setDistrict} options={[['', 'Barchasi'], ...districts.map((d) => [d, d])]} />
             <Select label="Brend/jihozlar" value={brand} onChange={setBrand} options={[['', 'Barchasi'], ...brands.map((b) => [b, b])]} />
-            <Select label="Hozir bo‘sh" value={free} onChange={setFree} options={[['', 'Barchasi'], ['online', 'Onlayn'], ['soon', 'Tez keladi'], ['offline', 'Offlayn']]} />
             <Select label="Reyting" value={rating} onChange={setRating} options={[['', 'Barchasi'], ['4.9', '4.9+'], ['4.7', '4.7+'], ['4.5', '4.5+']]} />
             <span className="ml-auto text-[11px] text-muted">Saralash</span>
             <Select label="" value={sort} onChange={setSort} options={Object.entries(sorts)} />
@@ -98,7 +99,7 @@ function Catalog({ query }) {
           <p className="mb-2 text-[13px] font-bold text-ink">{list.length} ta usta topildi</p>
           <div className="flex flex-col gap-2">
             {list.length === 0 ? <div className="grid h-[120px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">Usta topilmadi</div> : list.map((m) => (
-              <Card key={m.id} m={m} saved={saved.has(m.id)} onSave={() => setSaved((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })} onCall={() => setCall(m)} onOrder={() => setOrder(m)} />
+              <Card key={m.id} m={m} saved={saved.has(m.id)} onSave={() => setSaved((s) => { const n = new Set(s); n.has(m.id) ? n.delete(m.id) : n.add(m.id); return n })} onChat={() => openUstaChat(getUstaM(m.id) || m, setToast)} onOrder={() => setOrder(getUstaM(m.id))} />
             ))}
           </div>
         </div>
@@ -165,8 +166,8 @@ function Catalog({ query }) {
         </aside>
       </div>
 
-      {call && <Note title="Qo‘ng‘iroq" done={`${call.name}: ${call.phone}. Telegram: @${call.telegram}`} onClose={() => setCall(null)} />}
-      {order && <FormModal title={`${order.name} — buyurtma`} done="Buyurtma qabul qilindi. Usta siz bilan bog‘lanadi." onClose={() => setOrder(null)} fields={['Ism', 'Telefon', 'Jihoz va muammo']} />}
+      {order && <OrderSheet m={order} centered onClose={() => setOrder(null)} onDone={(msg) => { setOrder(null); setToast(msg) }} />}
+      {toast && <button type="button" onClick={() => setToast('')} className="fixed bottom-6 left-1/2 z-[70] -translate-x-1/2 rounded-xl bg-ink px-4 py-2.5 text-[13px] font-medium text-white shadow-lg">{toast}</button>}
       {urgent && <FormModal title="Shoshilinch chaqiruv" done="Navbatchi usta 15 daqiqa ichida qo‘ng‘iroq qiladi." onClose={() => setUrgent(false)} fields={['Telefon', 'Manzil', 'Nima buzilgan']} />}
       {join && <FormModal title="Usta sifatida ro‘yxatdan o‘tish" done="Arizangiz qabul qilindi. Profil tekshiruvdan so‘ng ochiladi." onClose={() => setJoin(false)} fields={['Ism', 'Telefon', 'Mutaxassislik']} />}
       {map && (
@@ -185,13 +186,14 @@ function Catalog({ query }) {
   )
 }
 
-function Card({ m, saved, onSave, onCall, onOrder }) {
-  const badge = m.status === 'online' ? 'bg-[#12a06a]' : m.status === 'soon' ? 'bg-[#e59a12]' : 'bg-[#8b97a6]'
+function Card({ m, saved, onSave, onChat, onOrder }) {
+  const demo = isDemoItem(m)
+  const tg = demo ? '' : ustaTelegram(m)
+  const tel = demo ? '' : ustaPhone(m)
   return (
     <article className="flex min-w-0 gap-3 rounded-xl bg-white p-2.5 shadow-card">
       <Link to={`/ustalar/${m.id}`} className="relative shrink-0 overflow-hidden rounded-lg" style={{ width: 118, height: 104 }}>
         <img src={m.photo} alt="" className="size-full object-cover" />
-        <span className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold text-white ${badge}`}>{statusLabel[m.status]}</span>
       </Link>
       <div className="min-w-0 flex-1">
         <Link to={`/ustalar/${m.id}`} className="text-[14px] font-extrabold text-ink hover:text-sea">{m.name}</Link>
@@ -215,9 +217,11 @@ function Card({ m, saved, onSave, onCall, onOrder }) {
           </div>
         ))}
         <div className="mt-1.5 flex gap-1">
-          <button onClick={onCall} className="flex h-7 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sea px-1 text-[9px] font-semibold text-sea"><Phone className="size-3" /> Qo‘ng‘iroq</button>
-          <button onClick={onCall} className="flex h-7 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sea px-1 text-[9px] font-semibold text-sea"><Send className="size-3" /> Telegram</button>
+          {demo ? <span className="flex h-7 flex-1 items-center justify-center rounded-lg bg-[#fff6e5] text-[9px] font-semibold text-[#8a5300]">Namuna — aloqa o‘chirilgan</span> : <>
+          {tel && <a href={`tel:${tel}`} className="flex h-7 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sea px-1 text-[9px] font-semibold text-sea"><Phone className="size-3" /> Qo‘ng‘iroq</a>}
+          {tg && <button onClick={onChat} className="flex h-7 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sea px-1 text-[9px] font-semibold text-sea"><Send className="size-3" /> Telegram</button>}
           <button onClick={onOrder} className="h-7 flex-1 whitespace-nowrap rounded-lg bg-sea px-1 text-[9px] font-semibold text-white">Buyurtma berish</button>
+          </>}
         </div>
       </div>
     </article>
@@ -239,16 +243,6 @@ function Field({ label, placeholder }) {
     <label className="text-[10px] text-muted">{label}
       <input required placeholder={placeholder} className="mt-1 h-8 w-full rounded-lg bg-page px-2 text-[11px] text-ink outline-none" />
     </label>
-  )
-}
-function Note({ title, done, onClose }) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[380px] rounded-2xl bg-white p-5 shadow-xl">
-        <div className="mb-2 flex items-center justify-between"><h3 className="text-[16px] font-bold">{title}</h3><button onClick={onClose} aria-label="Yopish"><X className="size-4 text-muted" /></button></div>
-        <p className="py-3 text-[13px] text-ink-2">{done}</p>
-      </div>
-    </div>
   )
 }
 function FormModal({ title, done, onClose, fields }) {

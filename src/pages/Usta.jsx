@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Star, Phone, Calendar, MessageCircle, MapPin, BadgeCheck, Clock, ShieldCheck, ChevronRight, X } from 'lucide-react'
-import { getUsta, viewOf, statusLabel } from '../ustalarData'
+import { Star, Phone, Calendar, Send, MapPin, BadgeCheck, Clock, ShieldCheck, ChevronRight, X } from 'lucide-react'
+import { getUsta, viewOf } from '../ustalarData'
+import { getUstaM } from '../ustalarMobileData'
+import { OrderSheet, openUstaChat } from '../components/usta/UstaOrder'
+import { ustaTelegram, ustaPhone, phoneLabel } from '../ustaContact'
 import { isDemoItem } from '../demoContent'
 import { DemoNotice, DemoChip } from '../components/DemoNotice'
 
@@ -13,9 +16,13 @@ const brandColor = {
 export default function Usta() {
   const { id } = useParams()
   const master = getUsta(id)
-  const [call, setCall] = useState(false)
   const [order, setOrder] = useState(false)
-  const [chat, setChat] = useState(false)
+  const [toast, setToast] = useState('')
+  useEffect(() => {
+    if (!toast) return undefined
+    const t = setTimeout(() => setToast(''), 3500)
+    return () => clearTimeout(t)
+  }, [toast])
   const [moreWorks, setMoreWorks] = useState(false)
   const [moreReviews, setMoreReviews] = useState(false)
 
@@ -24,6 +31,9 @@ export default function Usta() {
   }
 
   const view = viewOf(master)
+  const om = getUstaM(master.id)
+  const tg = ustaTelegram(master)
+  const tel = ustaPhone(master)
   const reviews = moreReviews ? view.reviewList : view.reviewList.slice(0, 4)
   const photos = moreWorks ? view.works : view.works.slice(0, 4)
 
@@ -52,11 +62,11 @@ export default function Usta() {
                   <span>{master.jobs} bajarilgan ish</span>
                   <span>Javob vaqti: {master.reply}</span>
                 </p>
-                <p className="mt-1 flex items-center gap-1 text-[13px]">{Number(master.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b>{master.rating}</b> <span className="text-muted">({master.reviews} sharh)</span></> : 'Hali baho yo‘q'} <span className="ml-2 rounded-md bg-[#f3f6fa] px-1.5 py-0.5 text-[10px]">{statusLabel[master.status]}</span></p>
+                <p className="mt-1 flex items-center gap-1 text-[13px]">{Number(master.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b>{master.rating}</b> <span className="text-muted">({master.reviews} sharh)</span></> : 'Hali baho yo‘q'}</p>
                 {isDemoItem(master) ? <DemoNotice className="mt-3" /> : <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => setCall(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Phone className="size-3.5" /> Qo‘ng‘iroq qilish</button>
-                  <button onClick={() => setOrder(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Calendar className="size-3.5" /> Buyurtma berish</button>
-                  <button onClick={() => setChat(true)} className="flex h-9 items-center gap-1.5 rounded-lg border border-sea px-3 text-[12px] font-semibold text-sea"><MessageCircle className="size-3.5" /> Xabar yozish</button>
+                  {tel && <a href={`tel:${tel}`} data-testid="usta-call" className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Phone className="size-3.5" /> {phoneLabel(tel)}</a>}
+                  {om && <button onClick={() => setOrder(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Calendar className="size-3.5" /> Buyurtma berish</button>}
+                  {tg && <button onClick={() => openUstaChat(om || master, setToast)} data-testid="usta-chat" className="flex h-9 items-center gap-1.5 rounded-lg border border-[#229ed9] px-3 text-[12px] font-semibold text-[#1c8ac4]"><Send className="size-3.5" /> Telegram’da yozish</button>}
                 </div>}
                 <p className="mb-1 mt-3 text-[12px] font-bold">Mutaxassislik va ko‘nikmalar</p>
                 <div className="flex flex-wrap gap-1">{view.skills.map((s) => <span key={s} className="rounded-md bg-[#f3f6fa] px-2 py-0.5 text-[11px] text-ink-2">{s}</span>)}</div>
@@ -148,28 +158,8 @@ export default function Usta() {
         </aside>
       </div>
 
-      {call && <Note title="Qo‘ng‘iroq qilish" done={`${master.name}: ${master.phone}`} onClose={() => setCall(false)} />}
-      {chat && <Note title="Xabar yozish" ask done="Xabaringiz ustaga yuborildi." onClose={() => setChat(false)} />}
-      {order && <Note title="Buyurtma berish" ask done={`${master.name} buyurtmani qabul qildi. Usta sana bo‘yicha bog‘lanadi.`} onClose={() => setOrder(false)} />}
-    </div>
-  )
-}
-
-function Note({ title, done, onClose, ask }) {
-  const [sent, setSent] = useState(!ask)
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-[400px] rounded-2xl bg-white p-5 shadow-xl">
-        <div className="mb-3 flex items-center justify-between"><h3 className="text-[16px] font-bold">{title}</h3><button onClick={onClose} aria-label="Yopish"><X className="size-4 text-muted" /></button></div>
-        {sent ? <p className="py-4 text-[13px] leading-relaxed text-ink-2">{done}</p> : (
-          <form onSubmit={(e) => { e.preventDefault(); setSent(true) }} className="flex flex-col gap-2">
-            <input required placeholder="Ism" className="h-10 rounded-lg bg-page px-3 text-[13px] outline-none" />
-            <input required placeholder="Telefon" className="h-10 rounded-lg bg-page px-3 text-[13px] outline-none" />
-            <textarea required placeholder="Xabar" className="h-20 rounded-lg bg-page p-3 text-[13px] outline-none" />
-            <button className="h-10 rounded-lg bg-sea text-[13px] font-semibold text-white">Yuborish</button>
-          </form>
-        )}
-      </div>
+      {order && om && !isDemoItem(master) && <OrderSheet m={om} centered onClose={() => setOrder(false)} onDone={(msg) => { setOrder(false); setToast(msg) }} />}
+      {toast && <div role="status" className="fixed bottom-6 left-1/2 z-[70] -translate-x-1/2 rounded-xl bg-ink px-4 py-2.5 text-[13px] font-medium text-white shadow-lg">{toast}</div>}
     </div>
   )
 }

@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, Heart, Share2, BadgeCheck, Star, BriefcaseBusiness, MapPin, CheckCircle2, Wrench, UsersRound, ShieldCheck, Clock,
-  ChevronRight, ArrowRight, Phone, CalendarDays, MessageCircle, Truck,
+  ChevronLeft, Heart, Share2, BadgeCheck, Star, BriefcaseBusiness, MapPin, Wrench, UsersRound, ShieldCheck, Clock,
+  ChevronRight, ArrowRight, Phone, CalendarDays, Send, Truck,
 } from 'lucide-react'
 import { getUstaM, som } from '../../ustalarMobileData'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { Lightbox } from './MobileCommunity'
-import { ChatSheet, CallSheet, useFav } from './MobileMutaxassislar'
+import { useFav } from './MobileMutaxassislar'
 import { ReviewsSheet, Review } from './MobileMutaxassis'
-import { OrderSheet, USTA_QUICK } from './MobileUstalar'
+import { OrderSheet, openUstaChat } from '../usta/UstaOrder'
+import { ustaTelegram, ustaPhone } from '../../ustaContact'
 import { isDemoItem } from '../../demoContent'
 import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 
@@ -50,6 +51,9 @@ function UstaView({ id }) {
 
   const isFav = fav.has(m.id)
   const demo = isDemoItem(m)
+  const tg = demo ? '' : ustaTelegram(m)
+  const tel = demo ? '' : ustaPhone(m)
+  const chat = () => openUstaChat(m, setToast)
   const total = m.reviews + reviews.length - m.reviewsList.length
   const go = (k) => {
     setTab(k)
@@ -91,7 +95,6 @@ function UstaView({ id }) {
               <span className="block size-full overflow-hidden rounded-full ring-[3px] ring-white">
                 <img src={m.photo} alt="" className="size-full object-cover" style={demo ? undefined : { objectPosition: m.face, transform: 'scale(2.4)', transformOrigin: m.face }} />
               </span>
-              <span className={`absolute bottom-1 right-1 size-4 rounded-full ring-[3px] ring-white ${m.online ? 'bg-[#22c55e]' : 'bg-[#9aa7b4]'}`} />
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
               <h1 className="flex items-center gap-1 text-[19px] font-extrabold leading-tight text-[#0d2a4a]"><span className="truncate">{m.name}</span>{!demo && m.verified && <BadgeCheck className="size-5 shrink-0 fill-sea text-white" />}</h1>
@@ -101,9 +104,6 @@ function UstaView({ id }) {
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-ink-2">
                 <span className="flex items-center gap-1"><BriefcaseBusiness className="size-3.5 text-muted" /> {m.years} yil tajriba</span>
                 <span className="flex items-center gap-1"><MapPin className="size-3.5 text-muted" /> {m.city}</span>
-                {m.online
-                  ? <span className="flex items-center gap-1 rounded-full bg-[#e3f8ec] px-2 py-0.5 text-[10.5px] font-semibold text-[#16a05a]"><CheckCircle2 className="size-3.5" /> Onlayn</span>
-                  : <span className="flex items-center gap-1 rounded-full bg-[#eef1f5] px-2 py-0.5 text-[10.5px] font-semibold text-ink-2"><Clock className="size-3.5" /> Band</span>}
               </div>
             </div>
           </div>
@@ -142,7 +142,7 @@ function UstaView({ id }) {
                   <b className="block text-[13px] font-semibold leading-tight text-ink">{s.name}</b>
                   <span className="mt-0.5 block text-[10.5px] leading-tight text-muted">{s.note}</span>
                 </span>
-                <span className="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#0b8a95]">{typeof s.price === 'number' ? som(s.price) : s.price}</span>
+                <span className="shrink-0 whitespace-nowrap text-[13px] font-bold text-[#0b8a95]">{s.priceText || (typeof s.price === 'number' ? som(s.price) : s.price)}</span>
                 <ChevronRight className="size-4 shrink-0 text-muted" />
               </button>
             ))}
@@ -185,21 +185,21 @@ function UstaView({ id }) {
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {m.brands.map((b) => <span key={b} className="rounded-lg border border-line px-2 py-1 text-[11px] font-bold text-[#0d2a4a]">{b}</span>)}
           </div>
-          {!demo && <button type="button" onClick={() => setSheet('chat')} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><MessageCircle className="size-4" /> Ustaga xabar yozish</button>}
+          {tg && <button type="button" onClick={chat} data-testid="usta-chat" className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#e8f5fc] text-[13px] font-semibold text-[#1c8ac4]"><Send className="size-4" /> Ustaga Telegram’da yozish</button>}
         </Card>
       </div>
 
       {demo ? (
         <div className="fixed inset-x-0 bottom-[62px] z-30 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur"><DemoActionBar /></div>
       ) : (
-      <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur">
-        <button type="button" onClick={() => setSheet('call')} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#0b8a95] bg-white text-[14px] font-semibold text-[#0b6d73]"><Phone className="size-5" /> Qo‘ng‘iroq</button>
+      <div className={`fixed inset-x-0 bottom-[62px] z-30 grid gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur ${tel || tg ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {tel
+          ? <a href={`tel:${tel}`} data-testid="usta-call" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#0b8a95] bg-white text-[14px] font-semibold text-[#0b6d73]"><Phone className="size-5" /> Qo‘ng‘iroq</a>
+          : tg && <button type="button" onClick={chat} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#229ed9] bg-white text-[14px] font-semibold text-[#1c8ac4]"><Send className="size-5" /> Telegram</button>}
         <button type="button" onClick={() => setSheet({ order: m.services[0] })} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(90deg,#0b8a95,#14a7a0)] text-[14px] font-semibold text-white shadow-[0_6px_14px_rgb(11_138_149/0.3)]"><CalendarDays className="size-5" /> Buyurtma berish</button>
       </div>
       )}
 
-      {sheet === 'call' && !demo && <CallSheet d={m} onClose={() => setSheet(null)} onChat={() => setSheet('chat')} onToast={setToast} />}
-      {sheet === 'chat' && !demo && <ChatSheet d={m} initial={`Assalomu alaykum, ${m.name}! Jihozni ta’mirlash bo‘yicha savolim bor edi.`} quick={USTA_QUICK} onClose={() => setSheet(null)} onSent={() => { setSheet(null); setToast('Xabar yuborildi. Usta tez orada javob beradi') }} />}
       {sheet === 'reviews' && <ReviewsSheet reviews={reviews} onClose={() => setSheet(null)} onAdd={(r) => { setReviews((l) => [r, ...l]); setToast('Sharhingiz qo‘shildi') }} />}
       {sheet?.order && !demo && <OrderSheet m={m} service={sheet.order} onClose={() => setSheet(null)} onDone={(msg) => { setSheet(null); setToast(msg) }} />}
       {zoom !== null && <Lightbox images={m.works} index={zoom} onClose={() => setZoom(null)} />}

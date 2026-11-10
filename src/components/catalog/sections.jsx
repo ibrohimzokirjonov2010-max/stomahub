@@ -220,11 +220,10 @@ export function useUstalarSection() {
       filters: [
         { key: 'city', label: 'Shahar', options: opts(items.map((m) => m.city)), match: (m, c) => m.city === c },
         { key: 'brand', label: 'Brend', options: opts(items.flatMap((m) => m.brands || [])), match: (m, b) => (m.brands || []).includes(b) },
-        { key: 'status', label: 'Holat', options: [['online', 'Hozir onlayn']], match: (m) => m.status === 'online' },
       ],
       sorts: [['default', 'Tavsiya etilgan', null], ['years', 'Tajriba', (a, b) => (b.years || 0) - (a.years || 0)]],
       text: (m) => `${m.name} ${m.role} ${(m.tags || []).join(' ')} ${(m.brands || []).join(' ')} ${m.city} ${m.district || ''}`,
-      card: (m) => ({ id: m.id, href: `/ustalar/${m.id}`, image: m.photo, kicker: [m.city, m.district].filter(Boolean).join(', '), title: m.name, meta: [m.role, m.years && `${m.years} yil tajriba`], priceText: m.services?.[0]?.price || '', badge: m.status === 'online' ? { text: 'Onlayn', tone: 'new' } : null }),
+      card: (m) => ({ id: m.id, href: `/ustalar/${m.id}`, image: m.photo, kicker: [m.city, m.district].filter(Boolean).join(', '), title: m.name, meta: [m.role, m.years && `${m.years} yil tajriba`], priceText: m.services?.[0]?.price || '' }),
       slides: (list, ctx) => slidesFor({ key: 'ustalar', icon: PWrench, items: list, image: (m) => m.photo, href: (m) => `/ustalar/${m.id}`, ctx }),
     }
   }, [v])
