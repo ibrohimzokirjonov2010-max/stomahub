@@ -10,7 +10,7 @@ import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { Lightbox } from './MobileCommunity'
 import { ChatSheet, CallSheet } from './MobileMutaxassislar'
-import { Pick } from './MobileIshlar'
+import { Pick } from './Pick'
 import PhoneInput from '../PhoneInput'
 import { OrderSheet } from '../usta/UstaOrder'
 

@@ -6,7 +6,9 @@ import { cats as bookCats, langOptions, formatOptions } from '../../booksData'
 import { directions, levels, formats } from '../../educationData'
 import { cats as ustaCats } from '../../ustalarData'
 import { catList as jihozCats, statusList } from '../../jihozData'
-import { specs as jobSpecs, cities as jobCities, types as jobTypes, exps as jobExps, pay } from '../../ishlarData'
+import { specs as jobSpecs, exps as jobExps } from '../../ishlarData'
+import { isPublicJob, JOB_CITIES, JOB_CITY_NAME, JOB_TYPES, JOB_TYPE_NAME, salaryShort } from '../../lib/vakansiya'
+import { JobFormSheet, MyJobsSheet } from '../vakansiya/JobSheets'
 import { surplusChips, conditions } from '../../surplusData'
 import { SPECS } from '../../mutaxassislarData'
 import { AD_CATS, DEALS, dealName, adPriceShort } from '../../elonlarData'
@@ -252,22 +254,31 @@ export function useJihozSection() {
   }, [v, live, liveStatus])
 }
 
-const jobCity = Object.fromEntries(jobCities)
+const initials = (s) => String(s || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'V'
 export function useIshlarSection() {
   const v = useCatalogVersion()
   return useMemo(() => {
-    const items = tag('job', jobs, (j) => j.title, (j) => j.clinic)
+    // Faqat foydalanuvchilar joylagan (0069) faol vakansiyalar; egasiz seed qatorlar recordSync’da tashlanadi.
+    const items = tag('job', jobs.filter(isPublicJob), (j) => j.title, (j) => j.clinic)
     return {
-      key: 'ishlar', shopActive: 'ishlar', title: 'Ish o‘rinlari', subtitle: 'Stomatologiya klinikalaridagi vakansiyalar', placeholder: 'Lavozim, klinika yoki shahar qidiring...',
+      key: 'ishlar', shopActive: 'ishlar', title: 'Vakansiyalar', subtitle: 'Stomatologiya klinikalaridagi ish o‘rinlari', placeholder: 'Lavozim, klinika yoki shahar qidiring...',
       items, cats: jobSpecs.map(([key, label]) => ({ key, label, icon: iconFor('ishlar', key, label) })), catOf: (j) => j.spec,
       filters: [
-        { key: 'city', label: 'Shahar', options: jobCities, match: (j, c) => j.city === c },
-        { key: 'type', label: 'Bandlik', options: jobTypes, match: (j, t) => j.type === t },
+        { key: 'city', label: 'Shahar', options: JOB_CITIES, match: (j, c) => j.city === c },
+        { key: 'type', label: 'Ish turi', options: JOB_TYPES, match: (j, t) => j.type === t },
         { key: 'exp', label: 'Tajriba', options: jobExps, match: (j, e) => j.exp === e },
       ],
-      sorts: [['default', 'Eng yangi', null], ['pay', 'Maosh', (a, b) => (b.max || 0) - (a.max || 0)]],
-      text: (j) => `${j.title} ${j.clinic} ${j.cityLabel || ''} ${j.district || ''} ${j.about || ''}`,
-      card: (j) => ({ id: j.id, href: `/ishlar/${j.id}`, image: j.image, kicker: j.clinic, title: j.title, meta: [[j.cityLabel || jobCity[j.city], j.district].filter(Boolean).join(', '), j.posted], priceText: j.min && j.max ? pay(j.min, j.max) : 'Kelishiladi', badge: { text: jobTypes.find(([k]) => k === j.type)?.[1] || 'Ish', tone: 'info' } }),
+      sorts: [['default', 'Eng yangi', null], ['pay', 'Maosh', (a, b) => (Number(b.max || b.min) || 0) - (Number(a.max || a.min) || 0)]],
+      action: {
+        label: 'Vakansiya qo‘shish',
+        render: ({ close, done }) => <JobFormSheet onClose={close} onDone={(m) => done(m)} />,
+      },
+      secondaryAction: {
+        label: 'Mening vakansiyalarim',
+        render: ({ close }) => <MyJobsSheet onClose={close} />,
+      },
+      text: (j) => `${j.title} ${j.clinic} ${j.cityLabel || ''} ${j.address || ''} ${(j.requirements || []).join(' ')} ${j.about || ''}`,
+      card: (j) => ({ id: j.id, href: `/ishlar/${j.id}`, tile: initials(j.clinic), kicker: j.clinic, title: j.title, meta: [[j.cityLabel || JOB_CITY_NAME[j.city], j.address].filter(Boolean).join(', '), j.posted], priceText: salaryShort(j.min, j.max), badge: { text: JOB_TYPE_NAME[j.type] || 'Ish', tone: 'info' } }),
       slides: (list, ctx) => slidesFor({ key: 'ishlar', icon: PJob, items: list, image: (j) => j.image, href: (j) => `/ishlar/${j.id}`, ctx }),
     }
   }, [v])

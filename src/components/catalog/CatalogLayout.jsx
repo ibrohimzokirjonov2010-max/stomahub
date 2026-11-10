@@ -259,7 +259,7 @@ export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
   return (
     <Link to={card.href} data-testid="catalog-card" className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
       <div className={`relative ${card.fit === 'contain' ? 'bg-white' : 'bg-[#eef3f6]'} ${desktop ? 'h-[190px]' : 'h-[150px]'}`}>
-        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-3' : 'object-cover object-[50%_18%]'}`} /> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
+        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-3' : 'object-cover object-[50%_18%]'}`} /> : card.tile ? <div aria-hidden="true" className="grid size-full place-items-center bg-[linear-gradient(135deg,#0b8a95,#0b5b66)] text-[30px] font-extrabold tracking-wide text-white">{card.tile}</div> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
         {card.badge && <span data-testid="catalog-badge" className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${badgeCls[card.badge.tone] || badgeCls.info}`}>{card.badge.text}</span>}
         {onLike && (
           <button type="button" onClick={(e) => { e.preventDefault(); onLike() }} aria-label="Sevimlilarga" aria-pressed={liked} className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/95 shadow-[0_1px_4px_rgb(11_31_58/0.15)]">
@@ -399,7 +399,7 @@ export function CatalogPage({ section }) {
 
   const body = (
     <>
-      <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => setPosting(true)} secondary={section.secondaryAction?.label} onSecondary={() => setMineOpen(true)} />
+      <CatalogHeader title={section.title} subtitle={section.subtitle} desktop={desktop} action={section.action?.label} onAction={() => { if (ensureLogin()) setPosting(true) }} secondary={section.secondaryAction?.label} onSecondary={() => { if (ensureLogin()) setMineOpen(true) }} />
       <CatalogSearch value={q} onChange={setQ} placeholder={section.placeholder} onFilter={() => setAllSheet(true)} active={active} inputRef={searchRef} desktop={desktop} onImage={section.imageSearch ? () => setImgOpen(true) : undefined} />
       {vis ? (
         <ImageSearchBanner vis={vis} desktop={desktop} count={list.length} setTerms={(terms) => setVis((v) => ({ ...v, terms }))} onClear={() => setVis(null)} />

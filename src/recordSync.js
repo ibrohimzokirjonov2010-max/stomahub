@@ -251,6 +251,11 @@ export async function loadCatalog() {
       } else {
         row = { ...row, payload }
       }
+    } else if (row.kind === 'job') {
+      // Vakansiyalar (0069): yopilgan/yashirilgan — faqat egasiga
+      const status = row.status || row.payload?.status || 'active'
+      if ((status !== 'active' || row.hidden) && !isOwner) return
+      row = { ...row, payload: { ...row.payload, status, ownerId: row.owner_id, ...(row.hidden ? { _pending: true } : {}) } }
     } else if (row.hidden) {
       // Yashirin (moderatsiyadagi/admin yashirgan) yozuvlar faqat egasiga, «moderatsiyada» belgisi bilan ko‘rinadi
       if (!isOwner) return
@@ -266,7 +271,8 @@ export async function loadCatalog() {
     const rows = grouped.get(kind) || []
     rows.sort((a, b) => (a.sort_at || 0) - (b.sort_at || 0))
     const next = rows.map((row) => row.payload)
-    const same = list.length === next.length && list.every((item, i) => item?.id === next[i]?.id)
+    // id bir xil bo‘lsa ham tahrirlangan yozuv yangilanishi kerak (masalan, vakansiya matni/holati)
+    const same = list.length === next.length && list.every((item, i) => item?.id === next[i]?.id && JSON.stringify(item) === JSON.stringify(next[i]))
     if (same && list.length === next.length) return
     list.splice(0, list.length, ...next)
     changed = true
