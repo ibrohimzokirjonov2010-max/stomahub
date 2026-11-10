@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../../cart'
-import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, ShoppingCart, Check, X, LayoutGrid, Tag } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Plus, Search, SlidersHorizontal, ArrowRight, ChevronDown, ArrowUpDown, Heart, Star, Check, X, LayoutGrid, Tag } from 'lucide-react'
+import CardQtyStepper, { useCardQty } from '../CardQtyStepper'
 import { useMobile } from '../../useMobile'
 import { ensureLogin } from '../../loginPrompt'
 import { BottomSheet } from '../mobile/MobileSeminars'
@@ -241,8 +241,22 @@ export function FilterBar({ filters, values, onChange, sorts, sort, onSort, desk
 /** Raqam guruhlari orasidagi bo‘shliqni bo‘linmas qiladi: "18 000 000 so‘m" -> faqat "so‘m" oldidan qator buzilishi mumkin. */
 export const keepDigits = (t) => String(t ?? '').replace(/(\d)[ \u00a0\u202f](?=\d)/g, '$1\u00a0')
 
-export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
+export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
   const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea' }
+  const lineId = card.cart?.line?.id
+  const qty = useCardQty(lineId)
+  const priceText = keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))
+  const priceBlock = (
+    <div data-testid="catalog-price" className="max-w-full leading-tight">
+      <p className={`whitespace-nowrap font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[12.5px]'}`}>{priceText}</p>
+      {card.oldPrice ? <s className="block whitespace-nowrap text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
+    </div>
+  )
+  const cartCtrl = card.cart ? (
+    <CardQtyStepper product={card.cart.line} lineId={lineId} onAdded={() => onAdd?.()} />
+  ) : (
+    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-sea-50 text-sea"><ArrowRight className="size-[17px]" /></span>
+  )
   return (
     <Link to={card.href} data-testid="catalog-card" className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
       <div className={`relative ${card.fit === 'contain' ? 'bg-white' : 'bg-[#eef3f6]'} ${desktop ? 'h-[190px]' : 'h-[150px]'}`}>
@@ -264,22 +278,18 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
         )}
         {(card.meta || []).filter(Boolean).slice(0, 2).map((m) => <p key={m} className="mt-0.5 truncate text-[10.5px] text-ink-2">{m}</p>)}
         {card.extra}
-        <div className="mt-auto flex items-end justify-between gap-1.5 pt-1.5">
-          {/* Narx hech qachon kesilmaydi: raqam guruhlari ajralmaydi, kerak bo‘lsa "so‘m" keyingi qatorga o‘tadi */}
-          <div data-testid="catalog-price" className="min-w-0 flex-1 leading-tight">
-            <p className={`break-words font-extrabold text-[#0d2a4a] ${desktop ? 'text-[14px]' : 'text-[13px]'}`}>
-              {keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))}
-            </p>
-            {card.oldPrice ? <s className="block text-[10.5px] font-medium text-muted">{keepDigits(som(card.oldPrice))}</s> : null}
+        {/* qty>0: narx alohida qator (nowrap), steyper pastda to‘liq en — narx siqilmaydi */}
+        {qty > 0 && card.cart ? (
+          <div className="mt-auto flex flex-col gap-1.5 pt-1.5">
+            {priceBlock}
+            {cartCtrl}
           </div>
-          {card.cart ? (
-            <button type="button" onClick={(e) => { e.preventDefault(); onAdd() }} aria-label={added ? 'Savatda' : 'Savatga qo‘shish'} className={`grid size-9 shrink-0 place-items-center rounded-xl active:scale-95 ${added ? 'bg-sea-50 text-sea ring-1 ring-sea/40' : 'bg-sea text-white'}`}>
-              {added ? <Check className="size-[18px]" strokeWidth={2.4} /> : <ShoppingCart className="size-[17px]" />}
-            </button>
-          ) : (
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-sea-50 text-sea"><ArrowRight className="size-[17px]" /></span>
-          )}
-        </div>
+        ) : (
+          <div className="mt-auto flex flex-wrap items-end gap-x-1.5 gap-y-1 pt-1.5">
+            {priceBlock}
+            <span className="ml-auto shrink-0">{cartCtrl}</span>
+          </div>
+        )}
       </div>
     </Link>
   )
@@ -290,14 +300,13 @@ export function CatalogCard({ card, liked, onLike, added, onAdd, desktop }) {
 const norm = (s) => String(s || '').toLowerCase()
 
 // ---- Reklama (0043) -----------------------------------------------------------------
-function AdCard({ ad, item, section, desktop, cartItems, add, navigate, setToast }) {
+function AdCard({ ad, item, section, desktop, setToast }) {
   useEffect(() => { trackAd('view', ad.campaign_id, item.id) }, [ad.campaign_id, item.id])
   const card = { ...section.card(item), badge: { text: 'Reklama', tone: 'info' } }
-  const added = card.cart ? cartItems.some((x) => String(x.id).startsWith(card.cart.prefix)) : false
   return (
     <div data-testid="ad-card" className="flex flex-col [&>a]:flex-1" onClickCapture={() => trackAd('click', ad.campaign_id, item.id)}>
-      <CatalogCard card={card} desktop={desktop} added={added}
-        onAdd={() => { if (added) navigate('/savatcha', { state: { from: section.key } }); else { add(card.cart.line); setToast(`${card.title} savatga qo‘shildi`) } }} />
+      <CatalogCard card={card} desktop={desktop}
+        onAdd={() => setToast(`${card.title} savatga qo‘shildi`)} />
     </div>
   )
 }
@@ -314,8 +323,6 @@ function AdCard({ ad, item, section, desktop, cartItems, add, navigate, setToast
  */
 export function CatalogPage({ section }) {
   const mobile = useMobile()
-  const navigate = useNavigate()
-  const { items: cartItems, add } = useCart()
   const desktop = !mobile
   const [cat, setCat] = useState('all')
   const [q, setQ] = useState('')
@@ -376,7 +383,7 @@ export function CatalogPage({ section }) {
   const sponsored = useMemo(() => (adOn && q.trim() && !vis ? joinAds(adSearch, section.items, (it) => inCat(it) && norm(section.text(it)).includes(norm(q.trim())), 2) : []), [adOn, adSearch, section, q, cat, vis]) // eslint-disable-line react-hooks/exhaustive-deps
   const catRow = useMemo(() => (adOn && cat !== 'all' && !q.trim() && !vis ? joinAds(adCat, section.items, inCat, 8) : []), [adOn, adCat, section, cat, q, vis]) // eslint-disable-line react-hooks/exhaustive-deps
   const sponsoredIds = new Set(sponsored.map((x) => x.item.id))
-  const adProps = { section, desktop, cartItems, add, navigate, setToast }
+  const adProps = { section, desktop, setToast }
   const active = Object.values(values).filter(Boolean).length
   // Poster: bo‘lim (yoki Marketplace turkumi) bo‘yicha; CTA ro‘yxatga tushadi yoki shu bo‘limda e’lon ochadi.
   const catLabel = section.catPosters && cat !== 'all' ? cats.find((c) => c.key === cat)?.label || '' : ''
@@ -422,7 +429,6 @@ export function CatalogPage({ section }) {
             {sponsored.map(({ ad, item }) => <AdCard key={`ad-${ad.campaign_id}`} ad={ad} item={item} {...adProps} />)}
             {list.filter((it) => !sponsoredIds.has(it.id)).slice(0, limit).map((it) => {
               const card = section.card(it)
-              const added = card.cart ? cartItems.some((x) => String(x.id).startsWith(card.cart.prefix)) : false
               return (
                 <CatalogCard
                   key={card.id}
@@ -430,8 +436,7 @@ export function CatalogPage({ section }) {
                   desktop={desktop}
                   liked={liked.has(card.id)}
                   onLike={() => setLiked((s) => { const n = new Set(s); if (n.has(card.id)) n.delete(card.id); else { n.add(card.id); setToast('Sevimlilarga qo‘shildi') } return n })}
-                  added={added}
-                  onAdd={() => { if (added) navigate('/savatcha', { state: { from: section.key } }); else { add(card.cart.line); setToast(`${card.title} savatga qo‘shildi`) } }}
+                  onAdd={() => setToast(`${card.title} savatga qo‘shildi`)}
                 />
               )
             })}

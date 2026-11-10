@@ -1,8 +1,9 @@
 import { offPercent } from '../../lib/discounts'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, ShoppingCart, Star, CircleCheck } from 'lucide-react'
-import { useCart, isOwnProduct } from '../../cart'
+import { Heart, Star, CircleCheck } from 'lucide-react'
+import { isOwnProduct } from '../../cart'
+import CardQtyStepper, { useCardQty } from '../CardQtyStepper'
 import { som } from '../../marketData'
 import { flushProfile, profileStore, useProfile } from '../../profileStore'
 
@@ -53,27 +54,13 @@ export function Rating({ rating, reviews }) {
 }
 
 export function AddButton({ product, className = '' }) {
-  const { add } = useCart()
-  const [done, setDone] = useState(false)
   if (isOwnProduct(product)) return <span title="Sizning mahsulotingiz" className={`shrink-0 rounded-md bg-[#eef4f4] px-1.5 py-1 text-[9px] font-semibold leading-none text-sea ${className}`}>Sizning mahsulotingiz</span>
-  return (
-    <button
-      onClick={(e) => {
-        e.preventDefault()
-        add(product)
-        setDone(true)
-        setTimeout(() => setDone(false), 900)
-      }}
-      aria-label="Savatga qo‘shish"
-      className={`grid h-[22px] w-[46px] shrink-0 place-items-center rounded-md text-white transition ${done ? 'bg-ok' : 'bg-sea hover:bg-sea-600'} ${className}`}
-    >
-      <ShoppingCart className="size-3.5" strokeWidth={2} />
-    </button>
-  )
+  return <CardQtyStepper product={product} className={className} />
 }
 
 export default function ProductCard({ product }) {
   const p = product
+  const qty = useCardQty(isOwnProduct(p) ? '' : p.id)
   return (
     <Link to={`/product/${p.id}`} className="group relative flex flex-col rounded-xl bg-white p-2.5 shadow-card transition hover:shadow-md">
       <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />
@@ -89,13 +76,23 @@ export default function ProductCard({ product }) {
       <p className="mt-0.5 flex items-center gap-1 text-[8.5px] text-ok">
         <CircleCheck className="size-[10px]" /> Omborda bor
       </p>
-      <div className="mt-auto flex items-end justify-between pt-1.5">
-        <div className="leading-tight">
-          {p.oldPrice && <p className="text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
-          <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+      {qty > 0 ? (
+        <div className="mt-auto flex flex-col gap-1 pt-1.5">
+          <div className="leading-tight">
+            {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
+            <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+          </div>
+          <AddButton product={p} />
         </div>
-        <AddButton product={p} />
-      </div>
+      ) : (
+        <div className="mt-auto flex flex-wrap items-end gap-x-1 gap-y-1 pt-1.5">
+          <div className="leading-tight">
+            {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
+            <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+          </div>
+          <span className="ml-auto shrink-0"><AddButton product={p} /></span>
+        </div>
+      )}
     </Link>
   )
 }

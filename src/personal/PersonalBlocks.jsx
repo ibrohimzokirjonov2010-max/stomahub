@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Sparkles, X, Check } from 'lucide-react'
 import { CatalogCard } from '../components/catalog/CatalogLayout'
 import { MobileToast } from '../components/mobile/parts'
-import { useCart } from '../cart'
 import { useMarket } from '../buyerApi'
 import { profileStore, flushProfile } from '../profileStore'
 import { refreshSession } from '../sessionStore'
@@ -30,8 +28,6 @@ function toCard(p, reasonText) {
 }
 
 function ProductRow({ title, subtitle, products, reasons = {}, desktop, testId }) {
-  const { items: cartItems, add } = useCart()
-  const navigate = useNavigate()
   const [toast, setToast] = useState('')
   return (
     <section data-testid={testId} className="mt-3 min-w-0">
@@ -44,11 +40,10 @@ function ProductRow({ title, subtitle, products, reasons = {}, desktop, testId }
       <div className={desktop ? 'grid grid-cols-3 gap-4 xl:grid-cols-4 2xl:grid-cols-5' : '-mx-3.5 flex snap-x scroll-px-3.5 gap-2.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'}>
         {products.slice(0, desktop ? 10 : 12).map((p) => {
           const card = toCard(p, reasons[p.id])
-          const added = card.cart ? cartItems.some((x) => String(x.id).startsWith(card.cart.prefix)) : false
           return (
             <div key={p.id} className={desktop ? 'flex min-w-0 [&>a]:flex-1' : 'flex w-[47%] max-w-[190px] shrink-0 snap-start [&>a]:flex-1'}>
-              <CatalogCard card={card} desktop={desktop} added={added}
-                onAdd={() => { if (added) navigate('/savatcha'); else if (add(card.cart.line) !== false) setToast(`${card.title} savatga qo‘shildi`) }} />
+              <CatalogCard card={card} desktop={desktop}
+                onAdd={() => setToast(`${card.title} savatga qo‘shildi`)} />
             </div>
           )
         })}
