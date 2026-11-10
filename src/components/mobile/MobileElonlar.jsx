@@ -180,7 +180,7 @@ export function AdCard({ a, saved, onSave }) {
     <article className="relative flex gap-3 rounded-2xl bg-white p-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
       <Link to={`/elonlar/${a.id}`} className="relative min-h-[92px] w-[108px] shrink-0 overflow-hidden rounded-xl bg-page">
         <img src={a.images[0]} alt={a.title} loading="lazy" className="absolute inset-0 size-full object-cover" />
-        <span className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${DEAL_CLS[a.deal]}`}>{dealName[a.deal]}</span>
+        <span className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${a.isDemo ? 'bg-[#f59e0b]' : DEAL_CLS[a.deal]}`}>{a.isDemo ? 'Namuna' : dealName[a.deal]}</span>
       </Link>
       <Link to={`/elonlar/${a.id}`} className="min-w-0 flex-1 py-0.5">
         <h3 className="line-clamp-2 pr-7 text-[14px] font-bold leading-tight text-[#0d2a4a]">{a.title}</h3>

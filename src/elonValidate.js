@@ -7,7 +7,8 @@ export function normalizeTelegram(raw) {
   let s = String(raw || '').trim()
   if (!s) return ''
   s = s.replace(/^@+/, '')
-  s = s.replace(/^https?:\/\/(t\.me|telegram\.me)\//i, '')
+  s = s.replace(/^(https?:\/\/)?(www\.)?(t\.me|telegram\.me)\//i, '')
+  s = s.replace(/^@+/, '')
   s = s.replace(/\/+$/, '').split(/[?#]/)[0]
   return s.trim()
 }

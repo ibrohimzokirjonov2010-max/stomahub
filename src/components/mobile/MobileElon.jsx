@@ -15,6 +15,8 @@ import { AdCard, adsStore, allAds, findAd, sellerOf, useAds, myAds } from './Mob
 import { useCatalogVersion, isOwned } from '../../recordSync'
 import { telegramUrl } from '../../elonApi'
 import { openTelegramWithListingMessage } from '../../lib/telegramShare'
+import { isDemoItem } from '../../demoContent'
+import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 import { setAdStatus } from '../../elonApi'
 import { friendlyError } from '../../lib/friendlyError'
 import { ensureLogin } from '../../loginPrompt'
@@ -54,6 +56,7 @@ function AdView({ id }) {
   const extra = images.length - 4
   const isSaved = saved.has(a.id)
   const isOwner = isOwned('ad', a.id)
+  const demo = isDemoItem(a)
   const tg = telegramUrl(seller.telegram || a.telegram)
   const phone = (seller.phone || '').replace(/\s/g, '')
   const contact = { ...seller, clinic: seller.type, city: a.city, online: true, phone: seller.phone || '' }
@@ -105,7 +108,7 @@ function AdView({ id }) {
             <span className="ml-auto rounded-full bg-[#e3f8ec] px-2.5 py-1 text-[10.5px] font-semibold text-[#16a05a]">{a.cond}</span>
             {a.original && <span className="rounded-full bg-[#e3f8ec] px-2.5 py-1 text-[10.5px] font-semibold text-[#16a05a]">Original</span>}
           </div>
-          <h1 className="mt-2 text-[24px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{a.title}</h1>
+          <h1 className="mt-2 text-[24px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{a.title}{demo && <DemoChip className="ml-2 align-middle" />}</h1>
           <p className="mt-1 text-[13px] leading-snug text-[#7d8fa9]">{a.sub}</p>
           <div className="mt-2.5 flex items-center justify-between gap-2">
             <p className="text-[21px] font-extrabold tracking-tight text-[#0b6d73]">{adPrice(a)}</p>
@@ -127,6 +130,7 @@ function AdView({ id }) {
             })}
           </div>
 
+          {demo && <DemoNotice className="mt-3" />}
           <h2 className="mt-4 flex items-center gap-2 text-[15px] font-bold text-[#0d2a4a]"><span className="grid size-7 place-items-center rounded-lg bg-[#e6f4f3] text-[#0b6d73]"><FileText className="size-4" /></span> Tavsif</h2>
           <p className="mt-2 text-[13px] leading-[1.55] text-ink-2">{a.about}</p>
           {a.features?.length > 0 && (
@@ -168,7 +172,10 @@ function AdView({ id }) {
         )}
       </div>
 
-      {!isOwner && (a.status || 'active') === 'active' && !a._pending && (
+      {demo && (
+        <div className="fixed inset-x-0 bottom-[62px] z-30 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur"><DemoActionBar /></div>
+      )}
+      {!demo && !isOwner && (a.status || 'active') === 'active' && !a._pending && (
         <div className="fixed inset-x-0 bottom-[62px] z-30 grid grid-cols-2 gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur">
           {tg ? (
             <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast })} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] text-[13.5px] font-semibold text-[#0b6d73]">
@@ -183,7 +190,7 @@ function AdView({ id }) {
         </div>
       )}
 
-      {sheet === 'call' && phone && <CallSheet d={contact} onClose={() => setSheet(null)} onChat={() => { setSheet(null); if (tg) openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast }) }} onToast={setToast} />}
+      {sheet === 'call' && phone && !demo && <CallSheet d={contact} onClose={() => setSheet(null)} onChat={() => { setSheet(null); if (tg) openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast }) }} onToast={setToast} />}
       {sheet === 'seller' && (
         <BottomSheet title={isJob ? 'Ish beruvchi' : 'Sotuvchi'} onClose={() => setSheet(null)}>
           <div className="mt-2 flex items-center gap-3 rounded-2xl bg-[#f2f8f8] p-3">
@@ -194,14 +201,14 @@ function AdView({ id }) {
               <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-ink-2">{seller.rating != null && <><Star className="size-3.5 fill-star text-star" /> <b>{seller.rating}</b></>}{seller.rating != null && seller.since && ' · '}{seller.since && `${seller.since} yildan beri StomaHub’da`}</p>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          {demo ? <DemoActionBar className="mt-3" /> : <div className="mt-3 grid grid-cols-2 gap-2">
             {tg ? (
               <button type="button" onClick={() => openTelegramWithListingMessage({ tgUrl: tg, title: a.title, price: a.price, itemPath: `/elonlar/${a.id}`, onToast: setToast })} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#e6f4f3] text-[13px] font-semibold text-[#0b6d73]"><Send className="size-4" /> Telegram</button>
             ) : (
               <span className="flex h-11 items-center justify-center rounded-xl bg-page text-[12px] text-muted">Telegram yo‘q</span>
             )}
             <a href={phone ? `tel:${phone}` : undefined} aria-disabled={!phone} className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#0b6d73] text-[13px] font-semibold text-white"><Phone className="size-4" /> {seller.phone || 'Raqam yo‘q'}</a>
-          </div>
+          </div>}
           <p className="mt-4 text-[13px] font-semibold text-ink">Boshqa e’lonlari ({myAds().filter((x) => x.id !== a.id && (x.sellerInfo?.id === seller.id || x.seller === a.seller)).length})</p>
         </BottomSheet>
       )}

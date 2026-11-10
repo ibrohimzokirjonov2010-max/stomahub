@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { DEMO_ORGANIZER_ID } from './hubSeed'
 import { scrubBlobPayload } from './demoPurge'
+import { withDemoFlag } from './demoContent'
 
 const blobs = new Map()
 const accountListeners = new Set()
@@ -213,7 +214,11 @@ export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)
 export async function loadCatalog() {
   if (!supabase) return
   ownedRows.clear()
-  let { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden,status').limit(5000)
+  let { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden,status,is_demo').limit(5000)
+  // is_demo ustuni (0063) hali bo‘lmasa — usiz
+  if (error && /is_demo/i.test(error.message || '')) {
+    ;({ data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden,status').limit(5000))
+  }
   // status ustuni migratsiyadan oldin bo‘lmasa — eski select
   if (error && /status/i.test(error.message || '')) {
     ;({ data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden').limit(5000))
@@ -229,9 +234,10 @@ export async function loadCatalog() {
   })()
   const grouped = new Map()
   ;(data || []).forEach((r0) => {
-    let row = r0
+    let row = withDemoFlag(r0)
     // Ownerless seed rows (demo courses/certificates/books) are not real content.
-    if (!row.owner_id && SEED_KINDS.has(row.kind)) return
+    // Istisno: is_demo = true (0063) — ataylab qo‘yilgan, «Namuna» belgili vaqtinchalik namuna.
+    if (!row.owner_id && SEED_KINDS.has(row.kind) && !row.payload?.isDemo) return
     const isOwner = Boolean(uid && row.owner_id === uid)
     if (row.kind === 'ad') {
       const status = row.status || row.payload?.status || 'active'

@@ -83,7 +83,7 @@ export function fromMaster(x) {
     tags: x.tags || [],
     works: v.works,
     reviewsList: [],
-    services: (x.services || []).map((sv, i) => ({ id: `s${i}`, name: sv.name, note: sv.meta || '', image: v.works[i % v.works.length], tag: sv.name, price: priceNum(sv.price) })),
+    services: (x.services || []).map((sv, i) => ({ id: `s${i}`, name: sv.name, note: sv.meta || '', image: v.works[i % v.works.length], tag: sv.name, price: priceNum(sv.price), priceText: typeof sv.price === 'string' ? sv.price.trim() : '' })),
   }
 }
 
