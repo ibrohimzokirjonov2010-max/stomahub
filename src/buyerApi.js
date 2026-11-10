@@ -140,7 +140,7 @@ export async function createOrder({ items, name, phone, city, address, note, pic
       name, phone, city, address, note: note || '', payment_method: pay === 'naqd' ? 'cash' : pay,
       payment_ref: paymentRef || '',
       delivery_method: pickup ? 'olib_ketish' : 'kuryer',
-      items: items.map((it) => ({ product_id: it.productId || it.id, qty: it.qty, variant: it.variant || '', ...(it.kashta ? { kashta: it.kashta } : {}) })),
+      items: items.map((it) => ({ product_id: it.productId || it.id, qty: it.qty, variant: it.variant || '', ...(it.kashta ? { kashta: it.kashta } : {}), ...(it.logo ? { logo_path: it.logo } : {}) })),
     },
   })
   if (error) throw new Error(friendlySupabaseError(error))

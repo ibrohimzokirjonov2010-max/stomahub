@@ -12,6 +12,8 @@ import NotificationBell from '../NotificationBell'
 import { currentUid } from '../../recordSync'
 import { som } from '../../marketData'
 import { createOrder } from '../../buyerApi'
+import CheckoutLogos from '../forma/CheckoutLogos'
+import { missingLogos, withLogos } from '../../lib/formaLogo'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../../payments/paymentService'
 import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -126,6 +128,24 @@ export default function MobileCheckout() {
   const [paying, setPaying] = useState(false)
   const [placing, setPlacing] = useState(false)
   const [placeErr, setPlaceErr] = useState('')
+  // 0066: «Logo tikish» qatorlari uchun shu yerda yuklangan/almashtirilgan logo fayllari
+  const [logos, setLogos] = useState({})
+  const [logoTried, setLogoTried] = useState(false)
+  const setLogo = (id, x) => {
+    setLogos((m) => ({ ...m, [id]: x }))
+    if (!buyNow) cart.setItems((list) => list.map((it) => {
+      if (it.id !== id) return it
+      const { logo: _l, logoName: _n, logoSize: _s, ...rest } = it
+      return x?.path ? { ...rest, logo: x.path, logoName: x.name || '', logoSize: Number(x.size) || 0 } : rest
+    }))
+  }
+  const needLogo = () => {
+    if (!missingLogos(items, logos).length) return false
+    setLogoTried(true)
+    const el = document.querySelector('[data-testid="checkout-logos"]')
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' })
+    return true
+  }
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const formRef = useRef(null)
@@ -186,6 +206,7 @@ export default function MobileCheckout() {
   const next1 = () => {
     if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma/rasmiylashtirish')}`); return }
     setTried(true)
+    if (needLogo()) return
     const bad = Object.keys(errors).find((k) => errors[k])
     if (bad) {
       const el = formRef.current?.querySelector(`[data-f="${bad}"]`)
@@ -209,6 +230,7 @@ export default function MobileCheckout() {
     // Buyurtma faqat hisob bilan (server ham talab qiladi). Savat brauzerda saqlanadi va kirgach qo‘shiladi.
     if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma/rasmiylashtirish')}`); return }
     if (otherProblems.length) { setPlaceErr(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
+    if (missingLogos(items, logos).length) { setLogoTried(true); setPlaceErr('Logo faylini yuklang'); return }
     if (rxBlocked) { setPlaceErr('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
     if (placing) return
     setPlacing(true)
@@ -217,7 +239,7 @@ export default function MobileCheckout() {
       const paymentRef = ''
       const online = method !== 'cash' && avail.includes(method)
       const res = await createOrder({
-        items, name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
+        items: withLogos(items, logos), name: form.name.trim(), phone, city: [form.city, form.district].filter(Boolean).join(', '),
         address: withGeo(form.address, mode === 'pickup' ? null : form), note: orderNote(form.note, { date: delivery.date, slot: delivery.slot, pickup: mode === 'pickup', invoice, inv }), pickup: mode === 'pickup',
         paymentMethod: online ? method : 'cash', paymentRef,
       })
@@ -288,6 +310,8 @@ export default function MobileCheckout() {
                 </div>
               )}
             </div>
+
+            <CheckoutLogos items={items} logos={logos} onChange={setLogo} error={logoTried} className={`${card} mt-3 p-3`} />
 
             <section ref={formRef} className={`${card} mt-3 p-3`}>
               <Head icon={MapPin} title="Yetkazib berish ma’lumotlari" text="Buyurtmangiz qayerga yetkazilsin?" />

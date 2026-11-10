@@ -13,7 +13,7 @@ const som = (n) => `${Math.round(Number(n) || 0).toLocaleString('ru-RU').replace
 export function orderText(o, items = []) {
   const lines = items.slice(0, 10).map((i) => {
     const v = i.variant_label || i.variant
-    return `• ${i.name}${v ? ` (${v})` : ''} × ${i.qty} — ${som(Number(i.price) * Number(i.qty))}${i.note ? `\n   ${i.note}` : ''}`
+    return `• ${i.name}${v ? ` (${v})` : ''} × ${i.qty} — ${som(Number(i.price) * Number(i.qty))}${i.note ? `\n   ${i.note}` : ''}${i.logo_path ? '\n   📎 Logo fayli biriktirilgan — kabinetdagi buyurtmadan yuklab oling' : ''}`
   })
   const total = Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0)) + Number(o.delivery_fee || 0)
   return [

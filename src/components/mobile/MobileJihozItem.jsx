@@ -111,7 +111,7 @@ function JihozView({ id }) {
     <div className="min-h-screen bg-[#f6f9fb] pb-[150px]">
       {/* Galereya */}
       <div
-        className="relative h-[300px] overflow-hidden bg-[#eef3f6]"
+        className="relative box-content h-[280px] overflow-hidden bg-[#f1f4f7] pt-[calc(var(--safe-top)+60px)]"
         onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
         onTouchEnd={(e) => {
           if (touch.current == null || n < 2) return
@@ -120,7 +120,7 @@ function JihozView({ id }) {
           touch.current = null
         }}
       >
-        <img src={gallery[shot]} alt={p.title} className="size-full object-cover" />
+        <img src={gallery[shot]} alt={p.title} className="size-full object-contain px-3 pb-3" />
         <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/jihozlar'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
           <ChevronLeft className="size-5" />
         </button>
@@ -134,7 +134,7 @@ function JihozView({ id }) {
         </div>
         {n > 1 && (
           <div className="absolute inset-x-0 bottom-2.5 flex justify-center gap-1.5">
-            {gallery.map((src, i) => <span key={src} className={`h-1.5 rounded-full transition-all ${i === shot ? 'w-4 bg-white' : 'w-1.5 bg-white/60'}`} />)}
+            {gallery.map((src, i) => <span key={src} className={`h-1.5 rounded-full transition-all ${i === shot ? 'w-4 bg-sea' : 'w-1.5 bg-ink/20'}`} />)}
           </div>
         )}
       </div>
