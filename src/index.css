@@ -110,7 +110,7 @@
   .reader-layout { grid-template-columns: 230px minmax(0, 1fr) 236px; align-items: start; }
 }
 .reader-night .text-ink, .reader-night .text-ink-2 { color: #e8eef4; }
-.kat-grid { display: grid; width: 100%; min-width: 0; gap: 12px; }
+.kat-grid { display: grid; width: 100%; min-width: 0; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .kat-grid > * { min-width: 0; }
 @media (min-width: 900px) {
   .kat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
