@@ -45,18 +45,18 @@ export default function Kategoriyalar() {
           {live.map((c) => {
             const Icon = c.icon
             return (
-              <Link key={c.id} to={c.to} className="min-w-0 overflow-hidden rounded-2xl bg-white shadow-card transition hover:-translate-y-0.5">
-                <div className="h-[148px] overflow-hidden bg-white">
-                  <img src={c.image} alt={`${c.name} kategoriyasi`} className="size-full object-contain" />
+              <Link key={c.id} to={c.to} className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-card transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-12px_rgb(11_138_149/0.4)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sea">
+                <div className="relative aspect-[16/9] overflow-hidden rounded-t-2xl bg-[#f3f7f8]">
+                  <img src={c.image} alt={`${c.name} kategoriyasi`} className="absolute inset-0 size-full object-cover object-center transition duration-500 ease-out group-hover:scale-[1.045]" />
                 </div>
-                <div className="flex items-center gap-2.5 border-t border-[#f2f5f8] p-3">
+                <div className="flex flex-1 items-center gap-2.5 border-t border-[#f2f5f8] p-3">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f6f4] text-sea"><Icon className="size-4" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-bold text-ink">{c.name}</span>
                     <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-muted">{c.about}</span>
                     <span className="mt-1 block text-[12px] font-semibold text-sea">{n(c.count)} ta mahsulot</span>
                   </span>
-                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#f4f7fb] text-muted"><ChevronRight className="size-4" /></span>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#f4f7fb] text-muted transition group-hover:bg-[#e7f6f4] group-hover:text-sea"><ChevronRight className="size-4" /></span>
                 </div>
               </Link>
             )
