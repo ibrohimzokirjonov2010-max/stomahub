@@ -5,8 +5,25 @@ export const MARKET_CATEGORIES = [
   'Restavratsion materiallar', 'Estetik stomatologiya', 'Implantlar', 'Endodontik asboblar',
   'Qolip (ottisk) materiallari', 'Sterilizatsiya', 'Izolyatsiya materiallari', 'Yordamchi materiallar',
   'Sarflanadigan materiallar', 'Instrumentlar', 'Uskunalar', 'Himoya vositalari', 'Ortodontiya',
-  'Gigiyena vositalari', 'Boshqa',
+  'Gigiyena vositalari', 'Tibbiy forma', 'Boshqa',
 ]
+
+/** Forma bo‘limiga tushadigan sotuvchi mahsulotlari kategoriyasi. */
+export const FORMA_CATEGORY = 'Tibbiy forma'
+export const isFormaCategory = (c) => String(c || '').trim() === FORMA_CATEGORY
+
+/** Forma ranglari (sotuvchi formasi va xaridor sahifasi uchun yagona ro‘yxat). */
+export const FORMA_COLORS = [
+  { id: 'teal', name: 'Yashil (Teal)', hex: '#128f8a' },
+  { id: 'navy', name: 'To‘q ko‘k', hex: '#1d3d66' },
+  { id: 'blue', name: 'Ko‘k', hex: '#2f6fed' },
+  { id: 'white', name: 'Oq', hex: '#f3f4f2' },
+  { id: 'green', name: 'Yashil', hex: '#3c9a58' },
+  { id: 'wine', name: 'Bordo', hex: '#7a3048' },
+  { id: 'black', name: 'Qora', hex: '#22262c' },
+  { id: 'lilac', name: 'Siyohrang', hex: '#8d6bb8' },
+]
+export const formaColorName = (id) => FORMA_COLORS.find((c) => c.id === id)?.name || String(id || '')
 
 // Legacy / alternative names already stored in seller_products.category
 export const CATEGORY_ALIASES = {
@@ -48,8 +65,9 @@ export const VARIANT_TYPES = [
   ['endo', 'Endo fayl (# va taper)'],
   ['implant', 'Implant (diametr × uzunlik)'],
   ['custom', 'Boshqa (erkin)'],
+  ['forma', 'Forma (o‘lcham × rang)'],
 ]
-export const VARIANT_TYPE_LABEL = { rang: 'Rang', olcham: 'O‘lcham', endo: 'Fayl o‘lchami', implant: 'Implant o‘lchami', custom: 'Variant' }
+export const VARIANT_TYPE_LABEL = { rang: 'Rang', olcham: 'O‘lcham', endo: 'Fayl o‘lchami', implant: 'Implant o‘lchami', custom: 'Variant', forma: 'O‘lcham va rang' }
 
 export const variantLabel = (v, type) => {
   if (!v) return ''
@@ -61,6 +79,7 @@ export const variantLabel = (v, type) => {
     case 'endo': return [v.size, v.taper && `taper ${v.taper}`, v.length].filter(Boolean).join(' · ')
     case 'implant': return v.diameter || v.length ? `Ø${v.diameter || '?'} × ${v.length || '?'} mm` : ''
     case 'custom': return v.name || ''
+    case 'forma': return [v.size, v.color && formaColorName(v.color)].filter(Boolean).join(' · ')
     default: return v.label || [v.color, v.size].filter((x) => x && x !== '—').join(', ')
   }
 }

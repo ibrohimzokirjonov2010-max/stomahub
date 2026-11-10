@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useCatalogVersion, isOwned } from '../../recordSync'
 import { som } from '../../marketData'
-import { cats as formaCats, colorOf, genders, sizesOf } from '../../formaData'
+import { cats as formaCats, colorOf, genders, sizesOf, allForma } from '../../formaData'
 import { cats as bookCats, langOptions, formatOptions } from '../../booksData'
 import { directions, levels, formats } from '../../educationData'
 import { cats as ustaCats } from '../../ustalarData'
@@ -18,6 +18,7 @@ import { AD_CATS, DEALS, dealName, adPriceShort } from '../../elonlarData'
 import { seminarChips, seminarCard } from '../../seminarsData'
 import { publicRecords, useHub } from '../../hubStore'
 import { useMarket } from '../../buyerApi'
+import { isFormaMarketProduct } from '../../lib/formaLive'
 import { books } from '../../booksData'
 import { courses } from '../../educationData'
 import { masters } from '../../ustalarData'
@@ -26,7 +27,6 @@ import { jobs } from '../../ishlarData'
 import { surplusItems } from '../../surplusData'
 import { DOCTORS } from '../../mutaxassislarData'
 import { ADS } from '../../elonlarData'
-import { products as uniforms } from '../../formaData'
 import { allAds, myAds, publicAds, useAds, PostAdSheet, MyAdsSheet } from '../mobile/MobileElonlar'
 import { PostSheet } from '../mobile/MobileSurplus'
 import { imgIcon } from '../tealIcons'
@@ -73,8 +73,10 @@ const tag = (kind, list, titleOf, subOf) => list.map((x) => Object.assign({}, x,
 
 export function useFormaSection() {
   const v = useCatalogVersion()
+  // Sotuvchi kabinetidan qo‘shilgan haqiqiy forma (market_products, category = 'Tibbiy forma')
+  const market = useMarket()
   return useMemo(() => {
-    const items = tag('uniform', uniforms, (p) => p.title, (p) => p.brand)
+    const items = allForma().map((x) => Object.assign({}, x, { __owned: x.live || isOwned('uniform', x.id), __title: x.title, __sub: x.brand }))
     return {
       key: 'forma', shopActive: 'forma', title: 'Tibbiy forma', subtitle: 'Qulay, sifatli va zamonaviy tibbiy kiyimlar', placeholder: 'Forma, xalat yoki brend qidiring...',
       items, cats: chipsFrom(formaCats, { scrub: Shirt, coat: Stethoscope, cap: HardHat, shoe: Footprints, apron: Layers, accessory: Glasses }), catOf: (p) => p.cat,
@@ -87,7 +89,7 @@ export function useFormaSection() {
       sorts: PRICE_SORTS(),
       text: (p) => `${p.title} ${p.brand} ${p.about || ''}`,
       card: (p) => {
-        const off = realDiscount('uniform', p)
+        const off = p.live ? (p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0) : realDiscount('uniform', p)
         return {
           id: p.id, href: `/forma/${p.id}`, image: p.image, kicker: p.brand, title: p.title, price: p.price, oldPrice: off ? p.oldPrice : 0,
           badge: off ? { text: `-${off}%`, tone: 'sale' } : p.__owned && p.fresh ? { text: 'Yangi', tone: 'new' } : null,
@@ -98,12 +100,13 @@ export function useFormaSection() {
               <span className="truncate text-[10px] text-muted">{sizesOf(p).join(' ')}</span>
             </div>
           ),
-          cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${sizesOf(p)[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
+          // Forma: o‘lcham va rang sahifada tanlanadi — kartochkada savat emas, sahifaga o‘tish
+          cart: null,
         }
       },
       slides: (list, ctx) => slidesFor({ key: 'forma', icon: PShirt, items: list, image: (p) => p.image, href: (p) => `/forma/${p.id}`, ctx }),
     }
-  }, [v])
+  }, [v, market.status, market.products.length])
 }
 
 const MARKET_ICONS = { 'Restavratsion materiallar': imgIcon('marketplace', 'plomba-materiallari'), Implantlar: Bone, 'Yordamchi materiallar': FlaskConical, 'Sarflanadigan materiallar': Boxes, 'Endodontik asboblar': Syringe, Instrumentlar: imgIcon('marketplace', 'asboblar'), Uskunalar: imgIcon('marketplace', 'uskunalar'), 'Himoya vositalari': ShieldCheck, 'Qolip (ottisk) materiallari': Layers, Sterilizatsiya: ShieldCheck, 'Estetik stomatologiya': Sparkles, 'Izolyatsiya materiallari': Layers, Ortodontiya: Smile, 'Gigiyena vositalari': imgIcon('marketplace', 'gigiyena'), Boshqa: Package }
@@ -128,9 +131,10 @@ export function useMarketSection() {
       sorts: PRICE_SORTS(),
       text: (p) => `${p.name} ${p.brand} ${p.category} ${p.seller}`,
       card: (p) => ({
-        id: p.id, href: `/product/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
+        id: p.id, href: isFormaMarketProduct(p) ? `/forma/${p.id}` : `/product/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
         badge: p.stock <= 0 ? { text: 'Tugagan', tone: 'info' } : null, rating: p.reviews > 0 ? { value: p.rating, count: p.reviews } : null,
-        cart: p.stock > 0 ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
+        // Variantli mahsulot (forma o‘lcham/rangi va h.k.) — variant sahifada tanlanadi
+        cart: p.stock > 0 && !(p.variants || []).length ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
       }),
       slides: (list, ctx) => slidesFor({ key: 'marketplace', icon: PBag, items: list, image: (p) => p.image, href: (p) => `/product/${p.id}`, ctx }),
     }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Store, FileText, CalendarDays, Truck, UserRound, Phone, Lock, MapPin, Check, ChevronRight, ArrowLeft, Wallet, Coins, StickyNote, Building2 } from 'lucide-react'
 import { COMMISSION_RATE, OPEN_STATUSES, STATUS, setOrderStatus, useAsync, useSellerData } from '../../api'
-import { dmy, hm, longDate, som, num } from '../../format'
+import { dmy, hm, longDate, som, num, itemVariantText } from '../../format'
 import StatusBadge from './StatusBadge'
 import ProductThumb from './ProductThumb'
 
@@ -10,7 +10,7 @@ const FLOW = ['yangi', 'tasdiqlandi', 'tayyorlanmoqda', 'yetkazilmoqda', 'yetkaz
 const FLOW_LABEL = { yangi: 'Buyurtma qabul qilindi', tasdiqlandi: 'Tasdiqlandi', tayyorlanmoqda: 'Tayyorlanmoqda', yetkazilmoqda: 'Yetkazilmoqda', yetkazildi: 'Yakunlanadi' }
 
 export default function OrderDrawer({ orderId, onClose }) {
-  const { orders } = useSellerData()
+  const { orders, products } = useSellerData()
   const order = orders.find((o) => o.id === orderId)
   const navigate = useNavigate()
   const { busy, error, setError, go } = useAsync()
@@ -95,7 +95,7 @@ export default function OrderDrawer({ orderId, onClose }) {
                 <div key={it.id} className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-t border-[#EEF3F4] py-3 first:border-t-0 md:grid-cols-[1fr_52px_80px_80px] md:px-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <ProductThumb src={it.image_url} className="size-14 md:size-10" />
-                    <div className="min-w-0"><div className="truncate text-[13.5px] font-semibold">{it.name}</div>{it.variant && <div className="text-[11.5px] text-[#6B7A88]">{it.variant}</div>}
+                    <div className="min-w-0"><div className="truncate text-[13.5px] font-semibold">{it.name}</div>{it.variant && <div className="text-[11.5px] text-[#6B7A88]">{itemVariantText(it, products)}</div>}{it.note && <div className="text-[11.5px] font-semibold text-[#B45309]">{it.note}</div>}
                       <div className="text-[13px] font-semibold md:hidden">{som(it.price)} <span className="ml-3 font-normal text-[#6B7A88]">{it.qty} dona</span></div></div>
                   </div>
                   <span className="hidden text-[12.5px] md:block">{it.qty} ta</span>

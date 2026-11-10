@@ -9,21 +9,25 @@ import { useMobile } from '../../../useMobile'
 import {
   BRANDS, COUNTRIES, SHADES, SIZES, ENDO_SIZES, ENDO_TAPERS, ENDO_LENGTHS, VARIANT_TYPES, UOMS, DOC_TYPES, STORAGE_TEMPS,
   SPEC_PRESETS, REORDER_INTERVALS, categoryOptions, normCategory, variantLabel, cleanTiers,
+  FORMA_COLORS, isFormaCategory,
 } from '../../../config/productCatalog'
+import { SIZE_TYPES, sizeOptionsFor } from '../../../lib/formaSizes'
+import { cats as FORMA_KINDS, genders as FORMA_GENDERS, fabrics as FORMA_FABRICS } from '../../../formaData'
 
 // columns added by migration 0029 (form keeps working if it is not applied yet)
-const NEW_COLS = ['clinical_use', 'delivery_info', 'reorder', 'variant_type', 'uom', 'min_qty', 'price_tiers', 'reg_cert_no', 'lot_no', 'storage_temp']
+const NEW_COLS = ['clinical_use', 'delivery_info', 'reorder', 'variant_type', 'uom', 'min_qty', 'price_tiers', 'reg_cert_no', 'lot_no', 'storage_temp', 'forma']
+const FORMA_BLANK = { cat: 'scrub', gender: 'uni', fabric: '', size_type: 'clothing', kashta_on: false, kashta_price: '' }
 const blank = {
   name: '', category: '', brand: '', country: '', description: '', price: '', stock: '', sku: '', expires_on: '', unit: '', images: [], variants: [], documents: [],
   specs: [], clinical_use: '', delivery_info: '', reorder_enabled: false, reorder_days: 30, variant_type: 'rang', uom: 'dona', min_qty: '1', price_tiers: [],
-  reg_cert_no: '', lot_no: '', storage_temp: '',
+  reg_cert_no: '', lot_no: '', storage_temp: '', forma: FORMA_BLANK,
 }
 const toNum = (v) => Number(String(v ?? '').replace(/\s/g, '')) || 0
 const sec = 'mt-5 border-t border-[#E6EEF0] pt-4'
 const h = 'text-[15px] font-bold text-[#0F766E]'
 const sub = 'text-[12px] text-[#5C6E80]'
 const cell = 'h-[38px] rounded-lg border border-[#DCE5E7] px-2 text-[13px] outline-none focus:border-[#0F766E]'
-const VAR_DEFAULTS = { rang: { color: 'A2' }, olcham: { size: 'M' }, endo: { size: '#25', taper: '.04', length: '25 mm' }, implant: { diameter: '4.0', length: '10' }, custom: { name: '' } }
+const VAR_DEFAULTS = { rang: { color: 'A2' }, olcham: { size: 'M' }, endo: { size: '#25', taper: '.04', length: '25 mm' }, implant: { diameter: '4.0', length: '10' }, custom: { name: '' }, forma: { size: 'M', color: 'white' } }
 const newVariant = (type, price) => ({ ...(VAR_DEFAULTS[type] || {}), price, stock: '', sku: '' })
 
 export function fromProduct(product) {
@@ -44,7 +48,26 @@ export function fromProduct(product) {
     variant_type: vt, uom: product.uom || 'dona', min_qty: String(product.min_qty || 1),
     price_tiers: (product.price_tiers || []).map((t) => ({ min_qty: String(t.min_qty), price: String(t.price) })),
     reg_cert_no: product.reg_cert_no || '', lot_no: product.lot_no || '', storage_temp: product.storage_temp || '',
+    forma: fromForma(product.forma),
   }
+}
+
+function fromForma(f) {
+  const x = f && typeof f === 'object' ? f : {}
+  const fee = Number(x.kashta_price) || 0
+  return { ...FORMA_BLANK, cat: x.cat || 'scrub', gender: x.gender || 'uni', fabric: x.fabric || '', size_type: x.size_type || 'clothing', kashta_on: fee > 0, kashta_price: fee > 0 ? String(fee) : '' }
+}
+
+/** Forma: tanlangan o‘lcham × rang bo‘yicha variantlar (mavjudlari narx/qoldig‘i bilan saqlanadi). */
+export function formaCombos(existing, sizes, colors, price, stock = '') {
+  const out = []
+  for (const size of sizes) {
+    for (const color of colors.length ? colors : ['']) {
+      const old = existing.find((x) => x.size === size && (x.color || '') === color)
+      out.push(old || { size, color, price: String(price ?? ''), stock: String(stock ?? ''), sku: '' })
+    }
+  }
+  return out
 }
 
 export function toRow(v) {
@@ -65,6 +88,11 @@ export function toRow(v) {
     reorder: { enabled: !!v.reorder_enabled, interval_days: Number(v.reorder_days) || 30 },
     variant_type: vt, uom: v.uom || 'dona', min_qty: Math.max(1, Math.round(toNum(v.min_qty) || 1)), price_tiers: cleanTiers(v.price_tiers),
     reg_cert_no: v.reg_cert_no.trim(), lot_no: v.lot_no.trim(), storage_temp: v.storage_temp.trim(),
+    // 0064: Forma bo‘limi ma’lumoti (faqat «Tibbiy forma» kategoriyasida)
+    forma: isFormaCategory(v.category) ? {
+      cat: v.forma?.cat || 'scrub', gender: v.forma?.gender || 'uni', fabric: v.forma?.fabric || '', size_type: v.forma?.size_type || 'clothing',
+      kashta_price: v.forma?.kashta_on ? toNum(v.forma?.kashta_price) : 0,
+    } : {},
   }
 }
 // Yangi mahsulot formasi uchun lokal qoralama (sahifa yopilsa ham yo‘qolmaydi)
@@ -102,6 +130,20 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
   const setVar = (i, k, val) => setV((s) => ({ ...s, variants: s.variants.map((x, j) => (j === i ? { ...x, [k]: val } : x)) }))
   const setList = (key, i, k, val) => setV((s) => ({ ...s, [key]: s[key].map((x, j) => (j === i ? (Array.isArray(x) ? x.map((y, n) => (n === k ? val : y)) : { ...x, [k]: val }) : x)) }))
   const hasVariants = v.variants.length > 0
+  const isForma = isFormaCategory(v.category)
+  const fm = { ...FORMA_BLANK, ...(v.forma || {}) }
+  const setF = (k) => (val) => setV((s) => ({ ...s, forma: { ...FORMA_BLANK, ...(s.forma || {}), [k]: val } }))
+  const [pickSizes, setPickSizes] = useState([])
+  const [pickColors, setPickColors] = useState([])
+  const [pickStock, setPickStock] = useState('')
+  useEffect(() => {
+    if (!open) return
+    const src = product || readDraft()?.v
+    const vs = (src?.variant_type === 'forma' ? src.variants : null) || []
+    setPickSizes([...new Set(vs.map((x) => x.size).filter(Boolean))])
+    setPickColors([...new Set(vs.map((x) => x.color).filter(Boolean))])
+    setPickStock('')
+  }, [open, product])
 
   async function addFiles(files, kind) {
     setUp(true)
@@ -133,6 +175,8 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       if (!v.sku.trim() && !mobile) errs.push('SKU ni kiriting')
       if (!v.images.length) errs.push('Kamida bitta mahsulot rasmini yuklang')
       if (hasVariants && v.variants.some((x) => !variantLabel(x, v.variant_type))) errs.push('Har bir variant uchun qiymat kiriting')
+      if (isFormaCategory(v.category) && !hasVariants) errs.push('Forma uchun o‘lcham va ranglarni tanlab, variantlarni yarating')
+      if (isFormaCategory(v.category) && v.forma?.kashta_on && toNum(v.forma?.kashta_price) <= 0) errs.push('Kashta narxini kiriting')
       const stockTotal = hasVariants ? Number(sumStock(v.variants)) : toNum(v.stock)
       if (toNum(v.min_qty) > 1 && toNum(v.min_qty) > stockTotal) errs.push(`Minimal buyurtma (${toNum(v.min_qty)}) qoldiqdan (${stockTotal}) oshmasligi kerak`)
       const bad = v.price_tiers.find((t) => toNum(t.min_qty) > 1 && toNum(t.price) >= toNum(v.price) && toNum(v.price) > 0)
@@ -188,6 +232,10 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
       ['length', 'Uzunlik (mm)', (x, i) => <input inputMode="decimal" value={x.length || ''} onChange={(e) => setVar(i, 'length', e.target.value)} placeholder="10" className={`${cell} w-[80px]`} />],
     ],
     custom: [['name', 'Variant nomi', (x, i) => <input value={x.name || ''} onChange={(e) => setVar(i, 'name', e.target.value)} placeholder="Masalan: 4 g shprits" className={`${cell} w-[150px]`} />]],
+    forma: [
+      ['size', 'O‘lcham', (x, i) => <Select value={x.size || ''} onChange={(val) => setVar(i, 'size', val)} options={sizeOptionsFor(fm.size_type)} className="w-[96px]" />],
+      ['color', 'Rang', (x, i) => <Select value={x.color || ''} onChange={(val) => setVar(i, 'color', val)} options={FORMA_COLORS.map((c) => [c.id, c.name])} className="w-[140px]" />],
+    ],
   }[vt] || []
 
   return (
@@ -222,13 +270,62 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
         {/* main info */}
         <div className="grid grid-cols-2 content-start gap-3 md:pl-5">
           <Field label="Mahsulot nomi" required className="col-span-2"><Input value={v.name} onChange={set('name')} placeholder="Mahsulot nomini kiriting..." /></Field>
-          <Field label="Kategoriya" required><Select value={v.category} onChange={set('category')} options={categoryOptions(v.category)} placeholder="— Tanlang —" /></Field>
+          <Field label="Kategoriya" required><Select value={v.category} onChange={(val) => setV((s) => {
+            const forma = isFormaCategory(val)
+            const vt0 = forma ? 'forma' : s.variant_type === 'forma' ? 'olcham' : s.variant_type
+            return { ...s, category: val, variant_type: vt0, variants: vt0 !== s.variant_type ? [] : s.variants }
+          })} options={categoryOptions(v.category)} placeholder="— Tanlang —" /></Field>
           <Field label="Brend" hint="Ro‘yxatdan tanlang yoki o‘zingiz yozing"><Input list="sh-brands" value={v.brand} onChange={set('brand')} placeholder="Masalan: Zhermack" /></Field>
           <Field label="Ishlab chiqaruvchi davlat"><Select value={v.country} onChange={set('country')} options={COUNTRIES} placeholder="— Tanlang —" /></Field>
           <Field label="Qadoq tarkibi" hint="Masalan: 2 × 50 ml, 4 g"><Input value={v.unit} onChange={set('unit')} placeholder="2 × 50 ml" /></Field>
           <Field label="Tavsif" required className="col-span-2"><Textarea value={v.description} onChange={(e) => set('description')(e.target.value.slice(0, 1000))} placeholder="Mahsulot haqida batafsil ma’lumot yozing..." /><span className="mt-1 block text-right text-[11.5px] text-[#5C6E80]">{v.description.length}/1000</span></Field>
         </div>
       </div>
+
+      {isForma && (
+        <div className={sec} data-testid="forma-block">
+          <div className={h}>Forma ma’lumotlari</div>
+          <div className={sub}>Forma bo‘limida xaridor shu ma’lumotlar bo‘yicha qidiradi va o‘lcham, rang tanlaydi.</div>
+          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Field label="Forma turi"><Select value={fm.cat} onChange={setF('cat')} options={FORMA_KINDS.filter(([k]) => k !== 'all')} /></Field>
+            <Field label="Kim uchun"><Select value={fm.gender} onChange={setF('gender')} options={FORMA_GENDERS} /></Field>
+            <Field label="Mato"><Select value={fm.fabric} onChange={setF('fabric')} options={FORMA_FABRICS} placeholder="— Tanlang —" /></Field>
+            <Field label="O‘lcham turi"><Select value={fm.size_type} onChange={(val) => { setF('size_type')(val); setPickSizes([]) ; setV((s) => ({ ...s, variants: [] })) }} options={SIZE_TYPES} /></Field>
+          </div>
+          <div className="mt-3 rounded-xl border border-[#E6EEF0] p-3">
+            <div className="text-[13.5px] font-semibold text-[#10283F]">{fm.size_type === 'shoe' ? 'Oyoq kiyim o‘lchamlari (EU)' : fm.size_type === 'one' ? 'O‘lcham' : 'O‘lchamlar'}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {sizeOptionsFor(fm.size_type).map((x) => {
+                const on = pickSizes.includes(x)
+                return <button key={x} type="button" aria-pressed={on} onClick={() => setPickSizes((a) => (on ? a.filter((y) => y !== x) : [...a, x]))} className={`h-9 min-w-[44px] rounded-lg px-2.5 text-[13px] font-semibold ${on ? 'bg-[#0F766E] text-white' : 'border border-[#DCE5E7] bg-white text-[#10283F]'}`}>{x}</button>
+              })}
+            </div>
+            <div className="mt-3 text-[13.5px] font-semibold text-[#10283F]">Ranglar</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {FORMA_COLORS.map((c) => {
+                const on = pickColors.includes(c.id)
+                return (
+                  <button key={c.id} type="button" aria-pressed={on} onClick={() => setPickColors((a) => (on ? a.filter((y) => y !== c.id) : [...a, c.id]))} className={`flex h-9 items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] ${on ? 'border-[#0F766E] bg-[#F0FDFA] font-semibold text-[#0F766E]' : 'border-[#DCE5E7] bg-white text-[#10283F]'}`}>
+                    <span className="size-4 rounded-full ring-1 ring-[#DCE5E7]" style={{ background: c.hex }} /> {c.name}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <Field label="Har biri uchun qoldiq" className="w-[150px]"><Input inputMode="numeric" value={pickStock} onChange={(e) => setPickStock(e.target.value.replace(/\D/g, ''))} placeholder="10" /></Field>
+              <Btn variant="soft" icon={Plus} disabled={!pickSizes.length} onClick={() => setV((s) => ({ ...s, variant_type: 'forma', variants: formaCombos(s.variants, pickSizes, pickColors, s.price, pickStock) }))} className="h-[42px]">
+                Variantlarni yaratish{pickSizes.length ? ` (${pickSizes.length * Math.max(1, pickColors.length)} ta)` : ''}
+              </Btn>
+            </div>
+            <p className="mt-1.5 text-[11.5px] text-[#5C6E80]">Har bir o‘lcham va rang juftligi alohida variant bo‘ladi — narx va qoldiqni pastdagi jadvalda o‘zgartirishingiz mumkin.</p>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-[#E6EEF0] p-3">
+            <Toggle checked={!!fm.kashta_on} onChange={(x) => setF('kashta_on')(x)} />
+            <div className="min-w-[180px] flex-1"><div className="text-[13.5px] font-semibold text-[#10283F]">Kashta xizmati</div><div className={sub}>Xaridor ism, lavozim yoki klinika nomini yozadi — matn buyurtma bilan sizga keladi</div></div>
+            {fm.kashta_on && <div className="flex items-center gap-2 text-[13px]"><input inputMode="numeric" value={priceFmt(fm.kashta_price)} onChange={(e) => setF('kashta_price')(priceDigits(e.target.value))} placeholder="35 000" aria-label="Kashta narxi" className={`${cell} w-[120px]`} /><span>so‘m / dona</span></div>}
+          </div>
+        </div>
+      )}
 
       {/* pricing */}
       <div className={sec}>
@@ -263,7 +360,7 @@ export default function ProductForm({ open, onClose, product, onSaved }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><div className={h}>Variantlar</div><div className={sub}>Har bir variantning o‘z narxi, qoldig‘i va SKU si bo‘ladi.</div></div>
           <div className="flex items-center gap-2">
-            <Select value={vt} onChange={(val) => setV((s) => ({ ...s, variant_type: val, variants: s.variants.length && val !== s.variant_type ? [] : s.variants }))} options={VARIANT_TYPES} className="w-[230px]" />
+            {!isForma && <Select value={vt} onChange={(val) => setV((s) => ({ ...s, variant_type: val, variants: s.variants.length && val !== s.variant_type ? [] : s.variants }))} options={VARIANT_TYPES.filter(([k]) => k !== 'forma')} className="w-[230px]" />}
             <Btn variant="soft" icon={Plus} size="sm" onClick={() => setV((s) => ({ ...s, variants: [...s.variants, newVariant(s.variant_type, s.price)] }))}>Variant qo‘shish</Btn>
           </div>
         </div>
