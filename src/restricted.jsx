@@ -1,3 +1,4 @@
+import GlassToast from './components/GlassToast'
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from './cart'
@@ -44,15 +45,7 @@ export function RxPrompt() {
 
 /** Savat cheklovi xabari (ombor qoldig‘i, o‘z mahsuloti) — bir necha soniyada yopiladi. */
 function CartNotice({ text, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [text, onClose])
-  return (
-    <div role="alert" className="fixed inset-x-0 bottom-[max(5.5rem,env(safe-area-inset-bottom))] z-[100] flex justify-center px-4">
-      <div className="flex max-w-sm items-center gap-2 rounded-xl bg-[#3a2a00] px-4 py-3 text-[13px] font-medium text-white shadow-lg">
-        <ShieldAlert className="size-4 shrink-0 text-[#f5d48a]" /> <span>{text}</span>
-        <button type="button" onClick={onClose} className="ml-2 text-[12px] font-semibold text-[#f5d48a]">Yopish</button>
-      </div>
-    </div>
-  )
+  return <GlassToast text={text} onClose={onClose} tone="warn" bottom={76} />
 }
 
 /** Mahsulot sahifasi va savat uchun cheklov bloki (rx bo‘lmagan holatlar). */

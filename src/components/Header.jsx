@@ -5,6 +5,7 @@ import { Logo } from './icons'
 import { useCart } from '../cart'
 import { useProfile } from '../profileStore'
 import NotificationBell from './NotificationBell'
+import { cartBadge } from '../lib/toastModel'
 import { pickDisplayName, signOut, useSession, profileName } from '../sessionStore'
 import { looksLikeDemoName } from '../demoPurge'
 import UserAvatar, { realAvatar } from './UserAvatar'
@@ -98,7 +99,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
           <>
             <IconBtn label="Savat" onClick={() => navigate('/savatcha', { state: { from: cartFrom } })}>
               <ShoppingCart className="size-[17px]" />
-              {items.length > 0 && <Badge className="bg-sea">{items.length}</Badge>}
+              {count > 0 && <Badge className="bg-sea">{cartBadge(count)}</Badge>}
             </IconBtn>
             <NotificationBell className="relative grid size-8 place-items-center rounded-lg text-ink-2 transition hover:bg-page" iconClass="size-[17px]" badgeClass="!-right-1 !-top-1 !h-[15px] !min-w-[15px] !text-[9px]" />
             <IconBtn label="Sevimlilar" className="hidden sm:grid" onClick={() => navigate('/profil/sevimlilar')}><Heart className="size-[17px]" /></IconBtn>
@@ -108,7 +109,7 @@ export default function Header({ onMenu, variant = 'home', search = 'image', pla
             <IconBtn label="Sevimlilar" className="hidden sm:grid"><Heart className="size-[17px]" /></IconBtn>
             <IconBtn label="Savat" onClick={() => navigate('/savatcha')}>
               <ShoppingCart className="size-[17px]" />
-              {count > 0 && <Badge className="bg-brand">{count}</Badge>}
+              {count > 0 && <Badge className="bg-brand">{cartBadge(count)}</Badge>}
             </IconBtn>
             <NotificationBell className="relative grid size-8 place-items-center rounded-lg text-ink-2 transition hover:bg-page" iconClass="size-[17px]" badgeClass="!-right-1 !-top-1 !h-[15px] !min-w-[15px] !text-[9px]" />
           </>

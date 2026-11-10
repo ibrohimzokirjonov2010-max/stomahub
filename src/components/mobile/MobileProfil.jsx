@@ -14,7 +14,7 @@ import { fetchBonusLog, fetchNotifications, markNotificationsRead, useRemote } f
 import { useNotifications } from '../../notificationsStore'
 import { COURSES, allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
-import { BrandLogo, MobileToast, CountBadge } from './parts'
+import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { useSeminarStore } from './seminarStore'
@@ -142,7 +142,7 @@ export default function MobileProfil() {
             <button type="button" onClick={() => navigate('/kategoriyalar')} aria-label="Qidirish" className={`grid size-10 place-items-center rounded-full ${navy}`}><Search className="size-[22px]" /></button>
             <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'profil' } })} aria-label="Savat" className={`relative grid size-10 place-items-center rounded-full ${navy}`}>
               <ShoppingCart className="size-[22px]" />
-              {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+              <CartCountBadge />
             </button>
             <button type="button" onClick={() => setSheet('inbox')} aria-label="Bildirishnomalar" className={`relative grid size-10 place-items-center rounded-full ${navy}`}>
               <Bell className="size-[22px]" />

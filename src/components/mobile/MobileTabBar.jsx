@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Presentation, ShoppingBag } from 'lucide-react'
 import { NavIcons, SectionIcons } from '../tealIcons'
 import { useCart } from '../../cart'
+import { cartBadge } from '../../lib/toastModel'
 import { TAB_MATCH, isTabActive } from './tabbarMatch'
 
 const TEAL = '#0F766E'
@@ -111,7 +112,7 @@ export default function MobileTabBar() {
                     )}
                     {showCart && (
                       <span className="absolute -right-2.5 -top-1.5 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-[#0F766E] px-1 text-[9px] font-bold leading-none text-white shadow-[0_1px_3px_rgb(15_118_110/0.35)]">
-                        {count > 99 ? '99+' : count}
+                        {cartBadge(count)}
                       </span>
                     )}
                   </span>

@@ -231,7 +231,7 @@ export function NotifText({ n, v, unread = false, extra = null, clamp = 'line-cl
         </span>
       ) : null}
       <span className={`block truncate text-[14.5px] leading-snug text-[#0b1f3a] ${unread ? 'font-bold' : 'font-semibold'}`}>{v.head}</span>
-      {n.body && <span className={`mt-0.5 block text-[13px] leading-[1.4] text-[#516074] ${clamp}`}>{n.body}</span>}
+      {n.body && <span className={`mt-0.5 text-[13px] leading-[1.4] text-[#516074] ${clamp || "block"}`}>{n.body}</span>}
       {!(v.label && v.style.pill) && <span className="mt-1 block text-[12px] text-[#94a3b8]">{time}</span>}
       {extra}
     </span>

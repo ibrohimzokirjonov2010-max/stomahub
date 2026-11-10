@@ -6,7 +6,7 @@ import {
 import { useCart } from '../../cart'
 import NotificationBell from '../NotificationBell'
 import { som } from '../../marketData'
-import { BrandLogo, MobileToast, CountBadge } from './parts'
+import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 
@@ -59,7 +59,7 @@ export default function MobileCart() {
         <div className="ml-auto flex items-center gap-2">
           <span className="relative grid size-10 place-items-center rounded-full bg-white text-[#0d2a4a] shadow-[0_1px_4px_rgb(11_31_58/0.08)]" aria-label="Savat">
             <ShoppingCart className="size-[19px]" />
-            {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+            <CartCountBadge />
           </span>
           <NotificationBell className="relative grid size-10 place-items-center rounded-full bg-white text-[#0d2a4a] shadow-[0_1px_4px_rgb(11_31_58/0.08)]" iconClass="size-[19px]" />
         </div>

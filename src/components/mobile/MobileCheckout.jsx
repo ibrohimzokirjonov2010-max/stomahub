@@ -13,7 +13,7 @@ import { currentUid } from '../../recordSync'
 import { som } from '../../marketData'
 import { createOrder } from '../../buyerApi'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../../payments/paymentService'
-import { BrandLogo, MobileToast, CountBadge } from './parts'
+import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import MapPicker, { MapPreview, withGeo, reverseGeocode } from '../MapPicker'
@@ -779,7 +779,7 @@ function Done({ order }) {
         <div className="ml-auto flex items-center">
           <button type="button" onClick={() => navigate('/buyurtma')} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-[#0d2a4a]">
             <ShoppingCart className="size-[21px]" />
-            {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+            <CartCountBadge />
           </button>
           <NotificationBell className="relative grid size-10 place-items-center rounded-full text-[#0d2a4a]" iconClass="size-[21px]" />
         </div>

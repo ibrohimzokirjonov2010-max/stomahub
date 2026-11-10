@@ -11,7 +11,7 @@ import { cardBrand, cvvRequired, validateCard } from '../../cardCheck'
 import { useCountdown } from '../../payBits'
 import LiveQr from '../LiveQr'
 import { useCart } from '../../cart'
-import { BrandLogo, MobileToast, CountBadge } from './parts'
+import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { downloadIcs } from './MobileSeminar'
@@ -596,7 +596,7 @@ function Done({ s, m, reg }) {
         <div className="ml-auto flex items-center gap-1.5">
           <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-[#0d2a4a]">
             <ShoppingCart className="size-[21px]" />
-            {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+            <CartCountBadge />
           </button>
           <button type="button" onClick={() => setToast('Yangi bildirishnomalar yo‘q')} aria-label="Bildirishnomalar" className="relative grid size-10 place-items-center rounded-full bg-white text-[#0d2a4a] shadow-[0_1px_4px_rgb(11_31_58/0.08)]">
             <Bell className="size-[19px]" />

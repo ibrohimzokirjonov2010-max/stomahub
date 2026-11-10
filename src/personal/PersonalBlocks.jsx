@@ -79,19 +79,25 @@ const DISMISS_KEY = 'sh_specpick_dismissed'
 const dismissed = (uid) => { try { return (JSON.parse(localStorage.getItem(DISMISS_KEY) || '[]') || []).includes(uid) } catch { return false } }
 const dismiss = (uid) => { try { const l = JSON.parse(localStorage.getItem(DISMISS_KEY) || '[]') || []; localStorage.setItem(DISMISS_KEY, JSON.stringify([...new Set([...l, uid])].slice(-20))) } catch { /* ignore */ } }
 
-/** Mutaxassisligi yo‘q shifokorga bir marta: "Yo‘nalishingizni tanlang". */
+// DEV-only: skrinshot uchun ?specpick bilan har doim ko‘rsatish (prod build’da o‘chadi)
+const forcePicker = () => import.meta.env.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).has('specpick')
+
+/** Mutaxassisligi yo‘q shifokorga bir marta: "Yo‘nalishingizni tanlang" (ixcham kartochka). */
 export function SpecialtyPicker({ desktop }) {
   const me = usePersonal()
   const [hidden, setHidden] = useState(false)
   const [pick, setPick] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
-  if (!me.isDoctor || me.specialtyRaw || hidden || !me.uid || dismissed(me.uid)) return null
-  const close = () => { dismiss(me.uid); setHidden(true) }
+  const forced = forcePicker()
+  if (!forced && (!me.isDoctor || me.specialtyRaw || hidden || !me.uid || dismissed(me.uid))) return null
+  if (forced && hidden) return null
+  const close = () => { if (me.uid) dismiss(me.uid); setHidden(true) }
   const save = async () => {
     if (!pick) return
     setSaving(true); setErr('')
     try {
+      if (forced && !me.uid) { setHidden(true); return }
       profileStore.update({ role: pick })
       await flushProfile()
       await refreshSession()
@@ -101,23 +107,51 @@ export function SpecialtyPicker({ desktop }) {
       setErr(e?.message || 'Saqlab bo‘lmadi, qayta urinib ko‘ring')
     } finally { setSaving(false) }
   }
+  return <SpecialtyPickerCard desktop={desktop} pick={pick} onPick={setPick} saving={saving} err={err} onSave={save} onClose={close} />
+}
+
+export function SpecialtyPickerCard({ desktop, pick, onPick, saving, err, onSave, onClose }) {
+  const actions = (
+    <>
+      <button type="button" onClick={onClose} className="h-8 rounded-full px-3 text-[12.5px] font-semibold text-[#64748b] transition hover:text-[#1f2a3c] focus-visible:outline-2 focus-visible:outline-[#0F766E]">Keyinroq</button>
+      <button type="button" disabled={!pick || saving} onClick={onSave} className="h-8 rounded-full bg-[#0F766E] px-4 text-[12.5px] font-semibold text-white shadow-[0_3px_10px_rgb(15_118_110/0.25)] transition active:scale-[0.97] disabled:bg-[#cbd5e1] disabled:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]">{saving ? 'Saqlanmoqda…' : 'Saqlash'}</button>
+    </>
+  )
   return (
-    <section data-testid="spec-picker" className={`relative mt-3 rounded-2xl border border-sea/25 bg-white p-3.5 shadow-[0_1px_4px_rgb(11_31_58/0.06)] ${desktop ? 'p-4' : ''}`}>
-      <button type="button" onClick={close} aria-label="Yopish" className="absolute right-2 top-2 grid size-8 place-items-center rounded-full text-muted hover:bg-page"><X className="size-4" /></button>
-      <p className="pr-8 text-[15px] font-bold text-ink">Yo‘nalishingizni tanlang</p>
-      <p className="mt-0.5 pr-8 text-[12.5px] text-ink-2">Sizga mos mahsulot va seminarlarni birinchi bo‘lib ko‘rsatamiz.</p>
-      <div className="mt-2.5 flex flex-wrap gap-1.5">
-        {PICKER_SPECIALTIES.map((s) => (
-          <button key={s} type="button" aria-pressed={pick === s} onClick={() => setPick(s)} className={`flex h-9 items-center gap-1 rounded-xl border px-3 text-[12.5px] font-medium ${pick === s ? 'border-sea bg-sea-50 text-sea' : 'border-line bg-white text-ink'}`}>
-            {pick === s && <Check className="size-3.5" />}{s}
-          </button>
-        ))}
+    <section
+      data-testid="spec-picker"
+      aria-labelledby="spec-picker-title"
+      className={`relative mt-3 overflow-hidden rounded-[20px] border border-[#cdeef2] bg-gradient-to-br from-white via-white to-[#eef9f8] shadow-[0_1px_3px_rgb(11_31_58/0.05),0_6px_18px_rgb(15_118_110/0.06)] ${desktop ? 'px-4 pb-3.5 pt-3.5' : 'px-3 pb-3 pt-3'}`}
+    >
+      <div className="flex items-center gap-2.5 pr-8">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e4f6f8] text-[#0F766E] ring-1 ring-inset ring-[#cdeef2]" aria-hidden="true"><Sparkles className="size-[18px]" /></span>
+        <div className="min-w-0">
+          <p id="spec-picker-title" className="text-[14.5px] font-bold leading-tight text-[#0b1f3a]">Yo‘nalishingizni tanlang</p>
+          <p className="mt-0.5 truncate text-[12px] leading-tight text-[#64748b]">Sizga mos mahsulotlar oldinda chiqadi</p>
+        </div>
       </div>
+      <button type="button" onClick={onClose} aria-label="Yopish" className="absolute right-2 top-2 grid size-8 place-items-center rounded-full text-[#94a3b8] transition hover:bg-black/5 hover:text-[#475569] focus-visible:outline-2 focus-visible:outline-[#0F766E]"><X className="size-4" /></button>
+
+      <div className={`mt-2.5 flex gap-1.5 py-0.5 ${desktop ? 'flex-wrap' : 'spec-chips no-scrollbar -mx-3 snap-x snap-mandatory overflow-x-auto scroll-px-3 px-3'}`} role="group" aria-label="Yo‘nalishlar">
+        {PICKER_SPECIALTIES.map((s) => {
+          const on = pick === s
+          return (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onPick(on ? '' : s)}
+              className={`flex h-8 shrink-0 snap-start items-center gap-1 whitespace-nowrap rounded-full border px-3 text-[12.5px] font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0F766E] ${on ? 'border-[#0F766E] bg-[#0F766E] text-white shadow-[0_3px_10px_rgb(15_118_110/0.28)]' : 'border-[#e2e8f0] bg-white text-[#1f2a3c] hover:border-[#9fd9d3]'}`}
+            >
+              {on && <Check className="size-3.5" strokeWidth={3} />}{s}
+            </button>
+          )
+        })}
+        {desktop && <span className="ml-auto flex items-center gap-1 pl-2">{actions}</span>}
+      </div>
+
       {err && <p role="alert" className="mt-2 text-[12px] text-[#b42318]">{err}</p>}
-      <div className="mt-3 flex gap-2">
-        <button type="button" disabled={!pick || saving} onClick={save} className="h-10 rounded-xl bg-sea px-4 text-[13px] font-semibold text-white disabled:opacity-50">{saving ? 'Saqlanmoqda…' : 'Saqlash'}</button>
-        <button type="button" onClick={close} className="h-10 rounded-xl px-3 text-[13px] font-semibold text-ink-2">Keyinroq</button>
-      </div>
+      {!desktop && <div className="mt-2.5 flex items-center justify-end gap-1">{actions}</div>}
     </section>
   )
 }
