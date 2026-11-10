@@ -49,7 +49,7 @@ export const SECTION_POSTERS = {
   },
   ishlar: {
     full: { title: 'Stomatologiyada ish o‘rinlari', text: 'Lavozim, shahar va maosh bo‘yicha vakansiya tanlang', cta: 'Vakansiyalarni ko‘rish', action: 'scroll' },
-    empty: { title: 'Vakansiyangizni joylang', text: 'Stomatologlar ish o‘rinlarini shu yerda qidiradi', cta: 'E’lon joylash', action: '/elonlar?joylash=1' },
+    empty: { title: 'Vakansiyangizni joylang', text: 'Stomatologlar ish o‘rinlarini shu yerda qidiradi', cta: 'Vakansiya qo‘shish', action: 'post' },
     count: (n) => `${n} ta vakansiya`,
   },
   mutaxassislar: {

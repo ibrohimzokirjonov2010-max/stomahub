@@ -240,6 +240,7 @@ export default function App() {
           <Route path="/jihozlar/:id" element={<Responsive mobile={<MobileJihozItem />}><ShopLayout active="jihozlar" search="plain" placeholder="Jihoz, material, brend yoki kategoriya qidiring..."><JihozItem /></ShopLayout></Responsive>} />
           <Route path="/ustalar" element={<UstalarCatalog />} />
           <Route path="/ustalar/:id" element={<Responsive mobile={<MobileUsta />}><ShopLayout active="ustalar" search="plain" placeholder="Usta, xizmat yoki brend bo‘yicha qidiring..."><Usta /></ShopLayout></Responsive>} />
+          <Route path="/vakansiyalar" element={<Navigate to="/ishlar" replace />} />
           <Route path="/ishlar" element={<IshlarCatalog />} />
           <Route path="/ishlar/:id" element={<Responsive mobile={<MobileIsh />}><ShopLayout active="ishlar" search="plain" placeholder="Lavozim, klinika yoki shahar bo‘yicha qidiring..."><IshItem /></ShopLayout></Responsive>} />
           <Route path="/yangiliklar" element={<Yangiliklar />} />

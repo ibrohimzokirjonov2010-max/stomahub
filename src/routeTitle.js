@@ -6,7 +6,7 @@ export const ROUTE_TITLES = [
   ['/marketplace', 'Marketplace'], ['/kategoriyalar', 'Kategoriyalar'], ['/product/', 'Mahsulot'], ['/dokon/', 'Do‘kon'],
   ['/savatcha', 'Savatcha'], ['/buyurtma/kuzatish/', 'Buyurtma kuzatuvi'], ['/buyurtma', 'Buyurtmani rasmiylashtirish'],
   ['/seminarlar', 'Seminarlar'], ['/talim', 'Ta’lim'], ['/kitoblar', 'Kitoblar'], ['/ustalar', 'Ustalar'],
-  ['/mutaxassislar', 'Mutaxassislar'], ['/jihozlar', 'Jihozlar'], ['/forma', 'Tibbiy forma'], ['/ishlar', 'Vakansiyalar'],
+  ['/mutaxassislar', 'Mutaxassislar'], ['/jihozlar', 'Jihozlar'], ['/forma', 'Tibbiy forma'], ['/vakansiyalar', 'Vakansiyalar'], ['/ishlar', 'Vakansiyalar'],
   ['/elonlar', 'E’lonlar'], ['/ortiqcha', 'Ortiqcha mahsulotlar'], ['/aksiyalar', 'Aksiyalar'], ['/brendlar', 'Brendlar'],
   ['/yangiliklar', 'Yangiliklar'], ['/kanallar', 'Kanallar'], ['/community', 'Hamjamiyat'], ['/hamjamiyat', 'Hamjamiyat'],
   ['/sertifikatlar', 'Sertifikatlar'], ['/kirish', 'Kirish'], ['/royxat', 'Ro‘yxatdan o‘tish'],
