@@ -30,3 +30,15 @@ test('count badge only for real non-zero counts', () => {
   assert.equal(sectionPoster('ishlar', 0).title, 'Vakansiyangizni joylang')
   assert.equal(categoryPoster('Implantlar').title, 'Implantlar')
 })
+
+test('vacancies empty poster posts a vacancy; classifieds keep E’lon joylash', () => {
+  const jobs = sectionPoster('ishlar', 0)
+  assert.equal(jobs.cta, 'Vakansiya qo‘shish')
+  assert.equal(jobs.action, 'post')
+  assert.equal(sectionPoster('ishlar', 3).cta, 'Vakansiyalarni ko‘rish')
+  assert.equal(sectionPoster('ishlar', 3).action, 'scroll')
+  const ads = sectionPoster('elonlar', 0)
+  assert.equal(ads.cta, 'E’lon joylash')
+  assert.equal(ads.action, 'post')
+  assert.equal(sectionPoster('ustalar', 0).action, '/elonlar?joylash=1')
+})

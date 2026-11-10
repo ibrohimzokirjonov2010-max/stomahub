@@ -78,3 +78,21 @@ test('soxta oqimlar olib tashlandi', () => {
   }
   assert.match(src('../src/components/catalog/sections.jsx'), /Vakansiya qo‘shish/)
 })
+
+test('vakansiyalar sahifasi: bo‘sh matn, e’lon tugmasi yo‘q, /vakansiyalar → /ishlar', () => {
+  const src = (p) => fs.readFileSync(new URL(p, import.meta.url), 'utf8')
+  const sections = src('../src/components/catalog/sections.jsx')
+  const ish = sections.slice(sections.indexOf('export function useIshlarSection'), sections.indexOf('export function useSurplusSection'))
+  const elon = sections.slice(sections.indexOf('export function useElonlarSection'))
+  assert.match(ish, /emptyText: 'Hozircha vakansiyalar yo‘q'/)
+  assert.match(ish, /label: 'Vakansiya qo‘shish'/)
+  assert.doesNotMatch(ish, /E’lon joylash/)
+  assert.match(elon, /label: 'E’lon joylash'/)
+  assert.match(src('../src/components/catalog/CatalogLayout.jsx'), /Hozircha e’lonlar yo‘q/)
+  assert.match(src('../src/App.jsx'), /path="\/vakansiyalar" element=\{<Navigate to="\/ishlar" replace/)
+  const posters = src('../src/posters/sectionPosters.js')
+  const ishPoster = posters.slice(posters.indexOf('ishlar:'), posters.indexOf('mutaxassislar:'))
+  assert.doesNotMatch(ishPoster, /E’lon joylash/)
+  assert.doesNotMatch(ishPoster, /\/elonlar/)
+  assert.match(posters.slice(posters.indexOf('elonlar:')), /E’lon joylash/)
+})

@@ -262,6 +262,7 @@ export function useIshlarSection() {
     const items = tag('job', jobs.filter(isPublicJob), (j) => j.title, (j) => j.clinic)
     return {
       key: 'ishlar', shopActive: 'ishlar', title: 'Vakansiyalar', subtitle: 'Stomatologiya klinikalaridagi ish o‘rinlari', placeholder: 'Lavozim, klinika yoki shahar qidiring...',
+      emptyText: 'Hozircha vakansiyalar yo‘q',
       items, cats: jobSpecs.map(([key, label]) => ({ key, label, icon: iconFor('ishlar', key, label) })), catOf: (j) => j.spec,
       filters: [
         { key: 'city', label: 'Shahar', options: JOB_CITIES, match: (j, c) => j.city === c },
