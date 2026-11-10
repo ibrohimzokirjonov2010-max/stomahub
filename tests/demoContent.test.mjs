@@ -93,6 +93,7 @@ test('detail sahifalar namunada aloqa/savat o‘rniga DemoActionBar ko‘rsatadi
     'src/pages/SurplusItem.jsx': /d\.isDemo\) return/,
     'src/pages/FormaItem.jsx': /demo \? <><DemoNotice/,
     'src/pages/Usta.jsx': /isDemoItem\(master\) \? <DemoNotice/,
+    'src/pages/Elon.jsx': /demo && <DemoNotice/,
   }
   for (const [f, re] of Object.entries(files)) assert.match(read(f), re, f)
   assert.match(read('src/recordSync.js'), /!row\.payload\?\.isDemo/)
@@ -105,6 +106,18 @@ test('adPriceShort: ish o‘rni oralig‘i ixcham', async () => {
   assert.equal(adPriceShort({ deal: 'job', price: 3500000, priceMax: 5000000 }), '3,5 – 5 mln so‘m')
   const sale = { deal: 'sale', price: 48000000 }
   assert.equal(adPriceShort(sale), adPrice(sale))
+})
+
+test('elonlar desktop detail is full width and keeps the mobile screen', () => {
+  const app = read('src/App.jsx')
+  const route = app.slice(app.indexOf('path="/elonlar/:id"'), app.indexOf('path="/community"'))
+  assert.match(route, /mobile=\{<MobileElon \/>\}/)
+  assert.match(route, /<Elon \/>/)
+  assert.doesNotMatch(route, /max-w-\[560px\]/)
+  const page = read('src/pages/Elon.jsx')
+  assert.match(page, /data-testid="elon-desktop"/)
+  assert.match(page, /<DemoActionBar/)
+  assert.doesNotMatch(page, /HubTopBar|MobileTabBar/)
 })
 
 test('MobileSurplusItem: hook’lar erta return’dan oldin (React #310)', () => {
