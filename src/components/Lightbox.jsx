@@ -33,12 +33,14 @@ export default function Lightbox({ images, index, onIndex, onClose, alt = '' }) 
       aria-label="Rasmlar"
       className="fixed inset-0 z-[1000] flex flex-col"
       style={{ zIndex: 2147483000, backgroundColor: '#0b1220', height: '100dvh', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', touchAction: 'pan-y' }}
-      onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
+      onTouchStart={(e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
       onTouchEnd={(e) => {
-        if (touch.current == null || n < 2) return
-        const dx = e.changedTouches[0].clientX - touch.current
-        if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1)
+        if (touch.current == null) return
+        const dx = e.changedTouches[0].clientX - touch.current.x
+        const dy = e.changedTouches[0].clientY - touch.current.y
         touch.current = null
+        if (Math.abs(dy) > 70 && Math.abs(dy) > Math.abs(dx) * 1.2) { onClose(); return }
+        if (n > 1 && Math.abs(dx) > 40 && Math.abs(dx) >= Math.abs(dy)) go(dx < 0 ? 1 : -1)
       }}
     >
       <div className="flex items-center justify-between px-4 py-3 text-white">

@@ -11,6 +11,7 @@ import LiveQr from '../components/LiveQr'
 import { tashkentWhen } from '../time'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 import { useSession } from '../sessionStore'
+import SeminarPosterFrame from '../components/SeminarPosterFrame'
 
 const SPECS = ['Implantolog', 'Terapevt', 'Ortoped', 'Ortodont', 'Jarroh', 'Gigiyenist', 'Boshqa']
 const CITIES = ['Toshkent', 'Samarqand', 'Buxoro', 'Andijon', 'Namangan', "Farg‘ona", 'Nukus']
@@ -245,7 +246,7 @@ export default function SeminarReg() {
                   ELEKTRON CHIPTA
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)_140px]">
-                  <img src={view.banner} alt="" className="h-[140px] w-full rounded-xl object-cover" />
+                  <SeminarPosterFrame src={view.banner} alt="" className="rounded-xl" imgClassName="max-h-[140px]" />
                   <div className="min-w-0">
                     <b className="block text-[16px] leading-snug">{view.longTitle}</b>
                     <p className="mt-2 flex items-center gap-2 text-[12.5px]"><img src={view.avatar} alt="" className="size-6 rounded-full object-cover" /> {view.doctor}<span className="text-muted">{view.role}</span></p>
@@ -277,13 +278,12 @@ export default function SeminarReg() {
 
         <aside className="min-w-0 rounded-2xl border border-line bg-white p-3 shadow-card">
           <h2 className="flex items-center gap-2 text-[14px] font-bold"><Calendar className="size-4 text-sea" /> Seminar haqida</h2>
-          <div className="relative mt-2 h-[148px] overflow-hidden rounded-xl bg-[#08343c]">
-            <img src={view.banner} alt="" className="h-full w-full object-cover opacity-80" />
-            <img src={view.avatar} alt="" className="absolute bottom-0 right-3 h-[132px] w-[92px] object-cover object-top" />
-            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold">{view.format}</span>
+          <div className="relative mt-2">
+            <SeminarPosterFrame src={view.banner} alt="" imgClassName="max-h-[200px]" />
+            <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold shadow-sm">{view.format}</span>
           </div>
           <p className="mt-2 text-[11px] font-semibold text-sea">{view.kicker}</p>
-          <b className="mt-0.5 block text-[16px] leading-snug">{step === 1 ? view.title : view.longTitle}</b>
+          <b className="mt-0.5 block text-[15px] leading-snug">{step === 1 ? view.title : view.longTitle}</b>
           <p className="mt-2 flex items-center gap-2 text-[12.5px]"><img src={view.avatar} alt="" className="size-7 rounded-full object-cover" /><span><b className="block">{view.doctor}</b><span className="text-[11px] text-muted">{view.role}</span></span></p>
           <p className="mt-2 flex items-start gap-2 text-[12.5px] text-ink-2"><Calendar className="mt-0.5 size-4 shrink-0 text-sea" /> {view.when}</p>
           <p className="mt-1 flex items-start gap-2 text-[12.5px] text-ink-2"><MapPin className="mt-0.5 size-4 shrink-0 text-sea" /><span>{view.place}<span className="block text-[11px] text-muted">{view.address}</span></span></p>
