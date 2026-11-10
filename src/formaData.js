@@ -1,4 +1,7 @@
-import { som } from './marketData'
+import { som, marketProducts } from './marketData'
+import { FORMA_COLORS } from './config/productCatalog'
+import { sizesFor, CLOTHING_CHART } from './lib/formaSizes'
+import { isFormaMarketProduct, marketToForma } from './lib/formaLive'
 
 const img = (name) => `/images/forma/${name}.jpg`
 
@@ -22,16 +25,7 @@ export const genders = [
 
 export const allSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']
 
-export const colors = [
-  { id: 'teal', name: 'Yashil (Teal)', hex: '#128f8a' },
-  { id: 'navy', name: 'To‘q ko‘k', hex: '#1d3d66' },
-  { id: 'blue', name: 'Ko‘k', hex: '#2f6fed' },
-  { id: 'white', name: 'Oq', hex: '#f3f4f2' },
-  { id: 'green', name: 'Yashil', hex: '#3c9a58' },
-  { id: 'wine', name: 'Bordo', hex: '#7a3048' },
-  { id: 'black', name: 'Qora', hex: '#22262c' },
-  { id: 'lilac', name: 'Siyohrang', hex: '#8d6bb8' },
-]
+export const colors = FORMA_COLORS
 
 export const fabrics = [
   ['cotton', 'Paxta-poliester'],
@@ -50,14 +44,7 @@ export const sorts = {
   rating: 'Reyting',
 }
 
-export const sizeChart = [
-  ['XS', '80–84', '62–66', '155–160'],
-  ['S', '84–88', '66–70', '160–165'],
-  ['M', '88–92', '70–74', '165–170'],
-  ['L', '92–96', '74–78', '170–175'],
-  ['XL', '96–102', '78–84', '175–180'],
-  ['XXL', '102–108', '84–90', '180–185'],
-]
+export const sizeChart = CLOTHING_CHART
 
 export const tiers = [
   ['10+ dona', '−10%'],
@@ -108,20 +95,26 @@ export const products = []
 
 export const similarIds = ['mediform', 'adiform', 'labwear', 'hnl-xalat', 'bestex-bordo', 'cherokee-flex']
 
+/** Sotuvchi kabinetidan qo‘shilgan (haqiqiy, sotuvdagi) forma mahsulotlari — market_products dan. */
+export function liveForma() {
+  return marketProducts.filter(isFormaMarketProduct).map(marketToForma)
+}
+
+/** Forma bo‘limi: avval haqiqiy sotuvchi mahsulotlari, keyin katalog (namuna) yozuvlari. */
+export function allForma() {
+  return [...liveForma(), ...products]
+}
+
 export function getForma(id) {
-  return products.find((p) => p.id === id) || null
+  return liveForma().find((p) => p.id === id) || products.find((p) => p.id === id) || null
 }
 
 export function colorOf(id) {
   return colors.find((c) => c.id === id) || colors[0]
 }
 
-/** Tibbiy poyabzal o‘lchamlari: 35–46. Poyabzalda harfli o‘lchamlar ko‘rsatilmaydi. */
+/** Tanlash uchun o‘lchamlar (oyoq kiyim — EU raqamlar, bitta o‘lcham — «Universal»): lib/formaSizes. */
 export const shoeSizes = Array.from({ length: 12 }, (_, i) => String(35 + i))
 export function sizesOf(p) {
-  if (!p) return []
-  const s = Array.isArray(p.sizes) ? p.sizes.map(String) : []
-  if (p.cat !== 'shoe') return s
-  const nums = s.filter((x) => shoeSizes.includes(x))
-  return nums.length ? nums : shoeSizes
+  return sizesFor(p)
 }

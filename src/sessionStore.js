@@ -6,10 +6,17 @@ const ROLE_KEY = 'stomahub-auth-role'
 let state = { status: 'loading', user: null, profile: null, error: '' }
 const listeners = new Set()
 
+let shotLock = false
 function commit(next) {
+  if (shotLock && next.__shot !== true) return
   state = next
   listeners.forEach((listener) => listener())
 }
+
+/** DEV-only (skrinshotlar): soxta sessiya; haqiqiy auth uni almashtirmaydi. Prod build’da null. */
+export const __shotSession = import.meta.env?.DEV
+  ? (profile) => { shotLock = true; commit({ __shot: true, status: 'authed', user: { id: profile.id, email: 'shot@stomahub.uz' }, profile, error: '' }) }
+  : null
 
 export function isPlaceholderName(n) {
   return /^(test|e2e|demo|sinov)\b/i.test(String(n || '').trim())
@@ -71,9 +78,14 @@ export async function refreshSession() {
     commit({ status: 'anon', user: null, profile: null, error: '' })
     return state
   }
-  let { data, error } = await supabase.from('profiles').select('id,role,seller_status,org_status,shop_name,name,full_name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle()
-  if (error && /full_name/i.test(error.message || '')) {
-    ;({ data, error } = await supabase.from('profiles').select('id,role,seller_status,org_status,shop_name,name,phone,telegram_id,email,specialty,avatar_url,city,clinic').eq('id', session.user.id).maybeSingle())
+  // seller_type (0065) va full_name bo‘lmasa — ularsiz qayta o‘qiymiz (migratsiya qo‘llanmagan baza)
+  let cols = ['id', 'role', 'seller_status', 'org_status', 'shop_name', 'name', 'full_name', 'phone', 'telegram_id', 'email', 'specialty', 'avatar_url', 'city', 'clinic', 'seller_type']
+  let { data, error } = await supabase.from('profiles').select(cols.join(',')).eq('id', session.user.id).maybeSingle()
+  for (const col of ['seller_type', 'full_name']) {
+    if (error && new RegExp(col, 'i').test(error.message || '')) {
+      cols = cols.filter((c) => c !== col)
+      ;({ data, error } = await supabase.from('profiles').select(cols.join(',')).eq('id', session.user.id).maybeSingle())
+    }
   }
   // Profildagi nom test/placeholder bo‘lsa (masalan 'Test Stomatolog'), Google/akkaunt metadatasidagi haqiqiy ismni ko‘rsatamiz (DB o‘zgartirilmaydi)
   const meta = session.user.user_metadata || {}

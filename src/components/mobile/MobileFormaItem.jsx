@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, Ruler, Leaf, WashingMachine, Truck, ShoppingCart,
+  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, Ruler, Leaf, WashingMachine, Truck, ShoppingCart, Send, Phone, Store,
 } from 'lucide-react'
-import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../../formaData'
+import { getForma, allForma, similarIds, money, colorOf, sizesOf, fabrics } from '../../formaData'
+import { useMarket } from '../../buyerApi'
+import { sizeChartFor, sizeTypeOf, chartKey } from '../../lib/formaSizes'
+import { pickVariant, sizeInStock, formaCartLine, formaQuestionText, cleanKashta, KASHTA_MAX } from '../../lib/formaLive'
+import { useSellerContact } from '../../lib/useSellerContact'
+import { telegramChatUrl, openExternal } from '../../ustaContact'
 import { useCart } from '../../cart'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -13,6 +18,7 @@ import { isDemoItem } from '../../demoContent'
 import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 
 const LOGO_PRICE = 25000
+const fabricName = (k) => fabrics.find(([x]) => x === k)?.[1] || k
 const MATERIAL = {
   cotton: ['65% paxta', '35% polyester'],
   stretch: ['72% polyester, 21% viskoza', '7% spandeks'],
@@ -26,13 +32,17 @@ export default function MobileFormaItem() {
 }
 
 function FormaView({ id }) {
+  useMarket() // haqiqiy (sotuvchi) forma market_products bilan keladi
   const p = getForma(id)
+  const products = allForma()
   const navigate = useNavigate()
   const { items, add, setQty: setCartQty, remove } = useCart()
   const [shot, setShot] = useState(0)
   const [colorSel, setColor] = useState(p?.colors[0])
-  const [size, setSize] = useState(p ? defaultSize(p) : 'M')
+  const [sizeSel, setSize] = useState(p ? defaultSize(p) : 'M')
   const [logo, setLogo] = useState(false)
+  const [kashtaText, setKashtaText] = useState('')
+  const contact = useSellerContact(p?.live ? p.sellerId : null)
   const [liked, setLiked] = useState(false)
   const [chart, setChart] = useState(false)
   const [toast, setToast] = useState('')
@@ -56,14 +66,25 @@ function FormaView({ id }) {
 
   // Katalog keyin yuklansa (to‘g‘ridan-to‘g‘ri havola) boshlang‘ich rang bo‘sh qoladi — birinchi rangga tushamiz.
   const color = colorSel && p.colors.includes(colorSel) ? colorSel : p.colors[0]
+  const size = sizesOf(p).includes(sizeSel) ? sizeSel : defaultSize(p)
   const gallery = (p.gallery?.length ? p.gallery : [p.image]).slice(0, 4)
   const n = gallery.length
   const oldPrice = p.oldPrice || null
   // QA2-F: foiz har doim haqiqiy narxlardan hisoblanadi (saqlangan p.off eskirgan bo‘lishi mumkin: 450 000→380 000 = 16%, -15% emas)
   const off = oldPrice && oldPrice > p.price ? Math.round((1 - p.price / oldPrice) * 100) : 0
-  const unit = p.price + (logo ? LOGO_PRICE : 0)
-  const sku = `${p.brand.slice(0, 2).toUpperCase()}-${String(p.rank + 1).padStart(3, '0')}`
-  const cartId = formaCartId(p, color, size, logo)
+  const live = !!p.live
+  const variant = live ? pickVariant(p, size, color) : null
+  const kashtaFee = live ? p.kashtaPrice : LOGO_PRICE
+  const canKashta = live ? p.kashtaPrice > 0 : sizeTypeOf(p) === 'clothing' // poyabzal/universal buyumga logo tikilmaydi
+  const kashta = live && logo ? cleanKashta(kashtaText) : ''
+  const basePrice = live ? Number(variant?.price) || p.price : p.price
+  const unit = basePrice + (logo && canKashta ? kashtaFee : 0)
+  const sku = live ? variant?.sku || '—' : `${p.brand.slice(0, 2).toUpperCase()}-${String(p.rank + 1).padStart(3, '0')}`
+  const line = live ? formaCartLine(p, variant, kashta) : null
+  const cartId = live ? line?.id || '' : formaCartId(p, color, size, logo)
+  const soldOut = live && (!variant || Number(variant.stock) <= 0)
+  const chartInfo = sizeChartFor(p)
+  const oneSize = sizeTypeOf(p) === 'one'
   const inCart = items.find((it) => it.id === cartId)?.qty || 0
   const qty = inCart || 1
   const fixedSimilar = similarIds.map((sid) => products.find((x) => x.id === sid)).filter((x) => x && x.id !== p.id)
@@ -79,6 +100,12 @@ function FormaView({ id }) {
   }
   const addToCart = () => {
     if (demo) return
+    if (live) {
+      if (!line || soldOut) { setToast('Bu o‘lcham va rang hozir omborda yo‘q'); return }
+      if (logo && !kashta) { setToast('Kashta matnini yozing'); return }
+      if (add(line, 1)) setToast(`1 ta ${p.title} savatga qo‘shildi`)
+      return
+    }
     add({
       id: cartId,
       name: `${p.title} (${colorOf(color).name}, ${sizeLabel(size)}${logo ? ', logo bilan' : ''})`,
@@ -148,7 +175,9 @@ function FormaView({ id }) {
         <h1 className="mt-0.5 text-[20px] font-bold leading-tight text-[#0d2a4a]">{p.title}{demo && <DemoChip className="ml-1.5 align-middle" />}</h1>
         <div className="mt-2 flex items-center gap-2 text-[11.5px]">
           <span className="flex items-center gap-1 text-ink-2">{Number(p.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta sharh)</> : 'Hali baho yo‘q'}</span>
-          {!demo && <span className="ml-auto flex items-center gap-1 text-ink-2"><CircleCheck className="size-4 fill-ok text-white" /> Sotuvda mavjud</span>}
+          {!demo && (soldOut
+            ? <span className="ml-auto text-[11.5px] font-semibold text-sale">Omborda yo‘q</span>
+            : <span className="ml-auto flex items-center gap-1 text-ink-2"><CircleCheck className="size-4 fill-ok text-white" /> Sotuvda mavjud</span>)}
           <span className="h-3 w-px bg-line" />
           <span className="text-muted">SKU: {sku}</span>
         </div>
@@ -158,43 +187,59 @@ function FormaView({ id }) {
 
       {/* Tanlov */}
       <div className="mx-3 mt-2.5 rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.05)]">
-        <p className="text-[13px] text-ink-2">Rang: <b className="font-semibold text-ink">{colorOf(color).name}</b></p>
+        {p.colors.length > 0 && <><p className="text-[13px] text-ink-2">Rang: <b className="font-semibold text-ink">{colorOf(color).name}</b></p>
         <div className="mt-2 flex gap-2.5">
           {p.colors.map((c) => (
             <button key={c} type="button" onClick={() => setColor(c)} aria-label={colorOf(c).name} aria-pressed={color === c} className={`size-10 rounded-full border border-line transition ${color === c ? 'ring-2 ring-sea ring-offset-2' : ''}`} style={{ background: colorOf(c).hex }} />
           ))}
-        </div>
+        </div></>}
 
+        {oneSize ? (
+          <p className="mt-4 flex items-center gap-1.5 text-[13px] text-ink-2"><Ruler className="size-4 text-sea" /> O‘lcham: <b className="font-semibold text-ink">Universal o‘lcham</b></p>
+        ) : <>
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-[13px] text-ink-2">O‘lcham: <b className="font-semibold text-sea">{sizeLabel(size)}</b></p>
-          <button type="button" onClick={() => setChart(true)} className="flex items-center gap-1 text-[12px] font-semibold text-[#1f5fa8]"><Ruler className="size-4" /> O‘lcham jadvali</button>
+          <p className="text-[13px] text-ink-2">{chartInfo?.type === 'shoe' ? 'Oyoq kiyim o‘lchami' : 'O‘lcham'}: <b className="font-semibold text-sea">{sizeLabel(size)}{chartInfo?.type === 'shoe' ? ' (EU)' : ''}</b></p>
+          {chartInfo && <button type="button" onClick={() => setChart(true)} className="flex items-center gap-1 text-[12px] font-semibold text-[#1f5fa8]"><Ruler className="size-4" /> O‘lcham jadvali</button>}
         </div>
         <div className="mt-2 grid grid-cols-6 gap-1.5">
-          {sizesOf(p).map((s) => (
-            <button key={s} type="button" onClick={() => setSize(s)} aria-pressed={size === s} className={`h-10 rounded-xl text-[13px] font-semibold transition ${size === s ? 'bg-sea text-white' : 'border border-line bg-white text-ink'}`}>{sizeLabel(s)}</button>
-          ))}
+          {sizesOf(p).map((s) => {
+            const out = live && !sizeInStock(p, s, color)
+            return (
+              <button key={s} type="button" onClick={() => setSize(s)} aria-pressed={size === s} aria-label={out ? `${sizeLabel(s)} — omborda yo‘q` : undefined} className={`h-10 rounded-xl text-[13px] font-semibold transition ${size === s ? 'bg-sea text-white' : out ? 'border border-dashed border-line bg-[#f6f8fa] text-muted line-through' : 'border border-line bg-white text-ink'}`}>{sizeLabel(s)}</button>
+            )
+          })}
         </div>
+        </>}
 
-        <label className="mt-3.5 flex cursor-pointer items-center gap-2.5 rounded-2xl border border-line p-2.5">
+        {canKashta && <label className="mt-3.5 flex cursor-pointer items-center gap-2.5 rounded-2xl border border-line p-2.5">
           <ToothIcon className="size-6 shrink-0 text-[#0d2a4a]" strokeWidth={1.5} />
           <span className="min-w-0 flex-1">
-            <span className="block text-[13px] font-semibold text-ink">Logo tikish (ixtiyoriy)</span>
-            <span className="block text-[10.5px] text-muted">Kiyimingizga klinika logotipini tikish</span>
+            <span className="block text-[13px] font-semibold text-ink">{live ? 'Kashta (ixtiyoriy)' : 'Logo tikish (ixtiyoriy)'}</span>
+            <span className="block text-[10.5px] text-muted">{live ? 'Ism, lavozim yoki klinika nomini tikib berish' : 'Kiyimingizga klinika logotipini tikish'}</span>
           </span>
-          <span className="whitespace-nowrap text-[12px] font-semibold text-[#1f5fa8]">+ {money(LOGO_PRICE)}</span>
+          <span className="whitespace-nowrap text-[12px] font-semibold text-[#1f5fa8]">+ {money(kashtaFee)}</span>
           <input type="checkbox" checked={logo} onChange={(e) => setLogo(e.target.checked)} className="sr-only" />
           <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${logo ? 'bg-sea' : 'bg-line'}`}>
             <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${logo ? 'left-[22px]' : 'left-0.5'}`} />
           </span>
-        </label>
+        </label>}
+        {live && logo && canKashta && (
+          <div className="mt-2">
+            <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Masalan: Dr. Aliyeva M. — Stomatolog" aria-label="Kashta matni" className="h-11 w-full rounded-xl border border-line bg-white px-3 text-[14px] outline-none focus:border-sea" />
+            <p className="mt-1 text-[10.5px] text-muted">Matn buyurtma bilan sotuvchiga yuboriladi. {kashtaText.length}/{KASHTA_MAX}</p>
+          </div>
+        )}
 
 
-        <div className="mt-3 grid grid-cols-[1fr_1fr_1.2fr] gap-1.5">
-          {[
-            [Leaf, 'Material', mat1, mat2],
-            [WashingMachine, 'Parvarish', '30°C da yuvish', 'Oqartiruvchi ishlatmaslik'],
-            [Truck, 'Yetkazib berish', 'Toshkent: 1 kun', 'Boshqa hududlar: 1–2 kun'],
-          ].map(([Icon, title, a, b]) => (
+        <div className={`mt-3 grid gap-1.5 ${live ? 'grid-cols-2' : 'grid-cols-[1fr_1fr_1.2fr]'}`}>
+          {(live
+            // Haqiqiy mahsulot: faqat sotuvchi kiritgan ma’lumot (o‘ylab topilgan tarkib/muddat ko‘rsatilmaydi)
+            ? [p.fabric && [Leaf, 'Mato', fabricName(p.fabric), ''], [Truck, 'Sotuvchi', p.seller, 'Yetkazish sotuvchi bilan kelishiladi']].filter(Boolean)
+            : [
+              [Leaf, 'Material', mat1, mat2],
+              [WashingMachine, 'Parvarish', '30°C da yuvish', 'Oqartiruvchi ishlatmaslik'],
+              [Truck, 'Yetkazib berish', 'Toshkent: 1 kun', 'Boshqa hududlar: 1–2 kun'],
+            ]).map(([Icon, title, a, b]) => (
             <div key={title} className="rounded-xl bg-[#f3f7fb] p-2">
               <p className="flex items-center gap-1 whitespace-nowrap text-[10.5px] font-semibold text-ink"><Icon className="size-4 shrink-0 text-sea" strokeWidth={1.7} /> {title}</p>
               <p className="mt-1 text-[9.5px] leading-snug text-ink-2">{a}<br />{b}</p>
@@ -215,6 +260,26 @@ function FormaView({ id }) {
           </ul>
         )}
       </div>
+
+      {live && (
+        <div className="mx-3 mt-2.5 rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.05)]">
+          <Link to={`/dokon/${p.sellerId}`} className="flex items-center gap-2.5">
+            <span className="grid size-10 place-items-center rounded-xl bg-sea-50 text-sea"><Store className="size-5" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] text-muted">Sotuvchi</span>
+              <span className="block truncate text-[14px] font-bold text-ink">{p.seller}</span>
+            </span>
+            <ChevronRight className="size-4 text-muted" />
+          </Link>
+          {contact?.telegram ? (
+            <button type="button" onClick={() => openExternal(telegramChatUrl(contact.telegram, formaQuestionText({ p, size: oneSize ? '' : sizeLabel(size), color: p.colors.length ? color : '', url: window.location.href })))} className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-sea text-[13.5px] font-semibold text-sea active:scale-[0.99]">
+              <Send className="size-4" /> Sotuvchiga savol (Telegram)
+            </button>
+          ) : contact?.phone ? (
+            <a href={`tel:${contact.phone}`} className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-sea text-[13.5px] font-semibold text-sea"><Phone className="size-4" /> Sotuvchiga qo‘ng‘iroq</a>
+          ) : null}
+        </div>
+      )}
 
       {/* O'xshash */}
       <div className="mt-4 flex items-center justify-between px-3.5">
@@ -249,37 +314,39 @@ function FormaView({ id }) {
               {off > 0 && oldPrice && (
                 <p className="flex items-center gap-1.5 text-[11.5px]">
                   <span className="rounded-md bg-sale px-1.5 font-bold text-white">-{off}%</span>
-                  <span className="text-muted line-through">{money((oldPrice + (logo ? LOGO_PRICE : 0)) * qty)}</span>
+                  <span className="text-muted line-through">{money((oldPrice + (logo && canKashta ? kashtaFee : 0)) * qty)}</span>
                 </p>
               )}
               <p className="whitespace-nowrap text-[19px] font-extrabold leading-tight text-[#0d2a4a]">{money(unit * qty)}</p>
             </div>
-            <button type="button" onClick={addToCart} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
-              <ShoppingCart className="size-[19px]" /> Savatga qo‘shish
+            <button type="button" onClick={addToCart} disabled={soldOut} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:bg-[#9fb4c0] disabled:shadow-none">
+              <ShoppingCart className="size-[19px]" /> {soldOut ? 'Omborda yo‘q' : 'Savatga qo‘shish'}
             </button>
           </>
         )}
       </div>
 
-      {chart && (
-        <BottomSheet title="O‘lcham jadvali (sm)" onClose={() => setChart(false)}>
+      {chart && chartInfo && (
+        <BottomSheet title={chartInfo.title} onClose={() => setChart(false)}>
           <table className="mt-3 w-full text-left text-[13px]">
             <thead>
-              <tr className="text-[11.5px] text-muted"><th className="py-2 font-medium">O‘lcham</th><th className="font-medium">Ko‘krak</th><th className="font-medium">Bel</th><th className="font-medium">Bo‘y</th></tr>
+              <tr className="text-[11.5px] text-muted">{chartInfo.head.map((h, i) => <th key={h} className={`py-2 font-medium ${i === 0 ? 'pl-1' : ''}`}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {sizeChart.map((r) => {
-                const on = sizeLabel(size) === r[0]
-                const avail = sizesOf(p).map(sizeLabel).includes(r[0])
+              {chartInfo.rows.map((r) => {
+                const match = sizesOf(p).find((s) => chartKey(s) === r[0])
+                const on = chartKey(size) === r[0]
+                const avail = !!match && (!live || sizeInStock(p, match, color))
                 return (
-                  <tr key={r[0]} onClick={() => { if (avail) { setSize(sizesOf(p).find((s) => sizeLabel(s) === r[0])); setChart(false) } }} className={`border-t border-line ${on ? 'bg-sea-50 font-semibold text-sea' : avail ? 'text-ink' : 'text-muted/60'} ${avail ? 'cursor-pointer' : ''}`}>
-                    <td className="py-2.5 pl-1">{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td>
+                  <tr key={r[0]} onClick={() => { if (avail) { setSize(match); setChart(false) } }} className={`border-t border-line ${on ? 'bg-sea-50 font-semibold text-sea' : avail ? 'text-ink' : 'text-muted/60'} ${avail ? 'cursor-pointer' : ''}`}>
+                    {r.map((c, i) => <td key={i} className={`py-2.5 ${i === 0 ? 'pl-1' : ''}`}>{c}</td>)}
                   </tr>
                 )
               })}
             </tbody>
           </table>
-          <p className="mt-3 text-[11.5px] text-muted">O‘lchamni tanlash uchun qatorni bosing. Kulrang o‘lchamlar bu mahsulotda mavjud emas.</p>
+          {chartInfo.note && <p className="mt-3 text-[11.5px] leading-snug text-ink-2">{chartInfo.note}</p>}
+          <p className="mt-2 text-[11.5px] text-muted">O‘lchamni tanlash uchun qatorni bosing. Kulrang o‘lchamlar bu mahsulotda mavjud emas.</p>
         </BottomSheet>
       )}
 

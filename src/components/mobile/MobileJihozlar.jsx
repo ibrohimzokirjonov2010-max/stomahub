@@ -29,7 +29,7 @@ const SORT_FN = {
 }
 const SORT_SHORT = { popular: 'Mashhur', cheap: 'Arzonroq', rich: 'Qimmatroq', fresh: 'Yangilari', rating: 'Reyting' }
 const PRICES = [['10000000', '10 mln gacha'], ['50000000', '50 mln gacha'], ['100000000', '100 mln gacha'], ['200000000', '200 mln gacha']]
-const EMPTY = { brand: '', price: '', warranty: '', city: '', lizing: false }
+const EMPTY = { brand: '', price: '', warranty: '', city: '' }
 
 export const warrantyLabel = (m) => (m >= 12 ? `${m / 12} yil` : `${m} oy`)
 export const conditionLabel = (s) => (s === 'used' ? 'B.U.' : s === 'demo' ? 'Ko‘rgazmali' : 'Yangi')
@@ -43,8 +43,7 @@ const matches = (p, f) =>
   (!f.brand || p.brand === f.brand) &&
   (!f.price || p.price <= Number(f.price)) &&
   (!f.warranty || p.warranty >= Number(f.warranty)) &&
-  (!f.city || p.city === f.city) &&
-  (!f.lizing || p.lizing)
+  (!f.city || p.city === f.city)
 
 export function BrandMark({ p, className = '' }) {
   return <span className={`block truncate font-black uppercase tracking-[0.08em] text-[#1d3d7a] ${className}`}>{p.mark || p.brand}</span>
@@ -217,7 +216,6 @@ function JihozCard({ p, liked, onLike, added, onAdd }) {
           <p className="min-w-0 whitespace-nowrap text-[14px] font-extrabold leading-tight text-[#0d2a4a]">{money(p.price)}</p>
           <CartBtn added={added} onAdd={onAdd} className="size-9" />
         </div>
-        {p.lizing && <p className="mt-1.5 truncate rounded-lg bg-[#e6f4f3] px-2 py-1 text-center text-[10px] font-medium text-sea-600">Oyiga {money(p.month)} dan</p>}
       </div>
     </Link>
   )
@@ -238,7 +236,6 @@ function JihozRow({ p, added, onAdd }) {
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="min-w-0">
             <p className="whitespace-nowrap text-[14px] font-extrabold text-[#0d2a4a]">{money(p.price)}</p>
-            {p.lizing && <p className="truncate text-[10px] text-sea-600">Oyiga {money(p.month)} dan</p>}
           </div>
           <CartBtn added={added} onAdd={onAdd} className="size-9" />
         </div>
@@ -285,13 +282,6 @@ function FilterSheet({ initial, cond: initialCond, count, onClose, onApply }) {
       <Options title="Narx" options={PRICES} value={f.price} onChange={(price) => patch({ price })} />
       <Options title="Kafolat" options={[['12', '1 yildan'], ['24', '2 yildan'], ['36', '3 yil']]} value={f.warranty} onChange={(warranty) => patch({ warranty })} />
       <Options title="Shahar" options={cities.map((c) => [c, c])} value={f.city} onChange={(city) => patch({ city })} />
-      <label className="mt-5 flex items-center justify-between rounded-2xl border border-line px-3.5 py-3 text-[13.5px] text-ink">
-        Bo‘lib to‘lash mumkin
-        <input type="checkbox" checked={f.lizing} onChange={(e) => patch({ lizing: e.target.checked })} className="sr-only" />
-        <span className={`relative h-6 w-11 rounded-full transition ${f.lizing ? 'bg-sea' : 'bg-line'}`}>
-          <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${f.lizing ? 'left-[22px]' : 'left-0.5'}`} />
-        </span>
-      </label>
     </BottomSheet>
   )
 }

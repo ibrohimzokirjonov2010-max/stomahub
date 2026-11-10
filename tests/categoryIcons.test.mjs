@@ -5,7 +5,6 @@ import { CATEGORY_ICON_MAP, LUCIDE_IDS, GLYPHS, FALLBACK_ICON, categoryIconId } 
 import { ART, CUSTOM_IDS } from '../src/icons/categoryIconArt.js'
 import { MARKET_CATEGORIES, CATEGORY_ALIASES, normCategory } from '../src/config/productCatalog.js'
 import { cats as ustaCats } from '../src/ustalarData.js'
-import { catList as jihozCats } from '../src/jihozData.js'
 import { specs as jobSpecs } from '../src/ishlarData.js'
 import { SPECS } from '../src/mutaxassislarData.js'
 import { AD_CATS } from '../src/elonlarData.js'
@@ -26,7 +25,7 @@ const SECTIONS = {
   seminarlar: keysFrom('seminarsData.js', 'seminarChips'),
   ortiqcha: keysFrom('surplusData.js', 'surplusChips'),
   ustalar: pairs(ustaCats),
-  jihozlar: pairs(jihozCats),
+  jihozlar: keysFrom('jihozData.js', 'catList'),
   ishlar: pairs(jobSpecs),
   mutaxassislar: pairs(SPECS),
   elonlar: pairs(AD_CATS),

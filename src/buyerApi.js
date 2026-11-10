@@ -55,6 +55,10 @@ export const toMarketProduct = (row) => ({
   lotNo: row.lot_no || '',
   storageTemp: row.storage_temp || '',
   expiresOn: row.expires_on || '',
+  // 0064: Forma (category = 'Tibbiy forma') — toifa, jins, mato, o‘lcham turi, kashta narxi
+  forma: row.forma && typeof row.forma === 'object' && !Array.isArray(row.forma) ? row.forma : null,
+  // 0065: Jihozlar (category = 'Stomatologik jihozlar') — turi, model, yil, kafolat, shahar, o‘rnatish
+  jihoz: row.jihoz && typeof row.jihoz === 'object' && !Array.isArray(row.jihoz) ? row.jihoz : null,
   rating: 0,
   reviews: 0,
   live: true,
@@ -94,6 +98,7 @@ export async function loadMarketProducts() {
   } else {
     // Faol sotuvchi chegirmalari (0048 market_discounts). RPC hali yo‘q bo‘lsa — chegirmasiz narx.
     rows = await dropNonPublicSellers(rows || [])
+    if (import.meta.env.DEV && shotLock) return
     const disc = await supabase.rpc('market_discounts').then((r) => (r.error ? [] : r.data || []), () => [])
     // Sotuvchi aksiyalari (0047 seller_promotions → catalog_items kind='deal'): aksiya narxi marketplace kartasida ham.
     const promos = await supabase.from('catalog_items').select('payload').eq('kind', 'deal')
@@ -135,7 +140,7 @@ export async function createOrder({ items, name, phone, city, address, note, pic
       name, phone, city, address, note: note || '', payment_method: pay === 'naqd' ? 'cash' : pay,
       payment_ref: paymentRef || '',
       delivery_method: pickup ? 'olib_ketish' : 'kuryer',
-      items: items.map((it) => ({ product_id: it.productId || it.id, qty: it.qty, variant: it.variant || '' })),
+      items: items.map((it) => ({ product_id: it.productId || it.id, qty: it.qty, variant: it.variant || '', ...(it.kashta ? { kashta: it.kashta } : {}) })),
     },
   })
   if (error) throw new Error(friendlySupabaseError(error))
@@ -369,3 +374,13 @@ export function matchKat(p, id) {
 }
 export const katCount = (products, id) => (products || []).filter((p) => matchKat(p, id)).length
 export const katLink = (id) => `/marketplace?kat=${id}`
+
+/** Dev-only: skrinshot uchun soxta vitrina (production bundle’da yo‘q). */
+let shotLock = false
+export const __shotMarket = import.meta.env.DEV ? (rows) => {
+  shotLock = true
+  marketProducts.splice(0, marketProducts.length, ...rows)
+  marketState = { status: 'ready', error: '' }
+  marketLoadedAt = Date.now() + 3600000
+  emit()
+} : undefined

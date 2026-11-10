@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, BadgeCheck, ShieldCheck, Truck, Package, ShoppingCart, CreditCard,
-  Zap, Sun, Armchair, Monitor, PenTool, Activity, Droplets, Wind, Weight, Calendar, Settings, MapPin, Tag, Lightbulb, FileText, Wrench,
+  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, BadgeCheck, ShieldCheck, Truck, Package, ShoppingCart,
+  Zap, Sun, Armchair, Monitor, PenTool, Activity, Droplets, Wind, Weight, Calendar, Settings, MapPin, Tag, Lightbulb, FileText, Wrench, Send, Phone,
 } from 'lucide-react'
-import { getJihoz, products, similarIds, specsOf, kitOf, money } from '../../jihozData'
+import { getJihoz, allJihoz, specsOf, kitOf, money } from '../../jihozData'
+import { useMarket } from '../../buyerApi'
+import { useSellerContact } from '../../lib/useSellerContact'
+import { telegramChatUrl, openExternal } from '../../ustaContact'
+import { jihozCartLine, jihozQuestionText } from '../../lib/jihozLive'
 import { useCart } from '../../cart'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
-import { SellerChat } from './MobileProduct'
 import { BrandMark, badgeOf, warrantyLabel } from './MobileJihozlar'
 
 const SPEC_ICONS = [
@@ -37,15 +40,15 @@ const KIT_ICONS = [
   [/o‘rnatish|yetkazib/i, Wrench],
 ]
 const iconFor = (list, text, fallback) => list.find(([re]) => re.test(text))?.[1] || fallback
-const PLANS = [6, 12, 24]
-
 export default function MobileJihozItem() {
   const { id } = useParams()
   return <JihozView key={id} id={id} />
 }
 
 function JihozView({ id }) {
+  useMarket() // sotuvchi jihozlari market_products bilan keladi (0065)
   const p = getJihoz(id)
+  const contact = useSellerContact(p?.live ? p.sellerId : null)
   const navigate = useNavigate()
   const { items, add, setQty, remove } = useCart()
   const [shot, setShot] = useState(0)
@@ -76,16 +79,20 @@ function JihozView({ id }) {
   const specs = specsOf(p).filter(([k]) => !/^(model|brend)$/i.test(k))
   const kit = kitOf(p)
   const inCart = items.find((it) => it.id === p.id)?.qty || 0
-  const official = p.official || p.status === 'new'
-  const seller = { name: `${p.brand} Uzbekistan`, logo: (p.mark || p.brand).slice(0, 2).toUpperCase() }
-  const similar = [...new Set([...similarIds, ...products.filter((x) => x.cat === p.cat).map((x) => x.id)])]
-    .map((sid) => products.find((x) => x.id === sid))
-    .filter((x) => x && x.id !== p.id)
-    .slice(0, 8)
+  const official = !!p.official
+  const seller = { name: p.seller || 'Sotuvchi', logo: String(p.seller || p.brand || 'S').slice(0, 2).toUpperCase() }
+  const similar = allJihoz().filter((x) => x.cat === p.cat && x.id !== p.id).slice(0, 8)
+  const inStock = !p.live || p.stock > 0
+  const ask = (topic = '') => {
+    if (contact?.telegram) openExternal(telegramChatUrl(contact.telegram, jihozQuestionText({ p, topic, url: window.location.href })))
+    else if (contact?.phone) window.location.href = `tel:${contact.phone}`
+  }
   const [badge] = badgeOf(p)
 
   const addToCart = () => {
-    add({ id: p.id, name: p.title, type: p.brand, price: p.price, image: p.image })
+    const line = jihozCartLine(p)
+    if (!line || !inStock) { setToast('Bu jihoz hozir sotuvda emas'); return }
+    add(line)
     setToast(`${p.title} savatga qo‘shildi`)
   }
   const changeQty = (next) => {
@@ -153,7 +160,7 @@ function JihozView({ id }) {
           <Link to={`/jihozlar?brand=${encodeURIComponent(p.brand)}`} className="flex items-center gap-0.5 rounded-md border border-line px-1.5 py-[3px]">
             <BrandMark p={p} className="max-w-[110px] text-[11px]" /> <ChevronRight className="size-3.5 text-ink-2" />
           </Link>
-          <span className="ml-auto flex items-center gap-1 whitespace-nowrap text-[11.5px] font-medium text-ok"><CircleCheck className="size-4 fill-ok text-white" /> Omborda bor</span>
+          {inStock ? <span className="ml-auto flex items-center gap-1 whitespace-nowrap text-[11.5px] font-medium text-ok"><CircleCheck className="size-4 fill-ok text-white" /> Omborda bor</span> : <span className="ml-auto whitespace-nowrap text-[11.5px] font-medium text-sale">Omborda yo‘q</span>}
         </div>
         <h1 className="mt-2 text-[21px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{p.title}</h1>
         <p className="mt-1 flex items-center gap-1 text-[12px] text-ink-2">
@@ -169,19 +176,12 @@ function JihozView({ id }) {
             </>
           )}
         </div>
-        {p.lizing && (
-          <button type="button" onClick={() => setSheet('lizing')} className="mt-2.5 flex h-10 w-full items-center gap-2 rounded-xl bg-[#e6f4f3] px-3 text-left text-[12.5px] text-sea-600">
-            <CreditCard className="size-4 shrink-0" />
-            <span className="min-w-0 flex-1 truncate"><b className="font-semibold">12 oy</b> — oyiga {money(Math.round(p.price / 12 / 1000) * 1000)} dan</span>
-            <ChevronRight className="size-4 shrink-0" />
-          </button>
-        )}
 
         <div className="mt-3 grid grid-cols-3 divide-x divide-line rounded-2xl border border-line py-2.5">
           {[
-            [ShieldCheck, 'Kafolat', warrantyLabel(p.warranty)],
-            [Truck, 'Toshkent bo‘ylab', 'bepul yetkazish'],
-            [Package, 'Omborda bor', 'Tez yetkazish'],
+            [ShieldCheck, 'Kafolat', p.warranty ? warrantyLabel(p.warranty) : 'ko‘rsatilmagan'],
+            [p.install ? Wrench : Truck, p.install ? 'O‘rnatish' : 'Yetkazish', p.install ? 'narxga kiradi' : (p.city || 'sotuvchi bilan')],
+            [Package, inStock ? 'Omborda bor' : 'Omborda yo‘q', p.live ? `${p.stock} dona` : ''],
           ].map(([Icon, a, b]) => (
             <div key={a} className="flex flex-col items-center px-1 text-center">
               <Icon className="size-[22px] text-sea" strokeWidth={1.6} />
@@ -217,7 +217,7 @@ function JihozView({ id }) {
       </section>
 
       {/* Komplektatsiya */}
-      <section className="mt-2.5 bg-white py-3.5">
+      {kit.length > 0 && <section className="mt-2.5 bg-white py-3.5">
         <h2 className="px-3.5 text-[16px] font-bold text-[#0d2a4a]">Komplektatsiya <span className="text-[12px] font-medium text-muted">({kit.length})</span></h2>
         <div className="mt-2.5 flex gap-2 overflow-x-auto px-3.5 no-scrollbar">
           {kit.map((k) => {
@@ -230,7 +230,7 @@ function JihozView({ id }) {
             )
           })}
         </div>
-      </section>
+      </section>}
 
       {/* Sotuvchi */}
       <section className="mt-2.5 bg-white px-3.5 py-3.5">
@@ -243,9 +243,13 @@ function JihozView({ id }) {
               <BadgeCheck className="size-4 shrink-0 fill-[#1a73e8] text-white" />
             </p>
             <p className="truncate text-[11px] text-muted">{official ? 'Rasmiy distribyutor' : 'Tekshirilgan sotuvchi'} · Stomatologik jihozlar</p>
-                      </div>
+          </div>
         </div>
-        <button type="button" onClick={() => setSheet('chat')} className="mt-2.5 h-11 w-full rounded-xl border border-sea text-[13.5px] font-semibold text-sea active:bg-sea-50">Sotuvchiga yozish</button>
+        {contact?.telegram ? (
+          <button type="button" onClick={() => ask()} className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-sea text-[13.5px] font-semibold text-sea active:bg-sea-50"><Send className="size-4" /> Sotuvchiga yozish (Telegram)</button>
+        ) : contact?.phone ? (
+          <a href={`tel:${contact.phone}`} className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-sea text-[13.5px] font-semibold text-sea"><Phone className="size-4" /> Sotuvchiga qo‘ng‘iroq</a>
+        ) : null}
       </section>
 
       {/* O'xshash */}
@@ -274,7 +278,6 @@ function JihozView({ id }) {
       <div className="fixed inset-x-0 bottom-[62px] z-30 flex items-center gap-1.5 border-t border-line bg-white px-3 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
         <div className="min-w-0 flex-1">
           <p className="whitespace-nowrap text-[14.5px] font-extrabold leading-tight tracking-tight text-[#0d2a4a]">{money(p.price * (inCart || 1))}</p>
-          {p.lizing && <p className="truncate text-[10px] text-sea-600">12 oy — oyiga {money(Math.round(p.price / 12 / 1000) * 1000)} dan</p>}
         </div>
         {inCart ? (
           <>
@@ -283,12 +286,7 @@ function JihozView({ id }) {
           </>
         ) : (
           <>
-            {p.lizing && (
-              <button type="button" onClick={() => setSheet('lizing')} className="flex h-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[#e6f4f3] px-2 text-[10.5px] font-semibold leading-tight text-sea-600">
-                <CreditCard className="size-4" /> Bo‘lib to‘lash
-              </button>
-            )}
-            <button type="button" onClick={addToCart} className="flex h-12 shrink-0 items-center justify-center gap-1 rounded-xl bg-sea px-2 text-[12px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
+            <button type="button" disabled={!inStock} onClick={addToCart} className="flex h-12 shrink-0 disabled:opacity-40 items-center justify-center gap-1 rounded-xl bg-sea px-2 text-[12px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">
               <ShoppingCart className="size-4" /> Savatga qo‘shish
             </button>
           </>
@@ -307,19 +305,6 @@ function JihozView({ id }) {
           </dl>
         </BottomSheet>
       )}
-      {sheet === 'lizing' && (
-        <LizingSheet p={p} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setToast('Ariza yuborildi — menejer 15 daqiqada qo‘ng‘iroq qiladi') }} />
-      )}
-      {sheet === 'chat' && (
-        <SellerChat
-          seller={seller}
-          product={{ name: p.title }}
-          quick={['O‘rnatish narxga kiradimi?', 'Kafolat qanday?', 'Ko‘rgazmada ko‘rsa bo‘ladimi?']}
-          onClose={() => setSheet(null)}
-          onSent={() => { setSheet(null); setToast('Xabar sotuvchiga yuborildi') }}
-        />
-      )}
-
       <MobileToast
         text={toast}
         onClose={closeToast}
@@ -327,40 +312,5 @@ function JihozView({ id }) {
       />
       <MobileTabBar />
     </div>
-  )
-}
-
-function LizingSheet({ p, onClose, onDone }) {
-  const [months, setMonths] = useState(12)
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('+998 ')
-  const monthly = Math.round(p.price / months / 1000) * 1000
-  const valid = name.trim().length > 1 && phone.replace(/\D/g, '').length >= 12
-  return (
-    <BottomSheet
-      title="Bo‘lib to‘lash"
-      onClose={onClose}
-      footer={<button type="button" disabled={!valid} onClick={onDone} className="h-12 flex-1 rounded-xl bg-sea text-[14px] font-semibold text-white disabled:opacity-40">Ariza yuborish</button>}
-    >
-      <p className="mt-1 text-[12.5px] text-muted">Ustamasiz muddatli to‘lov — birinchi to‘lovsiz</p>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {PLANS.map((m) => (
-          <button key={m} type="button" aria-pressed={months === m} onClick={() => setMonths(m)} className={`rounded-xl border px-2 py-2.5 text-center ${months === m ? 'border-sea bg-sea-50' : 'border-line'}`}>
-            <span className={`block text-[14px] font-bold ${months === m ? 'text-sea' : 'text-ink'}`}>{m} oy</span>
-            <span className="block whitespace-nowrap text-[10.5px] text-muted">{money(Math.round(p.price / m / 1000) * 1000)}</span>
-          </button>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-between rounded-2xl bg-[#f3f7fb] px-3.5 py-3">
-        <span className="text-[12.5px] text-ink-2">Oylik to‘lov</span>
-        <span className="text-[17px] font-extrabold text-[#0d2a4a]">{money(monthly)}</span>
-      </div>
-      <label className="mt-3 block text-[12.5px] font-medium text-ink">Ism familiya
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Masalan, Aziz Karimov" className="mt-1 h-11 w-full rounded-xl border border-line px-3 text-[14px] outline-none focus:border-sea" />
-      </label>
-      <label className="mt-2.5 block text-[12.5px] font-medium text-ink">Telefon
-        <input type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-line px-3 text-[14px] outline-none focus:border-sea" />
-      </label>
-    </BottomSheet>
   )
 }

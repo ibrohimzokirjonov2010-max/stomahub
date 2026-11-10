@@ -101,6 +101,7 @@ export function buyNowItem(product, qty = 1) {
     qty: Math.max(1, qty | 0),
     ...(typeof product.seller === 'string' ? { seller: product.seller } : {}),
     ...(isRestricted(product) ? { rx: true } : {}),
+    ...(product.kashta ? { kashta: String(product.kashta) } : {}),
   }
 }
 /** "Hozir xarid qilish": go to checkout with ONLY this product; cart is not touched. */

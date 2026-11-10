@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { goBuyNow } from '../checkoutUtils'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Star, Heart, ShoppingCart, Truck, ShieldCheck, CreditCard, ChevronRight, X } from 'lucide-react'
+import { Star, Heart, ShoppingCart, Truck, ShieldCheck, CreditCard, ChevronRight, Send, Phone, X } from 'lucide-react'
 import { useCart } from '../cart'
-import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../formaData'
+import { getForma, allForma, similarIds, money, colorOf, sizesOf, cats, genders, fabrics } from '../formaData'
+import { useMarket } from '../buyerApi'
+import { sizeChartFor, sizeTypeOf, chartKey } from '../lib/formaSizes'
+import { pickVariant, sizeInStock, formaCartLine, formaQuestionText, cleanKashta, KASHTA_MAX } from '../lib/formaLive'
+import { useSellerContact } from '../lib/useSellerContact'
+import { telegramChatUrl, openExternal } from '../ustaContact'
 import { payPromo } from '../payments/paymentService'
 import { isDemoItem } from '../demoContent'
 import { DemoNotice, DemoActionBar } from '../components/DemoNotice'
@@ -21,13 +26,18 @@ const shipping = [
 
 export default function FormaItem() {
   const { id } = useParams()
+  useMarket()
   const product = getForma(id)
+  const products = allForma()
   const [shot, setShot] = useState(0)
-  const [color, setColor] = useState(product?.colors[0] || 'teal')
-  const [size, setSize] = useState(sizesOf(product).includes('M') ? 'M' : sizesOf(product)[0])
+  const [colorSel, setColor] = useState(product?.colors[0] || 'teal')
+  const [sizeSel, setSize] = useState(sizesOf(product).includes('M') ? 'M' : sizesOf(product)[0])
+  const [kashtaOn, setKashtaOn] = useState(false)
+  const [kashtaText, setKashtaText] = useState('')
+  const [note, setNote] = useState('')
+  const contact = useSellerContact(product?.live ? product.sellerId : null)
   const [tab, setTab] = useState('about')
   const [saved, setSaved] = useState(false)
-  const [ask, setAsk] = useState(false)
   const [ship, setShip] = useState(false)
   const { add, items } = useCart()
   const navigate = useNavigate()
@@ -36,10 +46,30 @@ export default function FormaItem() {
     return <div className="py-16 text-center text-[14px] text-muted">Mahsulot topilmadi. <Link to="/forma" className="text-sea">Formaga qaytish</Link></div>
   }
 
+  const color = product.colors.includes(colorSel) ? colorSel : product.colors[0]
+  const size = sizesOf(product).includes(sizeSel) ? sizeSel : (sizesOf(product).includes('M') ? 'M' : sizesOf(product)[0])
   const gallery = product.gallery?.length ? product.gallery : [product.image]
-  const inCart = items.some((it) => it.id === product.id)
-  const demo = isDemoItem(product)
-  const put = () => { if (!inCart && !demo) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1) }
+  const live = !!product.live
+  const variant = live ? pickVariant(product, size, color) : null
+  const kashta = live && kashtaOn ? cleanKashta(kashtaText) : ''
+  const line = live ? formaCartLine(product, variant, kashta) : null
+  const soldOut = live && (!variant || Number(variant.stock) <= 0)
+  const shownPrice = live ? (Number(variant?.price) || product.price) + (kashta ? product.kashtaPrice : 0) : product.price
+  const inCart = !!line && items.some((it) => it.id === line.id)
+  // Faqat haqiqiy sotuvchi mahsuloti savatga tushadi (namuna/egasiz yozuvlarni buyurtma qilib bo‘lmaydi)
+  const demo = isDemoItem(product) || !live
+  const buyable = !demo
+  const flash = (t) => { setNote(t); setTimeout(() => setNote(''), 2500) }
+  const ready = () => {
+    if (soldOut || !line) { flash('Bu o‘lcham va rang hozir omborda yo‘q'); return false }
+    if (kashtaOn && !kashta) { flash('Kashta matnini yozing'); return false }
+    return true
+  }
+  const put = () => { if (!inCart && buyable && ready()) add(line, 1) }
+  const chartInfo = sizeChartFor(product)
+  const oneSize = sizeTypeOf(product) === 'one'
+  const label = (list, k) => list.find(([x]) => x === k)?.[1] || k || '—'
+  const askUrl = contact?.telegram ? telegramChatUrl(contact.telegram, formaQuestionText({ p: product, size: oneSize ? '' : size, color: product.colors.length ? color : '', url: window.location.href })) : null
   const similar = similarIds.map((sid) => products.find((p) => p.id === sid)).filter((p) => p && p.id !== product.id)
   const story = product.story || `${product.brand} ${product.title.toLowerCase()}. ${product.about} Klinika va shifoxonada kiyish uchun mos.`
 
@@ -71,35 +101,48 @@ export default function FormaItem() {
                 {product.sold ? <span className="text-muted">{product.sold} ta sotilgan</span> : null}
               </p>
               <div className="mt-2 flex items-end gap-2">
-                <p className="text-[26px] font-extrabold text-ink">{money(product.price)}</p>
+                <p className="text-[26px] font-extrabold text-ink">{money(shownPrice)}</p>
                 {product.oldPrice ? <p className="mb-1 text-[13px] text-muted line-through">{money(product.oldPrice)}</p> : null}
                 {product.off ? <span className="mb-1 rounded-md bg-sale/10 px-1.5 py-0.5 text-[12px] font-bold text-sale">-{product.off}%</span> : null}
               </div>
+              {product.colors.length > 0 && <>
               <p className="mt-3 text-[12px] text-ink-2">Rang: <b className="text-ink">{colorOf(color).name}</b></p>
               <div className="mt-1.5 flex gap-1.5">
                 {product.colors.map((c) => (
                   <button key={c} aria-label={colorOf(c).name} onClick={() => setColor(c)} className={`size-6 rounded-full border ${color === c ? 'ring-2 ring-sea ring-offset-2' : 'border-line'}`} style={{ background: colorOf(c).hex }} />
                 ))}
-              </div>
+              </div></>}
+              {oneSize ? <p className="mt-3 text-[12px] text-ink-2">O‘lcham: <b className="text-ink">Universal o‘lcham</b></p> : <>
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-[12px] text-ink-2">O‘lcham: <b className="text-ink">{size}</b></p>
-                <button onClick={() => setTab('size')} className="text-[11px] font-semibold text-sea">O‘lchamlar jadvali</button>
+                <p className="text-[12px] text-ink-2">{chartInfo?.type === 'shoe' ? 'Oyoq kiyim o‘lchami' : 'O‘lcham'}: <b className="text-ink">{size}{chartInfo?.type === 'shoe' ? ' (EU)' : ''}</b></p>
+                {chartInfo && <button onClick={() => setTab('size')} className="text-[11px] font-semibold text-sea">O‘lchamlar jadvali</button>}
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {sizesOf(product).map((s) => (
-                  <button key={s} onClick={() => setSize(s)} className={`h-8 min-w-8 rounded-lg px-2 text-[11px] font-semibold ${size === s ? 'bg-sea text-white' : 'bg-[#f3f6fa] text-ink'}`}>{s}</button>
-                ))}
-              </div>
+                {sizesOf(product).map((s) => {
+                  const out = live && !sizeInStock(product, s, color)
+                  return <button key={s} onClick={() => setSize(s)} className={`h-8 min-w-8 rounded-lg px-2 text-[11px] font-semibold ${size === s ? 'bg-sea text-white' : out ? 'bg-[#f3f6fa] text-muted line-through' : 'bg-[#f3f6fa] text-ink'}`}>{s}</button>
+                })}
+              </div></>}
+              {live && product.kashtaPrice > 0 && (
+                <div className="mt-3 rounded-xl border border-line p-2.5">
+                  <label className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold text-ink">
+                    <input type="checkbox" checked={kashtaOn} onChange={(e) => setKashtaOn(e.target.checked)} style={{ accentColor: '#0b8a95' }} />
+                    Kashta (ixtiyoriy) <span className="ml-auto font-semibold text-sea">+ {money(product.kashtaPrice)}</span>
+                  </label>
+                  {kashtaOn && <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Masalan: Dr. Aliyeva M. — Stomatolog" aria-label="Kashta matni" className="mt-2 h-9 w-full rounded-lg bg-page px-3 text-[12px] outline-none" />}
+                </div>
+              )}
+              {note && <p className="mt-2 text-[12px] font-semibold text-sale">{note}</p>}
               {demo ? <><DemoNotice className="mt-3" /><DemoActionBar className="mt-2" label="Namuna mahsulot — sotuvda emas" /></> : <>
               <div className="mt-3 flex items-center gap-2">
-                <button onClick={put} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
-                  <ShoppingCart className="size-4" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}
+                <button onClick={put} disabled={soldOut} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white disabled:bg-[#9fb4c0] ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
+                  <ShoppingCart className="size-4" /> {soldOut ? 'Omborda yo‘q' : inCart ? 'Savatda' : 'Savatga qo‘shish'}
                 </button>
                 <button aria-label="Saqlash" onClick={() => setSaved((v) => !v)} className="grid size-10 place-items-center rounded-full border border-line bg-white">
                   <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
                 </button>
               </div>
-              <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1, 'forma')} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
+              <button disabled={soldOut} onClick={() => { if (ready()) goBuyNow(navigate, line, 1, 'forma') }} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
               </>}
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {perks.map(([t, d], i) => {
@@ -120,7 +163,7 @@ export default function FormaItem() {
             {[
               ['about', 'Tavsif'],
               ['specs', 'Xususiyatlar'],
-              ['size', 'O‘lcham jadvali'],
+              ...(chartInfo ? [['size', 'O‘lcham jadvali']] : []),
               ['reviews', `Sharhlar (${product.reviews})`],
             ].map(([k, label]) => (
               <button key={k} onClick={() => setTab(k)} className={`h-9 px-3 text-[12px] font-semibold ${tab === k ? 'border-b-2 border-sea text-sea' : 'text-ink-2'}`}>{label}</button>
@@ -146,29 +189,24 @@ export default function FormaItem() {
                   {(product.cloth || [['Stretch mato', 'Nafas oluvchi'], [product.brand, 'Oson yuviladi']]).flat().filter(Boolean).map((line) => <p key={line} className="text-ink-2">{line}</p>)}
                 </div>
               </div>
-              <div className="rounded-xl bg-white p-3 shadow-card">
-                <h3 className="text-[13px] font-bold">O‘lchamlar jadvali (sm)</h3>
-                <table className="mt-2 w-full text-left text-[10px]">
-                  <thead><tr className="text-muted"><th className="py-1 font-medium">O‘lcham</th><th>Ko‘krak (A)</th><th>Bel (B)</th><th>Bo‘y (C)</th></tr></thead>
-                  <tbody>{sizeChart.map((r) => <tr key={r[0]} className="border-t border-line"><td className="py-1 font-semibold">{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td></tr>)}</tbody>
-                </table>
-              </div>
+              {chartInfo ? (
+                <div className="rounded-xl bg-white p-3 shadow-card">
+                  <h3 className="text-[13px] font-bold">{chartInfo.title}</h3>
+                  <ChartTable info={chartInfo} small />
+                </div>
+              ) : <div className="rounded-xl bg-white p-3 text-[12px] text-ink-2 shadow-card"><h3 className="text-[13px] font-bold text-ink">O‘lcham</h3><p className="mt-1">Universal o‘lcham</p></div>}
             </div>
           )}
           {tab === 'specs' && (
             <div className="mt-3 grid max-w-[520px] grid-cols-2 gap-y-2 rounded-xl bg-white p-4 text-[12px] shadow-card">
-              {[['Brend', product.brand], ['Toifa', product.cat], ['Mato', product.fabric], ['Jins', product.gender], ['Reyting', product.rating]].map(([k, v]) => (
+              {[['Brend', product.brand], ['Toifa', label(cats, product.cat)], ['Mato', label(fabrics, product.fabric)], ['Jins', label(genders, product.gender)], ['Reyting', Number(product.reviews) > 0 ? product.rating : 'Hali baho yo‘q']].map(([k, v]) => (
                 <div key={k}><p className="text-muted">{k}</p><p className="font-semibold text-ink">{v}</p></div>
               ))}
             </div>
           )}
           {tab === 'size' && (
             <div className="mt-3 max-w-[480px] rounded-xl bg-white p-4 shadow-card">
-              <h3 className="text-[14px] font-bold">O‘lchamlar jadvali (sm)</h3>
-              <table className="mt-2 w-full text-left text-[12px]">
-                <thead><tr className="text-muted"><th className="py-1">O‘lcham</th><th>Ko‘krak (A)</th><th>Bel (B)</th><th>Bo‘y (C)</th></tr></thead>
-                <tbody>{sizeChart.map((r) => <tr key={r[0]} className={r[0] === size ? 'bg-sea-50 font-semibold' : ''}><td className="py-1.5">{r[0]}</td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td></tr>)}</tbody>
-              </table>
+              {chartInfo ? <><h3 className="text-[14px] font-bold">{chartInfo.title}</h3><ChartTable info={chartInfo} current={size} />{chartInfo.note && <p className="mt-2 text-[11px] text-ink-2">{chartInfo.note}</p>}</> : <p className="text-[12px] text-ink-2">Bu mahsulot universal o‘lchamda.</p>}
             </div>
           )}
           {tab === 'reviews' && (
@@ -194,9 +232,9 @@ export default function FormaItem() {
         <aside className="flex flex-col gap-3">
           <div className="rounded-xl bg-white p-3 shadow-card">
             <p className="text-[10px] text-muted">Sotuvchi</p>
-            <p className="text-[14px] font-extrabold text-ink">{product.brand}</p>
+            <p className="text-[14px] font-extrabold text-ink">{live ? product.seller : product.brand}</p>
             <p className="text-[11px] text-muted">Tibbiy forma va aksessuarlar</p>
-            <Link to={`/forma?brand=${encodeURIComponent(product.brand)}`} className="mt-2 flex h-8 items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea">Barcha mahsulotlar →</Link>
+            <Link to={live ? `/dokon/${product.sellerId}` : `/forma?brand=${encodeURIComponent(product.brand)}`} className="mt-2 flex h-8 items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea">Barcha mahsulotlar →</Link>
           </div>
           <div className="rounded-xl bg-white p-3 shadow-card">
             <h3 className="text-[12px] font-bold">Yetkazib berish</h3>
@@ -205,15 +243,18 @@ export default function FormaItem() {
             ))}
             <button onClick={() => setShip(true)} className="mt-2 text-[11px] font-semibold text-sea">Yetkazib berish haqida batafsil →</button>
           </div>
-          <div className="rounded-xl bg-white p-3 shadow-card">
-            <h3 className="text-[12px] font-bold">Savollaringiz bormi?</h3>
-            <p className="mt-1 text-[10px] text-muted">Mahsulot haqida mutaxassisdan maslahat oling.</p>
-            <button onClick={() => setAsk(true)} className="mt-2 h-8 w-full rounded-lg bg-sea text-[11px] font-semibold text-white">Savol berish</button>
-          </div>
+          {live && (askUrl || contact?.phone) ? (
+            <div className="rounded-xl bg-white p-3 shadow-card">
+              <h3 className="text-[12px] font-bold">Savollaringiz bormi?</h3>
+              <p className="mt-1 text-[10px] text-muted">O‘lcham, rang yoki kashta haqida to‘g‘ridan-to‘g‘ri sotuvchidan so‘rang.</p>
+              {askUrl
+                ? <button onClick={() => openExternal(askUrl)} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-sea text-[11px] font-semibold text-white"><Send className="size-3.5" /> Telegram’da yozish</button>
+                : <a href={`tel:${contact.phone}`} className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-sea text-[11px] font-semibold text-white"><Phone className="size-3.5" /> Qo‘ng‘iroq qilish</a>}
+            </div>
+          ) : null}
         </aside>
       </div>
 
-      {ask && <Note title="Savol berish" done="Savolingiz yuborildi. Tez orada javob beramiz." onClose={() => setAsk(false)} />}
       {ship && <Note title="Yetkazib berish" done="Toshkent bo‘ylab 1 kun, viloyatlarga 2–3 kun. 500 000 so‘mdan yuqori buyurtmada yetkazish bepul." onClose={() => setShip(false)} plain />}
     </div>
   )
@@ -233,5 +274,14 @@ function Note({ title, done, onClose, plain }) {
         )}
       </div>
     </div>
+  )
+}
+
+function ChartTable({ info, current, small }) {
+  return (
+    <table className={`mt-2 w-full text-left ${small ? 'text-[10px]' : 'text-[12px]'}`}>
+      <thead><tr className="text-muted">{info.head.map((h) => <th key={h} className="py-1 font-medium">{h}</th>)}</tr></thead>
+      <tbody>{info.rows.map((r) => <tr key={r[0]} className={`border-t border-line ${current && chartKey(current) === r[0] ? 'bg-sea-50 font-semibold' : ''}`}>{r.map((c, i) => <td key={i} className={`py-1 ${i === 0 ? 'font-semibold' : ''}`}>{c}</td>)}</tr>)}</tbody>
+    </table>
   )
 }

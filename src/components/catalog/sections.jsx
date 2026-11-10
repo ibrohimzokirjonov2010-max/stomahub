@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useCatalogVersion, isOwned } from '../../recordSync'
 import { som } from '../../marketData'
-import { cats as formaCats, colorOf, genders, sizesOf } from '../../formaData'
+import { cats as formaCats, colorOf, genders, sizesOf, allForma } from '../../formaData'
 import { cats as bookCats, langOptions, formatOptions } from '../../booksData'
 import { directions, levels, formats } from '../../educationData'
 import { cats as ustaCats } from '../../ustalarData'
@@ -13,15 +13,16 @@ import { AD_CATS, DEALS, dealName, adPriceShort } from '../../elonlarData'
 import { seminarChips, seminarCard } from '../../seminarsData'
 import { publicRecords, useHub } from '../../hubStore'
 import { useMarket } from '../../buyerApi'
+import { isFormaMarketProduct } from '../../lib/formaLive'
 import { books } from '../../booksData'
 import { courses } from '../../educationData'
 import { masters } from '../../ustalarData'
-import { products as devices } from '../../jihozData'
+import { allJihoz } from '../../jihozData'
+import { isJihozMarketProduct, jihozCartLine } from '../../lib/jihozLive'
 import { jobs } from '../../ishlarData'
 import { surplusItems } from '../../surplusData'
 import { DOCTORS } from '../../mutaxassislarData'
 import { ADS } from '../../elonlarData'
-import { products as uniforms } from '../../formaData'
 import { allAds, myAds, publicAds, useAds, PostAdSheet, MyAdsSheet } from '../mobile/MobileElonlar'
 import { PostSheet } from '../mobile/MobileSurplus'
 import { iconFor } from '../../icons/categoryIcons'
@@ -69,8 +70,10 @@ const tag = (kind, list, titleOf, subOf) => list.map((x) => Object.assign({}, x,
 
 export function useFormaSection() {
   const v = useCatalogVersion()
+  // Sotuvchi kabinetidan qo‘shilgan haqiqiy forma (market_products, category = 'Tibbiy forma')
+  const market = useMarket()
   return useMemo(() => {
-    const items = tag('uniform', uniforms, (p) => p.title, (p) => p.brand)
+    const items = allForma().map((x) => Object.assign({}, x, { __owned: x.live || isOwned('uniform', x.id), __title: x.title, __sub: x.brand }))
     return {
       key: 'forma', shopActive: 'forma', title: 'Tibbiy forma', subtitle: 'Qulay, sifatli va zamonaviy tibbiy kiyimlar', placeholder: 'Forma, xalat yoki brend qidiring...',
       items, cats: chipsFrom(formaCats, 'forma'), catOf: (p) => p.cat,
@@ -83,7 +86,7 @@ export function useFormaSection() {
       sorts: PRICE_SORTS(),
       text: (p) => `${p.title} ${p.brand} ${p.about || ''}`,
       card: (p) => {
-        const off = realDiscount('uniform', p)
+        const off = p.live ? (p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0) : realDiscount('uniform', p)
         return {
           id: p.id, href: `/forma/${p.id}`, image: p.image, kicker: p.brand, title: p.title, price: p.price, oldPrice: off ? p.oldPrice : 0,
           badge: off ? { text: `-${off}%`, tone: 'sale' } : p.__owned && p.fresh ? { text: 'Yangi', tone: 'new' } : null,
@@ -94,12 +97,13 @@ export function useFormaSection() {
               <span className="truncate text-[10px] text-muted">{sizesOf(p).join(' ')}</span>
             </div>
           ),
-          cart: { prefix: `forma-${p.id}-`, line: { id: `forma-${p.id}-${p.colors?.[0] || 'std'}-${sizesOf(p)[0] || 'std'}`, name: p.title, type: p.brand, price: p.price, image: p.image } },
+          // Forma: o‘lcham va rang sahifada tanlanadi — kartochkada savat emas, sahifaga o‘tish
+          cart: null,
         }
       },
       slides: (list, ctx) => slidesFor({ key: 'forma', icon: PShirt, items: list, image: (p) => p.image, href: (p) => `/forma/${p.id}`, ctx }),
     }
-  }, [v])
+  }, [v, market.status, market.products.length])
 }
 
 export function useMarketSection() {
@@ -108,7 +112,9 @@ export function useMarketSection() {
   const desktop = !useMobile()
   return useMemo(() => {
     // Kirgan foydalanuvchi: qiziqish (ko‘rgan/qidirgan/savat/xarid) va yo‘nalish bo‘yicha standart tartib.
-    const ordered = me.authed ? orderForMarketplace(products, { signals: me.signals, specialty: me.specialty }) : products
+    // 0065: Forma va Jihozlar sotuvchilarining mahsulotlari o‘z bo‘limida — Marketplace’da faqat stomatologik mahsulotlar
+    const own = products.filter((p) => !isFormaMarketProduct(p) && !isJihozMarketProduct(p))
+    const ordered = me.authed ? orderForMarketplace(own, { signals: me.signals, specialty: me.specialty }) : own
     const items = ordered.map((p) => Object.assign({}, p, { __owned: true, __title: p.name, __sub: p.category || p.seller }))
     return {
       key: 'marketplace', shopActive: 'market', imageSearch: true, catPosters: true, ads: true, track: true,
@@ -123,9 +129,10 @@ export function useMarketSection() {
       sorts: PRICE_SORTS(),
       text: (p) => `${p.name} ${p.brand} ${p.category} ${p.seller}`,
       card: (p) => ({
-        id: p.id, href: `/product/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
+        id: p.id, href: isFormaMarketProduct(p) ? `/forma/${p.id}` : `/product/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.seller].filter(Boolean).join(' · '), title: p.name, meta: [p.type], price: p.price,
         badge: p.stock <= 0 ? { text: 'Tugagan', tone: 'info' } : null, rating: p.reviews > 0 ? { value: p.rating, count: p.reviews } : null,
-        cart: p.stock > 0 ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
+        // Variantli mahsulot (forma o‘lcham/rangi va h.k.) — variant sahifada tanlanadi
+        cart: p.stock > 0 && !(p.variants || []).length ? { prefix: p.id, line: { id: p.id, productId: p.id, name: p.name, type: p.brand || p.category, price: p.price, image: p.image } } : null,
       }),
       slides: (list, ctx) => slidesFor({ key: 'marketplace', icon: PBag, items: list, image: (p) => p.image, href: (p) => `/product/${p.id}`, ctx }),
     }
@@ -222,26 +229,27 @@ export function useUstalarSection() {
 
 export function useJihozSection() {
   const v = useCatalogVersion()
+  const { products: live, status: liveStatus } = useMarket()
   return useMemo(() => {
-    const items = tag('device', devices, (p) => p.title, (p) => p.brand)
+    const items = tag('device', allJihoz(), (p) => p.title, (p) => p.brand)
     return {
-      key: 'jihozlar', shopActive: 'jihozlar', title: 'Jihozlar', subtitle: 'Stomatologik uskunalar — yangi, ishlatilgan va ko‘rgazmali', placeholder: 'Uskuna, brend yoki model qidiring...',
+      key: 'jihozlar', shopActive: 'jihozlar', title: 'Jihozlar', subtitle: 'Yangi stomatologik uskunalar — tasdiqlangan sotuvchilardan', placeholder: 'Uskuna, brend yoki model qidiring...',
+      loading: !items.length && (liveStatus === 'loading' || liveStatus === 'idle'), emptyText: 'Hozircha sotuvdagi jihozlar yo‘q',
       items, cats: chipsFrom(jihozCats, 'jihozlar'), catOf: (p) => p.cat,
       filters: [
         { key: 'brand', label: 'Brend', options: opts(items.map((p) => p.brand)), match: (p, b) => p.brand === b },
-        { key: 'status', label: 'Holati', options: statusList, match: (p, s) => p.status === s },
         { key: 'city', label: 'Shahar', options: opts(items.map((p) => p.city)), match: (p, c) => p.city === c },
         priceBand([['lt10', '10 mln gacha', [0, 1e7]], ['10-50', '10–50 mln', [1e7, 5e7]], ['50-150', '50–150 mln', [5e7, 1.5e8]], ['gt150', '150 mln+', [1.5e8, Infinity]]]),
       ],
       sorts: PRICE_SORTS(),
-      text: (p) => `${p.title} ${p.brand} ${p.feature || ''}`,
+      text: (p) => `${p.title} ${p.brand} ${p.model || ''} ${p.feature || ''}`,
       card: (p) => {
         const off = realDiscount('device', p)
-        return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.city, p.warranty && `Kafolat: ${p.warranty} oy`], price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
+        return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.live ? p.seller : p.city, p.warranty ? `Kafolat: ${p.warranty} oy` : ''].filter(Boolean), cart: p.live && p.stock > 0 ? { prefix: p.id, line: jihozCartLine(p) } : null, price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
       },
       slides: (list, ctx) => slidesFor({ key: 'jihozlar', icon: PMonitor, items: list, image: (p) => p.image, href: (p) => `/jihozlar/${p.id}`, ctx }),
     }
-  }, [v])
+  }, [v, live, liveStatus])
 }
 
 const jobCity = Object.fromEntries(jobCities)

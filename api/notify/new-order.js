@@ -11,7 +11,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const som = (n) => `${Math.round(Number(n) || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
 
 export function orderText(o, items = []) {
-  const lines = items.slice(0, 10).map((i) => `• ${i.name}${i.variant ? ` (${i.variant})` : ''} × ${i.qty} — ${som(Number(i.price) * Number(i.qty))}`)
+  const lines = items.slice(0, 10).map((i) => {
+    const v = i.variant_label || i.variant
+    return `• ${i.name}${v ? ` (${v})` : ''} × ${i.qty} — ${som(Number(i.price) * Number(i.qty))}${i.note ? `\n   ${i.note}` : ''}`
+  })
   const total = Math.max(0, Number(o.subtotal || 0) - Number(o.discount_amount || 0)) + Number(o.delivery_fee || 0)
   return [
     `🛒 Yangi buyurtma ${o.code || ''}`.trim(),
@@ -37,7 +40,7 @@ export default async function handler(req, res) {
     if (!process.env.TELEGRAM_BOT_TOKEN) return send(res, 200, { ok: true, telegram: 'not_configured' })
 
     const since = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-    const { data: orders } = await db.from('seller_orders').select('*, seller_order_items(name, variant, qty, price)')
+    const { data: orders } = await db.from('seller_orders').select('*, seller_order_items(*)')
       .in('id', list).eq('buyer_id', auth.user.id).gte('created_at', since)
     const out = []
     for (const o of orders || []) {
@@ -50,7 +53,17 @@ export default async function handler(req, res) {
       const chat = st?.tg_chat_id || prof?.telegram_id
       if (!chat) { out.push({ id: o.id, telegram: 'no_chat' }); continue }
       try {
-        await sendTelegram(chat, orderText(o, o.seller_order_items || []))
+        // Variant SKU o‘rniga o‘qiladigan nom (masalan «M · To‘q ko‘k»)
+        const items = o.seller_order_items || []
+        const pids = [...new Set(items.filter((i) => i.variant && i.product_id).map((i) => i.product_id))]
+        if (pids.length) {
+          const { data: prods } = await db.from('seller_products').select('id, variants').in('id', pids)
+          for (const i of items) {
+            const v = (prods || []).find((p) => p.id === i.product_id)?.variants?.find?.((x) => x?.sku === i.variant)
+            if (v?.label) i.variant_label = v.label
+          }
+        }
+        await sendTelegram(chat, orderText(o, items))
         if ('tg_notified_at' in o) await db.from('seller_orders').update({ tg_notified_at: new Date().toISOString() }).eq('id', o.id)
         out.push({ id: o.id, telegram: 'sent' })
       } catch (e) {

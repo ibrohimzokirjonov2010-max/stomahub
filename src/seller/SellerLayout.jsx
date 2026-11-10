@@ -8,8 +8,11 @@ import Logo from './components/shell/Logo'
 import Modal from './components/shell/Modal'
 import QuickActions from './components/bosh-sahifa/QuickActions'
 import OrderDrawer from './components/bosh-sahifa/OrderDrawer'
-import { useSellerData } from './api'
-import { Toaster } from './components/ui'
+import { useSellerData, reloadSeller } from './api'
+import { onNewNotification } from '../notificationsStore'
+import { Toaster, toast } from './components/ui'
+import SellerTypePicker from './components/shell/SellerTypePicker'
+import { needsSellerTypePick, sellerTypeInfo } from '../lib/sellerType'
 
 function useShopName() {
   const session = useSession()
@@ -32,6 +35,8 @@ export default function SellerLayout() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0); setMore(false) }, [pathname])
   const hasNew = data.orders.some((o) => o.status === 'yangi')
+  // Yangi buyurtma bildirishnomasi (Realtime, buyer_create_order) kelsa — ro‘yxat darhol yangilanadi
+  useEffect(() => onNewNotification((n) => { if (n?.kind === 'order') reloadSeller() }), [])
   const session = useSession()
   const verified = canUseSeller(session.profile)
   const nav = useNavigate()
@@ -114,6 +119,7 @@ export default function SellerLayout() {
 
       <QuickActions open={quick} setOpen={setQuick} products={data.products} />
       <OrderDrawer orderId={orderId} onClose={() => setOrderId(null)} />
+      <SellerTypePicker open={verified && needsSellerTypePick(session.profile)} onDone={(t) => toast(`Yo‘nalish tanlandi: ${sellerTypeInfo(t).label}`)} />
       <Toaster />
     </div>
   )

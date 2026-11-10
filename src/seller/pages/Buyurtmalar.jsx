@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Filter, Eye, CalendarDays, SlidersHorizontal, ChevronRight, UserRound, Phone, ShoppingCart, ClipboardList, Truck, Box, FileText, CircleCheck, CircleX, Download } from 'lucide-react'
 import { useSellerData, setOrderStatus, netOf, csvDownload } from '../api'
-import { num, som, dmy, hm } from '../format'
+import { num, som, dmy, hm, itemVariantText } from '../format'
 import { useMobile } from '../../useMobile'
 import { card, PageHead, Btn, Select, SearchInput, Tabs, Chips, Badge, OverdueBadge, Checkbox, Pager, usePaged, Menu, Fab, Th, Td, toast, inputCls } from '../components/ui'
 import { xlsxBlob, oneCBlob, download } from '../lib/exportOrders'
@@ -155,6 +155,8 @@ export default function Buyurtmalar() {
                 <div>{dmy(o.created_at)} {hm(o.created_at)}</div>
                 <div className="flex items-center gap-1.5 truncate"><UserRound className="size-3.5 shrink-0" /><span className="truncate">{o.customer_name || '—'}</span></div>
                 <div className="flex items-center gap-1.5"><Phone className="size-3.5 shrink-0" />{phoneOf(o)}</div>
+                {o.items[0] && <div className="truncate text-[12px] font-medium text-[#10283F]">{o.items[0].name}{o.items[0].variant ? ` · ${itemVariantText(o.items[0], data.products)}` : ''}</div>}
+                {o.items.some((it) => it.note) && <div className="mt-0.5 w-fit max-w-full truncate rounded-md bg-[#FFF7E6] px-1.5 py-0.5 text-[11px] font-semibold text-[#B45309]">{o.items.find((it) => it.note).note}</div>}
                 <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5"><ShoppingCart className="size-3.5" />{o.items.length} ta mahsulot</span><span className="whitespace-nowrap text-[14.5px] font-extrabold text-[#10283F]">{som(total(o))}</span></div>
               </div>
               <ChevronRight className="size-5 shrink-0 text-[#10283F]" />

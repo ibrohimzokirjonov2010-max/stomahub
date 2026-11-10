@@ -10,3 +10,11 @@ export const longDate = (d) => { const x = new Date(d); const base = formatDateU
 export const monthTitle = (d) => { const m = MONTHS[d.getMonth()]; return `${m[0].toUpperCase()}${m.slice(1)} ${d.getFullYear()}` }
 export const maskPhone = (p) => (p ? '+998 ** *** ** **' : '—')
 export const itemsLabel = (n) => `${n} ta mahsulot`
+
+/** Buyurtma qatoridagi variant: SKU o‘rniga o‘qiladigan nom (masalan «M · To‘q ko‘k»), topilmasa — SKU. */
+export function itemVariantText(it, products = []) {
+  if (!it?.variant) return ''
+  const p = products.find((x) => x.id === it.product_id)
+  const v = (p?.variants || []).find((x) => (x.sku || '') === it.variant)
+  return v?.label || it.variant
+}

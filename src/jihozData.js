@@ -1,3 +1,5 @@
+import { marketProducts } from './marketData'
+import { isJihozMarketProduct, marketToJihoz } from './lib/jihozLive'
 const photo = (name) => `/images/jihozlar/${name}.jpg`
 
 export function money(n) {
@@ -37,13 +39,11 @@ export const sorts = {
 export const perks = [
   ['Rasmiy distribyutorlar', 'BadgeCheck'],
   ['Kafolat va servis', 'ShieldCheck'],
-  ['Lizing / bo‘lib to‘lash', 'CreditCard'],
   ['O‘rnatish xizmati', 'Wrench'],
 ]
 export const why = [
   ['Rasmiy distribyutorlar', 'Original mahsulotlar'],
   ['Kafolat va servis', 'Butun O‘zbekiston bo‘ylab'],
-  ['Lizing / bo‘lib to‘lash', 'Qulay to‘lov shartlari'],
   ['O‘rnatish va trening', 'Mutaxassislar tomonidan'],
   ['Klinikangizga yetkazish', 'Texnik qo‘llab-quvvatlash'],
   ['24/7 maslahat', 'Muhandis doim aloqada'],
@@ -53,7 +53,6 @@ const base = (p) => ({
   status: 'new',
   year: 2024,
   warranty: 24,
-  lizing: true,
   install: true,
   official: true,
   city: 'Toshkent',
@@ -157,8 +156,17 @@ export const products = []
 export const similarIds = similar.map((p) => p.id)
 export const compareSeed = ['sirona-intego', 'planmeca-promax']
 
+/** Sotuvchilar qo‘shgan jihozlar (0065) — Jihozlar bo‘limida faqat shular sotiladi. */
+export function liveJihoz() {
+  return marketProducts.filter(isJihozMarketProduct).map(marketToJihoz)
+}
+
+export function allJihoz() {
+  return [...liveJihoz(), ...products]
+}
+
 export function getJihoz(id) {
-  return products.find((p) => p.id === id) || null
+  return liveJihoz().find((p) => p.id === id) || products.find((p) => p.id === id) || null
 }
 
 export function specsOf(p) {
