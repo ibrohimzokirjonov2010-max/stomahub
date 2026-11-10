@@ -492,7 +492,26 @@ body {
   }
 }
 
-@keyframes notifIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
-  to { opacity: 1; transform: none; }
+/* ---- Bildirishnomalar (qo‘ng‘iroq, varaq, toast) ---- */
+@keyframes notifIn { from { opacity: 0; transform: translateY(-10px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes notifToastIn { from { opacity: 0; transform: translateY(-18px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes notifToastOut { to { opacity: 0; transform: translateY(-14px) scale(0.98); } }
+@keyframes notifSheetIn { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes notifDropIn { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes notifFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes notifTimer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes notifPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgb(229 50 61 / 0.45); } 40% { transform: scale(1.18); } 100% { transform: scale(1); box-shadow: 0 0 0 9px rgb(229 50 61 / 0); } }
+@keyframes notifRing { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } 75% { transform: rotate(2deg); } }
+.notif-toast { animation: notifToastIn 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; transition: transform 0.2s ease, opacity 0.2s ease; }
+.notif-toast-out { animation: notifToastOut 0.22s ease-in forwards; }
+.notif-sheet { animation: notifSheetIn 0.38s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.notif-drop { animation: notifDropIn 0.18s ease-out both; transform-origin: top right; }
+.notif-fade { animation: notifFade 0.2s ease-out both; }
+.notif-timer { animation: notifTimer linear forwards; }
+.notif-pulse { animation: notifPulse 1.1s ease-out 2; }
+.notif-ring { animation: notifRing 0.9s ease-in-out; transform-origin: 50% 8%; }
+@media (prefers-reduced-motion: reduce) {
+  .notif-toast, .notif-toast-out, .notif-sheet, .notif-drop, .notif-fade, .notif-pulse, .notif-ring { animation: none !important; transition: none !important; }
+  .notif-toast-out { opacity: 0; }
+  .notif-timer { display: none; }
 }

@@ -36,7 +36,7 @@ export function countUnread(items = [], localRead = []) {
   return (items || []).filter((n) => isUnread(n, localRead)).length
 }
 
-export const badgeText = (n) => (n > 9 ? '9+' : String(n))
+export const badgeText = (n) => (n > 99 ? '99+' : String(Math.max(0, n | 0)))
 
 const byNewest = (a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))
 
@@ -58,7 +58,31 @@ export function markLocalRead(items = [], ids = [], at = new Date().toISOString(
   return (items || []).map((n) => (set.has(n.id) && !n.read_at ? { ...n, read_at: at } : n))
 }
 
-/** "hozirgina", "5 daqiqa oldin", "2 soat oldin", "kecha", "3 kun oldin", yoki sana. */
+// ---- vaqt (Asia/Tashkent) ---------------------------------------------------------
+const TZ = 'Asia/Tashkent'
+const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
+const hmFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false })
+export const OY = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
+
+/** Toshkent vaqti bo‘yicha kun kaliti: "2026-11-10". */
+export const dayKey = (t) => dayFmt.format(new Date(t))
+const dayNum = (key) => Math.round(Date.parse(`${key}T00:00:00Z`) / 86400000)
+/** Necha kun oldin (Toshkent kalendari bo‘yicha): 0 — bugun, 1 — kecha. */
+export function daysAgo(iso, now = Date.now()) {
+  const t = new Date(iso).getTime()
+  if (!Number.isFinite(t)) return NaN
+  return dayNum(dayKey(now)) - dayNum(dayKey(t))
+}
+export const clock = (iso) => hmFmt.format(new Date(iso))
+
+/** "12-noyabr" yoki boshqa yil bo‘lsa "12-noyabr, 2025". */
+export function uzDate(iso, now = Date.now()) {
+  const [y, m, d] = dayKey(iso).split('-').map(Number)
+  const ny = Number(dayKey(now).slice(0, 4))
+  return `${d}-${OY[m - 1]}${y !== ny ? `, ${y}` : ''}`
+}
+
+/** "hozirgina", "5 daqiqa oldin", "2 soat oldin", "kecha, 14:30", "3 kun oldin", "12-noyabr". */
 export function timeAgo(iso, now = Date.now()) {
   const t = new Date(iso).getTime()
   if (!Number.isFinite(t)) return ''
@@ -66,12 +90,33 @@ export function timeAgo(iso, now = Date.now()) {
   if (s < 60) return 'hozirgina'
   const m = Math.floor(s / 60)
   if (m < 60) return `${m} daqiqa oldin`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h} soat oldin`
-  const d = Math.floor(h / 24)
-  if (d === 1) return 'kecha'
-  if (d < 7) return `${d} kun oldin`
-  const dt = new Date(t)
-  const pad = (x) => String(x).padStart(2, '0')
-  return `${pad(dt.getDate())}.${pad(dt.getMonth() + 1)}.${dt.getFullYear()}`
+  const days = daysAgo(iso, now)
+  if (days <= 0) return `${Math.floor(m / 60)} soat oldin`
+  if (days === 1) return `kecha, ${clock(iso)}`
+  if (days < 7) return `${days} kun oldin`
+  return uzDate(iso, now)
+}
+
+export const GROUPS = [['bugun', 'Bugun'], ['kecha', 'Kecha'], ['avval', 'Avvalroq']]
+
+/** Bugun / Kecha / Avvalroq bo‘yicha guruhlaydi (eng yangisi tepada, bo‘sh guruhlar tushib qoladi). */
+export function groupByDay(items = [], now = Date.now()) {
+  const buckets = { bugun: [], kecha: [], avval: [] }
+  for (const n of [...(items || [])].sort(byNewest)) {
+    const d = daysAgo(n.created_at, now)
+    buckets[d <= 0 ? 'bugun' : d === 1 ? 'kecha' : 'avval'].push(n)
+  }
+  return GROUPS.filter(([k]) => buckets[k].length).map(([key, label]) => ({ key, label, items: buckets[key] }))
+}
+
+/** "Buyurtma #STH-00028: Yo‘lda" → { head: 'Buyurtma #STH-00028', status: 'yetkazilmoqda', label: 'Yo‘lda' }. */
+export function splitTitle(title = '') {
+  const t = String(title || '')
+  const i = t.lastIndexOf(': ')
+  if (i > 0) {
+    const label = t.slice(i + 2).trim()
+    const status = Object.keys(ORDER_STATUS_LABEL).find((k) => ORDER_STATUS_LABEL[k] === label) || ''
+    if (status) return { head: t.slice(0, i).trim(), status, label }
+  }
+  return { head: t, status: statusOfTitle(t), label: '' }
 }
