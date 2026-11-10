@@ -24,6 +24,16 @@ export const isSurplusCartLine = (it) => {
 
 const CartContext = createContext(null)
 
+// Oxirgi qo‘shilgan mahsulot (toastda rasm/nom ko‘rsatish uchun) va "qo‘shildi" hodisasi
+let lastAdded = null
+const addListeners = new Set()
+export const getLastAdded = () => lastAdded
+export function onCartAdd(fn) { addListeners.add(fn); return () => addListeners.delete(fn) }
+function noteAdded(product) {
+  lastAdded = { id: product.id, name: product.name || product.title || '', image: product.image || product.image_url || product.img || product.thumbs?.[0] || '', at: Date.now() }
+  addListeners.forEach((fn) => { try { fn(lastAdded) } catch { /* ignore */ } })
+}
+
 export const GUEST_CART_KEY = 'stomahub:guest-cart'
 export function loadGuestCart() {
   try {
@@ -128,6 +138,7 @@ export function CartProvider({ children }) {
       if (inCart >= s) return false
     }
     addLine(probe, qty)
+    noteAdded(product)
     if (isUuid(product.productId || product.id)) recordInterest('cart', { productId: product.productId || product.id, category: live?.rawCategory || live?.category || '' })
     return true
   }

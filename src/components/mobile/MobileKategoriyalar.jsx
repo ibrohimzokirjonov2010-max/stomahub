@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import NotificationBell from '../NotificationBell'
-import { BrandLogo, CountBadge, MobileToast } from './parts'
+import { BrandLogo, CountBadge, MobileToast, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { useMarket, katCount, katLink } from '../../buyerApi'
@@ -191,7 +191,7 @@ export function HubTopBar({ onBell, onBack }) {
         <div className="flex justify-end">
           <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className={iconBtn}>
             <ShoppingCart className="size-[22px]" />
-            {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+            <CartCountBadge />
           </button>
           <NotificationBell className={iconBtn} iconClass="size-[22px]" />
         </div>

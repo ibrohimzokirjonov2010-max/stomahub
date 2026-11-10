@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Bell, Check, MapPin, Pencil, Phone, Plus, Search, ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '../../cart'
 import { ADDRESS_KINDS, addr, flushProfile, profileStore, useProfile } from '../../profileStore'
-import { BrandLogo, MobileToast, CountBadge } from './parts'
+import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import MapPicker, { MapPreview } from '../MapPicker'
 import { BottomSheet } from './MobileSeminars'
@@ -28,7 +28,7 @@ export function SubTopBar({ title, subtitle }) {
           <button type="button" onClick={() => navigate('/kategoriyalar')} aria-label="Qidirish" className={`grid size-10 place-items-center rounded-full ${navy}`}><Search className="size-[22px]" /></button>
           <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'profil' } })} aria-label="Savat" className={`relative grid size-10 place-items-center rounded-full ${teal}`}>
             <ShoppingCart className="size-[22px]" />
-            {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+            <CartCountBadge />
           </button>
           <button type="button" onClick={() => navigate('/profil', { state: { sheet: 'inbox' } })} aria-label="Bildirishnomalar" className={`grid size-10 place-items-center rounded-full ${teal}`}><Bell className="size-[22px]" /></button>
         </div>

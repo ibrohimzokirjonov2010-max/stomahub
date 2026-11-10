@@ -10,7 +10,7 @@ import { publicRecords, useHub } from '../../hubStore'
 import HubNotice from '../HubNotice'
 import { useCart } from '../../cart'
 import NotificationBell from '../NotificationBell'
-import { BrandLogo, MobileToast, CountBadge } from './parts'
+import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { SHOWCASE_SAVED, useSeminarStore, toggleSaved } from './seminarStore'
 import { useProfile } from '../../profileStore'
@@ -57,7 +57,7 @@ export function SeminarTopBar({ onCalendar, onBell }) {
         <button type="button" onClick={onCalendar} aria-label="Mening seminarlarim" className={btn}><CalendarDays className="size-[19px]" /></button>
         <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className={btn}>
           <ShoppingCart className="size-[19px]" />
-          {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+          <CartCountBadge />
         </button>
         <NotificationBell className={btn} iconClass="size-[19px]" />
       </div>

@@ -515,3 +515,20 @@ body {
   .notif-toast-out { opacity: 0; }
   .notif-timer { display: none; }
 }
+
+/* ---- Pastki "shisha" toast (savat, xato, ma’lumot) ---- */
+@keyframes glassToastIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes glassToastOut { to { opacity: 0; transform: translateY(12px) scale(0.98); } }
+.glass-toast { animation: glassToastIn 0.32s cubic-bezier(0.32, 0.72, 0, 1) both; transition: transform 0.2s ease, opacity 0.2s ease; }
+.glass-toast-out { animation: glassToastOut 0.2s ease-in forwards; }
+.glass-toast-timer { animation: notifTimer linear forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .glass-toast, .glass-toast-out { animation: none !important; transition: none !important; }
+  .glass-toast-timer { display: none; }
+}
+
+/* Yo‘nalish chiplari: o‘ng chetda "yana bor" ishorasi */
+.spec-chips {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}

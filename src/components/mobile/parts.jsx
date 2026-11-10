@@ -3,6 +3,8 @@ import MobileMenu, { MenuButton } from './MobileMenu'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, Bell, Check, Minus, Plus, ShoppingBag, AlertTriangle } from 'lucide-react'
 import { useCart } from '../../cart'
+import GlassToast from '../GlassToast'
+import { cartBadge } from '../../lib/toastModel'
 import NotificationBell from '../NotificationBell'
 
 export function BrandLogo({ className = 'h-8', to = '/' }) {
@@ -35,7 +37,7 @@ export function MobileTopBar({ onSearch, onBell, search = true }) {
         )}
         <button type="button" onClick={() => navigate('/savatcha', { state: { from: 'market' } })} aria-label="Savat" className="relative grid size-10 place-items-center rounded-full text-ink">
           <ShoppingCart className="size-[21px]" />
-          {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+          <CartCountBadge />
         </button>
         <NotificationBell className="relative grid size-10 place-items-center rounded-full text-ink" iconClass="size-[21px]" badgeClass="ring-[#eef7f8]" />
       </div>
@@ -79,19 +81,16 @@ export function CountBadge({ children }) {
   )
 }
 
-export function MobileToast({ text, onClose, action, bottom = 76, warn = false }) {
-  useEffect(() => {
-    if (!text) return
-    const t = setTimeout(onClose, 2200)
-    return () => clearTimeout(t)
-  }, [text, onClose])
-  if (!text) return null
-  return (
-    <div role="status" style={{ bottom }} className="fixed inset-x-4 z-50 flex items-center gap-2 rounded-xl bg-ink px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg">
-      {warn ? <AlertTriangle className="size-4 shrink-0 text-amber-300" aria-hidden="true" /> : <Check className="size-4 shrink-0 text-[#5fe0c8]" aria-hidden="true" />} <span className="min-w-0 flex-1 truncate">{text}</span>
-      {action}
-    </div>
-  )
+/** Eski API saqlangan: barcha sahifalar endi bir xil "shisha" toastni ko‘rsatadi. */
+export function MobileToast({ text, children, onClose, action, bottom = 76, warn = false, tone = '' }) {
+  return <GlassToast text={text ?? (typeof children === 'string' ? children : '')} onClose={onClose} action={action} bottom={bottom} warn={warn} tone={tone} />
+}
+
+/** Savat belgisi — jami dona soni (pastki menyu bilan bir xil), 99+. */
+export function CartCountBadge() {
+  const { count } = useCart()
+  if (!count) return null
+  return <CountBadge>{cartBadge(count)}</CountBadge>
 }
 
 export function GiftArt({ className }) {

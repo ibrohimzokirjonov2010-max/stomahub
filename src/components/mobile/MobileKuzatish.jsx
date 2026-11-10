@@ -7,7 +7,7 @@ import {
 import { useCart } from '../../cart'
 import { som } from '../../marketData'
 import { allOrders, profileStore, useProfile } from '../../profileStore'
-import { BrandLogo, CountBadge, MobileToast } from './parts'
+import { BrandLogo, CountBadge, MobileToast, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import { MenuDrawer } from './MobileKategoriyalar'
@@ -103,7 +103,7 @@ export default function MobileKuzatish() {
       <div className="ml-auto flex items-center">
         <button type="button" onClick={() => navigate('/buyurtma', { state: { from: 'market' } })} aria-label="Savat" className={`relative grid size-10 place-items-center rounded-full ${navy}`}>
           <ShoppingCart className="size-[22px]" />
-          {items.length > 0 && <CountBadge>{items.length}</CountBadge>}
+          <CartCountBadge />
         </button>
         <button type="button" onClick={() => navigate('/profil', { state: { sheet: 'inbox' } })} aria-label="Bildirishnomalar" className={`relative grid size-10 place-items-center rounded-full ${navy}`}>
           <Bell className="size-[22px]" />
