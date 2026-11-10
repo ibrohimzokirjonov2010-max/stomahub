@@ -46,7 +46,7 @@ export default function IconSheet() {
         {ROWS.filter(([, sec]) => !only || only === sec).map(([title, sec, pairs]) => (
           <section key={sec} data-row={sec} className="mb-3">
             <p className="text-[15px] font-extrabold text-ink">{title}</p>
-            <CategoryChips cats={pairs.map(([key, label]) => ({ key, label, icon: iconFor(sec, key, label) }))} value={pairs[1]?.[0]} onChange={() => {}} desktop={false} />
+            <CategoryChips cats={pairs.map(([key, label]) => ({ key, label, icon: iconFor(sec, key, label) }))} value={pairs[1]?.[0]} onChange={() => {}} desktop={new URLSearchParams(location.search).has('d')} />
           </section>
         ))}
       </div>

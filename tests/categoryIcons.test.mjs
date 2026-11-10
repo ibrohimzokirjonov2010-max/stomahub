@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { CATEGORY_ICON_MAP, LUCIDE_IDS, FALLBACK_ICON, categoryIconId } from '../src/icons/categoryIconMap.js'
+import { CATEGORY_ICON_MAP, LUCIDE_IDS, GLYPHS, FALLBACK_ICON, categoryIconId } from '../src/icons/categoryIconMap.js'
 import { ART, CUSTOM_IDS } from '../src/icons/categoryIconArt.js'
 import { MARKET_CATEGORIES, CATEGORY_ALIASES, normCategory } from '../src/config/productCatalog.js'
 import { cats as ustaCats } from '../src/ustalarData.js'
@@ -40,7 +40,7 @@ test('every known category has an explicit icon mapping', () => {
 })
 
 test('every mapped icon id exists in the set', () => {
-  const known = new Set([...CUSTOM_IDS, ...Object.keys(LUCIDE_IDS)])
+  const known = new Set([...CUSTOM_IDS, ...Object.keys(LUCIDE_IDS), ...Object.keys(GLYPHS)])
   for (const [sec, m] of Object.entries(CATEGORY_ICON_MAP)) for (const [k, id] of Object.entries(m)) assert.ok(known.has(id), `${sec}/${k} → unknown icon ${id}`)
   assert.ok(known.has(FALLBACK_ICON))
 })
@@ -67,5 +67,19 @@ test('custom art: single style (no hard-coded colours, no own stroke widths exce
       const scaled = /scale\(/.test(svg)
       assert.ok(Number(m[1]) <= 1 || scaled, `${id}: custom stroke-width ${m[1]}`)
     }
+  }
+})
+
+test('approved glyph sprite: every glyph exists, uses currentColor (no hard-coded fill)', () => {
+  const sprite = readFileSync(new URL('../public/icons/category-sprite.svg', import.meta.url), 'utf8')
+  const ids = new Set([...sprite.matchAll(/<symbol id="([^"]+)"/g)].map((m) => m[1]))
+  for (const [id, g] of Object.entries(GLYPHS)) assert.ok(ids.has(g), `${id} → missing glyph ${g}`)
+  assert.doesNotMatch(sprite, /fill=|#0F7C80/i)
+})
+
+test('every chip that has an approved glyph uses it', () => {
+  for (const [sec, keys] of Object.entries(SECTIONS)) for (const k of keys) {
+    const id = categoryIconId(sec, k, k)
+    if (id !== 'tooth') assert.ok(GLYPHS[id], `${sec}/${k} → ${id} has no glyph`)
   }
 })

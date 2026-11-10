@@ -8,9 +8,10 @@ import {
   ClipboardList, Package, Drill, Microscope, Syringe, Glasses,
 } from 'lucide-react'
 import { ART } from './categoryIconArt'
-import { LUCIDE_IDS, categoryIconId, FALLBACK_ICON } from './categoryIconMap'
+import { LUCIDE_IDS, GLYPHS, categoryIconId, FALLBACK_ICON } from './categoryIconMap'
 
-export const ICON_STROKE = 1.75
+// Glif to‘plamining ingichka chizig‘iga moslab (zaxira ikonkalar uchun)
+export const ICON_STROKE = 1.35
 
 const Lucide = {
   LayoutGrid, BookOpen, BookOpenText, Skull, GraduationCap, Presentation, MonitorPlay, Hospital, Briefcase, Users,
@@ -28,13 +29,26 @@ function CustomSvg({ id, className = '', strokeWidth = ICON_STROKE, ...rest }) {
   )
 }
 
+// Glif sprite: JS bundle ga kirmaydi, brauzer bir marta yuklab keshlaydi. fill=currentColor —
+// tanlangan chipda oq, oddiy holatda teal (CSS rang klassi orqali).
+export const SPRITE_URL = '/icons/category-sprite.svg?v=1'
+function GlyphSvg({ id, className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false" className={className} data-icon={id}>
+      <use href={`${SPRITE_URL}#${GLYPHS[id]}`} />
+    </svg>
+  )
+}
+
 const cache = new Map()
 /** id → React komponent (className, strokeWidth qabul qiladi). Noma’lum id → FALLBACK. */
 export function iconById(id) {
-  const key = ART[id] || LUCIDE_IDS[id] ? id : FALLBACK_ICON
+  const key = GLYPHS[id] || ART[id] || LUCIDE_IDS[id] ? id : FALLBACK_ICON
   if (cache.has(key)) return cache.get(key)
   let C
-  if (ART[key]) {
+  if (GLYPHS[key]) {
+    C = function CatIcon({ className }) { return <GlyphSvg id={key} className={className} /> }
+  } else if (ART[key]) {
     C = function CatIcon({ className, strokeWidth }) { return <CustomSvg id={key} className={className} strokeWidth={strokeWidth ?? ICON_STROKE} /> }
   } else {
     const L = Lucide[LUCIDE_IDS[key]]

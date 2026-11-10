@@ -12,6 +12,20 @@ export const LUCIDE_IDS = {
   glasses: 'Glasses',
 }
 
+// Yangi professional glif to‘plami (Ibrohim tasdiqlagan, 2026-11-10): public/icons/category-sprite.svg.
+// id → sprite dagi <symbol id>. Glifi bo‘lmagan id lar avvalgi chiziqli ikonkada qoladi.
+export const GLYPHS = {
+  filling: 'tooth-filling', whitening: 'tooth-whitening', pediatric: 'kids-tooth', implant: 'implant', endoFile: 'endo-file',
+  impressionTray: 'impression-tray', bracket: 'braces', crown: 'crown', lab: 'denture', gum: 'gum-tooth', scalpel: 'scalpel',
+  dentalChair: 'dental-chair', handpiece: 'handpiece', autoclave: 'autoclave', xray: 'xray', scanner: 'scanner',
+  digital: 'digital-monitor', compressor: 'compressor', curingLight: 'curing-light', toothbrush: 'toothbrush', gloves: 'glove',
+  mask: 'mask', bondBottle: 'bond-bottle', cement: 'cement-pad', compositeSyringe: 'composite-syringe', instruments: 'mirror-probe',
+  instrumentsSet: 'instruments-set', rubberDam: 'rubber-dam', scrub: 'scrub', coat: 'lab-coat', cap: 'surgical-cap', clog: 'clog',
+  apron: 'apron', glasses: 'loupes', all: 'grid-all', atlas: 'atlas-book', anatomy: 'skull', course: 'graduation-cap',
+  seminar: 'presentation-board', webinar: 'webinar', clinic: 'clinic', job: 'briefcase', team: 'people', admin: 'clipboard',
+  other: 'box', install: 'drill', anesthetic: 'anesthesia-syringe', microscope: 'microscope',
+}
+
 export const CATEGORY_ICON_MAP = {
   // Marketplace (seller_products.category, normCategory dan keyin)
   marketplace: {
@@ -28,7 +42,7 @@ export const CATEGORY_ICON_MAP = {
   jihozlar: { unit: 'dentalChair', cbct: 'xray', scan: 'scanner', autoclave: 'autoclave', micro: 'microscope', compressor: 'compressor', handpiece: 'handpiece', lamp: 'curingLight' },
   ustalar: { unit: 'dentalChair', handpiece: 'handpiece', compressor: 'compressor', autoclave: 'autoclave', cbct: 'xray', scan: 'scanner', install: 'install' },
   ortiqcha: { komp: 'filling', bond: 'bondBottle', sement: 'cement', impl: 'implant', instr: 'instruments', anes: 'anesthetic', other: 'other' },
-  elonlar: { uskuna: 'dentalChair', material: 'compositeSyringe', klinika: 'clinic', ish: 'job', asbob: 'instruments' },
+  elonlar: { uskuna: 'dentalChair', material: 'compositeSyringe', klinika: 'clinic', ish: 'job', asbob: 'instrumentsSet' },
   mutaxassislar: { stomatolog: 'tooth', implantolog: 'implant', ortodont: 'bracket', endodont: 'endoFile', jarroh: 'scalpel', estetik: 'whitening', pediatr: 'pediatric' },
   ishlar: { terapevt: 'filling', ortoped: 'crown', ortodont: 'bracket', jarroh: 'scalpel', bolalar: 'pediatric', gigiyenist: 'toothbrush', texnik: 'lab', assistent: 'team', admin: 'admin' },
 }
