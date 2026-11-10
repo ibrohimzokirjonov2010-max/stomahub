@@ -1,4 +1,5 @@
 import { isTestProductRow } from './testData'
+import { attachOrderShops } from './lib/orderShops'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
@@ -199,9 +200,69 @@ const fmt = (iso) => {
   return `${d.getDate()} ${MON[d.getMonth()]}, ${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+const ORDER_ITEMS = 'seller_order_items(id,product_id,seller_id,name,variant,image_url,qty,price)'
+
+function mapSellerOrder(o) {
+  const items = (o.seller_order_items || []).map((it) => ({
+    id: it.product_id || it.id,
+    itemId: it.id,
+    sellerId: it.seller_id || o.seller_id || null,
+    name: it.name,
+    type: it.variant || '',
+    price: Number(it.price),
+    qty: it.qty,
+    image: it.image_url || '',
+  }))
+  const goods = Number(o.subtotal) || items.reduce((s, it) => s + it.price * it.qty, 0)
+  const fee = Number(o.delivery_fee) || 0
+  const discount = Number(o.discount_amount) || 0
+  return {
+    id: o.code, dbId: o.id, sellerId: o.seller_id || null, shopName: '', live: true, at: fmt(o.created_at), createdAt: o.created_at, items, goods, fee, discount,
+    total: Math.max(0, goods + fee - discount), method: o.payment_method || 'cash', months: 0,
+    mode: o.delivery_method === 'olib_ketish' ? 'pickup' : 'courier',
+    status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
+    history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
+    name: o.customer_name, phone: o.customer_phone, address: [o.city, String(o.address || '').replace(/\s*\[geo:[^\]]+\]/, '')].filter(Boolean).join(', '), lat: o.lat ?? (String(o.address || '').match(/\[geo:(-?[\d.]+),/) || [])[1] ?? null, lng: o.lng ?? (String(o.address || '').match(/\[geo:[^,]+,(-?[\d.]+)\]/) || [])[1] ?? null,
+    trackingUrl: o.tracking_url || '', deliveryService: o.delivery_service || (o.tracking_url ? 'yandex' : ''),
+    courierName: o.courier_name || '', courierPhone: o.courier_phone || '', deliveryEta: o.delivery_eta || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
+    paymentLabel: payStatusLabel(o.payment_status, o.payment_method), deliveredAt: o.delivered_at || null, confirmedAt: o.buyer_confirmed_at || null,
+    dispute: o.dispute_status || '', disputeReason: o.dispute_reason || '',
+    autoReleaseAt: o.delivered_at ? new Date(new Date(o.delivered_at).getTime() + ESCROW_DAYS * 864e5).toISOString() : null,
+  }
+}
+
+// profiles RLS boshqa odamning shop_name ini yashiradi. 0071 buyer_order_shops — faqat
+// shu xaridor buyurtma bergan do‘konlar. Funksiya yo‘q bo‘lsa: ochiq profil, keyin vitrina.
+async function fetchOrderShopMap(orders) {
+  const map = new Map()
+  if (!supabase) return map
+  const { data, error } = await supabase.rpc('buyer_order_shops')
+  if (!error && Array.isArray(data)) {
+    data.forEach((row) => {
+      if (row?.seller_id && row.shop_name) map.set(row.seller_id, row.shop_name)
+    })
+    return map
+  }
+  const ids = [...new Set(orders.flatMap((o) => [o.sellerId, ...(o.items || []).map((it) => it.sellerId)]).filter(isUuid))]
+  await Promise.all(ids.map(async (id) => {
+    const res = await supabase.rpc('seller_public_profile', { p_id: id })
+    const name = res?.data?.shop_name
+    if (name) map.set(id, name)
+  }))
+  orders.forEach((o) => {
+    ;(o.items || []).forEach((it) => {
+      const sid = it.sellerId || o.sellerId
+      if (!sid || map.has(sid)) return
+      const product = marketProducts.find((p) => String(p.id) === String(it.id) || (sid && p.sellerId === sid))
+      if (product?.seller) map.set(sid, product.seller)
+    })
+  })
+  return map
+}
+
 export async function fetchMyOrders(uid) {
-  const full = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,delivered_at,buyer_confirmed_at,dispute_status,dispute_reason,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
-  const basic = 'id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,seller_order_items(id,product_id,name,variant,image_url,qty,price)'
+  const full = `id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,payment_status,payment_ref,tracking_url,customer_name,customer_phone,created_at,status_history,delivered_at,buyer_confirmed_at,dispute_status,dispute_reason,${ORDER_ITEMS}`
+  const basic = `id,seller_id,code,status,subtotal,delivery_fee,discount_amount,address,city,delivery_method,payment_method,customer_name,customer_phone,created_at,status_history,${ORDER_ITEMS}`
   // 0067: yetkazish xizmati va kuryer (sotuvchi kiritadi); migratsiya qo‘llanmagan bo‘lsa — oldingi ro‘yxat
   const withDelivery = full.replace('tracking_url,', 'tracking_url,delivery_service,courier_name,courier_phone,delivery_eta,')
   let { data, error } = await supabase.from('seller_orders').select(withDelivery).eq('buyer_id', uid).order('created_at', { ascending: false })
@@ -212,25 +273,12 @@ export async function fetchMyOrders(uid) {
     ;({ data, error } = await supabase.from('seller_orders').select(basic).eq('buyer_id', uid).order('created_at', { ascending: false }))
   }
   if (error) throw new Error(friendlySupabaseError(error))
-  return (data || []).map((o) => {
-    const items = (o.seller_order_items || []).map((it) => ({ id: it.product_id || it.id, name: it.name, type: it.variant || '', price: Number(it.price), qty: it.qty, image: it.image_url }))
-    const goods = Number(o.subtotal) || items.reduce((s, it) => s + it.price * it.qty, 0)
-    const fee = Number(o.delivery_fee) || 0
-    const discount = Number(o.discount_amount) || 0
-    return {
-      id: o.code, dbId: o.id, sellerId: o.seller_id || null, live: true, at: fmt(o.created_at), createdAt: o.created_at, items, goods, fee, discount,
-      total: Math.max(0, goods + fee - discount), method: o.payment_method || 'cash', months: 0,
-      mode: o.delivery_method === 'olib_ketish' ? 'pickup' : 'courier',
-      status: uiStatus(o.status), dbStatus: o.status, statusLabel: ORDER_STATUS[o.status] || o.status,
-      history: o.status_history || [], eta: '1–2 kun', days: '1–2 kun',
-      name: o.customer_name, phone: o.customer_phone, address: [o.city, String(o.address || '').replace(/\s*\[geo:[^\]]+\]/, '')].filter(Boolean).join(', '), lat: o.lat ?? (String(o.address || '').match(/\[geo:(-?[\d.]+),/) || [])[1] ?? null, lng: o.lng ?? (String(o.address || '').match(/\[geo:[^,]+,(-?[\d.]+)\]/) || [])[1] ?? null,
-      trackingUrl: o.tracking_url || '', deliveryService: o.delivery_service || (o.tracking_url ? 'yandex' : ''),
-      courierName: o.courier_name || '', courierPhone: o.courier_phone || '', deliveryEta: o.delivery_eta || '', paymentStatus: o.payment_status || '', paymentRef: o.payment_ref || '',
-      paymentLabel: payStatusLabel(o.payment_status, o.payment_method), deliveredAt: o.delivered_at || null, confirmedAt: o.buyer_confirmed_at || null,
-      dispute: o.dispute_status || '', disputeReason: o.dispute_reason || '',
-      autoReleaseAt: o.delivered_at ? new Date(new Date(o.delivered_at).getTime() + ESCROW_DAYS * 864e5).toISOString() : null,
-    }
-  })
+  const orders = (data || []).map(mapSellerOrder)
+  try {
+    return attachOrderShops(orders, await fetchOrderShopMap(orders))
+  } catch {
+    return attachOrderShops(orders, new Map())
+  }
 }
 
 // ---- reviews (seller_reviews, 0003 + 0035) -----------------------------------------------

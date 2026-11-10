@@ -13,6 +13,7 @@ import { BottomSheet } from './MobileSeminars'
 import { MenuDrawer } from './MobileKategoriyalar'
 import { DetailSheet, timeline } from './MobileBuyurtmalar'
 import CourierCard from '../CourierCard'
+import { orderShopSummary } from '../../lib/orderShops'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
@@ -250,10 +251,11 @@ export default function MobileKuzatish() {
             <h2 className={`flex-1 text-[14.5px] font-bold ${navy}`}>Mahsulotlar ({order.items.length} ta)</h2>
             <button type="button" onClick={() => setSheet('detail')} className={`flex items-center text-[12.5px] font-semibold ${teal}`}>Batafsil <ChevronRight className="size-4" /></button>
           </div>
+          <p className="mt-1 truncate text-[12px] font-semibold text-[#0b6d73]">{orderShopSummary(order)}</p>
           <div className="mt-2.5 grid grid-cols-6 gap-1.5">
             {order.items.slice(0, extra > 0 ? 5 : 6).map((it) => (
-              <Link key={it.id} to={`/product/${it.id}`} aria-label={it.name} className="grid aspect-[5/6] place-items-center overflow-hidden rounded-lg bg-[#f2f6f7]">
-                <img src={it.image} alt="" loading="lazy" className="size-full object-contain p-0.5" />
+              <Link key={it.itemId || it.id} to={`/product/${it.id}`} aria-label={it.name} className="grid aspect-square place-items-center overflow-hidden rounded-lg bg-[#eef6f5]">
+                <img src={it.image} alt="" loading="lazy" className="size-full object-cover" />
               </Link>
             ))}
             {extra > 0 && <button type="button" onClick={() => setSheet('detail')} className="grid aspect-[5/6] place-items-center rounded-lg bg-[#f2f6f7] text-[15px] font-medium text-[#6b7f8e]">+{extra}</button>}

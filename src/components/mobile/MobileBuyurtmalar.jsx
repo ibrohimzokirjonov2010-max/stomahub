@@ -13,6 +13,8 @@ import { BottomSheet } from './MobileSeminars'
 import { Logo, ALL_METHODS as METHODS } from './MobileCheckout'
 import { SubTopBar } from './MobileManzillar'
 import CourierCard from '../CourierCard'
+import { groupOrderItems, orderShopSummary, payMethodLabel } from '../../lib/orderShops'
+import { ShopLink } from '../orders/OrderVisuals'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
@@ -134,6 +136,7 @@ export default function MobileBuyurtmalar() {
           onRepeat={() => repeat(open)}
           onClose={() => setDetail(null)}
           reviews={reviews}
+          showPageLink
           onReviewed={() => setToast('Rahmat! Bahoingiz yuborildi')}
         />
       )}
@@ -181,19 +184,20 @@ function Stepper({ order }) {
 }
 
 function Thumbs({ items }) {
-  const extra = items.length - 3
+  const list = items || []
+  const extra = list.length - 3
   return (
     <div className="mt-3 grid grid-cols-4 gap-2">
-      {items.slice(0, 3).map((it) => (
-        <span key={it.id} className="grid aspect-[4/3] place-items-center overflow-hidden rounded-xl bg-[#f2f6f7]">
-          <img src={it.image} alt={it.name} loading="lazy" className="size-full object-contain p-1" />
+      {list.slice(0, 3).map((it, i) => (
+        <span key={it.itemId || `${it.id}-${i}`} className="grid aspect-square place-items-center overflow-hidden rounded-xl bg-[#eef6f5] ring-1 ring-[#e3eeec]">
+          <img src={it.image} alt={it.name} loading="lazy" className="size-full object-cover" />
         </span>
       ))}
       {extra > 0 && (
-        <span className="grid aspect-[4/3] place-items-center rounded-xl bg-[#f2f6f7] text-center">
+        <span className="grid aspect-square place-items-center rounded-xl bg-[#e7f6f4] text-center">
           <span>
-            <span className="block text-[15px] font-semibold text-[#5b6b7d]">+{extra}</span>
-            <span className="block text-[10px] text-[#8796a5]">ta mahsulot</span>
+            <span className="block text-[15px] font-semibold text-[#0b6d73]">+{extra}</span>
+            <span className="block text-[10px] text-[#5b6b7d]">ta mahsulot</span>
           </span>
         </span>
       )}
@@ -203,12 +207,17 @@ function Thumbs({ items }) {
 
 function OrderCard({ order, reviews, onTrack, onRepeat, onDetail }) {
   const active = order.status === 'processing' || order.status === 'shipping'
+  const open = (e) => {
+    if (e.target.closest('a, button')) return
+    onDetail()
+  }
   return (
-    <article className="rounded-2xl border border-[#e5eef0] bg-white p-3 shadow-[0_1px_6px_rgb(11_31_58/0.04)]">
+    <article data-order={order.id} onClick={open} className="cursor-pointer rounded-2xl border border-[#e5eef0] bg-white p-3 shadow-[0_1px_6px_rgb(11_31_58/0.04)] active:bg-[#f8fcfb]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className={`text-[16px] font-bold ${navy}`}>Buyurtma #{order.id}</p>
           <p className="text-[12px] text-[#7a8a9c]">{order.at.replace(/^(\d+ \S+), (\d{4}) /, '$1 $2, ')}</p>
+          <p className="truncate text-[12px] font-semibold text-[#0b6d73]">{orderShopSummary(order)}</p>
         </div>
         <StatusBadge status={order.status} />
       </div>
@@ -248,7 +257,7 @@ function OrderCard({ order, reviews, onTrack, onRepeat, onDetail }) {
   )
 }
 
-export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onClose, reviews: outer, onReviewed }) {
+export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onClose, reviews: outer, onReviewed, showPageLink = false }) {
   const own = useMyReviews()
   const reviews = outer || own
   const [rateItem, setRateItem] = useState(null)
@@ -270,36 +279,45 @@ export function DetailSheet({ order, canCancel, onCancel, onTrack, onRepeat, onC
         )
       }
     >
-      <div className="mt-1 flex items-center justify-between">
+      <div className="mt-1 flex items-center justify-between gap-2">
         <span className="text-[12px] text-muted">{order.at} · {qty} dona</span>
         <StatusBadge status={order.status} />
       </div>
+      <div className="mt-2"><PayStatusPill order={order} /></div>
       <CourierCard order={order} className="mt-2.5" />
-      <ul className="mt-2 divide-y divide-[#eef2f4]">
-        {order.items.map((it) => (
-          <li key={it.id}>
-            <Link to={`/product/${it.id}`} className="flex items-center gap-2.5 py-2">
-              <img src={it.image} alt="" className="size-12 shrink-0 rounded-lg bg-[#f2f6f7] object-contain p-0.5" />
-              <span className="min-w-0 flex-1">
-                <span className={`block truncate text-[13px] font-semibold ${navy}`}>{it.name}</span>
-                <span className="block text-[11px] text-muted">{it.qty} dona × {som(it.price)}</span>
-              </span>
-              <span className={`shrink-0 whitespace-nowrap text-[12.5px] font-semibold ${navy}`}>{som(it.price * it.qty)}</span>
-            </Link>
-            {reviewable && (
-              <div className="-mt-1 flex justify-end pb-2">
-                {reviews.ratingOf(order, it)
-                  ? <RatedBadge rating={reviews.ratingOf(order, it)} />
-                  : <button type="button" onClick={() => setRateItem(it)} className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#f5c56b] bg-[#fff8eb] px-2.5 text-[12px] font-semibold text-[#92400e]"><Star className="size-3.5 fill-[#f59e0b] text-[#f59e0b]" /> Baholash</button>}
-              </div>
-            )}
-          </li>
+      <div className="mt-2 space-y-2">
+        {groupOrderItems(order).map((g) => (
+          <div key={`${g.sellerId}-${g.shopName}`}>
+            <p className="flex items-center gap-1.5 px-0.5 text-[12.5px] text-[#5b6b7d]">Do‘kon: <ShopLink sellerId={g.sellerId} shopName={g.shopName} /></p>
+            <ul className="divide-y divide-[#eef2f4]">
+              {g.items.map((it, i) => (
+                <li key={it.itemId || `${it.id}-${i}`}>
+                  <Link to={`/product/${it.id}`} className="flex items-center gap-2.5 py-2">
+                    <img src={it.image} alt="" className="size-14 shrink-0 rounded-xl bg-[#eef6f5] object-cover" />
+                    <span className="min-w-0 flex-1">
+                      <span className={`block truncate text-[13px] font-semibold ${navy}`}>{it.name}</span>
+                      <span className="block text-[11px] text-muted">{it.qty} dona × {som(it.price)}</span>
+                    </span>
+                    <span className={`shrink-0 whitespace-nowrap text-[12.5px] font-semibold ${navy}`}>{som(it.price * it.qty)}</span>
+                  </Link>
+                  {reviewable && (
+                    <div className="-mt-1 flex justify-end pb-2">
+                      {reviews.ratingOf(order, it)
+                        ? <RatedBadge rating={reviews.ratingOf(order, it)} />
+                        : <button type="button" onClick={() => setRateItem(it)} className="inline-flex h-8 items-center gap-1 rounded-lg border border-[#f5c56b] bg-[#fff8eb] px-2.5 text-[12px] font-semibold text-[#92400e]"><Star className="size-3.5 fill-[#f59e0b] text-[#f59e0b]" /> Baholash</button>}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
       <div className="mt-2 space-y-2 rounded-xl bg-[#f3f8f8] p-3 text-[12.5px]">
         <p className="flex gap-2 text-ink-2"><MapPin className={`mt-0.5 size-4 shrink-0 ${teal}`} /> {order.address}</p>
         {order.lat != null && <MapPreview lat={+order.lat} lng={+order.lng} />}
-        <p className="flex items-center gap-2 text-ink-2"><Logo id={order.method} /> {METHODS[order.method]?.[0]}{order.months ? ` · ${order.months} oy` : ''}</p>
+        <p className="flex flex-wrap items-center gap-2 text-ink-2"><Logo id={order.method} /> {METHODS[order.method]?.[0] || payMethodLabel(order.method)}{order.months ? ` · ${order.months} oy` : ''}</p>
+        {showPageLink && onTrack && <button type="button" onClick={onTrack} className="text-[12.5px] font-semibold text-[#0b6d73]">Buyurtma sahifasi</button>}
         <div className="space-y-1 border-t border-[#e2ebee] pt-2 text-ink-2">
           <p className="flex justify-between"><span>Mahsulotlar</span><span>{som(order.goods ?? order.total)}</span></p>
           <p className="flex justify-between"><span>Yetkazish</span><span>{order.fee ? som(order.fee) : 'Bepul'}</span></p>

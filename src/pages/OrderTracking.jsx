@@ -5,6 +5,9 @@ import { som } from '../marketData'
 import { allOrders, profileStore, useProfile } from '../profileStore'
 import { timeline } from '../components/mobile/MobileBuyurtmalar'
 import CourierCard from '../components/CourierCard'
+import { PayStatusPill } from '../components/EscrowActions'
+import { ShopLink } from '../components/orders/OrderVisuals'
+import { deliveryModeLabel, groupOrderItems, payMethodLabel } from '../lib/orderShops'
 
 const STATUS = { new: 'Qabul qilindi', shipping: 'Yo‘lda', delivered: 'Yetkazildi', cancelled: 'Bekor qilindi' }
 
@@ -63,15 +66,28 @@ export default function OrderTracking() {
         </section>
         <aside className="rounded-xl bg-white p-5 shadow-card">
           <h2 className="text-[15px] font-bold">Mahsulotlar</h2>
-          <ul className="mt-3 space-y-2.5">
-            {(order.items || []).map((it) => (
-              <li key={`${it.id}-${it.variant || ''}`} className="flex items-center gap-2.5">
-                <img src={it.image} alt="" className="size-11 shrink-0 rounded-lg bg-[#f2f6f7] object-contain" />
-                <Link to={`/product/${it.id}`} className="min-w-0 flex-1 truncate text-[12.5px] hover:text-sea">{it.name}</Link>
-                <span className="whitespace-nowrap text-[12px] text-muted">{it.qty || 1} ta</span>
-              </li>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-muted">
+            <span>{order.at}</span>
+            <span>· {deliveryModeLabel(order.mode)}</span>
+            <span>· {payMethodLabel(order.method)}</span>
+            <PayStatusPill order={order} />
+          </div>
+          <div className="mt-3 space-y-3">
+            {groupOrderItems(order).map((g) => (
+              <div key={`${g.sellerId}-${g.shopName}`}>
+                <p className="mb-1.5 text-[12.5px] text-muted">Do‘kon: <ShopLink sellerId={g.sellerId} shopName={g.shopName} /></p>
+                <ul className="space-y-2.5">
+                  {g.items.map((it, i) => (
+                    <li key={it.itemId || `${it.id}-${i}`} className="flex items-center gap-2.5">
+                      <img src={it.image} alt="" className="size-14 shrink-0 rounded-xl bg-[#eef6f5] object-cover" />
+                      <Link to={`/product/${it.id}`} className="min-w-0 flex-1 truncate text-[12.5px] hover:text-sea">{it.name}</Link>
+                      <span className="whitespace-nowrap text-right text-[12px] text-muted">{it.qty || 1} × {som(it.price)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
           {order.total != null && <p className="mt-4 flex justify-between border-t border-line pt-3 text-[14px] font-bold"><span>Jami</span><span>{som(order.total)}</span></p>}
         </aside>
       </div>

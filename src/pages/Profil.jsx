@@ -11,10 +11,9 @@ import {
 } from 'lucide-react'
 import { MenuIcons as M } from '../components/tealIcons'
 import ShopLayout from '../components/market/ShopLayout'
-import { canReview, RatedBadge, ReviewDialog, useMyReviews } from '../components/OrderReview'
-import EscrowActions, { PayStatusPill } from '../components/EscrowActions'
+import OrdersBlock from '../components/orders/OrdersBlock'
 import { fetchNotifications, markNotificationsRead, useRemote } from '../buyerApi'
-import { marketProducts, som } from '../marketData'
+import { marketProducts } from '../marketData'
 import {
   ADDRESS_KINDS, COURSES, addr, allOrders, courseDone, flushProfile, profileStore, useProfile,
 } from '../profileStore'
@@ -51,12 +50,6 @@ const NOTIF_TOGGLES = [
 ]
 const field = 'mt-1.5 h-11 w-full rounded-xl border border-[#d7e5e3] bg-white px-3 text-[14px] text-[#1a2b3c] outline-none focus:border-[#0F766E] disabled:bg-[#f4f7f9] disabled:text-[#5b6b7d]'
 const card = 'rounded-2xl border border-[#e6eef2] bg-white p-4 shadow-[0_1px_2px_rgb(15_30_50/0.03)]'
-const pill = {
-  shipping: 'bg-[#e8f1fc] text-[#1f6fd1]',
-  processing: 'bg-[#fff4d6] text-[#b45309]',
-  delivered: 'bg-[#e5f6ec] text-[#15803d]',
-  cancelled: 'bg-[#fde8e8] text-[#b42318]',
-}
 
 function toAvatar(file) {
   return new Promise((resolve, reject) => {
@@ -153,7 +146,9 @@ function Board({ initial }) {
     }
   }, [toast])
 
-  const live = session.status === 'authed' || (session.status === 'loading' && profile.accountLive)
+  // Playwright skrinshoti (window.__STOMAHUB_SHOT_OWNER__) — RequireAuth bilan bir xil.
+  const shotOwner = typeof window !== 'undefined' && window.__STOMAHUB_SHOT_OWNER__
+  const live = shotOwner || session.status === 'authed' || (session.status === 'loading' && profile.accountLive)
   const name = pickDisplayName(profile.name, session.profile?.name, session.profile?.full_name)
   const avatar = profile.avatar || session.profile?.avatar_url || ''
   const role = profile.role || session.profile?.specialty || ''
@@ -718,54 +713,6 @@ function CoursesBlock({ courses, full }) {
           ))}
         </div>
       )}
-    </section>
-  )
-}
-
-function OrdersBlock({ orders, status, error, full }) {
-  const reviews = useMyReviews()
-  const [rate, setRate] = useState(null)
-  const [thanks, setThanks] = useState('')
-  return (
-    <section className={card}>
-      <SectionHead title={full ? 'Buyurtmalarim' : 'Oxirgi buyurtmalar'} action={full ? null : 'Barchasi'} onAction={() => {}} />
-      {status === 'loading' && !orders.length && <p className="py-6 text-center text-[13px] text-[#6b7c8f]">Yuklanmoqda…</p>}
-      {status === 'error' && (
-        <p role="alert" className="rounded-xl bg-[#fff4f4] px-3 py-2 text-[13px] text-[#b42318]">
-          {error} <button type="button" className="ml-2 font-semibold text-[#0F766E]" onClick={() => profileStore.refreshOrders()}>Qayta urinish</button>
-        </p>
-      )}
-      {status !== 'loading' && status !== 'error' && !orders.length && <Empty text="Hali buyurtma yo‘q." />}
-      <ul className="divide-y divide-[#eef3f2]">
-        {orders.map((o) => {
-          const thumb = o.items?.[0]?.image || '/images/market/p1.jpg'
-          const tone = pill[o.status] || pill.processing
-          return (
-            <li key={o.dbId || o.id} className="flex flex-wrap items-center gap-3 py-3">
-              <img src={thumb} alt="" className="size-11 rounded-lg object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] font-bold text-[#12263a]"># {o.id}</p>
-                <p className="text-[12px] text-[#6b7c8f]">{o.at}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[13px] font-bold text-[#12263a]">{som(o.total || o.goods || 0)}</p>
-                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone}`}>{o.statusLabel || o.status}</span>
-                <div className="mt-1"><PayStatusPill order={o} /></div>
-              </div>
-              {canReview(o) && (() => {
-                const next = (o.items || []).find((it) => !reviews.ratingOf(o, it))
-                const first = o.items?.[0]
-                return next
-                  ? <button type="button" onClick={() => setRate({ order: o, item: next })} className="shrink-0 rounded-lg border border-[#f5c56b] bg-[#fff8eb] px-3 py-1.5 text-[12px] font-semibold text-[#92400e]">★ Baholash</button>
-                  : first ? <span className="shrink-0"><RatedBadge rating={reviews.ratingOf(o, first)} /></span> : null
-              })()}
-              <EscrowActions order={o} compact />
-            </li>
-          )
-        })}
-      </ul>
-      {thanks && <p role="status" className="mt-2 rounded-xl bg-[#e5f6ec] px-3 py-2 text-[12.5px] font-medium text-[#15803d]">{thanks}</p>}
-      {rate && <ReviewDialog order={rate.order} item={rate.item} onClose={() => setRate(null)} onDone={(r) => { reviews.mark(rate.order, rate.item, r); setRate(null); setThanks('Rahmat! Bahoingiz yuborildi') }} />}
     </section>
   )
 }
