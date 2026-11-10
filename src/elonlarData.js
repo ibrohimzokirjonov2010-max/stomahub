@@ -26,3 +26,9 @@ export const SELLERS = {}
 const ad = (a) => ({ cond: 'Yangi', original: true, views: 120, ...a })
 
 export const ADS = []
+
+/** Kartochka uchun ixcham narx: ish o‘rni oralig‘i «8 – 15 mln so‘m» (to‘liq raqam kartochkaga sig‘maydi). */
+const mln = (n) => String(Math.round((Number(n) / 1e6) * 10) / 10).replace('.', ',')
+export const adPriceShort = (a) => (a?.deal === 'job' && Number(a.price) >= 1e6 && Number(a.priceMax) >= 1e6
+  ? `${mln(a.price)} – ${mln(a.priceMax)} mln so‘m`
+  : adPrice(a))

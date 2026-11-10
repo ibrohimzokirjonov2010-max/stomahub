@@ -5,6 +5,8 @@ import { Star, Heart, ShoppingCart, Truck, ShieldCheck, CreditCard, ChevronRight
 import { useCart } from '../cart'
 import { getForma, products, similarIds, money, colorOf, sizeChart, sizesOf } from '../formaData'
 import { payPromo } from '../payments/paymentService'
+import { isDemoItem } from '../demoContent'
+import { DemoNotice, DemoActionBar } from '../components/DemoNotice'
 
 const perks = [
   ['Sifat kafolati', '30 kun ichida qaytarish'],
@@ -36,7 +38,8 @@ export default function FormaItem() {
 
   const gallery = product.gallery?.length ? product.gallery : [product.image]
   const inCart = items.some((it) => it.id === product.id)
-  const put = () => { if (!inCart) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1) }
+  const demo = isDemoItem(product)
+  const put = () => { if (!inCart && !demo) add({ id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1) }
   const similar = similarIds.map((sid) => products.find((p) => p.id === sid)).filter((p) => p && p.id !== product.id)
   const story = product.story || `${product.brand} ${product.title.toLowerCase()}. ${product.about} Klinika va shifoxonada kiyish uchun mos.`
 
@@ -87,6 +90,7 @@ export default function FormaItem() {
                   <button key={s} onClick={() => setSize(s)} className={`h-8 min-w-8 rounded-lg px-2 text-[11px] font-semibold ${size === s ? 'bg-sea text-white' : 'bg-[#f3f6fa] text-ink'}`}>{s}</button>
                 ))}
               </div>
+              {demo ? <><DemoNotice className="mt-3" /><DemoActionBar className="mt-2" label="Namuna mahsulot — sotuvda emas" /></> : <>
               <div className="mt-3 flex items-center gap-2">
                 <button onClick={put} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
                   <ShoppingCart className="size-4" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}
@@ -96,6 +100,7 @@ export default function FormaItem() {
                 </button>
               </div>
               <button onClick={() => goBuyNow(navigate, { id: product.id, name: product.title, type: product.brand, price: product.price, image: product.image }, 1, 'forma')} className="mt-2 h-10 w-full rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">Hozir sotib olish</button>
+              </>}
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {perks.map(([t, d], i) => {
                   const Icon = [ShieldCheck, Truck, CreditCard][i]

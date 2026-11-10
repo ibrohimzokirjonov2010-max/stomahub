@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Star, Phone, Calendar, MessageCircle, MapPin, BadgeCheck, Clock, ShieldCheck, ChevronRight, X } from 'lucide-react'
 import { getUsta, viewOf, statusLabel } from '../ustalarData'
+import { isDemoItem } from '../demoContent'
+import { DemoNotice, DemoChip } from '../components/DemoNotice'
 
 const brandColor = {
   SIRONA: '#e4572e', KaVo: '#1b1f24', Fengdan: '#1d4e89', 'W&H': '#1f8f4e', NSK: '#2457c5',
@@ -40,7 +42,7 @@ export default function Usta() {
               <img src={master.photo} alt="" className="w-full shrink-0 rounded-xl object-cover object-top sm:w-[210px]" style={{ height: 220 }} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[22px] font-extrabold text-ink">{master.name}</h1>
+                  <h1 className="text-[22px] font-extrabold text-ink">{master.name}</h1>{isDemoItem(master) && <DemoChip />}
                   {master.verified ? <span className="inline-flex items-center gap-1 rounded-full bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea"><BadgeCheck className="size-3.5" /> Tasdiqlangan</span> : null}
                 </div>
                 <p className="text-[13px] text-muted">{master.role}</p>
@@ -51,11 +53,11 @@ export default function Usta() {
                   <span>Javob vaqti: {master.reply}</span>
                 </p>
                 <p className="mt-1 flex items-center gap-1 text-[13px]">{Number(master.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b>{master.rating}</b> <span className="text-muted">({master.reviews} sharh)</span></> : 'Hali baho yo‘q'} <span className="ml-2 rounded-md bg-[#f3f6fa] px-1.5 py-0.5 text-[10px]">{statusLabel[master.status]}</span></p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                {isDemoItem(master) ? <DemoNotice className="mt-3" /> : <div className="mt-3 flex flex-wrap gap-2">
                   <button onClick={() => setCall(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Phone className="size-3.5" /> Qo‘ng‘iroq qilish</button>
                   <button onClick={() => setOrder(true)} className="flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white"><Calendar className="size-3.5" /> Buyurtma berish</button>
                   <button onClick={() => setChat(true)} className="flex h-9 items-center gap-1.5 rounded-lg border border-sea px-3 text-[12px] font-semibold text-sea"><MessageCircle className="size-3.5" /> Xabar yozish</button>
-                </div>
+                </div>}
                 <p className="mb-1 mt-3 text-[12px] font-bold">Mutaxassislik va ko‘nikmalar</p>
                 <div className="flex flex-wrap gap-1">{view.skills.map((s) => <span key={s} className="rounded-md bg-[#f3f6fa] px-2 py-0.5 text-[11px] text-ink-2">{s}</span>)}</div>
                 <p className="mb-1 mt-3 text-[12px] font-bold">Brendlar bo‘yicha tajriba</p>

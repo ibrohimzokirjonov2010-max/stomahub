@@ -12,6 +12,7 @@ import { som } from '../../marketData'
 import { useAdPlacements, trackAd, joinAds } from '../../adsApi'
 import { recordInterest } from '../../personal/interestStore'
 import { ImageSearchButton, ImageSearchDialog, ImageSearchBanner, rankByTerms, termsFrom } from './ImageSearch'
+import { demoCard } from '../../demoContent'
 
 /* ---------- building blocks ---------- */
 
@@ -242,7 +243,7 @@ export function FilterBar({ filters, values, onChange, sorts, sort, onSort, desk
 export const keepDigits = (t) => String(t ?? '').replace(/(\d)[ \u00a0\u202f](?=\d)/g, '$1\u00a0')
 
 export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
-  const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea' }
+  const badgeCls = { new: 'bg-[#22b573]', sale: 'bg-sale', info: 'bg-sea', demo: 'bg-[#f59e0b]' }
   const lineId = card.cart?.line?.id
   const qty = useCardQty(lineId)
   const priceText = keepDigits(card.priceText ?? (card.price == null ? '' : card.price === 0 ? 'Bepul' : som(card.price)))
@@ -428,7 +429,7 @@ export function CatalogPage({ section }) {
           <div data-testid="catalog-grid" className={`grid gap-2.5 ${desktop ? 'grid-cols-3 gap-4 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-2'}`}>
             {sponsored.map(({ ad, item }) => <AdCard key={`ad-${ad.campaign_id}`} ad={ad} item={item} {...adProps} />)}
             {list.filter((it) => !sponsoredIds.has(it.id)).slice(0, limit).map((it) => {
-              const card = section.card(it)
+              const card = demoCard(it, section.card(it))
               return (
                 <CatalogCard
                   key={card.id}

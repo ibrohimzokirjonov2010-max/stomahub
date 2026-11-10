@@ -82,6 +82,7 @@ function fromItem(item) {
     reviews: 0,
     views: 0,
     pending: !!item._pending,
+    isDemo: item.isDemo === true,
     price: item.price,
     oldPrice: item.oldPrice || null,
     short: item.note || `${item.brand} ${item.name}. ${opened ? 'Qadoq ochilgan' : 'Yopiq, ishlatilmagan'}.`,

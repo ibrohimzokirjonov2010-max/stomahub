@@ -10,6 +10,7 @@ import { LikeButton } from '../components/market/ProductCard'
 import { ConditionBadge } from './Surplus'
 import { telegramUrl } from '../elonApi'
 import { openTelegramWithListingMessage } from '../lib/telegramShare'
+import { DemoNotice, DemoActionBar, DemoChip } from '../components/DemoNotice'
 
 const factIcons = { qty: Boxes, vol: Droplet, city: MapPin, place: MapPin }
 
@@ -103,7 +104,7 @@ export default function SurplusItem() {
       <div className="grid gap-4 sm:grid-cols-[minmax(0,350fr)_minmax(0,262fr)] sm:gap-x-[18px]">
         <div className="min-w-0 pt-1">
           <p className="text-[10px] text-ink-2"><span className="font-semibold text-ink">{d.brand}</span> · {d.category}</p>
-          <h1 className="mt-1 text-[23px] font-extrabold leading-tight tracking-tight text-ink">{d.name}</h1>
+          <h1 className="mt-1 text-[23px] font-extrabold leading-tight tracking-tight text-ink">{d.name}{d.isDemo && <DemoChip className="ml-2 align-middle" />}</h1>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <span className="rounded-md bg-[#e5f6ec] px-2.5 py-1 text-[10px] font-medium text-ok">{d.condition}</span>
             <span className="rounded-md bg-[#eef1f5] px-2.5 py-1 text-[10px] font-medium text-ink-2">{d.state}</span>
@@ -142,6 +143,7 @@ export default function SurplusItem() {
           )}
 
           {(() => {
+            if (d.isDemo) return <><DemoNotice className="mt-3" /><DemoActionBar className="mt-2" /></>
             const phone = (s?.phone || '').replace(/\s/g, '')
             const tg = telegramUrl(s?.telegram)
             if (!phone && !tg) {

@@ -14,7 +14,7 @@ import { catList as jihozCats, statusList } from '../../jihozData'
 import { specs as jobSpecs, cities as jobCities, types as jobTypes, exps as jobExps, pay } from '../../ishlarData'
 import { surplusChips, conditions } from '../../surplusData'
 import { SPECS } from '../../mutaxassislarData'
-import { AD_CATS, DEALS, dealName, adPrice } from '../../elonlarData'
+import { AD_CATS, DEALS, dealName, adPriceShort } from '../../elonlarData'
 import { seminarChips, seminarCard } from '../../seminarsData'
 import { publicRecords, useHub } from '../../hubStore'
 import { useMarket } from '../../buyerApi'
@@ -360,7 +360,7 @@ export function useElonlarSection() {
         kicker: [a.city, a.date].filter(Boolean).join(' · '),
         title: a.title,
         meta: [a.sub],
-        priceText: a.price ? adPrice(a) : 'Kelishiladi',
+        priceText: a.price ? adPriceShort(a) : 'Kelishiladi',
         badge: a._pending
           ? { text: 'Moderatsiyada', tone: 'info' }
           : { text: dealName[a.deal] || 'E’lon', tone: a.deal === 'sale' ? 'new' : 'info' },

@@ -9,6 +9,8 @@ import { MobileToast, QtyStepper, GoCartButton } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { defaultSize, formaCartId, sizeLabel } from './MobileForma'
+import { isDemoItem } from '../../demoContent'
+import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 
 const LOGO_PRICE = 25000
 const MATERIAL = {
@@ -28,7 +30,7 @@ function FormaView({ id }) {
   const navigate = useNavigate()
   const { items, add, setQty: setCartQty, remove } = useCart()
   const [shot, setShot] = useState(0)
-  const [color, setColor] = useState(p?.colors[0])
+  const [colorSel, setColor] = useState(p?.colors[0])
   const [size, setSize] = useState(p ? defaultSize(p) : 'M')
   const [logo, setLogo] = useState(false)
   const [liked, setLiked] = useState(false)
@@ -52,6 +54,8 @@ function FormaView({ id }) {
     )
   }
 
+  // Katalog keyin yuklansa (to‘g‘ridan-to‘g‘ri havola) boshlang‘ich rang bo‘sh qoladi — birinchi rangga tushamiz.
+  const color = colorSel && p.colors.includes(colorSel) ? colorSel : p.colors[0]
   const gallery = (p.gallery?.length ? p.gallery : [p.image]).slice(0, 4)
   const n = gallery.length
   const oldPrice = p.oldPrice || null
@@ -62,9 +66,11 @@ function FormaView({ id }) {
   const cartId = formaCartId(p, color, size, logo)
   const inCart = items.find((it) => it.id === cartId)?.qty || 0
   const qty = inCart || 1
-  const similar = similarIds.map((sid) => products.find((x) => x.id === sid)).filter((x) => x && x.id !== p.id)
+  const fixedSimilar = similarIds.map((sid) => products.find((x) => x.id === sid)).filter((x) => x && x.id !== p.id)
+  const similar = fixedSimilar.length ? fixedSimilar : products.filter((x) => x.id !== p.id && x.cat === p.cat).concat(products.filter((x) => x.id !== p.id && x.cat !== p.cat)).slice(0, 6)
   const story = p.story || `${p.brand} ${p.title.toLowerCase()}. ${p.about} Klinika va shifoxonada kiyish uchun mos.`
   const [mat1, mat2] = MATERIAL[p.fabric] || MATERIAL.cotton
+  const demo = isDemoItem(p)
 
   const changeQty = (next) => {
     if (!inCart) return
@@ -72,6 +78,7 @@ function FormaView({ id }) {
     else setCartQty(cartId, Math.min(99, next))
   }
   const addToCart = () => {
+    if (demo) return
     add({
       id: cartId,
       name: `${p.title} (${colorOf(color).name}, ${sizeLabel(size)}${logo ? ', logo bilan' : ''})`,
@@ -138,14 +145,16 @@ function FormaView({ id }) {
         <Link to={`/forma?brand=${encodeURIComponent(p.brand)}`} className="mt-2 flex w-fit items-center gap-0.5 text-[11.5px] font-bold uppercase tracking-wide text-ink">
           {p.brand} <ChevronRight className="size-3.5" />
         </Link>
-        <h1 className="mt-0.5 text-[20px] font-bold leading-tight text-[#0d2a4a]">{p.title}</h1>
+        <h1 className="mt-0.5 text-[20px] font-bold leading-tight text-[#0d2a4a]">{p.title}{demo && <DemoChip className="ml-1.5 align-middle" />}</h1>
         <div className="mt-2 flex items-center gap-2 text-[11.5px]">
           <span className="flex items-center gap-1 text-ink-2">{Number(p.reviews) > 0 ? <><Star className="size-4 fill-star text-star" /> <b className="font-semibold text-ink">{p.rating}</b> ({p.reviews} ta sharh)</> : 'Hali baho yo‘q'}</span>
-          <span className="ml-auto flex items-center gap-1 text-ink-2"><CircleCheck className="size-4 fill-ok text-white" /> Sotuvda mavjud</span>
+          {!demo && <span className="ml-auto flex items-center gap-1 text-ink-2"><CircleCheck className="size-4 fill-ok text-white" /> Sotuvda mavjud</span>}
           <span className="h-3 w-px bg-line" />
           <span className="text-muted">SKU: {sku}</span>
         </div>
       </div>
+
+      {demo && <DemoNotice className="mx-3 mt-2.5" />}
 
       {/* Tanlov */}
       <div className="mx-3 mt-2.5 rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.05)]">
@@ -227,7 +236,9 @@ function FormaView({ id }) {
 
       {/* Pastki panel */}
       <div className="fixed inset-x-0 bottom-[62px] z-30 flex items-center gap-3 border-t border-line bg-white px-3.5 py-2.5 shadow-[0_-6px_18px_rgb(11_31_58/0.06)]">
-        {inCart ? (
+        {demo ? (
+          <DemoActionBar label="Namuna mahsulot — sotuvda emas" />
+        ) : inCart ? (
           <div className="grid h-[52px] flex-1 grid-cols-2 gap-3">
             <QtyStepper big value={inCart} onDec={() => changeQty(inCart - 1)} onInc={() => changeQty(inCart + 1)} />
             <GoCartButton big />
