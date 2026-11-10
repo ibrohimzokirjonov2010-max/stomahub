@@ -13,6 +13,7 @@ import { telegramChatUrl, openExternal } from '../ustaContact'
 import { payPromo } from '../payments/paymentService'
 import { isDemoItem } from '../demoContent'
 import { DemoNotice, DemoActionBar } from '../components/DemoNotice'
+import Lightbox from '../components/Lightbox'
 
 const perks = [
   ['Sifat kafolati', '30 kun ichida qaytarish'],
@@ -40,6 +41,7 @@ export default function FormaItem() {
   const contact = useSellerContact(product?.live ? product.sellerId : null)
   const [tab, setTab] = useState('about')
   const [saved, setSaved] = useState(false)
+  const [zoom, setZoom] = useState(false)
   const [ship, setShip] = useState(false)
   const { add, items } = useCart()
   const navigate = useNavigate()
@@ -87,7 +89,7 @@ export default function FormaItem() {
 
       <div className="forma-buy">
         <div className="min-w-0">
-          <div className="grid items-start gap-3" style={{ gridTemplateColumns: '76px minmax(200px, 320px) minmax(0, 1fr)' }}>
+          <div className="grid items-start gap-3" style={{ gridTemplateColumns: '76px minmax(220px, min(520px, 48%)) minmax(0, 1fr)' }}>
             <div className="flex flex-col gap-2">
               {gallery.map((src, i) => (
                 <button key={src + i} onClick={() => setShot(i)} className={`overflow-hidden rounded-lg border ${shot === i ? 'border-sea' : 'border-transparent'}`} style={{ height: 68 }}>
@@ -95,8 +97,11 @@ export default function FormaItem() {
                 </button>
               ))}
             </div>
-            <div className="overflow-hidden rounded-2xl bg-[#f4f7fb]" style={{ height: 360 }}>
-              <img src={gallery[shot] || product.image} alt={product.title} className="size-full object-contain p-3" />
+            <div className="relative aspect-square overflow-hidden rounded-2xl bg-[#f4f7fb]">
+              <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
+                <img src={gallery[shot] || product.image} alt={product.title} className="size-full object-contain p-1" />
+              </button>
+              {gallery.length > 1 && <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{shot + 1} / {gallery.length}</span>}
             </div>
             <div className="min-w-0">
               <h1 className="text-[22px] font-extrabold leading-tight text-ink">{product.title}</h1>
@@ -168,6 +173,7 @@ export default function FormaItem() {
               </div>
             </div>
           </div>
+          {zoom && <Lightbox images={gallery} index={shot} onIndex={setShot} onClose={() => setZoom(false)} alt={product.title} />}
 
           <div className="mt-4 flex gap-1 border-b border-line">
             {[

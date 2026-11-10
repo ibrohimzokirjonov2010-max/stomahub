@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, Ruler, Leaf, WashingMachine, Truck, ShoppingCart, Send, Phone, Store,
+  ChevronRight, Star, CircleCheck, Ruler, Leaf, WashingMachine, Truck, ShoppingCart, Send, Phone, Store,
 } from 'lucide-react'
 import { getForma, allForma, similarIds, money, colorOf, sizesOf, fabrics } from '../../formaData'
 import { useMarket } from '../../buyerApi'
@@ -11,6 +11,7 @@ import { useSellerContact } from '../../lib/useSellerContact'
 import { telegramChatUrl, openExternal } from '../../ustaContact'
 import { useCart } from '../../cart'
 import { MobileToast, QtyStepper, GoCartButton } from './parts'
+import DetailHero from '../DetailHero'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
 import { defaultSize, formaCartId, sizeLabel } from './MobileForma'
@@ -49,7 +50,6 @@ function FormaView({ id }) {
   const [chart, setChart] = useState(false)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
-  const touch = useRef(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -126,30 +126,18 @@ function FormaView({ id }) {
 
   return (
     <div className="min-h-screen bg-[#f6f9fb] pb-[150px]">
-      {/* Galereya */}
-      <div
-        className="relative box-content h-[330px] overflow-hidden bg-[#f1f4f7] pt-[calc(var(--safe-top)+60px)]" data-testid="forma-hero"
-        onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
-        onTouchEnd={(e) => {
-          if (touch.current == null || n < 2) return
-          const dx = e.changedTouches[0].clientX - touch.current
-          if (Math.abs(dx) > 40) setShot((shot + (dx < 0 ? 1 : -1) + n) % n)
-          touch.current = null
-        }}
-      >
-        <img src={gallery[shot]} alt={p.title} className="size-full object-contain px-3 pb-3" />
-        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/forma'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-          <ChevronLeft className="size-5" />
-        </button>
-        <div className="safe-overlay-top absolute right-3.5 flex gap-2">
-          <button type="button" onClick={() => { setLiked(!liked); if (!liked) setToast('Sevimlilarga qo‘shildi') }} aria-label="Sevimlilarga" aria-pressed={liked} className="grid size-10 place-items-center rounded-xl bg-white/95 shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-            <Heart className={`size-5 ${liked ? 'fill-sale text-sale' : 'text-ink'}`} />
-          </button>
-          <button type="button" onClick={share} aria-label="Ulashish" className="grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-            <Share2 className="size-[18px]" />
-          </button>
-        </div>
-      </div>
+      <DetailHero
+        testId="forma-hero"
+        images={gallery}
+        index={shot}
+        onIndex={setShot}
+        alt={p.title}
+        bg="bg-[#f1f4f7]"
+        onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/forma'))}
+        liked={liked}
+        onLike={() => { setLiked(!liked); if (!liked) setToast('Sevimlilarga qo‘shildi') }}
+        onShare={share}
+      />
 
       {n > 1 && (
         <div className="grid grid-cols-4 gap-2 bg-white px-3.5 pt-2">

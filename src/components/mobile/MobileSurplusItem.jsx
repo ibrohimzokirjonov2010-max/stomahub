@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Heart, Share2, PackageCheck, CalendarDays, Box, MapPin, Star, BadgeCheck, MessageCircle,
+  ChevronRight, PackageCheck, CalendarDays, Box, MapPin, Star, BadgeCheck, MessageCircle,
   ShieldCheck, X, CalendarCheck, MessageSquare, Lock, Clock, Phone, Send,
 } from 'lucide-react'
 import { getSurplusDetail, similarFor } from '../../surplusData'
 import { som } from '../../marketData'
 import { MobileToast } from './parts'
+import DetailHero from '../DetailHero'
 import { telegramUrl } from '../../elonApi'
 import { openTelegramWithListingMessage } from '../../lib/telegramShare'
 import { condLabel, expiryLabel } from './MobileSurplus'
@@ -34,7 +35,6 @@ function SurplusView({ id }) {
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
-  const touch = useRef(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -68,34 +68,18 @@ function SurplusView({ id }) {
 
   return (
     <div className="min-h-screen bg-white pb-[150px]">
-      {/* Galereya */}
-      <div
-        className="relative box-content h-[262px] overflow-hidden bg-white pt-[calc(var(--safe-top)+60px)]"
-        onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
-        onTouchEnd={(e) => {
-          if (touch.current == null || n < 2) return
-          const dx = e.changedTouches[0].clientX - touch.current
-          if (Math.abs(dx) > 40) setShot((shot + (dx < 0 ? 1 : -1) + n) % n)
-          touch.current = null
-        }}
-      >
-        <img
-          src={shots[shot]}
-          alt={d.name}
-          className="size-full object-contain px-4 pb-3"
-        />
-        <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/ortiqcha'))} aria-label="Orqaga" className="safe-overlay-top absolute left-3.5 grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-          <ChevronLeft className="size-5" />
-        </button>
-        <div className="safe-overlay-top absolute right-3.5 flex gap-2">
-          <button type="button" onClick={() => { setLiked(!liked); if (!liked) setToast('Saqlanganlarga qo‘shildi') }} aria-label="Saqlash" aria-pressed={liked} className="grid size-10 place-items-center rounded-xl bg-white/95 shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-            <Heart className={`size-5 ${liked ? 'fill-sale text-sale' : 'text-ink'}`} />
-          </button>
-          <button type="button" onClick={share} aria-label="Ulashish" className="grid size-10 place-items-center rounded-xl bg-white/95 text-ink shadow-[0_2px_8px_rgb(11_31_58/0.12)]">
-            <Share2 className="size-[18px]" />
-          </button>
-        </div>
-      </div>
+      <DetailHero
+        testId="surplus-hero"
+        images={shots}
+        index={shot}
+        onIndex={setShot}
+        alt={d.name}
+        onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/ortiqcha'))}
+        liked={liked}
+        likeLabel="Saqlash"
+        onLike={() => { setLiked(!liked); if (!liked) setToast('Saqlanganlarga qo‘shildi') }}
+        onShare={share}
+      />
 
       {n > 1 && (
         <div className="mt-2 grid grid-cols-5 gap-2 px-3.5">
