@@ -130,6 +130,7 @@ const FormaShot = import.meta.env.DEV ? lazy(() => import('./dev/FormaShot')) : 
 const DeliveryShot = import.meta.env.DEV ? lazy(() => import('./dev/DeliveryShot')) : null
 const VakansiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/VakansiyaShot')) : null
 const AksiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/AksiyaShot')) : null
+const OrdersShot = import.meta.env.DEV ? lazy(() => import('./dev/OrdersShot')) : null
 const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
@@ -201,6 +202,7 @@ export default function App() {
           {VakansiyaShot && <Route path="/vakansiya-shot/:sec" element={<Suspense fallback={null}><VakansiyaShot /></Suspense>} />}
           {VakansiyaShot && <Route path="/vakansiya-shot/:sec/:id" element={<Suspense fallback={null}><VakansiyaShot /></Suspense>} />}
           {AksiyaShot && <Route path="/aksiya-shot/:sec" element={<Suspense fallback={null}><AksiyaShot /></Suspense>} />}
+          {OrdersShot && <Route path="/orders-shot/:view" element={<Suspense fallback={null}><OrdersShot /></Suspense>} />}
           {AksiyaShot && <Route path="/aksiya-shot/:sec/:id" element={<Suspense fallback={null}><AksiyaShot /></Suspense>} />}
           {/* DEV: rasmiylashtirish (logo bloki) skrinshoti — RequireAuth’siz, faqat lokal */}
           {import.meta.env.DEV && <Route path="/dev/rasmiylashtirish" element={<MobileCheckout />} />}
