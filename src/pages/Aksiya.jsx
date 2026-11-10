@@ -1,278 +1,81 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import {
-  ChevronLeft, ChevronRight, Clock, Heart, MapPin, RotateCcw, ShieldCheck,
-  ShoppingCart, Star, Store, Timer, Truck, Wallet, X, Zap,
-} from 'lucide-react'
-import { useCart } from '../cart'
-import { clock, getDeal, others, som, useCountdown } from '../aksiyaData'
-import { payPromo } from '../payments/paymentService'
+import { CalendarDays, ChevronRight, Store, Timer } from 'lucide-react'
+import ProductCard from '../components/market/ProductCard'
+import { useCatalogVersion } from '../recordSync'
+import { clock, getDeal, others, useCountdown } from '../aksiyaData'
+import { useMarket } from '../buyerApi'
+import { leftSeconds } from '../lib/aksiya'
+import { fmtDay, ShopDeal } from './Aksiyalar'
 
-const places = ['Toshkent, Yakkasaroy tumani', 'Toshkent, Chilonzor tumani', 'Samarqand shahri']
-
+// Aksiya sahifasi: banner, nom, sotuvchi, muddat va shu aksiyadagi REAL mahsulotlar (narx aksiya bilan).
+// Soxta yetkazish/reyting/«buyurtma qabul» oqimlari olib tashlandi — xarid mahsulot sahifasi va savat orqali.
 export default function Aksiya() {
+  useCatalogVersion()
   const { id } = useParams()
   const deal = getDeal(id)
-  const sec = useCountdown(deal?.left ?? 0)
-  const { add } = useCart()
-  const [photo, setPhoto] = useState(0)
-  const [saved, setSaved] = useState(false)
-  const [tab, setTab] = useState('tavsif')
-  const [added, setAdded] = useState(false)
-  const [bought, setBought] = useState(false)
-  const [shop, setShop] = useState(false)
-  const [place, setPlace] = useState(0)
-  const [editPlace, setEditPlace] = useState(false)
-  const [ship, setShip] = useState('std')
+  const market = useMarket()
+  const sec = useCountdown(deal?.endsOn ? leftSeconds(deal.endsOn) : 0)
+  const items = useMemo(() => {
+    if (!deal) return []
+    return market.products.filter((p) => String(p.sellerId) === String(deal.sellerId)
+      && (deal.scope === 'all' ? true : String(p.id) === String(deal.productId)))
+  }, [deal, market.products])
 
-  useEffect(() => {
-    setPhoto(0)
-    setTab('tavsif')
-    setAdded(false)
-    setBought(false)
-  }, [id])
-
-  if (!deal) return <p className="pt-6 text-[13px] text-muted">Aksiya topilmadi.</p>
-
-  const images = deal.images
-  const points = deal.points
-  const specs = deal.specs || [
-    ['Brend', deal.brand],
-    ['Chegirma', `-${deal.off}%`],
-    ['Omborda', `${deal.stock} dona`],
-    ['Kafolat', '12 oy'],
-    ['Yetkazish', '1–3 kun'],
-  ]
-  const reviews = deal.reviewList || []
-  const more = others(deal.id)
-
-  const addCart = () => {
-    add({ id: deal.id, name: deal.name, type: deal.brand, price: deal.price, image: deal.image }, 1)
-    setAdded(true)
+  if (!deal) {
+    return (
+      <div className="pb-4 pt-6 text-center">
+        <p className="text-[15px] font-bold text-ink">Aksiya topilmadi yoki muddati tugagan</p>
+        <Link to="/aksiyalar" className="mt-3 inline-flex h-10 items-center rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">Barcha aksiyalar</Link>
+      </div>
+    )
   }
+  const off = Number(deal.off || deal.percent) || 0
+  const more = others(deal.id)
+  const title = deal.title || deal.name
 
   return (
-    <div className="pb-2 pt-3">
-      <p className="mb-3 flex flex-wrap items-center gap-1 text-[12px] text-muted">
+    <div className="pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+      <p className="mb-3 flex min-w-0 flex-wrap items-center gap-1 text-[12px] text-muted">
         <Link to="/" className="hover:text-sea">Bosh sahifa</Link>
         <ChevronRight className="size-3" />
         <Link to="/aksiyalar" className="hover:text-sea">Aksiyalar</Link>
         <ChevronRight className="size-3" />
-        <span className="text-ink-2">{deal.name}</span>
+        <span className="min-w-0 truncate text-ink-2">{title}</span>
       </p>
 
-      <div className="aksiya-buy">
-        <div className="aksiya-gallery rounded-2xl bg-white p-3 shadow-card">
-          <div className="relative grid h-[280px] place-items-center overflow-hidden rounded-xl bg-[#f4f7fb]">
-            <span className="absolute left-3 top-3 rounded-lg bg-[#e85d4c] px-2 py-1 text-[12px] font-bold text-white">-{deal.off}%</span>
-            <button onClick={() => setSaved((v) => !v)} className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white text-muted shadow-card" aria-label="Saqlash">
-              <Heart className={`size-4 ${saved ? 'fill-sale text-sale' : ''}`} />
-            </button>
-            <button onClick={() => setPhoto((i) => (i + images.length - 1) % images.length)} className="absolute left-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full bg-white shadow-card" aria-label="Oldingi">
-              <ChevronLeft className="size-4" />
-            </button>
-            <img src={images[photo]} alt={deal.name} className="max-h-[250px] max-w-full object-contain" />
-            <button onClick={() => setPhoto((i) => (i + 1) % images.length)} className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full bg-white shadow-card" aria-label="Keyingi">
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-          <div className="mt-2 flex gap-2">
-            {images.map((src, i) => (
-              <button key={src} onClick={() => setPhoto(i)} className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border bg-white ${i === photo ? 'border-sea' : 'border-line'}`}>
-                <img src={src} alt="" className="max-h-12 max-w-full object-contain" />
-              </button>
-            ))}
+      <section className="overflow-hidden rounded-2xl bg-white shadow-card">
+        <div className="relative h-[170px] w-full bg-gradient-to-br from-sea to-[#0b5b66] sm:h-[240px]">
+          {deal.banner ? <img src={deal.banner} alt="" className="size-full object-cover" />
+            : <div className="grid size-full place-items-center px-6 text-center text-[24px] font-bold text-white sm:text-[30px]">{title}</div>}
+          {off > 0 && <span className="absolute left-3 top-3 rounded-lg bg-sale px-2.5 py-1 text-[14px] font-bold text-white">-{off}%</span>}
+        </div>
+        <div className="flex flex-col gap-2 p-4">
+          <span className="w-fit rounded-md bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea">{deal.scope === 'all' ? 'Do‘kondagi barcha mahsulotlarga' : 'Mahsulot aksiyasi'}</span>
+          <h1 className="break-words text-[20px] font-bold leading-tight text-ink sm:text-[24px]">{title}</h1>
+          <Link to={`/dokon/${deal.sellerId}`} className="flex w-fit items-center gap-1.5 text-[13px] font-semibold text-sea">
+            <Store className="size-4" /> {deal.seller?.name || 'Sotuvchi'} <ChevronRight className="size-3.5" />
+          </Link>
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">
+            <span className="flex items-center gap-1.5 text-ink-2"><CalendarDays className="size-4 text-sea" /> {fmtDay(deal.startsOn)} – {fmtDay(deal.endsOn)}</span>
+            {sec > 0 && <span className="flex items-center gap-1.5 rounded-lg bg-sea-50 px-2.5 py-1 font-semibold text-sea"><Timer className="size-4" /> Tugashiga: {clock(sec)}</span>}
           </div>
         </div>
+      </section>
 
-        <div className="aksiya-info min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="rounded-md bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea">Aksiya</span>
-          </div>
-          <h1 className="mt-1 text-[20px] font-bold leading-tight text-ink">{deal.name}</h1>
-          <p className="text-[13px] text-muted">{deal.brand}</p>
-          {Number(deal.reviews) > 0 && <p className="mt-1 flex items-center gap-1 text-[12.5px] text-ink-2">
-            <Stars value={deal.rating} />
-            <span className="font-semibold text-ink">{deal.rating}</span>
-            <span className="text-muted">({deal.reviews} ta sharh)</span>
-          </p>}
-          <p className="mt-3 text-[13px] text-muted line-through">{som(deal.oldPrice)}</p>
-          <div className="flex flex-wrap items-end gap-2">
-            <p className="text-[26px] font-bold leading-none text-ink">{som(deal.price)}</p>
-            <p className="text-[12.5px] font-semibold text-sea">Siz {som(deal.oldPrice - deal.price)} tejaysiz</p>
-          </div>
-          {deal.left > 0 && <div className="mt-3 flex items-center gap-2 rounded-xl bg-sea-50 px-3 py-2.5 text-[13px]">
-            <Timer className="size-4 text-sea" />
-            <span className="text-ink-2">Aksiya tugashiga:</span>
-            <span className="font-bold text-sea">{clock(sec)}</span>
-          </div>}
-          <p className="mt-3 text-[12.5px] text-muted">Soni: {deal.stock} dona</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={addCart} className="inline-flex h-11 items-center gap-2 rounded-xl bg-sea px-5 text-[13.5px] font-semibold text-white">
-              <ShoppingCart className="size-4" /> {added ? 'Savatga qo‘shildi' : 'Savatga qo‘shish'}
-            </button>
-            <button onClick={() => setBought(true)} className="inline-flex h-11 items-center gap-2 rounded-xl border border-line bg-white px-5 text-[13.5px] font-semibold text-ink">
-              <Zap className="size-4 text-sea" /> {bought ? 'Buyurtma qabul qilindi' : 'Hozir sotib olish'}
-            </button>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {[
-              [Truck, 'Tez yetkazib berish', '1–2 kun ichida'],
-              [ShieldCheck, 'Rasmiy kafolat', '12 oy'],
-              [Wallet, 'Qulay to‘lov', payPromo('Click, Payme, Uzum')],
-              [RotateCcw, '7 kun ichida qaytarish', 'Agar mos kelmasa'],
-            ].map(([Icon, title, sub]) => (
-              <div key={title} className="flex items-start gap-2 rounded-lg bg-white px-2 py-1.5">
-                <Icon className="mt-0.5 size-4 shrink-0 text-sea" />
-                <span>
-                  <span className="block text-[11.5px] font-semibold text-ink">{title}</span>
-                  <span className="block text-[10.5px] text-muted">{sub}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="mt-4">
+        <h2 className="mb-2 text-[16px] font-bold text-ink">Aksiyadagi mahsulotlar</h2>
+        {market.status === 'loading' && !items.length ? <p className="text-[13px] text-muted">Yuklanmoqda…</p>
+          : !items.length ? <p className="rounded-xl bg-white p-4 text-[13px] text-muted shadow-card">Hozircha bu aksiyada sotuvdagi mahsulot yo‘q.</p>
+          : <div className="aksiya-grid">{items.map((p) => <ProductCard key={p.id} product={p} />)}</div>}
+      </section>
 
-        <aside className="aksiya-seller flex flex-col gap-3">
-          <div className="rounded-2xl bg-white p-3.5 shadow-card">
-            <p className="text-[12px] font-semibold text-muted">Sotuvchi</p>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-full bg-sea-50 text-sea"><Store className="size-4" /></span>
-              <span>
-                <span className="block text-[13px] font-bold text-ink">{deal.seller.name}</span>
-                <span className="block text-[11px] text-sea">{deal.seller.role}</span>
-              </span>
-            </div>
-            <button onClick={() => setShop(true)} className="mt-3 flex h-9 w-full items-center justify-between rounded-lg bg-sea-50 px-3 text-[12.5px] font-semibold text-sea">
-              Do‘kon sahifasi <ChevronRight className="size-4" />
-            </button>
-            <dl className="mt-3 space-y-1.5 text-[12px]">
-              <Row k="Mahsulotlar soni" v={deal.seller.products} />
-              <Row k="Reyting" v={String(deal.seller.rating)} />
-              <Row k="Javob berish vaqti" v={deal.seller.reply} />
-            </dl>
-          </div>
-          <div className="rounded-2xl bg-white p-3.5 shadow-card">
-            <p className="text-[13px] font-bold text-ink">Yetkazib berish</p>
-            <p className="mt-2 flex items-start gap-1.5 text-[12px] text-ink-2">
-              <MapPin className="mt-0.5 size-3.5 shrink-0 text-sea" /> {places[place]}
-            </p>
-            <button onClick={() => setEditPlace((v) => !v)} className="mt-1 text-[11.5px] font-semibold text-sea">Manzilni o‘zgartirish</button>
-            {editPlace && (
-              <select value={place} onChange={(e) => setPlace(Number(e.target.value))} className="mt-2 h-8 w-full rounded-lg border border-line px-2 text-[12px]">
-                {places.map((p, i) => <option key={p} value={i}>{p}</option>)}
-              </select>
-            )}
-            <label className={`mt-3 flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-[12px] ${ship === 'std' ? 'border-sea bg-sea-50' : 'border-line'}`}>
-              <span className="flex items-center gap-2"><input type="radio" checked={ship === 'std'} onChange={() => setShip('std')} /> <span><span className="block font-semibold">Standart yetkazib berish</span><span className="text-muted">1–3 kun</span></span></span>
-              <span className="font-semibold text-sea">Bepul</span>
-            </label>
-            <label className={`mt-2 flex cursor-pointer items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-[12px] ${ship === 'exp' ? 'border-sea bg-sea-50' : 'border-line'}`}>
-              <span className="flex items-center gap-2"><input type="radio" checked={ship === 'exp'} onChange={() => setShip('exp')} /> <span><span className="block font-semibold">Ekspress yetkazib berish</span><span className="text-muted">Bugun (Toshkent)</span></span></span>
-              <span className="font-semibold">50 000 so‘m</span>
-            </label>
-          </div>
-        </aside>
-
-        <div className="aksiya-tabs rounded-2xl bg-white p-4 shadow-card">
-          <div className="flex gap-4 border-b border-line text-[13px] font-semibold">
-            {[
-              ['tavsif', 'Tavsif'],
-              ['xususiyat', 'Xususiyatlar'],
-              ['sharh', `Sharhlar (${deal.reviews})`],
-            ].map(([key, label]) => (
-              <button key={key} onClick={() => setTab(key)} className={`-mb-px border-b-2 pb-2 ${tab === key ? 'border-sea text-sea' : 'border-transparent text-muted'}`}>{label}</button>
-            ))}
-          </div>
-          {tab === 'tavsif' && (
-            <div className="pt-3">
-              <p className="text-[13px] leading-relaxed text-ink-2">{deal.about}</p>
-              <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
-                {points.map((p) => (
-                  <li key={p} className="flex gap-2 text-[12.5px] text-ink-2"><span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-sea" />{p}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {tab === 'xususiyat' && (
-            <dl className="mt-3 divide-y divide-line text-[13px]">
-              {specs.map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-3 py-2"><dt className="text-muted">{k}</dt><dd className="font-semibold text-ink">{v}</dd></div>
-              ))}
-            </dl>
-          )}
-          {tab === 'sharh' && (
-            <div className="mt-3 space-y-3">
-              {reviews.map((r) => (
-                <div key={r.name} className="rounded-xl bg-[#f7fafd] p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[13px] font-bold text-ink">{r.name} <span className="font-normal text-muted">· {r.role}</span></p>
-                    <span className="text-[11px] text-muted">{r.date}</span>
-                  </div>
-                  <Stars value={r.stars} />
-                  <p className="mt-1 text-[12.5px] text-ink-2">{r.text}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <section className="aksiya-more">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-[16px] font-bold text-ink">Boshqa aksiyalar</h2>
-            <Link to="/aksiyalar" className="text-[12.5px] font-semibold text-sea">Barchasini ko‘rish</Link>
-          </div>
-          <div className="aksiya-more-grid">
-            {more.map((d) => (
-              <Link key={d.id} to={`/aksiyalar/${d.id}`} className="min-w-0 rounded-xl bg-white p-2.5 shadow-card">
-                <div className="relative grid h-[100px] place-items-center">
-                  <span className="absolute left-0 top-0 rounded-md bg-sea px-1.5 py-0.5 text-[11px] font-bold text-white">-{d.off}%</span>
-                  <img src={d.image} alt="" className="max-h-[88px] max-w-full object-contain" />
-                </div>
-                <p className="mt-1 truncate text-[12.5px] font-bold text-ink">{d.name}</p>
-                <p className="text-[11px] text-muted">{d.brand}</p>
-                <p className="mt-1 text-[11px] text-muted line-through">{som(d.oldPrice)}</p>
-                <p className="text-[13px] font-bold text-ink">{som(d.price)}</p>
-              </Link>
-            ))}
-          </div>
+      {more.length > 0 && (
+        <section className="mt-5">
+          <h2 className="mb-2 text-[16px] font-bold text-ink">Boshqa aksiyalar</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{more.map((d) => <ShopDeal key={d.id} deal={d} compact />)}</div>
         </section>
-      </div>
-
-      {shop && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={() => setShop(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[16px] font-bold text-ink">{deal.seller.name}</p>
-                <p className="text-[12.5px] text-sea">{deal.seller.role}</p>
-              </div>
-              <button onClick={() => setShop(false)} aria-label="Yopish" className="grid size-8 place-items-center rounded-lg text-muted"><X className="size-4" /></button>
-            </div>
-            <p className="mt-3 text-[13px] text-ink-2">{places[place]}. {deal.seller.products} mahsulot, reyting {deal.seller.rating}.</p>
-            <button onClick={() => setShop(false)} className="mt-4 h-9 rounded-lg bg-sea px-4 text-[12.5px] font-semibold text-white">Yopish</button>
-          </div>
-        </div>
       )}
     </div>
-  )
-}
-
-function Row({ k, v }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <dt className="text-muted">{k}</dt>
-      <dd className="font-semibold text-ink">{v}</dd>
-    </div>
-  )
-}
-
-function Stars({ value }) {
-  return (
-    <span className="inline-flex">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className={`size-3.5 ${i <= Math.round(value) ? 'fill-[#f5b400] text-[#f5b400]' : 'text-line'}`} />
-      ))}
-    </span>
   )
 }

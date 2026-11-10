@@ -1,4 +1,5 @@
-import { tashkentToday } from '../tashkentDate'
+import { tashkentToday } from '../tashkentDate.js'
+import { promoFor, promoPrice } from './aksiya.js'
 
 // Sotuvchi chegirmalari (seller_discounts) xaridor narxiga — server (0048 buyer_create_order) bilan bir xil qoida:
 // faqat avtomatik turlar (foiz / qat’iy summa), faol, qoralama emas, promokodsiz, min_order = 0,
@@ -49,14 +50,32 @@ export function applyDiscount(product, discounts, today) {
   }
 }
 
-/** Faol sotuvchi aksiyasi (seller_promotions → deal payload) — chegirmadan arzonroq bo‘lsa qo‘llanadi. */
+/**
+ * Faol sotuvchi aksiyasi (seller_promotions → deal payload, 0047/0068) — chegirmadan arzonroq bo‘lsa qo‘llanadi.
+ * Server (0068 seller_discount_price) bilan bir xil: asl narxdan hisoblanadi, chegirma bilan qo‘shilmaydi (eng arzoni).
+ * 'all' — sotuvchining barcha mahsulotlariga foiz; mahsulot aksiyasi — narx nisbati (variantlarga ham).
+ */
 export function applyPromotion(product, promos = [], today = tashkentToday()) {
-  const d = promos.find((x) => x && String(x.productId) === String(product.id)
-    && (!x.startsOn || x.startsOn <= today) && (!x.endsOn || x.endsOn >= today))
-  const price = Number(d?.price) || 0
-  if (!d || !price || price >= product.price) return product
-  const old = Math.max(Number(product.oldPrice) || 0, Number(d.oldPrice) || 0, Number(product.price) || 0)
-  return { ...product, oldPrice: old, price, promotionId: d.id, endsOn: d.endsOn || '' }
+  const base = Number(product.discountId ? product.oldPrice : product.price) || 0
+  const d = promoFor({ ...product, basePrice: base }, promos, today)
+  if (!d) return product
+  const price = promoPrice(d, base)
+  if (!price || price >= product.price) return product
+  const old = Math.max(Number(product.oldPrice) || 0, base)
+  return {
+    ...product,
+    oldPrice: old,
+    price,
+    promotionId: d.id,
+    promotionTitle: d.title || '',
+    endsOn: d.endsOn || '',
+    variants: (product.variants || []).map((v) => {
+      const vb = Number(product.discountId ? v.oldPrice || v.price : v.price) || base
+      const vp = promoPrice(d, vb)
+      return vp < (Number(v.price) || Infinity) ? { ...v, oldPrice: vb, price: vp } : v
+    }),
+    priceTiers: (product.priceTiers || []).map((t) => ({ ...t, price: Math.min(Number(t.price) || 0, promoPrice(d, t.price)) })),
+  }
 }
 
 /** Chegirma foizi (badge uchun): -15% */

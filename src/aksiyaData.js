@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
+import { isLive, leftSeconds } from './lib/aksiya'
+import { tashkentToday } from './tashkentDate'
 
-const img = (name) => `/images/aksiyalar/${name}.jpg`
-const left = (d, h, m, s) => d * 86400 + h * 3600 + m * 60 + s
-
-export const som = (n) => `${n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
+export const som = (n) => `${Number(n || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
 
 export function useCountdown(start) {
   const [sec, setSec] = useState(start)
@@ -24,18 +23,12 @@ export function clock(sec) {
   return `${d} kun ${p(h)}:${p(m)}:${p(s)}`
 }
 
-const sellerOf = (brand) => ({
-  name: brand ? `${brand}` : 'Sotuvchi',
-  role: 'Sotuvchi',
-  products: '0',
-  rating: 0,
-  reply: '',
-  address: '',
-})
+// Real sotuvchi aksiyalari (catalog_items kind='deal', 0047/0068 trigger yozadi). Demo/soxta aksiya yo‘q.
+export const deals = []
 
-export const deals = [].map((d) => ({ ...d, seller: d.seller || sellerOf(d.brand), images: d.images || [d.image] }))
-
-export const getCatalog = () => deals.filter((d) => d.list !== false)
-export const catalog = getCatalog() // initial; prefer getCatalog() after loadCatalog
-export const getDeal = (id) => deals.find((d) => d.id === id)
+/** Faqat hozir amaldagi aksiyalar (muddati o‘tganlari avtomatik yashiriladi); qolgan vaqt endsOn dan hisoblanadi. */
+export const getCatalog = (today = tashkentToday()) => deals
+  .filter((d) => d && d.list !== false && isLive(d, today))
+  .map((d) => ({ ...d, left: d.endsOn ? leftSeconds(d.endsOn) : 0 }))
+export const getDeal = (id) => getCatalog().find((d) => d.id === id)
 export const others = (id) => getCatalog().filter((d) => d.id !== id).slice(0, 4)
