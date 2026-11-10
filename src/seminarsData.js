@@ -131,6 +131,10 @@ export function buildSeminarPage(s) {
     avatar: realAvatar(s.speaker?.avatar),
     rating: Number(s.speaker?.rating) || 0,
     reviews: Number(s.speaker?.reviews) || 0,
+    bio: s.speaker?.bio || s.speakers?.[0]?.bio || '',
+    userId: s.speaker?.userId || s.speakers?.[0]?.userId || '',
+    doctorId: s.speaker?.doctorId || s.speakers?.[0]?.doctorId || '',
+    profileId: s.speaker?.profileId || s.speakers?.[0]?.profileId || '',
     lines: s.organizer
       ? [
           s.speaker?.degree,

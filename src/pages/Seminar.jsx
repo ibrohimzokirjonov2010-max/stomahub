@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CONTACT_PHONE, CONTACT_PHONE_TEL } from '../config/contact'
 import {
   ChevronRight, ChevronDown, CalendarDays, MapPin, Users, Award, Hand, Video, MessagesSquare, BookOpen, UsersRound,
@@ -15,6 +15,10 @@ import { formatPhone, telegramHandle } from '../seminarAddress'
 import { dateRangeLabel } from '../programDays'
 import { IMG } from '../organizer/data'
 import { useSession } from '../sessionStore'
+import PhotoLightbox from '../components/Lightbox'
+import SpeakerProfileSheet from '../components/SpeakerProfileSheet'
+import { findSpeakerDoctorHref, seminarsBySpeaker } from '../seminarSpeaker'
+import { DOCTORS } from '../mutaxassislarData'
 
 const PLACEHOLDERS = new Set(Object.values(IMG))
 
@@ -156,6 +160,9 @@ export function SeminarView({ d, similar = null, preview = false }) {
   const [shot, setShot] = useState(null)
   const [note, setNote] = useState(null)
   const [corp, setCorp] = useState(false)
+  const [speakerOpen, setSpeakerOpen] = useState(false)
+  const navigate = useNavigate()
+  const hub = useHub()
   const v = detail(d)
   if (similar) v.similar = similar
   if (preview) v.similar = []
@@ -171,6 +178,13 @@ export function SeminarView({ d, similar = null, preview = false }) {
   const sp = d.organizer ? (d.speakersAll || [])[0] : null
   const spCerts = splitList(sp?.certs)
   const others = v.speakers
+  const speakerPerson = { ...(d.speakersAll?.[0] || {}), ...(v.speaker || {}), ...(sp || {}) }
+  const speakerHref = findSpeakerDoctorHref(speakerPerson, DOCTORS)
+  const speakerOthers = seminarsBySpeaker(publicRecords(hub), speakerPerson.name, d.id)
+  const openSpeaker = () => {
+    if (speakerHref) navigate(speakerHref)
+    else setSpeakerOpen(true)
+  }
   const pr = d.practiceRaw
   const tiles = [
     pr && KIND_TILE[pr.kind] && [Box, ...KIND_TILE[pr.kind]],
@@ -321,6 +335,9 @@ export function SeminarView({ d, similar = null, preview = false }) {
 
         {!d.noSpeaker && (
           <Card id="speaker" icon={UserRound} title={`Spiker — ${v.speaker.name}`} className="@[760px]:col-span-2">
+            <button type="button" onClick={openSpeaker} className="mb-3 flex w-full items-center justify-between gap-2 rounded-xl bg-sea-50 px-3 py-2 text-left text-[13px] font-semibold text-sea">
+              Ma’ruzachi profilini ochish <ChevronRight className="size-4 shrink-0" />
+            </button>
             <div className="grid gap-4 @[640px]:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)]">
               <div className="flex min-w-0 gap-3">
                 {v.speaker.avatar ? <img src={v.speaker.avatar} alt="" className="size-24 shrink-0 rounded-xl object-cover" /> : <span className="grid size-24 shrink-0 place-items-center rounded-xl bg-sea-50 text-[32px] font-bold text-sea">{(v.speaker.name || '?').slice(0, 1)}</span>}
@@ -457,7 +474,14 @@ export function SeminarView({ d, similar = null, preview = false }) {
         </div>
       </div>}
 
-      {shot !== null && <Lightbox trailer={!v.organizer} images={v.gallery} index={shot} onIndex={setShot} onClose={() => setShot(null)} />}
+      {shot !== null && <PhotoLightbox images={v.gallery} index={shot} onIndex={setShot} onClose={() => setShot(null)} alt="Galereya" />}
+      {speakerOpen && (
+        <SpeakerProfileSheet
+          speaker={{ ...speakerPerson, lines: v.speaker?.lines || [] }}
+          others={speakerOthers}
+          onClose={() => setSpeakerOpen(false)}
+        />
+      )}
       {note && <Dialog title={NOTES[note][0]} onClose={() => setNote(null)}><p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-2">{note === 'refund' && v.refundPolicy ? v.refundPolicy : NOTES[note][1]}</p></Dialog>}
       {corp && <Corporate title={v.title} onClose={() => setCorp(false)} />}
     </div>

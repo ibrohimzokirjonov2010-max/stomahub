@@ -5,7 +5,7 @@ import {
   LayoutGrid, ListChecks, Target, Layers, MessageCircle, BookOpen, Users, Gift, RotateCcw, Send, Phone, FileText, CreditCard, BadgeCheck, User, Clock, Award, Package, Pencil,
 } from 'lucide-react'
 import { buildSeminarPage, som } from '../../seminarsData'
-import { publicRecord, useHub } from '../../hubStore'
+import { publicRecord, publicRecords, useHub } from '../../hubStore'
 import { detail } from '../../pages/Seminar'
 import { dateRangeLabel, dayCount } from '../../programDays'
 import { IMG } from '../../organizer/data'
@@ -13,6 +13,10 @@ import { splitAddress, joinAddress, telegramHandle, formatPhone } from '../../se
 import { MobileToast } from './parts'
 import { useSeminarStore, toggleSaved } from './seminarStore'
 import { useSession } from '../../sessionStore'
+import Lightbox from '../Lightbox'
+import SpeakerProfileSheet from '../SpeakerProfileSheet'
+import { findSpeakerDoctorHref, seminarsBySpeaker } from '../../seminarSpeaker'
+import { DOCTORS } from '../../mutaxassislarData'
 
 const PLACEHOLDERS = new Set(Object.values(IMG))
 const TEAL = '#0F766E'
@@ -59,6 +63,8 @@ function Page({ id }) {
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
   const [tab, setTab] = useState('about')
+  const [shot, setShot] = useState(null)
+  const [speakerOpen, setSpeakerOpen] = useState(false)
   const refs = useRef({})
   const tabsRef = useRef(null)
 
@@ -108,6 +114,13 @@ function Page({ id }) {
   const timeLine = rec.time ? `${rec.time}${rec.hours ? ` · ${rec.hours}` : ''}` : ''
   const spLines = (d.speaker?.lines || []).filter(Boolean)
   const bring = rec.bring || []
+  const rawSpeaker = rec.speakers?.[0] || rec.speaker || sp
+  const speakerHref = findSpeakerDoctorHref({ ...rawSpeaker, ...sp }, DOCTORS)
+  const speakerOthers = seminarsBySpeaker(publicRecords(hub), sp?.name, rec.id)
+  const openSpeaker = () => {
+    if (speakerHref) navigate(speakerHref)
+    else setSpeakerOpen(true)
+  }
 
   const tabs = [
     ['about', 'Umumiy', LayoutGrid, true],
@@ -181,7 +194,7 @@ function Page({ id }) {
 
       {/* Ma’ruzachi */}
       {sp && (
-        <section className="mx-3 mt-3 flex items-center gap-3 rounded-2xl bg-white p-3.5">
+        <button type="button" onClick={openSpeaker} className="mx-3 mt-3 flex w-[calc(100%-1.5rem)] items-center gap-3 rounded-2xl bg-white p-3.5 text-left">
           {sp.avatar ? <img src={sp.avatar} alt="" className="size-16 shrink-0 rounded-full object-cover" /> : <span className="grid size-16 shrink-0 place-items-center rounded-full bg-[#CCFBF1] text-[#0F766E]"><User className="size-8" /></span>}
           <div className="min-w-0 flex-1">
             <p className="text-[13px] text-[#0F766E]">Ma’ruzachi</p>
@@ -190,7 +203,8 @@ function Page({ id }) {
             {spLines.length > 0 && <p className="mt-0.5 text-[13px] text-[#115E59]/80">{spLines.join(' · ')}</p>}
             {sp.bio && <p className="mt-0.5 line-clamp-2 text-[13px] text-[#115E59]/80">{sp.bio}</p>}
           </div>
-        </section>
+          <ChevronRight className="size-5 shrink-0 text-[#0F766E]" aria-hidden />
+        </button>
       )}
 
       {/* Kursdan lavhalar — faqat yuklangan rasmlar */}
@@ -198,7 +212,11 @@ function Page({ id }) {
         <section className="mt-3">
           <h2 className="px-4 text-[17px] font-bold text-[#115E59]">Kursdan lavhalar</h2>
           <div className="no-scrollbar mt-2 flex snap-x gap-2 overflow-x-auto px-3">
-            {gallery.map((g) => <img key={g} src={g} alt="" loading="lazy" className="h-28 w-40 shrink-0 snap-start rounded-xl object-cover" />)}
+            {gallery.map((g, i) => (
+              <button key={g} type="button" onClick={() => setShot(i)} aria-label={`Rasm ${i + 1}`} className="h-28 w-40 shrink-0 snap-start overflow-hidden rounded-xl">
+                <img src={g} alt="" loading="lazy" className="size-full object-cover" />
+              </button>
+            ))}
           </div>
         </section>
       )}
@@ -352,6 +370,16 @@ function Page({ id }) {
       </div>
 
       <MobileToast text={toast} onClose={closeToast} />
+      {shot != null && gallery.length > 0 && (
+        <Lightbox images={gallery} index={shot} onIndex={setShot} onClose={() => setShot(null)} alt="Kursdan lavhalar" />
+      )}
+      {speakerOpen && (
+        <SpeakerProfileSheet
+          speaker={{ ...rawSpeaker, ...sp, lines: spLines }}
+          others={speakerOthers}
+          onClose={() => setSpeakerOpen(false)}
+        />
+      )}
     </div>
   )
 }
