@@ -48,7 +48,8 @@ test('desktop product, forma and surplus galleries are square and not cropped', 
 })
 
 test('listing cards keep their own image frames', () => {
-  assert.match(read('src/components/market/ProductCard.jsx'), /h-\[66px\] overflow-hidden/)
+  assert.match(read('src/components/market/ProductCard.jsx'), /aspect-square overflow-hidden/)
+  assert.match(read('src/components/market/ProductCard.jsx'), /object-contain/)
   assert.match(read('src/components/mobile/MobileMarketplace.jsx'), /h-\[118px\] overflow-hidden rounded-xl/)
   assert.match(read('src/components/mobile/MobileForma.jsx'), /h-\[150px\] bg-\[#eef3f6\]/)
   assert.match(read('src/components/mobile/MobileSurplus.jsx'), /h-\[112px\] overflow-hidden rounded-xl/)

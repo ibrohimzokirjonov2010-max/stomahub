@@ -52,11 +52,11 @@ function ProductTabBody({ t, p }) {
   if (!t) return null
   return (
     <div className="lg:col-span-3">
-      {t.text && <p className="whitespace-pre-line text-[10px] leading-[1.6] text-ink-2">{t.text}</p>}
+      {t.text && <p className="whitespace-pre-line text-[13.5px] leading-[1.6] text-ink-2">{t.text}</p>}
       {t.rows?.length > 0 && (
-        <dl className={`${t.text ? 'mt-3' : ''} max-w-[560px]`}>
+        <dl className={`${t.text ? 'mt-3' : ''} max-w-[640px]`}>
           {t.rows.map(([k, v, url], i) => (
-            <div key={`${k}-${i}`} className="grid grid-cols-2 border-b border-line/70 py-[4px] text-[9.5px] last:border-0">
+            <div key={`${k}-${i}`} className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-2 border-b border-line/70 py-2 text-[13px] last:border-0">
               <dt className="text-muted">{k}</dt>
               <dd className="text-ink">{url ? <a href={url} target="_blank" rel="noreferrer" className="text-sea hover:underline">{v}</a> : v}</dd>
             </div>
@@ -74,7 +74,8 @@ function ProductBody({ p }) {
   const block = purchaseBlock(p, { uid, verified })
   const rxBlocked = block?.code === 'rx'
   const id = p.id
-  const similarProducts = similarTo(p)
+  const fromSeller = marketProducts.filter((x) => p.sellerId && x.sellerId === p.sellerId && x.id !== p.id).slice(0, 8)
+  const similarProducts = similarTo(p, 8).filter((s) => !fromSeller.some((x) => x.id === s.id))
   useTrackView(p)
   const [reviews, setReviews] = useState([])
   useEffect(() => {
@@ -98,15 +99,13 @@ function ProductBody({ p }) {
     { icon: MapPinned, label: 'Sotuvchi', value: p.seller || '—' },
     { icon: Truck, label: 'To‘lov', value: 'Naqd, yetkazishda' },
   ]
-  // Only tabs the seller actually filled are shown (no "ma’lumot qo‘shmagan" placeholders).
   const tabs = productTabs(p)
+  const activeTab = tabs[tab] || tabs[0]
+  const qty = Math.min(Math.max(1, minQty), Math.max(p.stock, 1))
 
   return (
-    <div className="pb-6 pt-2.5 lg:pl-1.5">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_278px] xl:gap-x-4">
-      <div className="min-w-0">
-      {/* Breadcrumb */}
-      <nav className="flex flex-wrap items-center gap-1.5 text-[10px] text-muted">
+    <div className="mx-auto w-full max-w-[1720px] pb-8 pt-3">
+      <nav className="flex flex-wrap items-center gap-1.5 text-[12px] text-muted">
         {['Marketplace', p.category || 'Mahsulot'].map((c) => (
           <span key={c} className="flex items-center gap-1.5">
             <Link to="/marketplace" className="hover:text-sea">{c}</Link> <ChevronRight className="size-3" />
@@ -115,9 +114,8 @@ function ProductBody({ p }) {
         <span className="font-medium text-ink">{p.name}</span>
       </nav>
 
-      <div className="mt-2.5 grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] xl:gap-x-6">
-        {/* Galereya */}
-        <div>
+      <div className="product-stage mt-3">
+        <div className="product-gallery mx-auto w-full max-w-[440px]">
           <div className="relative aspect-square overflow-hidden rounded-xl bg-[#eef3f8]">
             <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
               <img src={p.images[img]} alt={p.name} className="size-full object-contain p-1" />
@@ -126,211 +124,204 @@ function ProductBody({ p }) {
             {n > 1 && <GalleryArrow side="left" onClick={() => setImg((img - 1 + n) % n)} />}
             {n > 1 && <GalleryArrow side="right" onClick={() => setImg((img + 1) % n)} />}
           </div>
-          <div className={`no-scrollbar mt-2.5 flex gap-2 overflow-x-auto ${n > 1 ? '' : 'hidden'}`}>
+          <div className={`no-scrollbar mt-2.5 grid grid-cols-5 gap-2 ${n > 1 ? '' : 'hidden'}`}>
             {p.images.map((t, i) => (
               <button
                 key={`${i}-${t}`}
                 type="button"
                 aria-label={`Rasm ${i + 1}`}
                 onClick={() => setImg(i)}
-                className={`aspect-[70/55] w-[calc((100%-2rem)/5)] shrink-0 overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
+                className={`aspect-square overflow-hidden rounded-lg bg-white ${i === img ? 'ring-2 ring-sea' : 'ring-1 ring-line hover:ring-sea/50'}`}
               >
                 <img src={t} alt={`${p.name} — rasm ${i + 1}`} className="size-full object-contain p-1" />
               </button>
             ))}
           </div>
+          {zoom && <Lightbox images={p.images} index={img} onIndex={setImg} onClose={() => setZoom(false)} alt={p.name} />}
         </div>
 
-        {zoom && <Lightbox images={p.images} index={img} onIndex={setImg} onClose={() => setZoom(false)} alt={p.name} />}
+        <div className="product-info min-w-0">
+          <p className="text-[13px] font-semibold text-sea">{p.brand}</p>
+          <h1 className="mt-1 text-[26px] font-extrabold leading-tight tracking-tight text-ink">{p.name}</h1>
+          {p.type && <p className="mt-1 text-[14px] text-muted">{p.type}</p>}
+          {p.short && p.short !== p.description && <p className="mt-2 text-[13.5px] leading-relaxed text-ink-2">{p.short}</p>}
 
-        {/* Ma'lumot */}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[12.5px] text-ink-2">{p.brand}</span>
-          </div>
-          <h1 className="mt-1 text-[25px] font-extrabold leading-tight tracking-tight text-ink">{p.name}</h1>
-          <p className="text-[15px] text-muted">{p.type}</p>
-          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-ink-2">
-            {p.brand || p.category}
-          </div>
-          <p className="mt-2.5 text-[9.5px] leading-[1.6] text-ink-2">{p.short}</p>
-
-          <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-3.5 rounded-xl bg-white p-3 shadow-card sm:grid-cols-3">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             {facts.map(({ icon: Icon, label, value, ok }) => (
-              <div key={label} className="flex gap-2">
-                <Icon className="mt-0.5 size-[17px] shrink-0 text-ink-2" strokeWidth={1.5} />
-                <div className="leading-tight">
-                  <p className="whitespace-nowrap text-[8.5px] text-muted">{label}</p>
-                  <p className={`mt-1 whitespace-nowrap text-[10px] font-medium ${ok ? 'text-ok' : 'text-ink'}`}>{value}</p>
+              <div key={label} className="flex gap-2 rounded-xl bg-white px-3 py-2.5 shadow-card">
+                <Icon className="mt-0.5 size-4 shrink-0 text-sea" strokeWidth={1.7} />
+                <div className="min-w-0 leading-tight">
+                  <p className="text-[11px] text-muted">{label}</p>
+                  <p className={`mt-0.5 truncate text-[13px] font-semibold ${ok ? 'text-ok' : 'text-ink'}`}>{value}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {(Array.isArray(p.documents) ? p.documents : []).filter((d) => d?.url).map((d) => [d.name || 'Hujjat', d.size || '', d.url]).map(([t, s, url]) => (
-              <div key={t} className="flex items-center gap-2.5 rounded-xl bg-white p-3 shadow-card">
-                <FileText className="size-[22px] shrink-0 text-sale" strokeWidth={1.5} />
-                <div className="flex-1 leading-tight">
-                  <p className="whitespace-nowrap text-[10px] font-medium text-ink">{t}</p>
-                  <p className="mt-0.5 text-[8.5px] text-muted">{s}</p>
+          {(Array.isArray(p.documents) ? p.documents : []).some((d) => d?.url) && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {(p.documents || []).filter((d) => d?.url).map((d) => (
+                <div key={d.url} className="flex items-center gap-2.5 rounded-xl bg-white p-3 shadow-card">
+                  <FileText className="size-5 shrink-0 text-sale" strokeWidth={1.5} />
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <p className="truncate text-[13px] font-medium text-ink">{d.name || 'Hujjat'}</p>
+                    {d.size && <p className="mt-0.5 text-[11px] text-muted">{d.size}</p>}
+                  </div>
+                  <a href={d.url} target="_blank" rel="noreferrer" className="rounded-md bg-sea-50 px-2 py-1 text-[12px] font-semibold text-sea-600 hover:bg-sea-100">Yuklash</a>
                 </div>
-                <a href={url} target="_blank" rel="noreferrer" className="rounded-md bg-sea-50 px-2 py-1 text-[9px] font-semibold text-sea-600 hover:bg-sea-100">Yuklash</a>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 rounded-2xl bg-white p-4 shadow-card">
+            <div className="flex gap-1 overflow-x-auto border-b border-line no-scrollbar">
+              {tabs.map((t, i) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTab(i)}
+                  className={`relative shrink-0 px-3 pb-2 pt-1 text-[13px] ${i === tab ? 'font-semibold text-ink after:absolute after:inset-x-2 after:bottom-0 after:h-[2px] after:rounded-full after:bg-sea' : 'text-ink-2 hover:text-sea'}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="pt-3">
+              {activeTab?.key !== 'tavsif' ? (
+                <ProductTabBody t={activeTab} p={p} />
+              ) : (
+                <div>
+                  <p className="text-[13.5px] leading-[1.65] text-ink-2">{p.description}</p>
+                  {p.features?.length > 0 && (
+                    <ul className="mt-3 space-y-1.5">
+                      {p.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-[13px] text-ink">
+                          <CircleCheck className="mt-0.5 size-4 shrink-0 fill-[#3d8fe0] text-white" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {p.specs?.length > 0 && (
+                    <dl className="mt-4">
+                      <p className="mb-1 text-[13px] font-bold text-ink">Asosiy xususiyatlar</p>
+                      {p.specs.map(([k, v]) => (
+                        <div key={k} className="grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-2 border-b border-line/70 py-2 text-[13px] last:border-0">
+                          <dt className="text-muted">{k}</dt>
+                          <dd className="font-medium text-ink">{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
+          <section id="product-reviews" className="mt-4 rounded-2xl bg-white p-4 shadow-card">
+            <h2 className="text-[16px] font-bold text-ink">Sharhlar{reviews.length ? ` (${reviews.length})` : ''}</h2>
+            <div className="mt-2">
+              <ReviewList
+                reviews={reviews}
+                emptyTitle="Hozircha sharhlar yo‘q"
+                emptyText="Yetkazilgan buyurtmani baholagan xaridorlarning fikrlari shu yerda chiqadi."
+                className="!border-0 !shadow-none !px-0"
+              />
+            </div>
+          </section>
+
+          <RelatedGrid title="Shu sotuvchidan" href={p.sellerId ? `/dokon/${p.sellerId}` : '/marketplace'} linkLabel="Do‘kon" items={fromSeller} />
+          <RelatedGrid title="O‘xshash mahsulotlar" href="/marketplace" linkLabel="Barchasini ko‘rish" items={similarProducts} />
         </div>
 
-      </div>
-      </div>
-
-        {/* Xarid bloki */}
-        <aside className="h-fit rounded-xl bg-white p-3.5 shadow-card xl:mt-1">
-          <div className="flex items-start justify-between">
-            <div>
+        <aside className="product-aside h-fit rounded-2xl bg-white p-4 shadow-card">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
               <SaleBadge badge={p.badge} className="-ml-1 rounded-sm" />
-              <p className="mt-1 text-[23px] font-extrabold leading-none tracking-tight text-ink">{som(p.price)}{p.uom && p.uom !== 'dona' && <span className="ml-1 text-[11px] font-medium text-muted">/ {p.uom}</span>}</p>
+              <p className="mt-1 text-[26px] font-extrabold leading-none tracking-tight text-ink">{som(p.price)}{p.uom && p.uom !== 'dona' && <span className="ml-1 text-[13px] font-medium text-muted">/ {p.uom}</span>}</p>
               {(minQty > 1 || p.priceTiers?.length > 0) && (
-                <p className="mt-1 text-[10px] text-ink-2">
+                <p className="mt-2 text-[12px] leading-snug text-ink-2">
                   {minQty > 1 && <>Minimal buyurtma: <b>{minQty} {p.uom || 'dona'}</b></>}
-                  {p.priceTiers?.map((t) => <span key={t.min_qty} className="ml-2 rounded bg-sea-50 px-1.5 py-0.5 text-sea-600">{t.min_qty}+ — {som(t.price)}</span>)}
+                  {p.priceTiers?.map((t) => <span key={t.min_qty} className="ml-2 inline-block rounded bg-sea-50 px-1.5 py-0.5 text-sea-600">{t.min_qty}+ — {som(t.price)}</span>)}
                 </p>
               )}
               {p.oldPrice > p.price && (
-                <p className="mt-2 flex gap-3 text-[9.5px]">
+                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px]">
                   <span className="text-muted line-through">{som(p.oldPrice)}</span>
                   <span className="font-medium text-sea">Tejaysiz: {som(p.oldPrice - p.price)}</span>
                 </p>
               )}
             </div>
-            <LikeButton productId={p.id} className="size-7 bg-[#f3f6fa]" />
+            <LikeButton productId={p.id} className="size-8 bg-[#f3f6fa]" />
           </div>
 
-          <p className="mt-3 text-[10px] text-muted">{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</p>
+          <p className={`mt-3 text-[13px] font-semibold ${p.stock > 0 ? 'text-ok' : 'text-sale'}`}>{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</p>
 
           {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : block?.code === 'own' ? <BlockNotice className="mt-2.5" text={block.text} /> : <>
           <button
-            disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(Math.max(1, minQty), Math.max(p.stock, 1)))}
-            className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, qty)}
+            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white transition hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ShoppingCart className="size-4" /> {p.stock < 1 ? 'Tugagan' : 'Savatga qo‘shish'}
           </button>
-          <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, Math.min(Math.max(1, minQty), Math.max(p.stock, 1)), 'market')} className="mt-2 h-[32px] w-full rounded-lg border border-sea-100 bg-sea-50 text-[11px] font-semibold text-sea-600 transition hover:bg-sea-100">
+          <button disabled={p.stock < 1} onClick={() => goBuyNow(navigate, { ...p, image: p.thumbs[0] }, qty, 'market')} className="mt-2 h-11 w-full rounded-xl border border-sea-100 bg-sea-50 text-[13.5px] font-semibold text-sea-600 transition hover:bg-sea-100">
             Hozir xarid qilish
           </button>
           </>}
 
-          <Link to={p.sellerId ? `/dokon/${p.sellerId}` : '/marketplace'} className="mt-3 flex gap-3 rounded-lg border-t border-line pt-3 hover:bg-[#f6faf9]">
-            <div className="grid size-[48px] shrink-0 place-items-center rounded-full bg-white shadow-card ring-1 ring-line">
-              <div className="text-center leading-none text-sea">
-                <ToothIcon className="mx-auto size-[18px]" strokeWidth={2} />
-                <p className="mt-0.5 text-[7px] font-bold text-ink">StomaHub</p>
-              </div>
+          <Link to={p.sellerId ? `/dokon/${p.sellerId}` : '/marketplace'} className="mt-4 flex gap-3 rounded-xl border border-line p-3 hover:bg-[#f6faf9]">
+            <div className="grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-card ring-1 ring-line">
+              <ToothIcon className="size-5 text-sea" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1 text-[10.5px] font-bold text-ink">
+              <p className="flex items-center gap-1 text-[13px] font-bold text-ink">
                 {p.seller || 'Sotuvchi'} <BadgeCheck className="size-3.5 fill-[#1a73e8] text-white" />
               </p>
-              <p className="mt-0.5 flex items-center gap-1 text-[9px] text-ink-2">
-                <Package className="size-[10px]" /> {marketCount(p.sellerId)} ta mahsulot sotuvda
+              <p className="mt-0.5 flex items-center gap-1 text-[12px] text-ink-2">
+                <Package className="size-3.5" /> {marketCount(p.sellerId)} ta mahsulot sotuvda
               </p>
-              <p className="mt-1 text-[10px] font-semibold text-sea">Do‘konni ko‘rish →</p>
+              <p className="mt-1 text-[12.5px] font-semibold text-sea">Do‘konni ko‘rish →</p>
             </div>
           </Link>
         </aside>
       </div>
 
-      {/* Tablar */}
-      <div className="relative mt-4 flex gap-1 overflow-x-auto no-scrollbar">
-        {tabs.map((t, i) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(i)}
-            className={`relative shrink-0 rounded-t-lg px-3.5 pb-1.5 pt-1 text-[10.5px] transition ${
-              i === tab ? 'bg-sea-50 font-semibold text-ink after:absolute after:inset-x-1.5 after:bottom-0 after:h-[2px] after:rounded-full after:bg-sea' : 'text-ink-2 hover:text-sea'
-            } ${i === 0 ? 'ml-2' : 'sm:ml-5'}`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="catalog-frame">
+        <BirgaOlishadi product={p} desktop />
       </div>
-      <div className="grid gap-5 rounded-xl bg-white p-3.5 shadow-card lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.85fr)_240px]">
-        {tabs[tab]?.key !== 'tavsif' ? (
-          <ProductTabBody t={tabs[tab]} p={p} />
-        ) : (
-          <>
-            <div>
-              <p className="text-[10px] leading-[1.6] text-ink-2">{p.description}</p>
-              <ul className="mt-2 space-y-1.5">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-[9.5px] text-ink">
-                    <CircleCheck className="size-[13px] fill-[#3d8fe0] text-white" /> {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-1 text-[9.5px] font-bold text-ink">Asosiy xususiyatlar</p>
-              <dl>
-                {p.specs.map(([k, v]) => (
-                  <div key={k} className="grid grid-cols-2 border-b border-line/70 py-[3px] text-[8.5px] last:border-0">
-                    <dt className="text-muted">{k}</dt>
-                    <dd className="text-ink">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            <img src="/images/market/tooth.jpg" alt="" className="hidden h-[128px] w-full rounded-lg object-cover lg:block" />
-          </>
-        )}
+    </div>
+  )
+}
+
+function RelatedGrid({ title, href, linkLabel, items }) {
+  if (!items?.length) return null
+  return (
+    <section className="mt-6">
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <h2 className="text-[16px] font-bold text-ink">{title}</h2>
+        <Link to={href} className="flex items-center gap-1 text-[13px] font-semibold text-sea hover:underline">{linkLabel} <ArrowRight className="size-3.5" /></Link>
       </div>
-
-      <section id="product-reviews" className="mt-4 rounded-xl bg-white p-3.5 shadow-card">
-        <h2 className="text-[14px] font-bold text-ink">Sharhlar{reviews.length ? ` (${reviews.length})` : ''}</h2>
-        <div className="mt-1">
-          <ReviewList
-            reviews={reviews}
-            emptyTitle="Hozircha sharhlar yo‘q"
-            emptyText="Yetkazilgan buyurtmani baholagan xaridorlarning fikrlari shu yerda chiqadi."
-            className="!border-0 !shadow-none !px-0"
-          />
-        </div>
-      </section>
-
-      <BirgaOlishadi product={p} desktop />
-
-      {/* O'xshash mahsulotlar */}
-      <div className="mb-2 mt-4 flex items-center justify-between">
-        <h2 className="text-[13px] font-bold text-ink">O‘xshash mahsulotlar</h2>
-        <Link to="/marketplace" className="flex items-center gap-1.5 text-[9px] font-medium text-sea hover:underline">
-          Barchasini ko‘rish <ArrowRight className="size-3" />
-        </Link>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {similarProducts.map((s) => (
-          <div key={s.id} className="relative flex gap-2 rounded-xl bg-white p-2.5 shadow-card">
-            <SaleBadge badge={s.badge} className="absolute left-2 top-2 z-10" />
-            <img src={s.image} alt={s.name} className="h-[88px] w-[38%] shrink-0 object-contain" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between">
-                <p className="truncate text-[10px] font-bold text-ink">{s.name}</p>
-                <LikeButton productId={s.id} className="-mr-1 -mt-1" />
-              </div>
-              <p className="text-[9.5px] text-ink-2">{s.type}</p>
-              <p className="text-[8.5px] text-muted">{s.brand}</p>
-              
-              <div className="mt-1 flex items-end justify-between">
-                <div className="leading-tight">
-                  {s.oldPrice && <p className="text-[8.5px] text-muted line-through">{som(s.oldPrice)}</p>}
-                  <p className={`whitespace-nowrap text-[11.5px] font-bold ${s.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(s.price)}</p>
+      <div className="product-rail">
+        {items.map((s) => (
+          <div key={s.id} className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-white shadow-card">
+            <Link to={`/product/${s.id}`} className="relative block aspect-square bg-[#eef3f6]">
+              {s.badge && <SaleBadge badge={s.badge} className="absolute left-2 top-2 z-10" />}
+              <img src={s.image} alt={s.name} className="size-full object-contain p-3" />
+            </Link>
+            <div className="flex flex-1 flex-col p-2.5">
+              <Link to={`/product/${s.id}`} className="line-clamp-2 text-[13px] font-bold leading-snug text-ink">{s.name}</Link>
+              <p className="mt-0.5 truncate text-[12px] text-muted">{[s.brand, s.type].filter(Boolean).join(' · ')}</p>
+              <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+                <div className="min-w-0 leading-tight">
+                  {s.oldPrice > s.price && <p className="text-[11px] text-muted line-through">{som(s.oldPrice)}</p>}
+                  <p className={`text-[14px] font-extrabold ${s.oldPrice > s.price ? 'text-sale' : 'text-sea-600'}`}>{som(s.price)}</p>
                 </div>
-                <AddButton product={s} className="w-[34px]" />
+                <AddButton product={s} />
               </div>
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -344,19 +335,9 @@ function GalleryArrow({ side, onClick }) {
     <button
       onClick={onClick}
       aria-label={side === 'left' ? 'Oldingi' : 'Keyingi'}
-      className={`absolute top-1/2 grid size-[26px] -translate-y-1/2 place-items-center rounded-full bg-white/95 text-ink shadow-md transition hover:bg-white ${side === 'left' ? 'left-2.5' : 'right-2.5'}`}
+      className={`absolute top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-ink shadow-md transition hover:bg-white ${side === 'left' ? 'left-2.5' : 'right-2.5'}`}
     >
       <Icon className="size-4" />
     </button>
-  )
-}
-
-function Stars({ value }) {
-  return (
-    <span className="flex">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className={`size-[11px] ${i <= Math.round(value - 0.3) ? 'fill-star text-star' : 'fill-star/40 text-star/40'}`} />
-      ))}
-    </span>
   )
 }

@@ -66,8 +66,8 @@ export default function ProductCard({ product }) {
       <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />
       <LikeButton productId={product.id} className="absolute right-1.5 top-1.5 z-10" />
       {!p.badge && offPercent(p) > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[9px] font-bold text-white">-{offPercent(p)}%</span>}
-      <div className="mt-3 h-[66px] overflow-hidden">
-        <img src={p.image} alt={p.name} className="mx-auto h-full object-contain transition group-hover:scale-105" />
+      <div className="mt-3 aspect-square overflow-hidden rounded-lg bg-[#f4f7fb]">
+        <img src={p.image} alt={p.name} className="size-full object-contain p-2 transition group-hover:scale-105" />
       </div>
       <h3 className="mt-2.5 truncate text-[10px] font-bold text-ink">{p.name}</h3>
       <p className="truncate text-[9.5px] text-ink-2">{p.type}</p>
