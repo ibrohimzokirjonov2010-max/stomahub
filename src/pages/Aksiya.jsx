@@ -35,7 +35,7 @@ export default function Aksiya() {
   const title = deal.title || deal.name
 
   return (
-    <div className="pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+    <div className="catalog-frame pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
       <p className="mb-3 flex min-w-0 flex-wrap items-center gap-1 text-[12px] text-muted">
         <Link to="/" className="hover:text-sea">Bosh sahifa</Link>
         <ChevronRight className="size-3" />

@@ -76,7 +76,7 @@ export function HeroSlider({ slides, desktop }) {
   return (
     <div
       data-testid="catalog-hero"
-      className={`relative mt-3 overflow-hidden rounded-2xl ${desktop ? 'h-[230px]' : 'h-[164px]'}`}
+      className="catalog-hero relative mt-3 overflow-hidden rounded-2xl"
       onTouchStart={(e) => { touch.current = e.touches[0].clientX }}
       onTouchEnd={(e) => {
         if (touch.current == null || n < 2) return
@@ -157,7 +157,7 @@ export function CategoryChips({ cats, value, onChange, desktop }) {
         // Yagona uslub: barcha bo‘limlarda bir xil teal plitka (src/icons/categoryIcons.jsx)
         const Icon = icon && !icon.raster ? icon : iconById(FALLBACK_ICON)
         return (
-          <button key={key} type="button" aria-pressed={on} title={label} onClick={() => onChange(on && key !== 'all' ? 'all' : key)} className={`flex shrink-0 flex-col items-center gap-1 ${desktop ? 'w-[92px]' : 'w-[64px]'}`}>
+          <button key={key} type="button" aria-pressed={on} title={label} onClick={() => onChange(on && key !== 'all' ? 'all' : key)} className={`catalog-chip flex shrink-0 flex-col items-center gap-1 ${desktop ? 'w-[92px]' : 'w-[64px]'}`}>
             <CategoryTile icon={Icon} active={on} size={desktop ? 'lg' : 'md'} />
             <span className={`w-full truncate text-center ${desktop ? 'text-[12px]' : 'text-[10.5px]'} ${on ? 'font-semibold text-sea' : 'text-ink-2'}`}>{label}</span>
           </button>
@@ -205,7 +205,7 @@ export function FilterBar({ filters, values, onChange, sorts, sort, onSort, desk
       </BottomSheet>
     )
   })()
-  const pillCls = (on) => `flex shrink-0 items-center gap-0.5 rounded-xl border font-medium ${desktop ? 'h-10 px-3 text-[13px]' : 'h-9 px-2 text-[11.5px]'} ${on ? 'border-sea bg-sea-50 text-sea' : 'border-line bg-white text-ink'}`
+  const pillCls = (on) => `catalog-pill flex shrink-0 items-center gap-0.5 rounded-xl border font-medium ${desktop ? 'h-10 px-3 text-[13px]' : 'h-9 px-2 text-[11.5px]'} ${on ? 'border-sea bg-sea-50 text-sea' : 'border-line bg-white text-ink'}`
   return (
     <div ref={ref} data-testid="catalog-filterbar" className={`mt-2 flex gap-1.5 pb-1 ${desktop ? 'flex-wrap' : '-mx-3.5 overflow-x-auto px-3.5 no-scrollbar'}`}>
       {filters.map((f) => {
@@ -258,8 +258,8 @@ export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
   )
   return (
     <Link to={card.href} data-testid="catalog-card" className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
-      <div className={`relative ${card.fit === 'contain' ? 'bg-white' : 'bg-[#eef3f6]'} ${desktop ? 'h-[190px]' : 'h-[150px]'}`}>
-        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-3' : 'object-cover object-[50%_18%]'}`} /> : card.tile ? <div aria-hidden="true" className="grid size-full place-items-center bg-[linear-gradient(135deg,#0b8a95,#0b5b66)] text-[30px] font-extrabold tracking-wide text-white">{card.tile}</div> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
+      <div className={`relative aspect-square overflow-hidden ${card.fit === 'contain' ? 'bg-white' : 'bg-[#eef3f6]'}`}>
+        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-3' : 'object-cover object-center'}`} /> : card.tile ? <div aria-hidden="true" className="grid size-full place-items-center bg-[linear-gradient(135deg,#0b8a95,#0b5b66)] text-[30px] font-extrabold tracking-wide text-white">{card.tile}</div> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
         {card.badge && <span data-testid="catalog-badge" className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${badgeCls[card.badge.tone] || badgeCls.info}`}>{card.badge.text}</span>}
         {onLike && (
           <button type="button" onClick={(e) => { e.preventDefault(); onLike() }} aria-label="Sevimlilarga" aria-pressed={liked} className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/95 shadow-[0_1px_4px_rgb(11_31_58/0.15)]">
@@ -420,11 +420,11 @@ export function CatalogPage({ section }) {
       </div>
       <div className="mt-2.5">
         {section.loading && !section.items.length ? (
-          <div className={`grid gap-2.5 ${desktop ? 'grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-2'}`}>
-            {[0, 1, 2, 3].map((k) => <div key={k} className="h-[250px] animate-pulse rounded-2xl bg-white" />)}
+          <div className={desktop ? 'catalog-grid' : 'grid grid-cols-2 gap-2.5'}>
+            {[0, 1, 2, 3].map((k) => <div key={k} className="aspect-[3/4] animate-pulse rounded-2xl bg-white" />)}
           </div>
         ) : list.length || sponsored.length ? (
-          <div data-testid="catalog-grid" className={`grid gap-2.5 ${desktop ? 'grid-cols-3 gap-4 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-2'}`}>
+          <div data-testid="catalog-grid" className={desktop ? 'catalog-grid' : 'grid grid-cols-2 gap-2.5'}>
             {sponsored.map(({ ad, item }) => <AdCard key={`ad-${ad.campaign_id}`} ad={ad} item={item} {...adProps} />)}
             {list.filter((it) => !sponsoredIds.has(it.id)).slice(0, limit).map((it) => {
               const card = demoCard(it, section.card(it))
@@ -467,6 +467,11 @@ export function CatalogPage({ section }) {
           </div>
         )}
       </div>
+    </>
+  )
+  // Fixed dialogs stay outside .catalog-frame so container containment does not trap them.
+  const overlays = (
+    <>
       {allSheet && (
         <AllFilters filters={filters} values={values} desktop={desktop} count={(v) => section.items.filter((it) => (cat === 'all' || [].concat(section.catOf(it) || []).includes(cat)) && filters.every((f) => !v[f.key] || f.match(it, v[f.key]))).length} onClose={() => setAllSheet(false)} onApply={(v) => { setValues(v); setAllSheet(false) }} />
       )}
@@ -480,7 +485,10 @@ export function CatalogPage({ section }) {
   if (desktop) {
     return (
       <ShopLayout active={section.shopActive} search="plain" placeholder={section.placeholder}>
-        <div data-testid={`catalog-${section.key}`} className="pt-4">{body}</div>
+        <div data-testid={`catalog-${section.key}`} className="pt-4">
+          <div className="catalog-frame">{body}</div>
+          {overlays}
+        </div>
       </ShopLayout>
     )
   }
@@ -490,6 +498,7 @@ export function CatalogPage({ section }) {
         <MobileTopBar onSearch={() => searchRef.current?.focus()} onBell={() => setToast('Yangi bildirishnomalar yo‘q')} />
         {body}
       </div>
+      {overlays}
       <MobileTabBar />
     </div>
   )

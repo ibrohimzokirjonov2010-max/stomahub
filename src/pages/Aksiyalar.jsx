@@ -56,7 +56,7 @@ export default function Aksiyalar() {
 
   return (
     <ShopLayout active="aksiya" placeholder="Mahsulot, brend yoki kategoriya qidiring...">
-      <div className="pb-[max(12px,env(safe-area-inset-bottom))] pt-4">
+      <div className="catalog-frame pb-[max(12px,env(safe-area-inset-bottom))] pt-4">
         <h1 className="text-[22px] font-bold leading-none text-ink">Aksiyalar</h1>
         <p className="mt-1 text-[13px] text-muted">Sotuvchilarning amaldagi aksiyalari va chegirmalari</p>
 
@@ -106,7 +106,7 @@ export function ShopDeal({ deal, compact = false }) {
   const off = Number(deal.off || deal.percent) || 0
   return (
     <Link to={`/aksiyalar/${deal.id}`} className="group flex min-w-0 flex-col overflow-hidden rounded-xl bg-white shadow-card">
-      <div className={`relative ${compact ? 'h-[120px]' : 'h-[150px]'} w-full overflow-hidden bg-gradient-to-br from-sea to-[#0b5b66]`}>
+      <div className={`relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-sea to-[#0b5b66] ${compact ? 'max-h-[120px]' : ''}`}>
         {deal.banner ? <img src={deal.banner} alt="" className="size-full object-cover" loading="lazy" />
           : <div className="grid size-full place-items-center px-4 text-center text-[20px] font-bold text-white">{deal.title || deal.name}</div>}
         {off > 0 && <span className="absolute left-2.5 top-2.5 rounded-md bg-sale px-2 py-0.5 text-[12px] font-bold text-white">-{off}%</span>}
@@ -130,8 +130,8 @@ function Card({ deal }) {
     <article className="relative flex min-w-0 flex-col rounded-xl bg-white p-2.5 shadow-card">
       <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-sea px-1.5 py-0.5 text-[11px] font-bold text-white">-{deal.off}%</span>
       <LikeButton productId={deal.productId} className="absolute right-2.5 top-2.5 z-10 size-7 bg-white shadow-card" />
-      <Link to={deal.link} className="grid h-[128px] place-items-center overflow-hidden">
-        {deal.image ? <img src={deal.image} alt={deal.name} className="max-h-[118px] max-w-full object-contain" loading="lazy" /> : <span className="text-[12px] text-muted">Rasm yo‘q</span>}
+      <Link to={deal.link} className="grid aspect-square place-items-center overflow-hidden rounded-lg bg-[#f7fafc]">
+        {deal.image ? <img src={deal.image} alt={deal.name} className="size-full object-contain p-3" loading="lazy" /> : <span className="text-[12px] text-muted">Rasm yo‘q</span>}
       </Link>
       {deal.left > 0 && (
         <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-sea"><Clock className="size-3" /> {clock(sec)}</p>

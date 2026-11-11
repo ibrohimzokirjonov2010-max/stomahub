@@ -37,7 +37,7 @@ function ProductRow({ title, subtitle, products, reasons = {}, desktop, testId }
           {subtitle && <p className="truncate text-[11.5px] text-muted">{subtitle}</p>}
         </div>
       </div>
-      <div className={desktop ? 'grid grid-cols-3 gap-4 xl:grid-cols-4 2xl:grid-cols-5' : '-mx-3.5 flex snap-x scroll-px-3.5 gap-2.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'}>
+      <div className={desktop ? 'catalog-grid' : '-mx-3.5 flex snap-x scroll-px-3.5 gap-2.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'}>
         {products.slice(0, desktop ? 10 : 12).map((p) => {
           const card = toCard(p, reasons[p.id])
           return (
