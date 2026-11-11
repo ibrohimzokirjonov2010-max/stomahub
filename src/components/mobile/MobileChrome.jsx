@@ -22,6 +22,7 @@ const BAR = [
   /^\/buyurtma\/rasmiylashtirish$/,
   /^\/seminarlar\/[^/]+$/,
   /^\/seminarlar\/[^/]+\/royxat$/,
+  /^\/seminarlar\/[^/]+\/chipta$/,
   /^\/kitoblar\/[^/]+\/oqish$/,
   /^\/bemorlar\/[^/]+$/,
   /^\/uchrashuvlar\/yangi$/,

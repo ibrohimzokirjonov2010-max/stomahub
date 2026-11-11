@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Bell, Building, CalendarCheck, CalendarDays, CalendarPlus, ChartPie, Check, ChevronDown, ChevronLeft,
   Coins, CreditCard, Crown, Download, FileBadge, FileText, Hash, Info, LoaderCircle, MapPin, ShieldCheck, ShoppingCart, Tag,
@@ -116,7 +116,7 @@ function RegView({ id, seminar, profile }) {
   const navigate = useNavigate()
   const store = useSeminarStore()
   const reg = store.registered[s.id]
-  const [step, setStep] = useState(reg?.order ? 3 : 1)
+  const [step, setStep] = useState(1)
   // Profil ma’lumotlari bilan to‘ldiriladi; soxta standart qiymatlar (Toshkent / Implantolog / 3 yil) yo‘q
   const fromProfile = (p) => ({
     name: profileName(p),
@@ -235,7 +235,7 @@ function RegView({ id, seminar, profile }) {
     else navigate(`/seminarlar/${s.id}`)
   }
 
-  if (step === 3 && reg) return <Done s={s} m={m} reg={reg} />
+  if (reg?.order || reg?.code || (step === 3 && reg)) return <Navigate to={`/seminarlar/${s.id}/chipta`} replace />
 
   return (
     <div className={`min-h-screen ${page} pb-[100px]`}>

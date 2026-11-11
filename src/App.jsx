@@ -23,6 +23,7 @@ import SurplusItem from './pages/SurplusItem'
 import SeminarsPage from './pages/SeminarsPage'
 import Seminar from './pages/Seminar'
 import SeminarReg from './pages/SeminarReg'
+import { SeminarTicketRoute } from './pages/SeminarTicket'
 import Shell from './organizer/Shell'
 import OrganizerGate from './organizer/OrganizerGate'
 import OrgVerifyGate, { OrgVerifyPage } from './organizer/OrgVerifyGate'
@@ -231,6 +232,7 @@ export default function App() {
             <Route path="yordam" element={<HelpPage />} />
           </Route>
           <Route path="/seminarlar/:id/royxat" element={<RequireAuth><Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive></RequireAuth>} />
+          <Route path="/seminarlar/:id/chipta" element={<SeminarTicketRoute />} />
           <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminarV2 />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />
           <Route path="/talim" element={<EducationCatalog />} />

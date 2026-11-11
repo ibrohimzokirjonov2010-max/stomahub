@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import {
   ArrowRight, Calendar, CalendarPlus, Check, ChevronRight, Download, Info, Mail, MapPin, UserRound, Users, X,
 } from 'lucide-react'
 import { buildSeminarPage } from '../seminarsData'
 import { addMessage, checkPromo, publicRecord, useHub } from '../hubStore'
-import { register } from '../components/mobile/seminarStore'
+import { register, useSeminarStore } from '../components/mobile/seminarStore'
 import { som } from '../marketData'
 import LiveQr from '../components/LiveQr'
 import { tashkentWhen } from '../time'
@@ -37,6 +37,8 @@ export default function SeminarReg() {
   const [promoMsg, setPromoMsg] = useState('')
   const [discount, setDiscount] = useState(0)
   const [planId, setPlanId] = useState(() => seminar?.plans?.find((p) => /standart/i.test(p.name))?.id || seminar?.plans?.[0]?.id || '')
+  const registered = useSeminarStore().registered?.[id]
+  if (registered?.order || registered?.code) return <Navigate to={`/seminarlar/${id}/chipta`} replace />
   if (!seminar || !view) {
     return (
       <div className="py-16 text-center">
