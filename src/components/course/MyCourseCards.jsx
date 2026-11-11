@@ -23,7 +23,7 @@ export function MyCourseCards({ courses, mobile }) {
               <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11.5px] font-semibold text-[#5b6b7d]">
                   {complete ? `Natija ${c.score ?? 0}%` : `${pct}%`}
-                  {complete && c.points ? ` · ${c.points} ball` : ''}
+                  {Number(c.points) > 0 ? ` · ${c.points} ball` : ''}
                 </span>
                 {complete && c.certificateId ? (
                   <Link to={`/sertifikatlar?cert=${c.certificateId}`} className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0F766E]">

@@ -14,6 +14,7 @@ import { fetchBonusLog, fetchNotifications, markNotificationsRead, useRemote } f
 import { useNotifications } from '../../notificationsStore'
 import { allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
 import { useMyCourses } from '../../courseApi'
+import { sumCoursePoints } from '../../courseRules'
 import { MyCourseCards } from '../course/MyCourseCards'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
@@ -88,6 +89,7 @@ export default function MobileProfil() {
   const semCount = mySem.upcoming.length + mySem.past.length
   const mine = useMyCourses()
   const myCourseCount = mine.rows.length
+  const coursePoints = sumCoursePoints(mine.rows)
   const completedCourses = mine.rows.filter((row) => row.complete).map((row) => ({ ...row, certificateId: row.certificate_id, score: row.score, points: row.points }))
   const unread = notes.filter((n) => !readIds.includes(n.id)).length
   const displayName = profile.name || (profile.accountLive ? 'Ism kiritilmagan' : 'Mehmon')
@@ -114,7 +116,7 @@ export default function MobileProfil() {
     [
       { id: 'orders', icon: M.buyurtmalar, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Mening buyurtmalarim', text: 'Buyurtmalar tarixi va holati', count: orders.length, go: () => navigate('/profil/buyurtmalar') },
       { id: 'favs', icon: M.sevimlilar, tone: 'bg-[#fde8ef] text-[#e04f7d]', title: 'Sevimlilar', text: 'Mahsulotlar, seminarlar va e’lonlar', count: favCount, go: () => navigate('/profil/sevimlilar') },
-      { id: 'courses', icon: M.kurslar, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Kurslarim', text: 'Onlayn kurslar va sertifikatlar', count: myCourseCount, go: () => navigate('/profil/kurslar') },
+      { id: 'courses', icon: M.kurslar, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Kurslarim', text: coursePoints > 0 ? `${coursePoints} ball` : 'Onlayn kurslar va sertifikatlar', count: myCourseCount, go: () => navigate('/profil/kurslar') },
       { id: 'seminars', icon: CalendarDays, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Seminarlarim', text: 'Ro‘yxatdan o‘tgan seminarlar', count: semCount, go: () => navigate('/profil/seminarlar') },
       { id: 'ads', icon: Megaphone, tone: 'bg-[#e3f5f3] text-sea', title: 'E’lonlarim', text: 'Ish va xizmat e’lonlarim', count: myAds.length },
     ],

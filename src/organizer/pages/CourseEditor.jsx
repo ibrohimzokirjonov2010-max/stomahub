@@ -12,6 +12,7 @@ const blankLesson = () => ({
   description: '',
   moduleTitle: '',
   passThreshold: 70,
+  maxMistakes: 2,
   points: 10,
   bunnyVideoId: '',
   encodingStatus: 'empty',
@@ -161,6 +162,7 @@ export default function CourseEditor() {
       description: lesson.description,
       moduleTitle: lesson.moduleTitle,
       passThreshold: Number(lesson.passThreshold) || 70,
+      maxMistakes: Number.isFinite(Number(lesson.maxMistakes)) ? Number(lesson.maxMistakes) : 2,
       points: Number(lesson.points) || 0,
       questions: (lesson.questions || []).filter((q) => q.prompt.trim()).map((q) => ({
         prompt: q.prompt,
@@ -327,7 +329,7 @@ export default function CourseEditor() {
                 onApply={() => applyDraft(lesson.id, jobs[lesson.id])}
               />
             </div>
-            <QuizEditor lesson={lesson} onChange={(questions) => patchLesson(lesson.key, { questions })} onThreshold={(passThreshold) => patchLesson(lesson.key, { passThreshold })} onPoints={(points) => patchLesson(lesson.key, { points })} />
+            <QuizEditor lesson={lesson} onChange={(questions) => patchLesson(lesson.key, { questions })} onMaxMistakes={(maxMistakes) => patchLesson(lesson.key, { maxMistakes })} onPoints={(points) => patchLesson(lesson.key, { points })} />
           </article>
         ))}
       </div>
@@ -389,7 +391,7 @@ function AiQuizPanel({ lesson, job, onGenerate, onApply }) {
   )
 }
 
-function QuizEditor({ lesson, onChange, onThreshold, onPoints }) {
+function QuizEditor({ lesson, onChange, onMaxMistakes, onPoints }) {
   const questions = lesson.questions || []
   const patchQ = (index, patch) => onChange(questions.map((q, i) => i === index ? { ...q, ...patch } : q))
   return (
@@ -398,8 +400,8 @@ function QuizEditor({ lesson, onChange, onThreshold, onPoints }) {
         <p className="mb-2 rounded-lg bg-[#f3fbf8] px-2.5 py-2 text-[12px] text-[#0F766E]">AI qoralama. Izoh va iqtibos faqat tekshirish uchun — testda chiqmaydi. Talaba savolni siz saqlagandan keyin ko‘radi.</p>
       )}
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-[12px] text-[#5b7280]">O‘tish bali %
-          <input value={lesson.passThreshold} onChange={(e) => onThreshold(e.target.value.replace(/\D/g, ''))} className={`${input} mt-1 w-24`} />
+        <label className="text-[12px] text-[#5b7280]">Ruxsat etilgan xato
+          <input value={lesson.maxMistakes ?? 2} onChange={(e) => onMaxMistakes(e.target.value.replace(/\D/g, ''))} inputMode="numeric" className={`${input} mt-1 w-24`} />
         </label>
         <label className="text-[12px] text-[#5b7280]">Ball
           <input value={lesson.points} onChange={(e) => onPoints(e.target.value.replace(/\D/g, ''))} className={`${input} mt-1 w-24`} />
@@ -408,6 +410,7 @@ function QuizEditor({ lesson, onChange, onThreshold, onPoints }) {
           <Plus className="size-4" /> Savol
         </button>
       </div>
+      <p className="mt-1 text-[12px] text-[#5b7280]">Talaba shu sondan ortiq xato qilsa, test yopiladi. Javobsiz savol ham xato.</p>
       {questions.map((q, qi) => (
         <div key={qi} className="mt-2 rounded-xl border border-[#e3eeec] p-3">
           <div className="flex gap-2">

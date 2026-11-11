@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Award, GraduationCap, Clock, Star, Calendar, Eye, Download, Share2, Copy, Building2, UserRound, CircleCheck, MapPin, Monitor } from 'lucide-react'
-import { certs, certFromRow, hoursLine } from '../../sertifikatData'
+import { certs, certFromRow, hoursLine, accreditedCme } from '../../sertifikatData'
 import { useProfile } from '../../profileStore'
 import { currentUid } from '../../recordSync'
 import { useSession } from '../../sessionStore'
@@ -41,7 +41,7 @@ export default function MobileSertifikatlar() {
   const open = source.find((c) => c.id === params.get('cert')) || null
   const list = useMemo(() => source.filter((c) => tab === 'all' || c.type === tab).sort((a, b) => b.iso.localeCompare(a.iso)), [tab, source])
   const countOf = (k) => (k === 'all' ? source.length : source.filter((c) => c.type === k).length)
-  const cme = source.reduce((sum, row) => sum + row.cme, 0)
+  const cme = accreditedCme(source)
   const hours = source.reduce((sum, row) => sum + row.hours, 0)
   const done = source.filter((row) => row.type === 'online' || row.type === 'training').length
 
@@ -151,7 +151,7 @@ export default function MobileSertifikatlar() {
           </div>
           <dl className="mt-4 divide-y divide-line/70 rounded-2xl border border-line/70 px-3">
             <Row icon={Award} label="Raqami">
-              <button type="button" onClick={() => copy(open.id, 'Sertifikat raqami nusxalandi')} className="inline-flex items-center gap-1 text-sea">{open.id} <Copy className="size-3.5" /></button>
+              <button type="button" onClick={() => copy(open.code || open.id, 'Sertifikat raqami nusxalandi')} className="inline-flex items-center gap-1 text-sea">{open.code || open.id} <Copy className="size-3.5" /></button>
             </Row>
             <Row icon={Calendar} label="Berilgan sana">{open.date}</Row>
             <Row icon={UserRound} label="Ma’ruzachi">{open.speaker || '—'}</Row>

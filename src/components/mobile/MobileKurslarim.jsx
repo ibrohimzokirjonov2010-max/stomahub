@@ -150,6 +150,7 @@ function CourseCard({ c, onOpen }) {
 function CertSheet({ course, name, onClose, onToast }) {
   const c = certFromRow({
     id: course.certificateId || course.id,
+    course_id: `course:${course.id}`,
     code: course.code,
     title: course.title,
     issuedAt: course.issued_at,

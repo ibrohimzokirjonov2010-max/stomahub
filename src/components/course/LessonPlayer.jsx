@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Award, Check, ChevronDown, Clock, Lock, Play, RotateCcw } from 'lucide-react'
-import { formatDuration, groupLessons } from '../../courseRules'
+import { formatDuration, formatRetry, groupLessons, mistakeRule } from '../../courseRules'
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -20,8 +20,10 @@ export function LessonPlayer({
   enrolling,
   quiz,
   result,
+  retryUntil = 0,
   onRetry,
   onOpenCert,
+  onPlayerFrame,
 }) {
   const [listOpen, setListOpen] = useState(true)
   const active = lessons.find((lesson) => lesson.id === activeId) || lessons.find((lesson) => !lesson.locked) || lessons[0]
@@ -45,7 +47,9 @@ export function LessonPlayer({
           enrolling={enrolling}
           quiz={quiz}
           result={result}
+          retryUntil={retryUntil}
           onRetry={onRetry}
+          onPlayerFrame={onPlayerFrame}
           onNext={onNext}
           onOpenCert={onOpenCert}
           next={next}
@@ -144,7 +148,7 @@ function LessonRow({ lesson, current, onPick }) {
   )
 }
 
-function PlayerStage({ course, lesson, phase, message, videoUrl, poster, posterAsPlayer, onEnroll, enrolling, quiz, result, onRetry, onNext, onOpenCert, next }) {
+function PlayerStage({ course, lesson, phase, message, videoUrl, poster, posterAsPlayer, onEnroll, enrolling, quiz, result, retryUntil, onRetry, onNext, onOpenCert, onPlayerFrame, next }) {
   if (phase === 'loading') {
     return <div className="aspect-video animate-pulse rounded-2xl bg-[#d7e6e4]" />
   }
@@ -180,7 +184,7 @@ function PlayerStage({ course, lesson, phase, message, videoUrl, poster, posterA
     )
   }
   if (phase === 'quiz' && quiz) return <QuizCard quiz={quiz} lesson={lesson} />
-  if (phase === 'result' && result) return <ResultCard result={result} onRetry={onRetry} onNext={() => onNext?.(next)} nextLocked={next?.locked} hasNext={!!next} onOpenCert={onOpenCert} />
+  if (phase === 'result' && result) return <ResultCard result={result} retryUntil={retryUntil} onRetry={onRetry} onNext={() => onNext?.(next)} nextLocked={next?.locked} hasNext={!!next} onOpenCert={onOpenCert} />
   if (!lesson || lesson.locked) {
     return <StageFrame icon={Lock} title="Dars yopiq" text="Avvalgi darsni ko‘rib, testni topshiring. Keyingi dars shundan keyin ochiladi." />
   }
@@ -211,6 +215,7 @@ function PlayerStage({ course, lesson, phase, message, videoUrl, poster, posterA
           className="absolute inset-0 size-full"
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
+          onLoad={(event) => onPlayerFrame?.(event.currentTarget)}
         />
       </div>
     </div>
@@ -258,7 +263,7 @@ function QuizCard({ quiz, lesson }) {
           )
         })}
       </div>
-      <p className="mt-3 text-[12px] text-[#6b7c8f]">O‘tish bali: {quiz.threshold}%. Javoblar yuborilguncha to‘g‘ri variant ko‘rsatilmaydi.</p>
+      <p className="mt-3 text-[12px] text-[#6b7c8f]">{mistakeRule(quiz.maxMistakes)}. Javobsiz savol ham xato. To‘g‘ri variant ko‘rsatilmaydi.</p>
       {quiz.error && <p className="mt-2 text-[12.5px] text-[#b42318]">{quiz.error}</p>}
       <div className="mt-4 flex gap-2">
         <button type="button" disabled={quiz.index === 0} onClick={quiz.onPrev} className="h-11 flex-1 rounded-xl border border-[#d5e4e2] text-[13.5px] font-semibold text-[#143044] disabled:opacity-40">Orqaga</button>
@@ -272,30 +277,41 @@ function QuizCard({ quiz, lesson }) {
   )
 }
 
-function ResultCard({ result, onRetry, onNext, nextLocked, hasNext, onOpenCert }) {
+function ResultCard({ result, retryUntil = 0, onRetry, onNext, nextLocked, hasNext, onOpenCert }) {
   const passed = !!result.passed
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (passed || !retryUntil || retryUntil <= Date.now()) return undefined
+    const timer = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(timer)
+  }, [passed, retryUntil])
+  const left = !passed && retryUntil > now ? Math.ceil((retryUntil - now) / 1000) : 0
+  const waiting = left > 0
   return (
     <div className="rounded-2xl bg-white p-5 text-center shadow-card md:p-8">
       <ScoreRing score={result.score} passed={passed} />
       <h2 className="mt-3 text-[22px] font-extrabold text-[#0d2a4a]">{passed ? 'Test topshirildi' : 'Bu safar o‘tmadi'}</h2>
       <p className="mt-1 text-[14px] text-[#4d6274]">
-        {result.correct != null ? `${result.correct}/${result.total} ta to‘g‘ri. ` : ''}
-        O‘tish bali {result.threshold}%.
+        {result.correct != null && result.total != null ? `${result.correct}/${result.total} ta to‘g‘ri. ` : ''}
+        {result.mistakes != null ? `Xatolar: ${result.mistakes} ta. ` : ''}
+        {mistakeRule(result.maxMistakes ?? 2)}.
         {passed && result.pointsAwarded > 0 ? ` +${result.pointsAwarded} ball.` : ''}
       </p>
-      {!passed && <p className="mt-1 text-[13px] text-[#6b7c8f]">To‘g‘ri javoblar ko‘rsatilmaydi. Qayta urinib ko‘ring.</p>}
+      {!passed && !result.error && <p className="mt-1 text-[13px] text-[#6b7c8f]">To‘g‘ri javoblar ko‘rsatilmaydi. Qayta urinib ko‘ring.</p>}
+      {!passed && result.error && <p className="mt-1 text-[13px] text-[#6b7c8f]">{result.error}</p>}
+      {waiting && <p className="mt-1 text-[13.5px] font-semibold text-[#0d2a4a]">Qayta topshirish {formatRetry(left)} dan keyin ochiladi.</p>}
       {result.certificate && <p className="mt-2 text-[13.5px] font-semibold text-sea">Kurs yakunlandi. Sertifikat tayyor.</p>}
-      <div className="mx-auto mt-4 flex max-w-[420px] flex-col gap-2 sm:flex-row">
+      <div className="mx-auto mt-4 flex w-full max-w-[420px] flex-col gap-2 sm:flex-row">
         {!passed && (
-          <button type="button" onClick={onRetry} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-sea text-[13.5px] font-semibold text-sea">
-            <RotateCcw className="size-4" /> Qayta topshirish
+          <button type="button" data-testid="quiz-retry" disabled={waiting} onClick={onRetry} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-sea px-3 py-2.5 text-center text-[13.5px] font-semibold leading-tight text-sea disabled:opacity-50 sm:w-auto sm:flex-1">
+            <RotateCcw className="size-4 shrink-0" /> {waiting ? `Qayta topshirish · ${formatRetry(left)}` : 'Qayta topshirish'}
           </button>
         )}
         {passed && hasNext && (
-          <button type="button" disabled={nextLocked} onClick={onNext} className="h-11 flex-1 rounded-xl bg-sea text-[13.5px] font-semibold text-white disabled:opacity-40">Keyingi dars</button>
+          <button type="button" disabled={nextLocked} onClick={onNext} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-xl bg-sea px-3 py-2.5 text-[13.5px] font-semibold text-white disabled:opacity-40 sm:w-auto sm:flex-1">Keyingi dars</button>
         )}
         {passed && result.certificate && (
-          <button type="button" onClick={onOpenCert} className="h-11 flex-1 rounded-xl bg-sea text-[13.5px] font-semibold text-white">Sertifikat</button>
+          <button type="button" onClick={onOpenCert} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-xl bg-sea px-3 py-2.5 text-[13.5px] font-semibold text-white sm:w-auto sm:flex-1">Sertifikat</button>
         )}
       </div>
     </div>

@@ -22,7 +22,7 @@ import { supabase } from '../supabaseClient'
 import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
 import { dateLabel, useMySeminars } from '../components/mobile/MobileSeminarlarim'
 import { useCourseCatalog, useMyCourses } from '../courseApi'
-import { toCatalogCard } from '../courseRules'
+import { sumCoursePoints, toCatalogCard } from '../courseRules'
 import { MyCourseCards } from '../components/course/MyCourseCards'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
@@ -166,6 +166,7 @@ function Board({ initial }) {
     points: c.points || c.cme || 0,
     score: c.score ?? c.score_pct ?? 0,
   }))
+  const coursePoints = sumCoursePoints(myCourses)
   const certCount = (profile.certificates || []).length || myCourses.filter((c) => c.complete).length
   const favCount = (profile.favProducts || []).length + (profile.favCourses || []).length + (profile.favMasters || []).length
   const clinic = profile.clinicInfo || {}
@@ -287,7 +288,8 @@ function Board({ initial }) {
     { label: 'Buyurtmalar', value: orders.length, icon: M.buyurtmalar, tone: 'bg-[#e7f6f4] text-[#0F766E]', to: '/profil/buyurtmalar' },
     { label: 'Sertifikatlar', value: certCount, icon: M.sertifikatlar, tone: 'bg-[#e8f0fc] text-[#2563eb]', to: '/profil/sertifikatlar' },
     { label: 'Kurslar', value: myCourses.length, icon: M.kurslar, tone: 'bg-[#e8f0fc] text-[#2563eb]' },
-    { label: 'Bonus ballar', value: fmtBonus(profile.bonus), icon: Star, tone: 'bg-[#fff6df] text-[#d97706]' },
+    // Kursdan yig‘ilgan ball. profiles.bonus — do‘kon balansi (1 bonus = 1 so‘m), bu yerga qo‘shilmaydi.
+    { label: 'Bonus ballar', value: fmtBonus(coursePoints), icon: Star, tone: 'bg-[#fff6df] text-[#d97706]' },
     { label: 'Saqlanganlar', value: favCount, icon: M.saqlanganlar, tone: 'bg-[#fde8ef] text-[#e11d48]' },
   ]
 
