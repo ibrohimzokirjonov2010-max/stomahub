@@ -12,7 +12,9 @@ import { som } from '../../marketData'
 import { adPrice } from '../../elonlarData'
 import { fetchBonusLog, fetchNotifications, markNotificationsRead, useRemote } from '../../buyerApi'
 import { useNotifications } from '../../notificationsStore'
-import { COURSES, allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
+import { allOrders, flushProfile, profileStore, useProfile } from '../../profileStore'
+import { useMyCourses } from '../../courseApi'
+import { MyCourseCards } from '../course/MyCourseCards'
 import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
@@ -84,7 +86,9 @@ export default function MobileProfil() {
   const favCount = profile.favProducts.length + seminars.saved.length + profile.favCourses.length + (profile.accountLive ? 0 : savedAds.size)
   const mySem = useMySeminars()
   const semCount = mySem.upcoming.length + mySem.past.length
-  const myCourseCount = profile.accountLive ? new Set([...(profile.favCourses || []), ...Object.keys(profile.courseDone || {})]).size : COURSES.length
+  const mine = useMyCourses()
+  const myCourseCount = mine.rows.length
+  const completedCourses = mine.rows.filter((row) => row.complete).map((row) => ({ ...row, certificateId: row.certificate_id, score: row.score, points: row.points }))
   const unread = notes.filter((n) => !readIds.includes(n.id)).length
   const displayName = profile.name || (profile.accountLive ? 'Ism kiritilmagan' : 'Mehmon')
   const close = () => setSheet(null)
@@ -185,6 +189,13 @@ export default function MobileProfil() {
             </button>
           ))}
         </div>
+
+        {completedCourses.length > 0 && (
+          <section className="mt-3">
+            <h2 className={`mb-2 text-[15px] font-bold ${navy}`}>Tugatilgan kurslar</h2>
+            <MyCourseCards courses={completedCourses} mobile />
+          </section>
+        )}
 
         <button type="button" onClick={() => setSheet('plus')} className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[#d5eeea] bg-[linear-gradient(100deg,#ecf8f6,#f6fcfb)] p-3 text-left active:scale-[0.99]">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#d9f1ed] text-sea"><Crown className="size-5" /></span>

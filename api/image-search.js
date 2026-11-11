@@ -10,6 +10,7 @@ import { generateObject } from 'ai'
 import { z } from 'zod'
 import { clientIp, readJson, requirePost, send } from './_lib/http.js'
 import { fetchPublicListing, listingMetaFromRow, renderOgHtml, siteOrigin } from './_lib/ogListing.js'
+import { handleTalim } from './_lib/talim.js'
 
 const MODEL = process.env.IMAGE_SEARCH_MODEL || 'google/gemini-2.5-flash-lite'
 const MAX_BYTES = 1.5 * 1024 * 1024 // decoded image
@@ -92,6 +93,7 @@ async function handleOg(req, res) {
 export default async function handler(req, res) {
   const pathQ = (req.url || '').split('?')[1] || ''
   const qs = new URLSearchParams(pathQ)
+  if (qs.has('talim')) return handleTalim(req, res)
   if (req.method === 'GET' && (qs.get('og') === '1' || qs.get('kind'))) {
     return handleOg(req, res)
   }

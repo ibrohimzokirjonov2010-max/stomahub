@@ -28,7 +28,11 @@ function localApi(env) {
           }
         }
         const pathOnly = (req.url || '').split('?')[0]
-        const file = routes[pathOnly]
+        if (pathOnly === '/api/talim') {
+          const q = (req.url || '').split('?')[1] || ''
+          req.url = `/api/image-search?talim=1${q ? `&${q}` : ''}`
+        }
+        const file = routes[(req.url || '').split('?')[0]]
         if (!file) return next()
         try {
           const mod = await import(pathToFileURL(path.resolve(file)).href)

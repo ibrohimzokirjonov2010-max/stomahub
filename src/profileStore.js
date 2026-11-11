@@ -491,24 +491,7 @@ async function hydrateProfile(nextUid, opts = {}) {
       website: clinicRow?.website || '',
       photo: clinicRow?.photo_url || '',
     },
-    certificates: (certsRes?.data || []).map((c) => {
-      const sem = semById.get(String(c.course_id || '').replace(/^seminar:/, '')) || null
-      const f = sem?.form || {}
-      return {
-        id: c.id,
-        courseId: c.course_id,
-        title: c.title,
-        issuedAt: c.issued_at,
-        fileUrl: c.file_url || '',
-        kind: c.kind || (String(c.course_id || '').startsWith('seminar:') ? 'seminar' : ''),
-        hours: Number(c.hours) || Number(f.cmeHours) || 0,
-        cme: Number(c.cme) || Number(f.cmePoints) || 0,
-        format: c.format || sem?.format || f.format || '',
-        place: c.place || sem?.place || sem?.city || '',
-        speaker: c.speaker || sem?.speaker || '',
-        holderName: c.holder_name || '',
-      }
-    }),
+    certificates: (certsRes?.data || []).map((c) => mapCertificate(c, semById)),
     defaultAddr: prefs.defaultAddr || '',
     defaultPay: prefs.defaultPay || '',
     favProducts: (favs.data || []).filter((row) => row.kind === 'product').map((row) => row.item_id),
@@ -585,6 +568,35 @@ export const profileStore = {
 }
 
 // Real learning stats from the user's Supabase progress + certificates.
+function mapCertificate(c, semById = new Map()) {
+  const sem = semById.get(String(c.course_id || '').replace(/^seminar:/, '')) || null
+  const f = sem?.form || {}
+  return {
+    id: c.id,
+    courseId: c.course_id,
+    title: c.title,
+    issuedAt: c.issued_at,
+    fileUrl: c.file_url || '',
+    kind: c.kind || (String(c.course_id || '').startsWith('seminar:') ? 'seminar' : ''),
+    hours: Number(c.hours) || Number(f.cmeHours) || 0,
+    cme: Number(c.cme) || Number(f.cmePoints) || 0,
+    format: c.format || sem?.format || f.format || '',
+    place: c.place || sem?.place || sem?.city || '',
+    speaker: c.speaker || sem?.speaker || '',
+    holderName: c.holder_name || '',
+    scorePct: Number(c.score_pct) || 0,
+    code: c.code || '',
+  }
+}
+
+export async function reloadCertificates() {
+  const uid = currentUid()
+  if (!supabase || !uid) return
+  const { data, error } = await supabase.from('customer_certificates').select('*').eq('user_id', uid).order('created_at', { ascending: false })
+  if (error || !data) return
+  write({ certificates: data.map((row) => mapCertificate(row)) }, { remote: true })
+}
+
 export const learningStats = (profile, catalog = []) => {
   const done = profile?.courseDone || {}
   let hours = 0, completed = 0, current = 0

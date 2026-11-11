@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Search, SlidersHorizontal, LayoutGrid, LayoutList, Heart, Star, Play, Clock, BookOpen, Award, Headphones, X, FileBadge, Hourglass, BadgeCheck, MonitorPlay } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
-import EmptyCatalog from '../components/EmptyCatalog'
 import { useMobile } from '../useMobile'
 import { BottomSheet } from '../components/mobile/MobileSeminars'
 import { useCatalogVersion } from '../recordSync'
-import { useProfile, learningStats } from '../profileStore'
-import { directions, levels, formats, prices, sorts, courses, continuing, why, money } from '../educationData'
+import { useProfile } from '../profileStore'
+import { useNavigate } from 'react-router-dom'
+import { directions, levels, formats, prices, sorts, why, money } from '../educationData'
+import { useCourseCatalog, useMyCourses } from '../courseApi'
+import { formatDuration, toCatalogCard } from '../courseRules'
+import { profileStore } from '../profileStore'
 
 export default function EducationRoute() {
   const [q, setQ] = useState('')
@@ -20,6 +23,17 @@ export default function EducationRoute() {
 
 function Education({ headerQuery, mobile }) {
   useCatalogVersion()
+  const navigate = useNavigate()
+  const catalog = useCourseCatalog()
+  const mine = useMyCourses()
+  const courses = catalog.rows.map(toCatalogCard)
+  const continuing = (mine.rows || []).filter((row) => row.access && !row.complete && (row.done || 0) > 0).map((row) => ({
+    id: row.id,
+    title: row.title,
+    cover: row.cover,
+    duration: formatDuration(row.duration_seconds),
+    progress: { seen: row.done || 0, total: row.lessons || 0, pct: row.lessons ? Math.round((100 * (row.done || 0)) / row.lessons) : 0 },
+  }))
   const [local, setLocal] = useState('')
   const [direction, setDirection] = useState('all')
   const [level, setLevel] = useState('all')
@@ -32,13 +46,18 @@ function Education({ headerQuery, mobile }) {
   const activeCount = [direction !== 'all', level !== 'all', format !== 'all', price !== 'all', sort !== 'popular'].filter(Boolean).length
   const openSheet = () => setSheet({ direction, level, format, price, sort })
   const applySheet = () => { setDirection(sheet.direction); setLevel(sheet.level); setFormat(sheet.format); setPrice(sheet.price); setSort(sheet.sort); setSheet(null) }
-  const [saved, setSaved] = useState(() => new Set())
-  const [playing, setPlaying] = useState(null)
   const [chat, setChat] = useState(false)
   const [sent, setSent] = useState(false)
 
   const profile = useProfile()
-  const stats = learningStats(profile, courses)
+  const watchedSeconds = (mine.rows || []).reduce((sum, row) => sum + ((row.done || 0) / Math.max(1, row.lessons || 1)) * (row.duration_seconds || 0), 0)
+  const stats = {
+    hours: Math.round(watchedSeconds / 3600),
+    completed: (mine.rows || []).filter((row) => row.complete).length,
+    certificates: (profile.certificates || []).length,
+    current: (mine.rows || []).filter((row) => row.access && !row.complete).length,
+    any: (mine.rows || []).length > 0 || (profile.certificates || []).length > 0,
+  }
   const query = (local || headerQuery).trim().toLowerCase()
   const list = useMemo(() => courses
     .filter((c) => direction === 'all' || c.direction === direction)
@@ -50,16 +69,13 @@ function Education({ headerQuery, mobile }) {
     .sort((a, b) => {
       if (sort === 'cheap') return a.price - b.price
       if (sort === 'rich') return b.price - a.price
-      if (sort === 'fresh') return Number(!!b.fresh) - Number(!!a.fresh) || a.rank - b.rank
-      return a.rank - b.rank
-    }), [direction, level, format, price, sort, query])
+      if (sort === 'fresh') return String(b.publishedAt).localeCompare(String(a.publishedAt))
+      return (b.enrolled - a.enrolled) || String(b.publishedAt).localeCompare(String(a.publishedAt))
+    }), [courses, direction, level, format, price, sort, query])
 
-  const toggle = (id) => setSaved((prev) => {
-    const next = new Set(prev)
-    next.has(id) ? next.delete(id) : next.add(id)
-    return next
-  })
-  const openCourse = (id) => setPlaying(courses.find((c) => c.id === id) || continuing.find((c) => c.id === id))
+  const saved = new Set(profile.favCourses || [])
+  const toggle = (cid) => profileStore.toggleFav('favCourses', cid)
+  const openCourse = (cid) => navigate(`/talim/${cid}`)
 
   return (
     <div className="grid gap-4 pb-8 pt-3 xl:grid-cols-[minmax(0,1fr)_250px]">
@@ -94,8 +110,8 @@ function Education({ headerQuery, mobile }) {
           <div className="grid gap-2.5 md:grid-cols-3">
             {continuing.map((c) => (
               <article key={c.id} className="flex gap-2 rounded-xl bg-white p-2 shadow-card">
-                <div className="relative shrink-0 overflow-hidden rounded-lg" style={{ width: 92, height: 68 }}>
-                  <img src={c.cover} alt="" className="size-full object-cover" />
+                <div className="relative shrink-0 overflow-hidden rounded-lg bg-[linear-gradient(135deg,#0b6d73,#143044)]" style={{ width: 92, height: 68 }}>
+                  {c.cover ? <img src={c.cover} alt="" className="size-full object-cover" /> : null}
                   <span className="absolute bottom-1 left-1 rounded bg-black/75 px-1 text-[8px] font-medium text-white">{c.duration}</span>
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -106,7 +122,7 @@ function Education({ headerQuery, mobile }) {
                   </div>
                   <div className="mt-auto flex items-center justify-between pt-1.5">
                     <span className="text-[10px] font-bold text-sea">{c.progress.pct}%</span>
-                    <button onClick={() => openCourse(c.courseId || c.id)} className="flex h-[24px] items-center gap-1 rounded-full bg-sea px-2 text-[9px] font-semibold text-white hover:bg-sea-600">
+                    <button onClick={() => openCourse(c.id)} className="flex h-[24px] items-center gap-1 rounded-full bg-sea px-2 text-[9px] font-semibold text-white hover:bg-sea-600">
                       Davom ettirish <Play className="size-2.5 fill-white" />
                     </button>
                   </div>
@@ -141,8 +157,9 @@ function Education({ headerQuery, mobile }) {
           </div>
         </div>
 
+        {catalog.status === 'error' && <p className="mb-2 rounded-xl bg-[#fff4f4] px-3 py-2 text-[12px] text-[#b42318]">{catalog.error}</p>}
         {list.length === 0 ? (
-          <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">{courses.length ? 'Kurs topilmadi' : 'Hali kurslar qo‘shilmagan'}</div>
+          <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">{catalog.status === 'loading' ? 'Yuklanmoqda…' : courses.length ? 'Kurs topilmadi' : 'Hali kurslar qo‘shilmagan'}</div>
         ) : view === 'grid' ? (
           <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
       {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
@@ -236,17 +253,6 @@ function Education({ headerQuery, mobile }) {
           ))}
         </BottomSheet>
       )}
-      {playing && (
-        <Modal title={playing.title} onClose={() => setPlaying(null)}>
-          <img src={playing.cover} alt="" className="h-[160px] w-full rounded-xl object-cover" />
-          <p className="mt-3 text-[12px] text-ink-2">{playing.about || 'Klinik video dars. Davom ettirish joyidan ochiladi.'}</p>
-          <p className="mt-1 text-[11px] text-muted">{playing.doctor ? `${playing.doctor} · ` : ''}{playing.duration}</p>
-          <button onClick={() => setPlaying(null)} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-sea text-[13px] font-semibold text-white">
-            <Play className="size-4 fill-white" /> Tomosha qilish
-          </button>
-        </Modal>
-      )}
-
       {chat && (
         <Modal title="Onlayn chat" onClose={() => setChat(false)}>
           {sent ? <p className="py-6 text-center text-[13px] text-ink-2">Xabar yuborildi. Mutaxassis tez orada javob beradi.</p> : (
@@ -290,8 +296,8 @@ function CourseCard({ c, saved, onSave, onOpen }) {
 function CourseRow({ c, saved, onSave, onOpen }) {
   return (
     <article className="flex gap-3 rounded-xl bg-white p-2 shadow-card">
-      <div className="relative shrink-0 overflow-hidden rounded-lg" style={{ width: 168, height: 96 }}>
-        <img src={c.cover} alt="" className="size-full object-cover" />
+      <div className="relative shrink-0 overflow-hidden rounded-lg bg-[linear-gradient(135deg,#0b6d73,#143044)]" style={{ width: 168, height: 96 }}>
+        {c.cover ? <img src={c.cover} alt="" className="size-full object-cover" /> : null}
         <Badge c={c} />
         <span className="absolute bottom-1.5 left-1.5 rounded bg-black/75 px-1 text-[8px] text-white">{c.duration}</span>
       </div>
@@ -313,8 +319,8 @@ function CourseRow({ c, saved, onSave, onOpen }) {
 
 function Cover({ c, saved, onSave }) {
   return (
-    <div className="relative" style={{ height: 108 }}>
-      <img src={c.cover} alt="" className="size-full object-cover" />
+    <div className="relative bg-[linear-gradient(135deg,#0b6d73,#143044)]" style={{ height: 108 }}>
+      {c.cover ? <img src={c.cover} alt="" className="size-full object-cover" /> : null}
       <Badge c={c} />
       <button onClick={onSave} aria-label="Saqlash" className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white/90">
         <Heart className={`size-3.5 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
@@ -334,7 +340,7 @@ function Badge({ c }) {
 function Teacher({ c }) {
   return (
     <div className="mt-1.5 flex items-center gap-1.5">
-      <img src={c.avatar} alt="" className="size-6 rounded-full object-cover" />
+      {c.avatar ? <img src={c.avatar} alt="" className="size-6 rounded-full object-cover" /> : <span className="grid size-6 place-items-center rounded-full bg-sea-50 text-[10px] font-bold text-sea">{(c.doctor || 'M').slice(0, 1)}</span>}
       <div className="min-w-0">
         <p className="truncate text-[10px] font-semibold text-ink">{c.doctor}</p>
         <p className="truncate text-[9px] text-muted">{c.role}</p>
@@ -347,7 +353,7 @@ function Meta({ c }) {
   return (
     <div className="mt-1">
       <p className="flex items-center gap-1 text-[9.5px] text-ink-2">{Number(c.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews} ta sharh)</span></> : 'Hali baho yo‘q'}</p>
-      <p className="mt-0.5 text-[9.5px] text-ink-2">{c.lessons} dars · {c.hours} soat · O‘zbek</p>
+      <p className="mt-0.5 text-[9.5px] text-ink-2">{c.lessons} dars{c.duration ? ` · ${c.duration}` : ''} · O‘zbek</p>
     </div>
   )
 }

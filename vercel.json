@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/talim",
+      "destination": "/api/image-search?talim=1"
+    },
+    {
       "source": "/elonlar/:id",
       "has": [
         {
