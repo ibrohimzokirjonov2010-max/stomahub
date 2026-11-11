@@ -64,7 +64,7 @@ export default function CourseShot() {
     questions,
     index,
     answers,
-    threshold: 70,
+    maxMistakes: 2,
     busy: false,
     error: '',
     onPick: (id, choice) => setAnswers((prev) => ({ ...prev, [id]: choice })),
@@ -72,12 +72,18 @@ export default function CourseShot() {
     onNext: () => setIndex((n) => Math.min(questions.length - 1, n + 1)),
     onSubmit: () => {},
   }
-  const result = { passed: true, score: 92, threshold: 70, correct: 3, total: 3, pointsAwarded: 10, certificate }
+  const result = { passed: true, score: 100, correct: 3, total: 3, mistakes: 0, maxMistakes: 2, pointsAwarded: 10, certificate }
+  const failed = { passed: false, score: 40, correct: 2, total: 5, mistakes: 3, maxMistakes: 2, pointsAwarded: 0 }
+  const cooled = { ...failed, error: 'Keyingi urinishdan oldin biroz kuting.' }
 
   const body = screen === 'quiz' ? (
     <LessonPlayer course={course} lessons={lessons} activeId="l2" mobile={mobile} phase="quiz" quiz={quiz} poster={COVER} posterAsPlayer />
   ) : screen === 'natija' ? (
     <LessonPlayer course={{ ...course, completed: true, done: 4, pct: 100 }} lessons={lessons.map((l) => ({ ...l, locked: false, complete: true }))} activeId="l2" mobile={mobile} phase="result" result={result} poster={COVER} />
+  ) : screen === 'qayta' ? (
+    <LessonPlayer course={course} lessons={lessons} activeId="l2" mobile={mobile} phase="result" result={failed} retryUntil={0} poster={COVER} />
+  ) : screen === 'xato' ? (
+    <LessonPlayer course={course} lessons={lessons} activeId="l2" mobile={mobile} phase="result" result={cooled} retryUntil={Date.now() + 47000} poster={COVER} />
   ) : screen === 'profil' ? (
     <ProfileShot mobile={mobile} />
   ) : screen === 'sertifikat' ? (

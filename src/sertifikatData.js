@@ -24,9 +24,26 @@ export function uzDate(iso) {
   return `${Number(m[3])}-${UZ_MONTHS[Number(m[2]) - 1]} ${m[1]}`
 }
 
-// "6 soat · 6 CME" — noma’lum qiymatlar yashiriladi; ikkalasi ham bo‘lmasa '' (hech qachon "0 soat · 0 CME").
+// Kurs sertifikati (SH-KURS / course:) — ball. Seminar CME si o‘z holicha qoladi.
+export function isCourseCertificate(c) {
+  const courseId = String(c?.courseId || c?.course_id || '')
+  const code = String(c?.code || '')
+  return courseId.startsWith('course:') || code.startsWith('SH-KURS-')
+}
+
+export function pointsBadge(c) {
+  const n = Number(c?.cme) || 0
+  if (n <= 0) return ''
+  return isCourseCertificate(c) ? `${n} ball` : `${n} CME`
+}
+
+// "6 soat · 6 CME" yoki kurs uchun "6 soat · 6 ball". Noma’lum qiymat yashiriladi.
 export function hoursLine(c) {
-  return [Number(c?.hours) > 0 ? `${Number(c.hours)} soat` : '', Number(c?.cme) > 0 ? `${Number(c.cme)} CME` : ''].filter(Boolean).join(' · ')
+  return [Number(c?.hours) > 0 ? `${Number(c.hours)} soat` : '', pointsBadge(c)].filter(Boolean).join(' · ')
+}
+
+export function accreditedCme(rows) {
+  return (rows || []).reduce((sum, row) => sum + (isCourseCertificate(row) ? 0 : (Number(row?.cme) || 0)), 0)
 }
 
 // customer_certificates qatori → UI sertifikati (desktop + mobil bir xil manba)

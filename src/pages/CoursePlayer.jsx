@@ -4,7 +4,7 @@ import ShopLayout from '../components/market/ShopLayout'
 import { LessonPlayer } from '../components/course/LessonPlayer'
 import { Certificate, printCert } from './Sertifikatlar'
 import { bunnyLibraryId, courseError, embedUrl, enrollCourse, loadPlayer, reportProgress, submitQuiz } from '../courseApi'
-import { parseBunnyMessage } from '../courseRules'
+import { BUNNY_PLAYER_ORIGIN, parseBunnyMessage, shouldReportProgress, subscribeBunnyPlayer } from '../courseRules'
 import { certFromRow } from '../sertifikatData'
 import { reloadCertificates } from '../profileStore'
 import { useMobile } from '../useMobile'
@@ -34,7 +34,10 @@ function PlayerBody({ mobile }) {
   const [quiz, setQuiz] = useState(null)
   const [result, setResult] = useState(null)
   const [certOpen, setCertOpen] = useState(false)
+  const [retryUntil, setRetryUntil] = useState(0)
   const lastSent = useRef(0)
+  const playerWindow = useRef(null)
+  const playerLesson = useRef('')
 
   const reload = async () => {
     const body = await loadPlayer(id)
@@ -59,17 +62,42 @@ function PlayerBody({ mobile }) {
   const course = data?.course
   const active = lessons.find((lesson) => lesson.id === activeId)
 
+  const armRetry = (seconds) => {
+    const wait = Number(seconds) || 0
+    if (wait > 0) setRetryUntil(Date.now() + wait * 1000)
+  }
+
+  const onPlayerFrame = (frame) => {
+    const win = frame?.contentWindow
+    if (!win) return
+    playerWindow.current = win
+    playerLesson.current = active?.id || ''
+    lastSent.current = 0
+    subscribeBunnyPlayer(win)
+  }
+
+  const lessonKey = active?.id || ''
+  if (playerLesson.current && playerLesson.current !== lessonKey) {
+    playerWindow.current = null
+    playerLesson.current = ''
+    lastSent.current = 0
+  }
+
   useEffect(() => {
     if (!active?.videoId || phase !== 'watch') return undefined
+    const lessonId = active.id
     const onMessage = (event) => {
-      if (event.origin !== 'https://iframe.mediadelivery.net') return
+      if (event.origin !== BUNNY_PLAYER_ORIGIN) return
       const parsed = parseBunnyMessage(event.data)
+      const frame = playerWindow.current
+      if (parsed?.event === 'ready' && (!frame || event.source === frame)) subscribeBunnyPlayer(event.source)
+      if (!frame || event.source !== frame || playerLesson.current !== lessonId) return
       if (!parsed || parsed.current == null) return
       if (parsed.event && !/timeupdate|progress|ended|pause|seeked/.test(parsed.event)) return
       const now = Date.now()
-      if (parsed.event !== 'ended' && now - lastSent.current < 8000) return
+      if (!shouldReportProgress({ lastSent: lastSent.current, now, event: parsed.event })) return
       lastSent.current = now
-      reportProgress(active.id, parsed.current).then((res) => {
+      reportProgress(lessonId, parsed.current).then((res) => {
         if (!res?.ok) return
         if (res.quizUnlocked && !active.quizUnlocked) {
           reload().then((body) => {
@@ -97,7 +125,7 @@ function PlayerBody({ mobile }) {
     setQuiz({
       lessonId: lesson.id,
       questions,
-      threshold: lesson.passThreshold || 70,
+      maxMistakes: Number.isFinite(Number(lesson.maxMistakes)) ? Number(lesson.maxMistakes) : 2,
       index: 0,
       answers: {},
       busy: false,
@@ -150,8 +178,29 @@ function PlayerBody({ mobile }) {
       try {
         const answers = quiz.questions.map((q) => ({ id: q.id, choice: quiz.answers[q.id] }))
         const res = await submitQuiz(quiz.lessonId, answers)
-        if (!res?.ok) throw new Error(res?.error || 'Test qabul qilinmadi')
+        if (!res?.ok) {
+          if (Number(res?.retryAfter) > 0) {
+            armRetry(res.retryAfter)
+            setResult({
+              passed: false,
+              score: res.score,
+              correct: res.correct,
+              total: res.total,
+              mistakes: res.mistakes,
+              maxMistakes: res.maxMistakes ?? quiz.maxMistakes,
+              error: res.error,
+              code: res.code,
+              retryAfter: res.retryAfter,
+            })
+            setQuiz((q) => ({ ...q, busy: false }))
+            setPhase('result')
+            return
+          }
+          throw new Error(res?.error || 'Test qabul qilinmadi')
+        }
         setResult(res)
+        if (res.passed) setRetryUntil(0)
+        else armRetry(res.retryAfter)
         setPhase('result')
         if (res.passed) {
           await reload()
@@ -168,6 +217,7 @@ function PlayerBody({ mobile }) {
     code: course.certificate.code,
     title: course.certificate.title || course.title,
     issuedAt: course.certificate.issuedAt,
+    courseId: `course:${course.id}`,
     kind: 'online',
     hours: course.certificate.hours,
     cme: course.certificate.points,
@@ -196,7 +246,12 @@ function PlayerBody({ mobile }) {
         enrolling={enrolling}
         quiz={phase === 'quiz' ? quizView : null}
         result={result}
-        onRetry={() => active && openQuiz(active)}
+        retryUntil={retryUntil}
+        onPlayerFrame={onPlayerFrame}
+        onRetry={() => {
+          if (Date.now() < retryUntil) return
+          if (active) openQuiz(active)
+        }}
         onOpenCert={() => setCertOpen(true)}
       />
       {active?.quizUnlocked && !active.quizPassed && active.hasQuiz && phase === 'watch' && (

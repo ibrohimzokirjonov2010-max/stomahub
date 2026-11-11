@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import { ToothIcon } from '../components/icons'
-import { TYPES, TYPE_LABEL, TYPE_LINE, certs, STATS, certFromRow, hoursLine } from '../sertifikatData'
+import { TYPES, TYPE_LABEL, TYPE_LINE, certs, STATS, certFromRow, hoursLine, isCourseCertificate, pointsBadge, accreditedCme } from '../sertifikatData'
 import { useProfile } from '../profileStore'
 import { currentUid } from '../recordSync'
 import { useSession } from '../sessionStore'
@@ -34,7 +34,7 @@ function Board() {
   const fromProfile = (profile.certificates || []).map(certFromRow)
   const library = live ? fromProfile : certs
   const stats = live
-    ? { count: fromProfile.length, cme: fromProfile.reduce((s, c) => s + c.cme, 0), done: fromProfile.length }
+    ? { count: fromProfile.length, cme: accreditedCme(fromProfile), done: fromProfile.length }
     : STATS
   const [params, setParams] = useSearchParams()
   const [type, setType] = useState('all')
@@ -104,7 +104,7 @@ function Board() {
             <article key={c.id} className="rounded-2xl bg-white p-2.5 shadow-card">
               <button type="button" onClick={() => show(c)} className="relative block w-full overflow-hidden rounded-xl text-left" aria-label={`${c.title} sertifikatini ko‘rish`}>
                 <Certificate c={c} />
-                <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-white px-1.5 py-0.5 text-[10px] font-bold text-ink shadow"><Clock className="size-3" /> {c.cme} CME</span>
+                {pointsBadge(c) && <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-white px-1.5 py-0.5 text-[10px] font-bold text-ink shadow"><Clock className="size-3" /> {pointsBadge(c)}</span>}
               </button>
               <h3 className="mt-2 truncate text-[13.5px] font-bold">{c.title}</h3>
               <p className="truncate text-[11.5px] text-muted">{TYPE_LABEL[c.type]} · {c.speaker}</p>
@@ -192,14 +192,14 @@ function Viewer({ c, onClose, onToast }) {
               <dl className="space-y-2.5 text-[12.5px]">
                 <Info label="Sertifikat raqami">
                   <span className="inline-flex items-center gap-1 font-semibold text-sea">{c.code || c.id}
-                    <button type="button" aria-label="Raqamni nusxalash" onClick={() => copy(c.id, 'Sertifikat raqami nusxalandi')}><Copy className="size-3.5" /></button>
+                    <button type="button" aria-label="Raqamni nusxalash" onClick={() => copy(c.code || c.id, 'Sertifikat raqami nusxalandi')}><Copy className="size-3.5" /></button>
                   </span>
                 </Info>
                 <Info label="Berilgan sana" icon={Calendar}>{c.date}</Info>
                 <Info label="Kurs / seminar" icon={FileText}>{c.title}</Info>
                 <Info label="Tashkilotchi" icon={Building2}>StomaHub</Info>
                 {c.hours > 0 && <Info label="Soatlar" icon={Clock}>{c.hours} soat</Info>}
-                {c.cme > 0 && <Info label="CME ballari" icon={Star}>{c.cme} ball</Info>}
+                {c.cme > 0 && <Info label={isCourseCertificate(c) ? 'Ball' : 'CME ballari'} icon={Star}>{isCourseCertificate(c) ? `${c.cme} ball` : `${c.cme} CME`}</Info>}
                 <Info label="Holat" icon={CircleCheck}><span className="rounded-full bg-[#e5f7ea] px-2 py-0.5 text-[11px] font-semibold text-[#17803d]">Tasdiqlangan</span></Info>
               </dl>
               <div className="mt-3 flex items-center gap-3 rounded-2xl bg-[#eef9f7] p-3">
@@ -243,13 +243,25 @@ export function Certificate({ c, big }) {
         <span className="mt-[0.8cqw] font-semibold" style={{ fontSize: '3.2cqw', color: t.accent, lineHeight: 1.15 }}>{big ? `«${c.title}»` : c.title}</span>
         <span className="mt-[0.8cqw]" style={{ fontSize: '2.1cqw' }}>{TYPE_LINE[c.type]}</span>
         {Number(c.scorePct) > 0 && <span className="mt-[1cqw] font-semibold" style={{ fontSize: '2.2cqw' }}>Natija: {c.scorePct}%</span>}
-        {big && (
+        {big && !isCourseCertificate(c) && (
           <span className="mt-[2cqw] flex items-center gap-[5cqw] border-y py-[1cqw]" style={{ borderColor: t.frame, fontSize: '2.2cqw' }}>
             {hoursLine(c) && <span className="inline-flex items-center gap-[1cqw]"><Clock className="size-[3cqw]" /> <b>{hoursLine(c)}</b></span>}
             <span className="inline-flex items-center gap-[1cqw]"><Calendar className="size-[3cqw]" /> <b>{c.date}</b></span>
           </span>
         )}
-        <div className="absolute inset-x-[9%] bottom-[8%] flex items-end justify-between" style={{ fontSize: '1.9cqw' }}>
+        <div className="absolute inset-x-[8%] bottom-[5%] flex flex-col items-center gap-[1.2cqw]" style={{ fontSize: '1.9cqw' }}>
+          {big && isCourseCertificate(c) && (
+            <span className="flex w-full flex-wrap items-center justify-center gap-x-[2.4cqw] gap-y-[0.4cqw] border-y py-[0.7cqw]" style={{ borderColor: t.frame, fontSize: '1.9cqw' }}>
+              {c.code && <b className="tracking-[0.12em]">{c.code}</b>}
+              {hoursLine(c) && <span className="inline-flex items-center gap-[0.7cqw]"><Clock className="size-[2.4cqw]" /> <b>{hoursLine(c)}</b></span>}
+              <span className="inline-flex items-center gap-[0.7cqw]"><Calendar className="size-[2.4cqw]" /> <b>{c.date}</b></span>
+              <span className="inline-flex items-center gap-[0.6cqw]">
+                <Qr seed={certVerifyUrl(c)} className="size-[5cqw]" />
+                <b>Tekshirish</b>
+              </span>
+            </span>
+          )}
+          <div className="flex w-full items-end justify-between">
           <span className="text-left">
             <span className="block font-serif italic" style={{ fontSize: '3.4cqw', lineHeight: 1 }}>{String(c.speaker || '').replace('Dr. ', '').split(' ')[0]}</span>
             <span className="mt-[0.4cqw] block border-t pt-[0.4cqw]" style={{ borderColor: t.frame }}>{c.speaker}</span>
@@ -260,6 +272,7 @@ export function Certificate({ c, big }) {
             <span className="block">{c.place === 'Onlayn' ? 'Toshkent' : c.place}</span>
             <span className="block font-semibold">{c.date}</span>
           </span>
+          </div>
         </div>
       </div>
     </div>
@@ -295,7 +308,14 @@ function Info({ label, icon: Icon, children }) {
   )
 }
 
-export function Qr({ seed, className = 'size-20' }) {
+export function certVerifyUrl(c) {
+  const id = encodeURIComponent(c?.id || '')
+  const path = `/sertifikatlar?cert=${id}`
+  if (typeof window === 'undefined') return path
+  return `${window.location.origin}${path}`
+}
+
+function qrModel(seed) {
   const n = 21
   let h = 2166136261
   for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619)
@@ -315,6 +335,11 @@ export function Qr({ seed, className = 'size-20' }) {
       if (on) cells.push(`${x}-${y}`)
     }
   }
+  return { n, cells }
+}
+
+export function Qr({ seed, className = 'size-20' }) {
+  const { n, cells } = qrModel(seed)
   return (
     <svg viewBox={`0 0 ${n} ${n}`} className={className}>
       <rect width={n} height={n} fill="#fff" />
@@ -324,6 +349,15 @@ export function Qr({ seed, className = 'size-20' }) {
       })}
     </svg>
   )
+}
+
+function qrSvg(seed) {
+  const { n, cells } = qrModel(String(seed || ''))
+  const rects = cells.map((cell) => {
+    const [x, y] = cell.split('-')
+    return `<rect x="${x}" y="${y}" width="1" height="1" fill="#0b1f3a"/>`
+  }).join('')
+  return `<svg viewBox="0 0 ${n} ${n}" width="72" height="72" xmlns="http://www.w3.org/2000/svg"><rect width="${n}" height="${n}" fill="#fff"/>${rects}</svg>`
 }
 
 export function printCert(c, owner = 'Sizning ismingiz') {
@@ -351,6 +385,7 @@ h1 { font-size: 64px; letter-spacing: 10px; margin: 14px 0 8px; font-weight: 400
 <div class="t">«${esc(c.title)}»</div>
 <div class="s" style="margin-top:8px">${esc(TYPE_LINE[c.type])}</div>
 <div class="s" style="margin-top:16px">${esc([Number(c.scorePct) > 0 ? `Natija ${c.scorePct}%` : '', hoursLine(c), c.date].filter(Boolean).join(' · '))}</div>
+${isCourseCertificate(c) ? `<div class="s" style="margin-top:14px;font-weight:700;letter-spacing:2px">${esc(c.code || '')}</div><div style="margin-top:8px">${qrSvg(certVerifyUrl(c))}</div><div class="s" style="margin-top:6px">Haqiqiyligini tekshirish: ${esc(certVerifyUrl(c))}</div>` : ''}
 <div class="b"><span>${esc(c.speaker)}<br>Ma’ruzachi</span><span>${esc(c.code || c.id)}</span><span>StomaHub<br>Ta’lim platformasi</span></div>
 </div><script>window.onload = () => { window.print() }</script></body></html>`
   const win = window.open('', '_blank')
