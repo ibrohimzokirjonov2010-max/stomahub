@@ -4,6 +4,8 @@ import { som } from '../../marketData'
 import { cats as formaCats, colorOf, genders, sizesOf, allForma } from '../../formaData'
 import { cats as bookCats, langOptions, formatOptions } from '../../booksData'
 import { directions, levels, formats } from '../../educationData'
+import { useCourseCatalog } from '../../courseApi'
+import { toCatalogCard } from '../../courseRules'
 import { cats as ustaCats } from '../../ustalarData'
 import { catList as jihozCats, statusList } from '../../jihozData'
 import { specs as jobSpecs, exps as jobExps } from '../../ishlarData'
@@ -17,7 +19,6 @@ import { publicRecords, useHub } from '../../hubStore'
 import { useMarket } from '../../buyerApi'
 import { isFormaMarketProduct } from '../../lib/formaLive'
 import { books } from '../../booksData'
-import { courses } from '../../educationData'
 import { masters } from '../../ustalarData'
 import { allJihoz } from '../../jihozData'
 import { isJihozMarketProduct, jihozCartLine } from '../../lib/jihozLive'
@@ -191,8 +192,9 @@ export function useBooksSection() {
 
 export function useEducationSection() {
   const v = useCatalogVersion()
+  const catalog = useCourseCatalog()
   return useMemo(() => {
-    const items = tag('course', courses, (c) => c.title, (c) => c.doctor)
+    const items = tag('course', catalog.rows.map(toCatalogCard), (c) => c.title, (c) => c.doctor)
     return {
       key: 'talim', shopActive: 'education', title: 'Ta’lim', subtitle: 'Video darslar, kurslar va vebinarlar', placeholder: 'Kurs, mavzu yoki shifokor qidiring...',
       items, emptyText: 'Hozircha kurslar yo‘q — tez orada qo‘shiladi',
@@ -204,10 +206,10 @@ export function useEducationSection() {
       ],
       sorts: PRICE_SORTS(),
       text: (c) => `${c.title} ${c.doctor} ${c.about || ''}`,
-      card: (c) => ({ id: c.id, href: '/talim', image: c.cover, kicker: c.doctor, title: c.title, meta: [[c.lessons && `${c.lessons} dars`, c.hours && `${c.hours} soat`].filter(Boolean).join(' · ')], price: Number(c.price) || 0, badge: { text: formats.find(([k]) => k === c.format)?.[1] || 'Kurs', tone: 'info' } }),
-      slides: (list, ctx) => slidesFor({ key: 'talim', icon: PPlay, items: list, image: (c) => c.cover, href: () => '/talim', ctx }),
+      card: (c) => ({ id: c.id, href: `/talim/${c.id}`, image: c.cover, kicker: c.doctor, title: c.title, meta: [[c.lessons && `${c.lessons} dars`, c.duration].filter(Boolean).join(' · ')], price: Number(c.price) || 0, badge: { text: formats.find(([k]) => k === c.format)?.[1] || 'Kurs', tone: 'info' } }),
+      slides: (list, ctx) => slidesFor({ key: 'talim', icon: PPlay, items: list, image: (c) => c.cover, href: (c) => `/talim/${c.id}`, ctx }),
     }
-  }, [v])
+  }, [v, catalog.rows])
 }
 
 export function useUstalarSection() {

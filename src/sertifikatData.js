@@ -48,6 +48,8 @@ export function certFromRow(c, i = 0) {
     cme: Number(c.cme) || 0,
     hours: Number(c.hours) || 0,
     holderName: c.holderName || c.holder_name || '',
+    scorePct: Number(c.scorePct ?? c.score_pct) || 0,
+    code: c.code || '',
     theme: 'teal',
     fileUrl: c.fileUrl || c.file_url || '',
     courseId,

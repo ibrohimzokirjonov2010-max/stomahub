@@ -7,7 +7,9 @@ import { marketProducts, som } from '../../marketData'
 import { seminarPrice } from '../../seminarsData'
 import { seminars, seminarCard } from '../../seminarsData'
 import { ADS, adPrice } from '../../elonlarData'
-import { COURSES, courseDone, profileStore, useProfile } from '../../profileStore'
+import { profileStore, useProfile } from '../../profileStore'
+import { useCourseCatalog } from '../../courseApi'
+import { toCatalogCard } from '../../courseRules'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { useSeminarStore, toggleSaved } from './seminarStore'
@@ -32,10 +34,15 @@ export default function MobileSevimlilar() {
   const closeToast = useCallback(() => setToast(null), [])
   useEffect(() => { window.scrollTo(0, 0) }, [tab])
 
+  const catalog = useCourseCatalog()
+  const courseCards = catalog.rows.map((row) => {
+    const card = toCatalogCard(row)
+    return { ...card, image: card.cover, author: card.doctor, lessons: card.lessons, price: card.price }
+  })
   const lists = {
     products: (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || (marketStatus === 'ready' ? null : { id, name: 'Yuklanmoqda…', type: 'Mahsulot', price: 0, image: '/images/market/placeholder.jpg' })).filter(Boolean),
     seminars: SEMINARS.filter((s) => seminarStore.saved.includes(s.id)),
-    courses: COURSES.filter((c) => profile.favCourses.includes(c.id)),
+    courses: courseCards.filter((c) => (profile.favCourses || []).map(String).includes(String(c.id))),
     ads: [...added, ...ADS].filter((a) => savedAds.has(a.id)),
   }
   const toggles = {
@@ -67,14 +74,11 @@ export default function MobileSevimlilar() {
         </ActionBtn>
       </Card>
     ),
-    courses: (c) => {
-      const pct = Math.round((courseDone(profile, c) / c.lessons) * 100)
-      return (
-        <Card key={c.id} image={c.image} badge={`${c.lessons} dars`} onOpen={() => navigate('/profil/kurslar')} onHeart={() => unfav('courses', c.id)} title={c.title} sub={c.author} price={pct ? `${pct}% o‘tildi` : som(c.price)}>
-          <ActionBtn onClick={() => navigate('/profil/kurslar')}>{pct === 100 ? 'Sertifikat' : pct ? 'Davom etish' : 'Boshlash'}</ActionBtn>
-        </Card>
-      )
-    },
+    courses: (c) => (
+      <Card key={c.id} image={c.image} badge={`${c.lessons} dars`} onOpen={() => navigate(`/talim/${c.id}`)} onHeart={() => unfav('courses', c.id)} title={c.title} sub={c.author} price={c.price ? som(c.price) : 'Bepul'}>
+        <ActionBtn onClick={() => navigate(`/talim/${c.id}`)}>Boshlash</ActionBtn>
+      </Card>
+    ),
     ads: (a) => (
       <Card key={a.id} image={a.images?.[0]} onOpen={() => navigate(`/elonlar/${a.id}`)} onHeart={() => unfav('ads', a.id)} title={a.title} sub={<span className="flex items-center gap-1"><MapPin className="size-3" /> {a.city}</span>} price={adPrice(a)}>
         <ActionBtn onClick={() => navigate(`/elonlar/${a.id}`)}>Batafsil</ActionBtn>
@@ -84,7 +88,7 @@ export default function MobileSevimlilar() {
   const empty = {
     products: ['Sevimli mahsulot yo‘q', 'Marketplace’da yurakcha bosib saqlang', '/marketplace', 'Marketplace’ga o‘tish'],
     seminars: ['Saqlangan seminar yo‘q', 'Seminar sahifasida saqlash tugmasini bosing', '/seminarlar', 'Seminarlarni ko‘rish'],
-    courses: ['Sevimli kurs yo‘q', 'Qiziqarli kurslarni saqlab qo‘ying', '/seminarlar', 'Kurslarni ko‘rish'],
+    courses: ['Sevimli kurs yo‘q', 'Qiziqarli kurslarni saqlab qo‘ying', '/talim', 'Kurslarni ko‘rish'],
     ads: ['Saqlangan e’lon yo‘q', 'E’lonlar bo‘limida yurakchani bosing', '/elonlar', 'E’lonlarni ko‘rish'],
   }[tab]
 

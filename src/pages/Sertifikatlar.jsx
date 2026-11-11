@@ -191,7 +191,7 @@ function Viewer({ c, onClose, onToast }) {
             <aside className="min-w-0">
               <dl className="space-y-2.5 text-[12.5px]">
                 <Info label="Sertifikat raqami">
-                  <span className="inline-flex items-center gap-1 font-semibold text-sea">{c.id}
+                  <span className="inline-flex items-center gap-1 font-semibold text-sea">{c.code || c.id}
                     <button type="button" aria-label="Raqamni nusxalash" onClick={() => copy(c.id, 'Sertifikat raqami nusxalandi')}><Copy className="size-3.5" /></button>
                   </span>
                 </Info>
@@ -224,7 +224,8 @@ function Viewer({ c, onClose, onToast }) {
 
 export function Certificate({ c, big }) {
   const profile = useProfile()
-  const owner = profile.accountLive ? (profile.name || c.holderName || 'Ism kiritilmagan') : 'Sizning ismingiz'
+  const liveName = profile.accountLive ? String(profile.name || '').trim() : ''
+  const owner = liveName || c.holderName || (profile.accountLive ? 'Ism kiritilmagan' : 'Sizning ismingiz')
   const t = THEMES[c.theme] || THEMES.teal
   const dark = c.theme === 'dark'
   return (
@@ -241,6 +242,7 @@ export function Certificate({ c, big }) {
         <span className="mt-[1.2cqw] font-serif font-bold" style={{ fontSize: '4.6cqw' }}>{big ? `Dr. ${owner}` : owner}</span>
         <span className="mt-[0.8cqw] font-semibold" style={{ fontSize: '3.2cqw', color: t.accent, lineHeight: 1.15 }}>{big ? `«${c.title}»` : c.title}</span>
         <span className="mt-[0.8cqw]" style={{ fontSize: '2.1cqw' }}>{TYPE_LINE[c.type]}</span>
+        {Number(c.scorePct) > 0 && <span className="mt-[1cqw] font-semibold" style={{ fontSize: '2.2cqw' }}>Natija: {c.scorePct}%</span>}
         {big && (
           <span className="mt-[2cqw] flex items-center gap-[5cqw] border-y py-[1cqw]" style={{ borderColor: t.frame, fontSize: '2.2cqw' }}>
             {hoursLine(c) && <span className="inline-flex items-center gap-[1cqw]"><Clock className="size-[3cqw]" /> <b>{hoursLine(c)}</b></span>}
@@ -348,8 +350,8 @@ h1 { font-size: 64px; letter-spacing: 10px; margin: 14px 0 8px; font-weight: 400
 <div class="n">Dr. ${esc(owner)}</div>
 <div class="t">«${esc(c.title)}»</div>
 <div class="s" style="margin-top:8px">${esc(TYPE_LINE[c.type])}</div>
-<div class="s" style="margin-top:16px">${esc([hoursLine(c), c.date].filter(Boolean).join(' · '))}</div>
-<div class="b"><span>${esc(c.speaker)}<br>Ma’ruzachi</span><span>${esc(c.id)}</span><span>StomaHub<br>Ta’lim platformasi</span></div>
+<div class="s" style="margin-top:16px">${esc([Number(c.scorePct) > 0 ? `Natija ${c.scorePct}%` : '', hoursLine(c), c.date].filter(Boolean).join(' · '))}</div>
+<div class="b"><span>${esc(c.speaker)}<br>Ma’ruzachi</span><span>${esc(c.code || c.id)}</span><span>StomaHub<br>Ta’lim platformasi</span></div>
 </div><script>window.onload = () => { window.print() }</script></body></html>`
   const win = window.open('', '_blank')
   if (!win) return

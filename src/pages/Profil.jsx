@@ -1,11 +1,11 @@
 import { useMarket } from '../buyerApi'
 import { useNotifications } from '../notificationsStore'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import MapPicker, { MapPreview } from '../components/MapPicker'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  BadgeCheck, Bell, Building2, Camera, Check, CreditCard, Download, Globe,
+  BadgeCheck, Bell, Building2, Camera, Check, CreditCard, Globe,
   GraduationCap, Heart, IdCard, LogOut, MapPin, Pencil, Phone, Plus, Shield,
   ShoppingBag, Star, Trash2, Wallet,
 } from 'lucide-react'
@@ -15,12 +15,15 @@ import OrdersBlock from '../components/orders/OrdersBlock'
 import { fetchNotifications, markNotificationsRead, useRemote } from '../buyerApi'
 import { marketProducts } from '../marketData'
 import {
-  ADDRESS_KINDS, COURSES, addr, allOrders, courseDone, flushProfile, profileStore, useProfile,
+  ADDRESS_KINDS, addr, allOrders, flushProfile, profileStore, useProfile,
 } from '../profileStore'
 import { linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
 import { supabase } from '../supabaseClient'
 import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
 import { dateLabel, useMySeminars } from '../components/mobile/MobileSeminarlarim'
+import { useCourseCatalog, useMyCourses } from '../courseApi'
+import { toCatalogCard } from '../courseRules'
+import { MyCourseCards } from '../components/course/MyCourseCards'
 import PhoneInput, { extractUzLocalDigits, PHONE_INCOMPLETE_MSG, toE164 } from '../components/PhoneInput'
 
 import { specialtyOptions } from '../personal/specialtyMap.js'
@@ -154,15 +157,15 @@ function Board({ initial }) {
   const role = profile.role || session.profile?.specialty || ''
   const orders = allOrders(profile)
   const completeness = profileCompleteness(profile)
-  const myCourses = useMemo(() => {
-    const ids = new Set([...(profile.favCourses || []), ...Object.keys(profile.courseDone || {})])
-    const list = COURSES.filter((c) => ids.has(c.id) || (profile.courseDone?.[c.id] ?? 0) > 0)
-    return (list.length ? list : []).map((c) => {
-      const done = courseDone(profile, c)
-      const pct = Math.round((done / c.lessons) * 100)
-      return { ...c, done, pct, complete: pct >= 100 }
-    })
-  }, [profile])
+  const mine = useMyCourses()
+  const myCourses = mine.rows.map((c) => ({
+    ...c,
+    image: c.cover,
+    pct: c.lessons ? Math.round((100 * (c.done || 0)) / c.lessons) : 0,
+    certificateId: c.certificate_id || c.certificateId,
+    points: c.points || c.cme || 0,
+    score: c.score ?? c.score_pct ?? 0,
+  }))
   const certCount = (profile.certificates || []).length || myCourses.filter((c) => c.complete).length
   const favCount = (profile.favProducts || []).length + (profile.favCourses || []).length + (profile.favMasters || []).length
   const clinic = profile.clinicInfo || {}
@@ -684,33 +687,27 @@ function SeminarsBlock() {
   )
 }
 
-function CoursesBlock({ courses, full }) {
+function CoursesBlock({ courses }) {
+  const done = courses.filter((c) => c.complete)
   return (
     <section className={card}>
       <SectionHead title="Kurslarim va sertifikatlar" />
       {!courses.length ? (
         <Empty text="Hali kurs yo‘q. Ta’lim bo‘limidan kurs qo‘shing." />
       ) : (
-        <div className={`grid gap-3 ${full ? 'md:grid-cols-2 xl:grid-cols-3' : ''}`}>
-          {courses.map((c) => (
-            <article key={c.id} className="flex gap-3 rounded-xl border border-[#e7eef2] p-2.5">
-              <img src={c.image} alt="" className="size-[72px] shrink-0 rounded-lg object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] font-bold text-[#12263a]">{c.title}</p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e7eef2]">
-                  <div className={`h-full rounded-full ${c.complete ? 'bg-[#16a34a]' : 'bg-[#0F766E]'}`} style={{ width: `${c.pct}%` }} />
-                </div>
-                <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <span className="text-[11.5px] font-semibold text-[#5b6b7d]">{c.pct}%</span>
-                  {c.complete ? (
-                    <button type="button" className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0F766E]"><Download className="size-3.5" /> Sertifikatni yuklab olish</button>
-                  ) : (
-                    <Link to="/talim" className="text-[12px] font-semibold text-[#0F766E]">Davom ettirish</Link>
-                  )}
-                </div>
-              </div>
-            </article>
-          ))}
+        <div className="space-y-4">
+          {done.length > 0 && (
+            <div>
+              <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-[#6b7c8f]">Tugatilgan</p>
+              <MyCourseCards courses={done} />
+            </div>
+          )}
+          {courses.some((c) => !c.complete) && (
+            <div>
+              <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-[#6b7c8f]">Davom etmoqda</p>
+              <MyCourseCards courses={courses.filter((c) => !c.complete)} />
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -935,8 +932,10 @@ function PaymentsBlock({ profile, cardForm, setCardForm, walletForm, setWalletFo
 
 function SavedBlock({ profile }) {
   const { status: marketStatus } = useMarket()
+  const catalog = useCourseCatalog()
+  const cards = catalog.rows.map(toCatalogCard)
   const products = (profile.favProducts || []).map((id) => marketProducts.find((p) => String(p.id) === String(id)) || (marketStatus === 'ready' ? null : { id, name: 'Yuklanmoqda…', type: 'Mahsulot', price: 0, image: '/images/market/placeholder.jpg' })).filter(Boolean)
-  const courses = (profile.favCourses || []).map((id) => COURSES.find((c) => c.id === id) || { id, title: id })
+  const courses = (profile.favCourses || []).map((id) => cards.find((c) => String(c.id) === String(id)) || { id, title: 'Kurs' })
   const masters = profile.favMasters || []
   const n = products.length + courses.length + masters.length
   const remove = async (key, id) => {
@@ -956,7 +955,7 @@ function SavedBlock({ profile }) {
           ))}
           {courses.map((c) => (
             <li key={`c-${c.id}`} className="flex items-center justify-between rounded-xl border border-[#e7eef2] px-3 py-2 text-[13.5px]">
-              <span className="font-semibold text-[#12263a]">{c.title || c.id}</span>
+              <Link to={`/talim/${c.id}`} className="font-semibold text-[#12263a]">{c.title || c.id}</Link>
               <button type="button" className="text-[12px] font-semibold text-[#d14343]" onClick={() => remove('favCourses', c.id)}>O‘chirish</button>
             </li>
           ))}

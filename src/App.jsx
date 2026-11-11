@@ -39,11 +39,15 @@ import OrgCertificates from './organizer/pages/Certificates'
 import Promos from './organizer/pages/Promos'
 import Wizard from './organizer/pages/Wizard'
 import WalletPage from './organizer/pages/Wallet'
+import OrgCourses from './organizer/pages/OrgCourses'
+import CourseEditor from './organizer/pages/CourseEditor'
 import ConfirmHeld from './organizer/pages/Confirm'
 import SeminarDetail from './organizer/pages/Detail'
 import { Marketing, Speakers, Reports, Ratings, SettingsPage, HelpPage } from './organizer/pages/Extra'
 import ChannelsRoute from './pages/Channels'
-import { FormaCatalog, MarketCatalog, SeminarsCatalog, BooksCatalog, EducationCatalog, UstalarCatalog, JihozCatalog, IshlarCatalog, SurplusCatalog, DoctorsCatalog, ElonlarCatalog } from './pages/CatalogRoutes'
+import { FormaCatalog, MarketCatalog, SeminarsCatalog, BooksCatalog, UstalarCatalog, JihozCatalog, IshlarCatalog, SurplusCatalog, DoctorsCatalog, ElonlarCatalog } from './pages/CatalogRoutes'
+import EducationRoute from './pages/Education'
+import CoursePlayer from './pages/CoursePlayer'
 import BooksRoute from './pages/Books'
 import Book from './pages/Book'
 import Reader from './pages/Reader'
@@ -133,6 +137,7 @@ const VakansiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/VakansiyaSh
 const AksiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/AksiyaShot')) : null
 const OrdersShot = import.meta.env.DEV ? lazy(() => import('./dev/OrdersShot')) : null
 const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : null
+const CourseShot = import.meta.env.DEV ? lazy(() => import('./dev/CourseShot')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -208,10 +213,14 @@ export default function App() {
           {/* DEV: rasmiylashtirish (logo bloki) skrinshoti — RequireAuth’siz, faqat lokal */}
           {import.meta.env.DEV && <Route path="/dev/rasmiylashtirish" element={<MobileCheckout />} />}
           {IconSheet && <Route path="/icon-sheet" element={<Suspense fallback={null}><IconSheet /></Suspense>} />}
+          {CourseShot && <Route path="/dev/kurs/:screen" element={<Suspense fallback={null}><CourseShot /></Suspense>} />}
           {ReviewPhotosShot && <Route path="/review-photos-shot/:sec" element={<Suspense fallback={null}><ReviewPhotosShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />
             <Route path="seminarlar" element={<OrgVerifyGate section="Mening seminarlarim"><Seminars /></OrgVerifyGate>} />
+            <Route path="kurslar" element={<OrgVerifyGate section="Kurslar"><OrgCourses /></OrgVerifyGate>} />
+            <Route path="kurslar/yangi" element={<OrgVerifyGate section="Yangi kurs"><CourseEditor /></OrgVerifyGate>} />
+            <Route path="kurslar/:id" element={<OrgVerifyGate section="Kurs"><CourseEditor /></OrgVerifyGate>} />
             <Route path="seminarlar/yangi" element={<OrgVerifyGate section="Seminar qo‘shish"><Wizard /></OrgVerifyGate>} />
             <Route path="seminarlar/:id" element={<OrgVerifyGate section="Seminar"><SeminarDetail /></OrgVerifyGate>} />
             <Route path="seminarlar/:id/tasdiqlash" element={<OrgVerifyGate section="Seminar"><ConfirmHeld /></OrgVerifyGate>} />
@@ -233,7 +242,8 @@ export default function App() {
           <Route path="/seminarlar/:id/royxat" element={<RequireAuth><Responsive mobile={<MobileSeminarReg />}><ShopLayout active="seminars" search="plain" placeholder="Mahsulot, kurs, mutaxassis yoki maqola qidiring..."><SeminarReg /></ShopLayout></Responsive></RequireAuth>} />
           <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminarV2 />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />
-          <Route path="/talim" element={<EducationCatalog />} />
+          <Route path="/talim" element={<EducationRoute />} />
+          <Route path="/talim/:id" element={<CoursePlayer />} />
           <Route path="/kitoblar" element={<BooksCatalog />} />
           <Route path="/kitoblar/:id/oqish" element={<Responsive mobile={<MobileReader />}><Reader /></Responsive>} />
           <Route path="/kitoblar/:id" element={<Responsive mobile={<MobileBook />}><ShopLayout active="books" search="plain" placeholder="Mahsulot, kurs, kitob yoki maqola qidiring..."><Book /></ShopLayout></Responsive>} />

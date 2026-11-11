@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  House, CalendarDays, Users, Ticket, QrCode, Wallet, Award, Tag, Megaphone, Mic, ChartColumn,
+  House, CalendarDays, Users, Ticket, QrCode, Wallet, Award, Tag, Megaphone, Mic, ChartColumn, GraduationCap,
   Store, Wrench, Shirt, BookOpen, Settings, CircleQuestionMark, Search, MapPin, Calendar, Bell,
   ChevronDown, ChevronLeft, Star, Landmark, Ellipsis, MoreVertical, Lock, ShieldCheck,
 } from 'lucide-react'
@@ -23,6 +23,7 @@ const MAIN = [
 ]
 const ORG_NAV = [
   { to: '/tashkilotchi/seminarlar', label: 'Mening seminarlarim', icon: CalendarDays },
+  { to: '/tashkilotchi/kurslar', label: 'Kurslar', icon: GraduationCap },
   { to: '/tashkilotchi/ishtirokchilar', label: 'Ishtirokchilar', icon: Users },
   { to: '/tashkilotchi/chiptalar', label: 'Chiptalar', icon: Ticket },
   { to: '/tashkilotchi/qr', label: 'QR Check-in', icon: QrCode },
