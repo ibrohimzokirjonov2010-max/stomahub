@@ -33,8 +33,40 @@ export function mapBunnyStatus(body) {
   }
 }
 
-export function bunnyConfigured() {
-  const libraryId = String(process.env.BUNNY_STREAM_LIBRARY_ID || '').trim()
-  const apiKey = String(process.env.BUNNY_STREAM_API_KEY || '').trim()
-  return { libraryId, apiKey, ok: Boolean(libraryId && apiKey) }
+export function bunnyConfigured(env = process.env) {
+  const libraryId = String(env.BUNNY_STREAM_LIBRARY_ID || '').trim()
+  const apiKey = String(env.BUNNY_STREAM_API_KEY || '').trim()
+  const cdnHost = String(env.BUNNY_STREAM_CDN_HOST || '').trim().replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const refererRaw = String(env.BUNNY_STREAM_REFERER || 'https://stomahub-three.vercel.app/').trim()
+  const referer = refererRaw.endsWith('/') ? refererRaw : `${refererRaw}/`
+  return { libraryId, apiKey, cdnHost, referer, ok: Boolean(libraryId && apiKey) }
+}
+
+const MP4_HEIGHTS = ['240p', '360p', '480p', '720p', '1080p', '1440p', '2160p']
+
+function joinUrl(prefix, name) {
+  return `${String(prefix).replace(/\/$/, '')}/${name}`
+}
+
+/**
+ * STT uchun manba. Eng past MP4 fallback (odatda play_240p.mp4) — audio izi kichik.
+ * CDN referrer cheklovi bor, shuning uchun keyinroq so‘rov Referer bilan ketadi.
+ * Play-data dagi URL imzolangan bo‘lishi mumkin; bo‘lmasa CDN hostdan yig‘iladi.
+ * MP4 fallback yo‘q bo‘lsa original (library "keep original") ishlatiladi, lekin
+ * baribir butun fayl emas, faqat audio baytlari olinadi.
+ */
+export function pickLessonAudioSource({ video, play, cdnHost }) {
+  const available = String(video?.availableResolutions || '')
+    .split(/[,\s]+/)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+  const height = MP4_HEIGHTS.find((item) => available.includes(item))
+  const guid = video?.guid || video?.videoId || ''
+  if (video?.hasMP4Fallback && height) {
+    if (play?.fallbackUrl) return { url: joinUrl(play.fallbackUrl, `play_${height}.mp4`), label: `play_${height}.mp4`, kind: 'mp4' }
+    if (cdnHost && guid) return { url: `https://${cdnHost}/${guid}/play_${height}.mp4`, label: `play_${height}.mp4`, kind: 'mp4' }
+  }
+  if (play?.originalUrl) return { url: play.originalUrl, label: 'original', kind: 'original' }
+  if (cdnHost && guid) return { url: `https://${cdnHost}/${guid}/original`, label: 'original', kind: 'original' }
+  return null
 }
