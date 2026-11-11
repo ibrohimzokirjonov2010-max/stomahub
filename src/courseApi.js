@@ -45,6 +45,8 @@ export const submitQuiz = (lessonId, answers) => rpc('course_submit_quiz', { p_l
 export const authoredCourses = () => rpc('course_authored')
 export const deleteCourse = (courseId) => rpc('course_delete', { p_course_id: courseId })
 export const refreshVideo = (lessonId) => talim('status', { lessonId })
+export const startQuizFromVideo = (lessonId) => talim('quiz-start', { lessonId })
+export const pollQuizJob = (lessonId, jobId) => talim('quiz-status', { lessonId, jobId })
 
 export async function bunnyLibraryId() {
   try {
@@ -86,7 +88,7 @@ export async function uploadLessonVideo(lessonId, file, title, onProgress) {
   return refreshVideo(lessonId)
 }
 
-function devShot(key) {
+export function devShot(key) {
   try {
     if (!import.meta.env?.DEV || typeof window === 'undefined') return null
     return window.__STOMAHUB_COURSE_SHOT__?.[key] ?? null

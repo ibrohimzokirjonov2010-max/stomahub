@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto'
 import { readJson, send } from './http.js'
 import { adminClient, anonClient } from './supabaseAdmin.js'
 import { bunnyConfigured, bunnySignature, mapBunnyStatus } from './bunny.js'
+import { beginQuizGeneration, tickQuizJob } from './quizJob.js'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const TUS = 'https://video.bunnycdn.com/tusupload'
@@ -109,6 +111,28 @@ function configBody() {
   return { ok: true, libraryId: libraryId || '805789', embedHost: 'iframe.mediadelivery.net' }
 }
 
+function quizDeps() {
+  return { admin: adminClient(), fetch: globalThis.fetch, env: process.env, now: () => Date.now(), uuid: () => randomUUID() }
+}
+
+async function sendQuiz(res, work) {
+  res.statusCode = 200
+  res.setHeader('Content-Type', 'application/json; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-store')
+  if (typeof res.flushHeaders === 'function') res.flushHeaders()
+  try {
+    const body = await work()
+    if (!res.writableEnded) res.end(JSON.stringify(body))
+  } catch (error) {
+    const status = error.status || 500
+    if (status >= 500 && status !== 502 && status !== 503) console.error('talim quiz', error.message)
+    const hidden = status >= 500 && status !== 502 && status !== 503
+    const payload = { ok: false, error: hidden ? 'Savol tuzishda xato' : error.message, code: error.code || '' }
+    if (!res.headersSent) res.statusCode = status
+    if (!res.writableEnded) res.end(JSON.stringify(payload))
+  }
+}
+
 export async function handleTalim(req, res) {
   try {
     const qs = new URLSearchParams((req.url || '').split('?')[1] || '')
@@ -120,6 +144,16 @@ export async function handleTalim(req, res) {
     if (action === 'config') return send(res, 200, configBody())
     if (action === 'create') return send(res, 200, await createUpload(ctx))
     if (action === 'status') return send(res, 200, await refreshStatus(ctx))
+    if (action === 'quiz-start' || action === 'quiz-status') {
+      const qsLesson = qs.get('lessonId') || ''
+      const lessonId = peek.lessonId || qsLesson
+      const jobId = peek.jobId || qs.get('jobId') || ''
+      return sendQuiz(res, async () => {
+        const user = await requireUser(ctx)
+        if (action === 'quiz-start') return beginQuizGeneration(quizDeps(), { userId: user.id, lessonId })
+        return tickQuizJob(quizDeps(), { userId: user.id, lessonId, jobId })
+      })
+    }
     return send(res, 400, { ok: false, error: 'Noma’lum amal' })
   } catch (error) {
     const status = error.status || 500

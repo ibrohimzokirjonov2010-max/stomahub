@@ -139,6 +139,7 @@ const AksiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/AksiyaShot')) 
 const OrdersShot = import.meta.env.DEV ? lazy(() => import('./dev/OrdersShot')) : null
 const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : null
 const CourseShot = import.meta.env.DEV ? lazy(() => import('./dev/CourseShot')) : null
+const QuizEditorShot = import.meta.env.DEV ? lazy(() => import('./dev/QuizEditorShot')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -215,6 +216,7 @@ export default function App() {
           {import.meta.env.DEV && <Route path="/dev/rasmiylashtirish" element={<MobileCheckout />} />}
           {IconSheet && <Route path="/icon-sheet" element={<Suspense fallback={null}><IconSheet /></Suspense>} />}
           {CourseShot && <Route path="/dev/kurs/:screen" element={<Suspense fallback={null}><CourseShot /></Suspense>} />}
+          {QuizEditorShot && <Route path="/dev/kurs-tahrir/:screen" element={<Suspense fallback={null}><QuizEditorShot /></Suspense>} />}
           {ReviewPhotosShot && <Route path="/review-photos-shot/:sec" element={<Suspense fallback={null}><ReviewPhotosShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />
