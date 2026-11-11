@@ -651,7 +651,7 @@ function StatBox({ to, className, children }) {
 function SeminarsBlock() {
   const { upcoming, past } = useMySeminars()
   const Row = ({ s, done }) => (
-    <Link to={s.link} className="flex gap-3 rounded-xl border border-[#e7eef2] p-2.5 hover:border-[#0F766E]/40">
+    <Link to={`/seminarlar/${s.key}/chipta`} className="flex gap-3 rounded-xl border border-[#e7eef2] p-2.5 hover:border-[#0F766E]/40">
       {s.image
         ? <img src={s.image} alt="" className="size-[72px] shrink-0 rounded-lg object-cover" />
         : <span className="grid size-[72px] shrink-0 place-items-center rounded-lg bg-[#e7f6f4] text-[#0F766E]"><GraduationCap className="size-6" /></span>}

@@ -884,6 +884,7 @@ export function toPublic(s) {
       id: t.id, name: t.name, price: currentPrice(t), basePrice: Number(t.price) || 0, earlyPrice: Number(t.earlyPrice) || 0, earlyUntil: t.earlyUntil || '', earlyActive: earlyActive(t), seats: Number(t.seats || t.total) || 0, left: t.left, perks: t.perks || [],
     })),
     format: online ? 'Online' : hybrid ? 'Offline + jonli efir' : 'Offline',
+    kind: s.category || '',
     image: s.cover && !String(s.cover).startsWith('data:') ? s.cover : (s.image || IMG.teeth),
     status: s.status,
     cancelled: s.status === 'bekor',

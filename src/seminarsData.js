@@ -211,10 +211,13 @@ const cardImage = { 'implant-toj': '/images/seminar-1.jpg', 'mikroskop-endo': '/
 const BREAKS = /breyk|Tushlik|qahva/i
 
 export function seminarCard(s) {
-  // s.days ko‘pincha "2 kunlik seminar" matni — Number() NaN berib doim 1 bo‘lardi
-  const span = s.start && s.end && s.end > s.start ? Math.round((Date.parse(s.end) - Date.parse(s.start)) / 864e5) + 1 : 0
+  // s.days ko‘pincha "2 kunlik seminar" matni — Number() NaN berib doim 1 bo‘lardi.
+  // Ommaviy yozuvda sana startIso/endIso va dayCount da (toPublic).
+  const start = s.startIso || s.start
+  const end = s.endIso || s.end
+  const span = start && end && end > start ? Math.round((Date.parse(end) - Date.parse(start)) / 864e5) + 1 : 0
   const prog = Array.isArray(s.program) ? new Set(s.program.map((x) => x?.date).filter(Boolean)).size : 0
-  const days = Math.max(1, span, prog, parseInt(s.days, 10) || 0)
+  const days = Math.max(1, span, prog, Number(s.dayCount) || 0, parseInt(s.days, 10) || 0)
   const d = Number(s.day)
   const month = MONTHS[s.mon]
   const standart = plansFor(s)[0]

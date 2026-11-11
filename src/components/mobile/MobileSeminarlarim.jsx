@@ -1,23 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Poster from '../Poster'
 
-import { Link } from 'react-router-dom'
-import { CalendarCheck, CalendarDays, CircleCheck, Download, MapPin, QrCode, Ticket, UserRound, Video } from 'lucide-react'
-import { seminarView, som } from '../../seminarsData'
+import { Link, useNavigate } from 'react-router-dom'
+import { CalendarCheck, CalendarDays, CircleCheck, Download, MapPin, QrCode, UserRound, Video } from 'lucide-react'
+import { seminarView } from '../../seminarsData'
 import { publicRecord, useHub } from '../../hubStore'
 import { useProfile } from '../../profileStore'
 import { currentUid } from '../../recordSync'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
-import { BottomSheet } from './MobileSeminars'
 import { SubTopBar } from './MobileManzillar'
-import { Qr, downloadTicket } from './MobileSeminarReg'
 import { useSeminarStore } from './seminarStore'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
 const MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
-const METHOD_LABEL = { click: 'Click', payme: 'Payme', uzum: 'Uzum Bank', card: 'Bank kartasi', split: 'Bo‘lib to‘lash' }
 
 // iOS Safari "YYYY-MM-D" kabi satrlarni o‘qiy olmaydi — sanani raqamlardan quramiz.
 const ymd = (s) => {
@@ -214,9 +211,9 @@ async function downloadCertificate(s, name) {
 
 export default function MobileSeminarlarim() {
   const profile = useProfile()
+  const navigate = useNavigate()
   const { upcoming, past } = useMySeminars()
   const [tab, setTab] = useState('upcoming')
-  const [ticket, setTicket] = useState(null)
   const [added, setAdded] = useState(() => new Set())
   const [toast, setToast] = useState('')
   const closeToast = useCallback(() => setToast(''), [])
@@ -281,7 +278,7 @@ export default function MobileSeminarlarim() {
           {upcoming.length ? (
             <div className="mt-2 flex flex-col gap-3">
               {upcoming.map((s) => (
-                <SemCard key={s.key} s={s} past={false} inCal={added.has(s.key)} onTicket={() => setTicket(s)} onCal={() => addCal(s)} />
+                <SemCard key={s.key} s={s} past={false} inCal={added.has(s.key)} onTicket={() => navigate(`/seminarlar/${s.key}/chipta`)} onCal={() => addCal(s)} />
               ))}
             </div>
           ) : (
@@ -298,13 +295,12 @@ export default function MobileSeminarlarim() {
           <section ref={pastRef} aria-labelledby="sem-past">
             <h2 id="sem-past" className={`mt-5 text-[17px] font-bold ${navy}`}>O‘tgan seminarlar</h2>
             <div className="mt-2 flex flex-col gap-3">
-              {past.map((s) => <SemCard key={s.key} s={s} past onTicket={() => setTicket(s)} onCert={() => cert(s)} />)}
+              {past.map((s) => <SemCard key={s.key} s={s} past onTicket={() => navigate(`/seminarlar/${s.key}/chipta`)} onCert={() => cert(s)} />)}
             </div>
           </section>
         )}
       </div>
 
-      {ticket && <TicketSheet s={ticket} profile={profile} past={ticket.ended || atOf(ticket) < Date.now()} onClose={() => setTicket(null)} onToast={setToast} />}
       <MobileToast text={toast} onClose={closeToast} />
       <MobileTabBar />
     </div>
@@ -369,68 +365,5 @@ function SemCard({ s, past, inCal, onTicket, onCal, onCert }) {
         )}
       </div>
     </article>
-  )
-}
-
-function TicketSheet({ s, profile, past, onClose, onToast }) {
-  const seed = `${s.order}-${s.key}-${profile?.phone}`
-  const download = async () => {
-    try {
-      await downloadTicket({
-        s: { id: s.key, image: s.image, catName: s.cat, title: s.title, speaker: { name: s.speaker } },
-        m: { whenFull: dateLabel(s) },
-        reg: { order: s.order, phone: profile?.phone, name: s.attendee || profile?.name, plan: s.plan, price: s.price },
-        place: s.online ? 'Onlayn (Zoom)' : s.place,
-        methodLabel: s.months ? `${METHOD_LABEL.split} (${s.months} oy)` : METHOD_LABEL[s.method] || 'Click',
-      })
-      onToast('Chipta yuklab olindi')
-    } catch {
-      onToast('Chiptani yuklab bo‘lmadi')
-    }
-  }
-  return (
-    <BottomSheet
-      title="Elektron chipta"
-      onClose={onClose}
-      footer={<button type="button" onClick={download} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#0b6d73] text-[14px] font-semibold text-white"><Download className="size-[18px]" /> Chiptani yuklab olish</button>}
-    >
-      <div className="mt-1 overflow-hidden rounded-2xl border border-[#e2ebee]">
-        <div className="flex gap-3 p-3">
-          <img src={s.image} alt="" className={`h-[92px] w-[80px] shrink-0 rounded-xl object-cover ${s.pos}`} />
-          <div className="min-w-0 flex-1">
-            <span className="rounded-md bg-[#e3f4f1] px-1.5 py-0.5 text-[10px] font-medium text-[#0b6d73]">{s.cat}</span>
-            <p className={`mt-1 line-clamp-2 text-[14px] font-bold leading-tight ${navy}`}>{s.title}</p>
-            <p className="mt-1 truncate text-[11.5px] text-[#7a8a9c]">{s.speaker} · {s.role}</p>
-          </div>
-        </div>
-        <div className="relative mx-3 border-t-2 border-dashed border-[#d9e6e8]">
-          <span className="absolute -left-[22px] -top-[10px] size-[18px] rounded-full border border-[#e2ebee] bg-white" />
-          <span className="absolute -right-[22px] -top-[10px] size-[18px] rounded-full border border-[#e2ebee] bg-white" />
-        </div>
-        <div className="flex flex-col items-center px-3 pb-3 pt-3">
-          <div className={past ? 'opacity-40' : ''}><Qr seed={seed} className="size-[132px]" /></div>
-          <span className="mt-1.5 rounded-md bg-[#e3f4f1] px-2 py-0.5 text-[12px] font-bold text-[#0b6d73]">#{s.order}</span>
-          <p className="mt-1 text-center text-[11.5px] text-ink-2">
-            {past ? 'Seminar yakunlangan · chipta arxivda saqlanadi' : s.online ? 'Zoom havolasi seminardan 1 soat oldin email va Telegram orqali yuboriladi' : 'Ro‘yxatdan o‘tishda QR kodni ko‘rsating'}
-          </p>
-        </div>
-      </div>
-      <dl className="mt-3 divide-y divide-[#eef2f4] rounded-xl bg-[#f6faf9] px-3 text-[12.5px]">
-        {[
-          [UserRound, 'Ishtirokchi', s.attendee || profile?.name],
-          [CalendarDays, 'Sana va vaqt', dateLabel(s)],
-          [s.online ? Video : MapPin, 'Joy', s.online ? 'Onlayn (Zoom)' : `${s.place}`],
-          [Ticket, 'Chipta turi', s.plan],
-          [CircleCheck, 'To‘langan', s.months ? `${som(Math.round(s.price / s.months))} / oy` : som(s.price)],
-        ].map(([Icon, k, v]) => (
-          <div key={k} className="flex items-center gap-2.5 py-2.5">
-            <Icon className={`size-4 shrink-0 ${teal}`} strokeWidth={1.8} />
-            <dt className="flex-1 text-ink-2">{k}</dt>
-            <dd className={`text-right font-semibold ${navy}`}>{v}</dd>
-          </div>
-        ))}
-      </dl>
-      {s.link && <Link to={s.link} className={`mt-3 block text-center text-[13px] font-semibold ${teal}`}>Seminar sahifasini ochish</Link>}
-    </BottomSheet>
   )
 }
