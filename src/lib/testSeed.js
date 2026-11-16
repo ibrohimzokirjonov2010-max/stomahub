@@ -6,7 +6,8 @@ export const TEST_ID_PREFIX = '7e57d000-0000-4000-'
 export const TEST_ORDER_TEXT = 'Hozircha buyurtma qabul qilinmaydi'
 export const TEST_CHIP_TEXT = 'Sotuvda emas'
 
-export const isTestSeedId = (id) => typeof id === 'string' && id.toLowerCase().startsWith(TEST_ID_PREFIX)
+// Savat qatori ID si ham bo‘lishi mumkin: "forma-<mahsulot id>-<rang>-<o‘lcham>"
+export const isTestSeedId = (id) => typeof id === 'string' && id.toLowerCase().replace(/^forma-/, '').startsWith(TEST_ID_PREFIX)
 
 /** Mahsulot (yoki savat qatori) sinov sotuvchisiga tegishlimi. */
 export function isTestProduct(p) {

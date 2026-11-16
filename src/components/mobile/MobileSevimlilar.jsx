@@ -11,6 +11,7 @@ import { profileStore, useProfile } from '../../profileStore'
 import { useCourseCatalog } from '../../courseApi'
 import { toCatalogCard } from '../../courseRules'
 import { MobileToast } from './parts'
+import { isTestProduct, TEST_CHIP_TEXT } from '../../lib/testSeed'
 import MobileTabBar from './MobileTabBar'
 import { useSeminarStore, toggleSaved } from './seminarStore'
 import { adsStore, useAds } from './MobileElonlar'
@@ -60,7 +61,9 @@ export default function MobileSevimlilar() {
   const cards = {
     products: (p) => (
       <Card key={p.id} image={p.image} contain onOpen={() => navigate(`/product/${p.id}`)} onHeart={() => unfav('products', p.id)} title={p.name} sub={p.type} price={som(p.price)}>
-        {inCart(p.id) ? (
+        {isTestProduct(p) ? (
+          <span data-testid="card-not-for-sale" className="flex h-9 w-full items-center justify-center rounded-xl bg-[#f1f4f5] text-[12.5px] font-semibold text-muted">{TEST_CHIP_TEXT}</span>
+        ) : inCart(p.id) ? (
           <ActionBtn onClick={() => navigate('/buyurtma', { state: { from: 'profil' } })} done><Check className="size-4" /> Savatda</ActionBtn>
         ) : (
           <ActionBtn onClick={() => { add(p); setToast({ text: `${p.name} savatga qo‘shildi` }) }}><ShoppingCart className="size-4" /> Savatga</ActionBtn>

@@ -56,7 +56,7 @@ export default function CardQtyStepper({
 
   // Sinov ma’lumoti (0075): savat o‘rniga neytral «Sotuvda emas»
   if (isTestProduct(product)) {
-    return <span title={TEST_CHIP_TEXT} className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-[#f1f4f5] px-2 py-1.5 text-[10.5px] font-semibold leading-none text-muted ${variant === 'bar' ? 'h-9 w-full text-[12px]' : ''} ${className}`}>{TEST_CHIP_TEXT}</span>
+    return <span data-testid="card-not-for-sale" title={TEST_CHIP_TEXT} className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-[#f1f4f5] px-2 py-1.5 text-[10.5px] font-semibold leading-none text-muted ${variant === 'bar' ? 'h-9 w-full text-[12px]' : ''} ${className}`}>{TEST_CHIP_TEXT}</span>
   }
 
   if (disabled) {
