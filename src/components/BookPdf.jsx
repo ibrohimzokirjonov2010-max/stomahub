@@ -32,13 +32,13 @@ export function BookPreviewModal({ book, onClose }) {
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-black/80" onClick={onClose}>
       <div className="flex items-center justify-between px-4 py-3 text-white" onClick={(e) => e.stopPropagation()}>
-        <p className="text-[13px] font-semibold">{book.title} — namuna ({pages.length} / {book.pdf.pages} bet)</p>
+        <p className="text-[13px] font-semibold">{book.title} — bepul qism ({pages.length} / {book.pdf.pages} bet)</p>
         <button onClick={onClose} aria-label="Yopish" className="grid size-8 place-items-center rounded-full bg-white/15"><X className="size-4" /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6" onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.preventDefault()}>
         <div className="mx-auto grid max-w-[760px] gap-3">
           {pages.map((src, i) => <img key={src} src={src} alt={`${i + 1}-bet`} loading="lazy" draggable={false} className="w-full select-none rounded bg-white" />)}
-          <p className="rounded-lg bg-white/10 p-3 text-center text-[12px] text-white">Namuna shu yerda tugadi. To‘liq PDF ({book.pdf.pages} bet) xariddan keyin ochiladi.</p>
+          <p className="rounded-lg bg-white/10 p-3 text-center text-[12px] text-white">Bepul qism shu yerda tugadi. To‘liq PDF ({book.pdf.pages} bet) xariddan keyin ochiladi.</p>
         </div>
       </div>
     </div>
@@ -62,10 +62,10 @@ export default function BookPdfPanel({ book, compact = false }) {
   return (
     <div className={`rounded-xl border border-[#e6eef3] bg-white ${compact ? 'p-3' : 'mt-3 p-3'}`} data-testid="book-pdf">
       <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-ink"><FileText className="size-4 text-sea" /> Elektron nusxa (PDF)</p>
-      <p className="mt-0.5 text-[11px] text-muted">{book.pdf.pages} bet{mb && ` · ${mb}`}{book.pdf.previewPages ? ` · ${book.pdf.previewPages} bet bepul namuna` : ''}</p>
+      <p className="mt-0.5 text-[11px] text-muted">{book.pdf.pages} bet{mb && ` · ${mb}`}{book.pdf.previewPages ? ` · ${book.pdf.previewPages} bet bepul` : ''}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {book.pdf.preview?.length > 0 && (
-          <button onClick={() => setPreview(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5 text-sea" /> Namuna o‘qish ({book.pdf.previewPages} bet)</button>
+          <button onClick={() => setPreview(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#d7e3ea] bg-white px-3 text-[12px] font-semibold text-ink"><BookOpen className="size-3.5 text-sea" /> Bepul o‘qish ({book.pdf.previewPages} bet)</button>
         )}
         {access === 'yes' && (
           <button onClick={open} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white disabled:opacity-60"><FileText className="size-3.5" /> {busy ? 'Ochilmoqda…' : 'To‘liq PDF ni ochish'}</button>

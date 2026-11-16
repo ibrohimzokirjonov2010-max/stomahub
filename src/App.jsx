@@ -137,6 +137,7 @@ const FormaShot = import.meta.env.DEV ? lazy(() => import('./dev/FormaShot')) : 
 const CartToastShot = import.meta.env.DEV ? lazy(() => import('./dev/CartToastShot')) : null
 const DoneShot = import.meta.env.DEV ? lazy(() => import('./dev/DoneShot')) : null
 const DeliveryShot = import.meta.env.DEV ? lazy(() => import('./dev/DeliveryShot')) : null
+const TestSeedShot = import.meta.env.DEV ? lazy(() => import('./dev/TestSeedShot')) : null
 const VakansiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/VakansiyaShot')) : null
 const AksiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/AksiyaShot')) : null
 const OrdersShot = import.meta.env.DEV ? lazy(() => import('./dev/OrdersShot')) : null
@@ -213,6 +214,7 @@ export default function App() {
           {CartToastShot && <Route path="/cart-toast-shot" element={<Suspense fallback={null}><CartToastShot /></Suspense>} />}
           {DoneShot && <Route path="/done-shot" element={<Suspense fallback={null}><DoneShot /></Suspense>} />}
           {DeliveryShot && <Route path="/delivery-shot/:sec/:id" element={<Suspense fallback={null}><DeliveryShot /></Suspense>} />}
+          {TestSeedShot && <Route path="/test-seed-shot" element={<Suspense fallback={null}><TestSeedShot /></Suspense>} />}
           {VakansiyaShot && <Route path="/vakansiya-shot/:sec" element={<Suspense fallback={null}><VakansiyaShot /></Suspense>} />}
           {VakansiyaShot && <Route path="/vakansiya-shot/:sec/:id" element={<Suspense fallback={null}><VakansiyaShot /></Suspense>} />}
           {AksiyaShot && <Route path="/aksiya-shot/:sec" element={<Suspense fallback={null}><AksiyaShot /></Suspense>} />}

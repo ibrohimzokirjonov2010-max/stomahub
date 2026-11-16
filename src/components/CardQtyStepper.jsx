@@ -1,6 +1,7 @@
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
 import { useCart } from '../cart'
 import { qtyAfterDec } from './cardQtyLogic'
+import { isTestProduct, TEST_CHIP_TEXT } from '../lib/testSeed'
 
 /** Kartochka layouti uchun: savatdagi miqdor (0 = steyper yo‘q). */
 export function useCardQty(lineId) {
@@ -51,6 +52,11 @@ export default function CardQtyStepper({
     const next = qtyAfterDec(qty, minQty)
     if (next < 1) remove(id)
     else setQty(id, next)
+  }
+
+  // Sinov ma’lumoti (0075): savat o‘rniga neytral «Sotuvda emas»
+  if (isTestProduct(product)) {
+    return <span title={TEST_CHIP_TEXT} className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-[#f1f4f5] px-2 py-1.5 text-[10.5px] font-semibold leading-none text-muted ${variant === 'bar' ? 'h-9 w-full text-[12px]' : ''} ${className}`}>{TEST_CHIP_TEXT}</span>
   }
 
   if (disabled) {

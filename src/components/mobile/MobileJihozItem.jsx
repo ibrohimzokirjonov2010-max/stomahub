@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isTestProduct, TEST_ORDER_TEXT } from '../../lib/testSeed'
+import NotForSale from '../NotForSale'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, ChevronRight, Heart, Share2, Star, CircleCheck, BadgeCheck, ShieldCheck, Truck, Package, ShoppingCart,
@@ -90,6 +92,7 @@ function JihozView({ id }) {
   const [badge] = badgeOf(p)
 
   const addToCart = () => {
+    if (isTestProduct(p)) { setToast(TEST_ORDER_TEXT); return }
     const line = jihozCartLine(p)
     if (!line || !inStock) { setToast('Bu jihoz hozir sotuvda emas'); return }
     add(line)
@@ -284,6 +287,8 @@ function JihozView({ id }) {
             <QtyStepper big value={inCart} onDec={() => changeQty(inCart - 1)} onInc={() => changeQty(inCart + 1)} className="h-12 w-[100px] shrink-0" />
             <GoCartButton big className="h-12 w-[92px] shrink-0" />
           </>
+        ) : isTestProduct(p) ? (
+          <NotForSale className="w-auto flex-[1.4] !h-12" />
         ) : (
           <>
             <button type="button" disabled={!inStock} onClick={addToCart} className="flex h-12 shrink-0 disabled:opacity-40 items-center justify-center gap-1 rounded-xl bg-sea px-2 text-[12px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98]">

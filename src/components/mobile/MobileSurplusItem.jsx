@@ -12,7 +12,6 @@ import { telegramUrl } from '../../elonApi'
 import { openTelegramWithListingMessage } from '../../lib/telegramShare'
 import { condLabel, expiryLabel } from './MobileSurplus'
 import MobileTabBar from './MobileTabBar'
-import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 
 const SAFETY = [
   { icon: ShieldCheck, title: 'Ehtiyotkor bo‘ling', text: 'Mahsulotni ko‘rib oling, yaroqlilik muddatini tekshiring' },
@@ -96,8 +95,7 @@ function SurplusView({ id }) {
           <Link to={`/ortiqcha?cat=${d.cat}`} className="rounded-full bg-[#fde8ef] px-2.5 py-1 text-[11px] font-semibold text-[#e0457b]">{d.category}</Link>
           <span className="rounded-full bg-[#eef1f5] px-2.5 py-1 text-[11px] font-medium text-ink-2">{d.brand}</span>
         </div>
-        <h1 className="mt-2 text-[21px] font-extrabold leading-tight tracking-tight text-ink">{d.name}{d.isDemo && <DemoChip className="ml-1.5 align-middle" />}</h1>
-        {d.isDemo && <DemoNotice className="mt-2.5" />}
+        <h1 className="mt-2 text-[21px] font-extrabold leading-tight tracking-tight text-ink">{d.name}</h1>
         <p className="mt-0.5 text-[12px] text-muted">{subtitle}</p>
 
         <div className="mt-2.5 flex flex-wrap gap-1 whitespace-nowrap">
@@ -139,7 +137,7 @@ function SurplusView({ id }) {
             : <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full bg-sea-50 text-[15px] font-bold text-sea">{(s.name || '?').trim().charAt(0).toUpperCase()}</span>}
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-bold leading-tight text-ink">
-              {s.name} {!d.isDemo && <BadgeCheck className="-mt-0.5 inline size-4 fill-sea text-white" />}
+              {s.name} {<BadgeCheck className="-mt-0.5 inline size-4 fill-sea text-white" />}
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
               {s.reviews > 0 ? <><Star className="size-3.5 fill-star text-star" /> <b className="font-semibold text-ink">{s.rating}</b> ({s.reviews} ta baho)</> : 'Hali baho yo‘q'}
@@ -192,7 +190,6 @@ function SurplusView({ id }) {
 
 /** E’lonlar detail bilan bir xil: Telegram’da yozish + Qo‘ng‘iroq qilish */
 export function SurplusContactLinks({ seller, listing, onToast, compact = false }) {
-  if (listing?.isDemo) return <DemoActionBar className={compact ? '!h-10 text-[11px]' : ''} />
   const phone = (seller?.phone || '').replace(/\s/g, '')
   const tg = telegramUrl(seller?.telegram)
   const h = compact ? 'h-10 text-[11px]' : 'h-12 text-[13.5px]'

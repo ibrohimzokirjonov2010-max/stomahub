@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, Star, CircleCheck } from 'lucide-react'
 import { isOwnProduct } from '../../cart'
+import { isTestProduct, TEST_CHIP_TEXT } from '../../lib/testSeed'
 import CardQtyStepper, { useCardQty } from '../CardQtyStepper'
 import { som } from '../../marketData'
 import { flushProfile, profileStore, useProfile } from '../../profileStore'
@@ -56,13 +57,14 @@ export function Rating({ rating, reviews }) {
 }
 
 export function AddButton({ product, className = '' }) {
+  if (isTestProduct(product)) return <span title={TEST_CHIP_TEXT} className={`shrink-0 rounded-md bg-[#f1f4f5] px-1.5 py-1 text-[9px] font-semibold leading-none text-muted ${className}`}>{TEST_CHIP_TEXT}</span>
   if (isOwnProduct(product)) return <span title="Sizning mahsulotingiz" className={`shrink-0 rounded-md bg-[#eef4f4] px-1.5 py-1 text-[9px] font-semibold leading-none text-sea ${className}`}>Sizning mahsulotingiz</span>
   return <CardQtyStepper product={product} className={className} />
 }
 
 export default function ProductCard({ product }) {
   const p = product
-  const qty = useCardQty(isOwnProduct(p) ? '' : p.id)
+  const qty = useCardQty(isOwnProduct(p) || isTestProduct(p) ? '' : p.id)
   return (
     <Link to={`/product/${p.id}`} className="group relative flex flex-col rounded-xl bg-white p-2.5 shadow-card transition hover:shadow-md">
       <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />

@@ -1,3 +1,4 @@
+import { isTestEvent } from '../../lib/testSeed'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -45,6 +46,7 @@ export default function MobileSeminarReg() {
   if (!seminar) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar topilmadi</div>
   if (seminar.cancelled) return <div className="px-4 py-16 text-center text-[15px] font-bold">Seminar bekor qilingan</div>
   if (rec.regClosed || rec.past) return <div className="px-4 py-16 text-center"><p className="text-[15px] font-bold">Seminar yakunlangan</p><p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p></div>
+  if (isTestEvent(seminar) || isTestEvent(rec)) return <div className="px-4 py-16 text-center"><p className="text-[15px] font-bold">Ro‘yxatdan o‘tish hozircha yopiq</p><p className="mt-1 text-[13px] text-muted">Bu seminarga hozircha joy band qilib bo‘lmaydi.</p></div>
   return <RegGate id={id} seminar={seminar} />
 }
 

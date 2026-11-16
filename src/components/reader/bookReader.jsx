@@ -168,7 +168,7 @@ export function LockScreen({ book, facts, access, night }) {
   return (
     <div data-testid="reader-lock" className={`grid place-items-center rounded-2xl border px-5 py-10 text-center ${night ? 'border-[#22343f] bg-[#16252f] text-[#e3edf2]' : 'border-line/70 bg-white text-ink'}`}>
       <span className="grid size-12 place-items-center rounded-full bg-[#e6f4f3] text-[#0b6d73]"><Lock className="size-6" /></span>
-      <p className="mt-3 text-[15px] font-bold">Bepul namuna {n} bet bilan tugadi</p>
+      <p className="mt-3 text-[15px] font-bold">Bepul qism ({n} bet) tugadi</p>
       <p className="mt-1 max-w-[340px] text-[12.5px] leading-snug opacity-80">
         To‘liq kitob ({facts.total} bet) xarid qilganlar uchun ochiq.
         {access === 'guest' ? ' Avval tizimga kiring.' : book.price == null ? ' Narx sotuvchi bilan kelishiladi.' : ''}

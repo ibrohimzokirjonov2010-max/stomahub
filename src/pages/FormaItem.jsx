@@ -11,8 +11,8 @@ import { pickVariant, sizeInStock, formaCartLine, formaQuestionText, cleanKashta
 import { useSellerContact } from '../lib/useSellerContact'
 import { telegramChatUrl, openExternal } from '../ustaContact'
 import { payPromo } from '../payments/paymentService'
-import { isDemoItem } from '../demoContent'
-import { DemoNotice, DemoActionBar } from '../components/DemoNotice'
+import { isTestProduct } from '../lib/testSeed'
+import NotForSale from '../components/NotForSale'
 import Lightbox from '../components/Lightbox'
 
 const perks = [
@@ -55,7 +55,7 @@ export default function FormaItem() {
   const gallery = product.gallery?.length ? product.gallery : [product.image]
   const live = !!product.live
   const variant = live ? pickVariant(product, size, color) : null
-  // Logo tikish: haqiqiy mahsulotda sotuvchi kashta narxini belgilagan bo‘lsa; namunada — faqat ko‘rinish (kiyim uchun)
+  // Logo tikish: haqiqiy mahsulotda sotuvchi kashta narxini belgilagan bo‘lsa; egasiz katalog yozuvida — faqat ko‘rinish (kiyim uchun)
   const canLogo = live ? product.kashtaPrice > 0 : sizeTypeOf(product) === 'clothing'
   const logoFee = live ? product.kashtaPrice : 25000
   const kashta = live && kashtaOn ? cleanKashta(kashtaText) : ''
@@ -63,9 +63,9 @@ export default function FormaItem() {
   const soldOut = live && (!variant || Number(variant.stock) <= 0)
   const shownPrice = live ? (Number(variant?.price) || product.price) + (kashtaOn && canLogo ? product.kashtaPrice : 0) : product.price + (kashtaOn && canLogo ? logoFee : 0)
   const inCart = !!line && items.some((it) => it.id === line.id)
-  // Faqat haqiqiy sotuvchi mahsuloti savatga tushadi (namuna/egasiz yozuvlarni buyurtma qilib bo‘lmaydi)
-  const demo = isDemoItem(product) || !live
-  const buyable = !demo
+  // Faqat haqiqiy sotuvchi mahsuloti savatga tushadi (egasiz katalog yozuvi va sinov mahsulotini buyurtma qilib bo‘lmaydi)
+  const blocked = !live || isTestProduct(product)
+  const buyable = !blocked
   const flash = (t) => { setNote(t); setTimeout(() => setNote(''), 2500) }
   const ready = () => {
     if (soldOut || !line) { flash('Bu o‘lcham va rang hozir omborda yo‘q'); return false }
@@ -140,7 +140,7 @@ export default function FormaItem() {
                   </label>
                   {kashtaOn && (
                     <div className="mt-2 space-y-2" data-testid="logo-block">
-                      <LogoUpload value={logoFile} onChange={setLogoFile} demo={!live} />
+                      <LogoUpload value={logoFile} onChange={setLogoFile} local={blocked} />
                       <input value={kashtaText} onChange={(e) => setKashtaText(e.target.value.slice(0, KASHTA_MAX))} maxLength={KASHTA_MAX} placeholder="Izoh (ixtiyoriy): joylashuvi yoki yozuv, masalan chap ko‘krakda" aria-label="Logo bo‘yicha izoh" className="h-9 w-full rounded-lg bg-page px-3 text-[12px] outline-none" />
                       <p className="text-[10.5px] text-muted">Logoni hozir yoki buyurtmani rasmiylashtirishda yuklashingiz mumkin — u buyurtma bilan sotuvchiga yuboriladi.</p>
                     </div>
@@ -148,7 +148,7 @@ export default function FormaItem() {
                 </div>
               )}
               {note && <p className="mt-2 text-[12px] font-semibold text-sale">{note}</p>}
-              {demo ? <><DemoNotice className="mt-3" /><DemoActionBar className="mt-2" label="Namuna mahsulot — sotuvda emas" /></> : <>
+              {blocked ? <NotForSale className="mt-3" /> : <>
               <div className="mt-3 flex items-center gap-2">
                 <button onClick={put} disabled={soldOut} className={`flex h-10 flex-1 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white disabled:bg-[#9fb4c0] ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
                   <ShoppingCart className="size-4" /> {soldOut ? 'Omborda yo‘q' : inCart ? 'Savatda' : 'Savatga qo‘shish'}

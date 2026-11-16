@@ -73,7 +73,7 @@ function ReaderView({ book }) {
       </header>
 
       {!full && free > 0 && page <= free && (
-        <p className={`mx-3 mt-2 rounded-lg px-3 py-1.5 text-center text-[11.5px] ${dark ? 'bg-[#16252f]' : 'bg-[#e6f4f3] text-[#0b5b60]'}`}>Bepul namuna: 1–{free} bet · to‘liq kitob {facts.total} bet</p>
+        <p className={`mx-3 mt-2 rounded-lg px-3 py-1.5 text-center text-[11.5px] ${dark ? 'bg-[#16252f]' : 'bg-[#e6f4f3] text-[#0b5b60]'}`}>Bepul qism: 1–{free} bet · to‘liq kitob {facts.total} bet</p>
       )}
 
       <main className="overflow-x-auto px-2 pt-2">

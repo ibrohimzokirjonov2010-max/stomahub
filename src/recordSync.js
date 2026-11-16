@@ -2,7 +2,6 @@ import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { DEMO_ORGANIZER_ID } from './hubSeed'
 import { scrubBlobPayload } from './demoPurge'
-import { withDemoFlag } from './demoContent'
 
 const blobs = new Map()
 const accountListeners = new Set()
@@ -210,10 +209,27 @@ const SEED_KINDS = new Set(['course', 'certificate', 'book', 'job', 'deal', 'cha
 // kind:id of rows that have a real owner (seller/organizer). Ratings/discounts are only trusted on these.
 const ownedRows = new Set()
 export const isOwned = (kind, id) => ownedRows.has(`${kind}:${id}`)
+// kind:id of rows owned by the CURRENT user (egasining boshqaruv tugmalari faqat shunda).
+const mineRows = new Set()
+export const isMine = (kind, id) => mineRows.has(`${kind}:${id}`)
+
+/** Dev-only: skrinshot uchun katalog qatorlari (production bundle’da yo‘q). */
+export const __shotCatalog = import.meta.env.DEV ? (rows) => {
+  const grouped = new Map()
+  rows.forEach((row) => {
+    if (row.owner_id) ownedRows.add(`${row.kind}:${row.id}`)
+    if (!grouped.has(row.kind)) grouped.set(row.kind, [])
+    grouped.get(row.kind).push(row.payload)
+  })
+  targets.forEach(({ kind, list }) => { if (grouped.has(kind)) list.splice(0, list.length, ...grouped.get(kind)) })
+  catalogVersion += 1
+  catalogListeners.forEach((listener) => listener())
+} : undefined
 
 export async function loadCatalog() {
   if (!supabase) return
   ownedRows.clear()
+  mineRows.clear()
   let { data, error } = await supabase.from('catalog_items').select('kind,id,payload,sort_at,owner_id,hidden,status,is_demo').limit(5000)
   // is_demo ustuni (0063) hali bo‘lmasa — usiz
   if (error && /is_demo/i.test(error.message || '')) {
@@ -234,10 +250,11 @@ export async function loadCatalog() {
   })()
   const grouped = new Map()
   ;(data || []).forEach((r0) => {
-    let row = withDemoFlag(r0)
+    // 0063 «Namuna» (is_demo) qatorlari endi ko‘rsatilmaydi — o‘rniga 0075 sinov ma’lumoti (egasi bor qatorlar).
+    if (r0?.is_demo) return
+    let row = r0?.payload?.isDemo ? { ...r0, payload: (({ isDemo, ...rest }) => rest)(r0.payload) } : r0 // eslint-disable-line no-unused-vars
     // Ownerless seed rows (demo courses/certificates/books) are not real content.
-    // Istisno: is_demo = true (0063) — ataylab qo‘yilgan, «Namuna» belgili vaqtinchalik namuna.
-    if (!row.owner_id && SEED_KINDS.has(row.kind) && !row.payload?.isDemo) return
+    if (!row.owner_id && SEED_KINDS.has(row.kind)) return
     const isOwner = Boolean(uid && row.owner_id === uid)
     if (row.kind === 'ad') {
       const status = row.status || row.payload?.status || 'active'
@@ -262,6 +279,7 @@ export async function loadCatalog() {
       row = { ...row, payload: { ...row.payload, _pending: true } }
     }
     if (row.owner_id) ownedRows.add(`${row.kind}:${row.id}`)
+    if (isOwner) mineRows.add(`${row.kind}:${row.id}`)
     if (!grouped.has(row.kind)) grouped.set(row.kind, [])
     grouped.get(row.kind).push(row)
   })

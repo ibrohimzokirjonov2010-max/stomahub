@@ -68,10 +68,10 @@ test('ustalarda soxta oqimlar yo‘q', () => {
   assert.doesNotMatch(read('src/pages/Ustalar.jsx'), /Hozir bo‘sh|statusLabel/)
 })
 
-test('namuna ustalarda aloqa o‘chiq', () => {
+test('ustalarda aloqa har doim ko‘rinadi (Namuna holati yo‘q)', () => {
   const s = read('src/components/mobile/MobileUsta.jsx')
-  assert.match(s, /const tg = demo \? '' : ustaTelegram\(m\)/)
-  assert.match(s, /const tel = demo \? '' : ustaPhone\(m\)/)
-  assert.match(s, /sheet\?\.order && !demo/)
-  assert.match(read('src/pages/Usta.jsx'), /isDemoItem\(master\) \? <DemoNotice/)
+  assert.match(s, /const tg = ustaTelegram\(m\)/)
+  assert.match(s, /const tel = ustaPhone\(m\)/)
+  assert.doesNotMatch(s, /demo/)
+  assert.doesNotMatch(read('src/pages/Usta.jsx'), /isDemoItem|DemoNotice/)
 })

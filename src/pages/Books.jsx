@@ -154,7 +154,7 @@ function Books({ query }) {
                 <p className="mt-1 text-[16px] font-extrabold text-sale">{money(featuredBook.price)}</p>
                 {featuredBook.oldPrice ? <p className="text-[10px] text-muted line-through">{money(featuredBook.oldPrice)}</p> : null}
                 <CartButton book={featuredBook} wide />
-                <Link to={`/kitoblar/${featuredBook.id}/oqish`} className="mt-1.5 flex h-8 w-full items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea hover:bg-sea-50">Namuna o‘qish</Link>
+                <Link to={`/kitoblar/${featuredBook.id}/oqish`} className="mt-1.5 flex h-8 w-full items-center justify-center rounded-lg border border-sea text-[11px] font-semibold text-sea hover:bg-sea-50">Bepul o‘qish</Link>
               </>
             ) : (
               <p className="py-2 text-[11px] text-muted">Tanlangan kitob yo‘q</p>
@@ -227,7 +227,7 @@ function BookCard({ book }) {
       </div>
       <div className="mt-auto pt-2">
         <CartButton book={book} />
-        {book.price != null && <Link to={`/kitoblar/${book.id}/oqish`} className="mt-1 block h-7 w-full text-center text-[10.5px] font-semibold leading-7 text-sea hover:underline">Namuna o‘qish</Link>}
+        {book.price != null && <Link to={`/kitoblar/${book.id}/oqish`} className="mt-1 block h-7 w-full text-center text-[10.5px] font-semibold leading-7 text-sea hover:underline">Bepul o‘qish</Link>}
       </div>
     </article>
   )

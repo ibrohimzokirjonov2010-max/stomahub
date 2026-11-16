@@ -12,8 +12,6 @@ import { useFav } from './MobileMutaxassislar'
 import { ReviewsSheet, Review } from './MobileMutaxassis'
 import { OrderSheet, openUstaChat } from '../usta/UstaOrder'
 import { ustaTelegram, ustaPhone } from '../../ustaContact'
-import { isDemoItem } from '../../demoContent'
-import { DemoNotice, DemoActionBar, DemoChip } from '../DemoNotice'
 
 const TABS = [['services', 'Xizmatlar'], ['works', 'Ishlar'], ['reviews', 'Sharhlar'], ['info', 'Ma’lumot']]
 
@@ -50,9 +48,8 @@ function UstaView({ id }) {
   }
 
   const isFav = fav.has(m.id)
-  const demo = isDemoItem(m)
-  const tg = demo ? '' : ustaTelegram(m)
-  const tel = demo ? '' : ustaPhone(m)
+  const tg = ustaTelegram(m)
+  const tel = ustaPhone(m)
   const chat = () => openUstaChat(m, setToast)
   const total = m.reviews + reviews.length - m.reviewsList.length
   const go = (k) => {
@@ -93,12 +90,11 @@ function UstaView({ id }) {
           <div className="flex gap-3">
             <div className="relative size-[84px] shrink-0">
               <span className="block size-full overflow-hidden rounded-full ring-[3px] ring-white">
-                <img src={m.photo} alt="" className="size-full object-cover" style={demo ? undefined : { objectPosition: m.face, transform: 'scale(2.4)', transformOrigin: m.face }} />
+                <img src={m.photo} alt="" className="size-full object-cover" style={m.face ? { objectPosition: m.face, transform: 'scale(2.4)', transformOrigin: m.face } : undefined} />
               </span>
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
-              <h1 className="flex items-center gap-1 text-[19px] font-extrabold leading-tight text-[#0d2a4a]"><span className="truncate">{m.name}</span>{!demo && m.verified && <BadgeCheck className="size-5 shrink-0 fill-sea text-white" />}</h1>
-              {demo && <DemoChip className="mt-1" />}
+              <h1 className="flex items-center gap-1 text-[19px] font-extrabold leading-tight text-[#0d2a4a]"><span className="truncate">{m.name}</span>{m.verified && <BadgeCheck className="size-5 shrink-0 fill-sea text-white" />}</h1>
               <p className="mt-0.5 truncate text-[12px] text-[#7d8fa9]">{m.role}</p>
               <p className="mt-1 flex items-center gap-1 text-[12px] text-ink-2">{Number(total) > 0 ? <><Star className="size-4 fill-star text-star" /> <b className="font-bold text-ink">{m.rating}</b> <span className="text-muted">({total} ta baho)</span></> : 'Hali baho yo‘q'}</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-ink-2">
@@ -132,11 +128,10 @@ function UstaView({ id }) {
       </div>
 
       <div className="flex flex-col gap-2.5 px-3.5 pt-1">
-        {demo && <DemoNotice />}
         <Card refEl={refs.services} title="Xizmatlar va narxlar">
           <div className="flex flex-col gap-1.5">
             {m.services.map((s) => (
-              <button key={s.id} type="button" onClick={() => (demo ? setToast('Namuna e’lon — buyurtma o‘chirilgan') : setSheet({ order: s }))} className="flex items-center gap-2.5 rounded-xl border border-line/70 p-1.5 pr-1 text-left active:bg-[#f2f8f8]">
+              <button key={s.id} type="button" onClick={() => setSheet({ order: s })} className="flex items-center gap-2.5 rounded-xl border border-line/70 p-1.5 pr-1 text-left active:bg-[#f2f8f8]">
                 <img src={s.image} alt="" className="size-[46px] shrink-0 rounded-lg object-cover" />
                 <span className="min-w-0 flex-1">
                   <b className="block text-[13px] font-semibold leading-tight text-ink">{s.name}</b>
@@ -189,19 +184,15 @@ function UstaView({ id }) {
         </Card>
       </div>
 
-      {demo ? (
-        <div className="fixed inset-x-0 bottom-[62px] z-30 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur"><DemoActionBar /></div>
-      ) : (
       <div className={`fixed inset-x-0 bottom-[62px] z-30 grid gap-2 border-t border-line/60 bg-white/95 px-3.5 py-2 backdrop-blur ${tel || tg ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {tel
           ? <a href={`tel:${tel}`} data-testid="usta-call" className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#0b8a95] bg-white text-[14px] font-semibold text-[#0b6d73]"><Phone className="size-5" /> Qo‘ng‘iroq</a>
           : tg && <button type="button" onClick={chat} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#229ed9] bg-white text-[14px] font-semibold text-[#1c8ac4]"><Send className="size-5" /> Telegram</button>}
         <button type="button" onClick={() => setSheet({ order: m.services[0] })} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(90deg,#0b8a95,#14a7a0)] text-[14px] font-semibold text-white shadow-[0_6px_14px_rgb(11_138_149/0.3)]"><CalendarDays className="size-5" /> Buyurtma berish</button>
       </div>
-      )}
 
       {sheet === 'reviews' && <ReviewsSheet reviews={reviews} onClose={() => setSheet(null)} onAdd={(r) => { setReviews((l) => [r, ...l]); setToast('Sharhingiz qo‘shildi') }} />}
-      {sheet?.order && !demo && <OrderSheet m={m} service={sheet.order} onClose={() => setSheet(null)} onDone={(msg) => { setSheet(null); setToast(msg) }} />}
+      {sheet?.order && <OrderSheet m={m} service={sheet.order} onClose={() => setSheet(null)} onDone={(msg) => { setSheet(null); setToast(msg) }} />}
       {zoom !== null && <Lightbox images={m.works} index={zoom} onClose={() => setZoom(null)} />}
 
       <MobileToast text={toast} onClose={closeToast} bottom={140} />
