@@ -51,3 +51,13 @@ test('Checkout: soxta chizilgan xarita (CityMap) olib tashlangan, haqiqiy MapPic
   assert.doesNotMatch(c, /CityMap/)
   assert.match(c, /<MapPicker /)
 })
+
+test('detailPath: mahsulot sahifalarida toast pastda (narxni yopmaydi)', async () => {
+  const { detailPath } = await import('../src/lib/toastBus.js')
+  assert.ok(detailPath('/product/abc'))
+  assert.ok(detailPath('/forma/x1'))
+  assert.ok(detailPath('/jihozlar/7'))
+  assert.ok(detailPath('/kitoblar/9'))
+  assert.ok(!detailPath('/kitoblar/9/oqish'))
+  assert.ok(!detailPath('/marketplace'))
+})

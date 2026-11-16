@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { parseWhenNote } from '../../../lib/deliveryWhen.js'
 import { useNavigate } from 'react-router-dom'
 import { X, Store, FileText, CalendarDays, Truck, UserRound, Phone, Lock, MapPin, Check, ChevronRight, ArrowLeft, Wallet, Coins, StickyNote, Building2 } from 'lucide-react'
 import OrderLogo from '../buyurtma/OrderLogo'
@@ -153,7 +154,7 @@ export default function OrderDrawer({ orderId, onClose }) {
             <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#E3F4F2] text-[#0F766E]"><StickyNote className="size-5" /></span>
             <div className="text-[12px] leading-relaxed text-[#3D4E5F]">
               <div className="text-[13px] font-semibold text-[#10283F]">Eslatma</div>
-              {order.note ? <div className="mb-1">{order.note}</div> : null}
+              {(() => { const w = parseWhenNote(order.note); return <>{w.when ? <div className="mb-1 font-semibold text-[#0F766E]">Xaridor tanlagan vaqt: {w.when}</div> : null}{w.rest ? <div className="mb-1">{w.rest}</div> : null}</> })()}
               Xaridor buyurtmani olganda naqd to‘lov qiladi. Buyurtmani tasdiqlagandan so‘ng xaridorga telefon raqami ko‘rinadi.
             </div>
           </div>

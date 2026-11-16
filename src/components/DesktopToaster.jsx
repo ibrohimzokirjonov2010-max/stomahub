@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { AlertTriangle, Check, Heart, Info, ShoppingCart, X } from 'lucide-react'
 import { onCartAdd, useCart } from '../cart'
 import { useMobile } from '../useMobile'
-import { cartToastModel, onToast, quietCartPath } from '../lib/toastBus'
+import { cartToastModel, detailPath, onToast, quietCartPath } from '../lib/toastBus'
 
 const DURATION = { cart: 3000, fav: 2600, info: 2600, success: 3000, warn: 4500, error: 4500 }
 const TILE = {
@@ -74,7 +74,7 @@ export default function DesktopToaster() {
   const Icon = ICON[toast.kind] || Info
   const alert = toast.kind === 'warn' || toast.kind === 'error'
   return (
-    <div className="pointer-events-none fixed right-5 top-[68px] z-[96] flex w-[380px] max-w-[calc(100vw-40px)] justify-end" data-testid="desktop-toast-host">
+    <div className={`pointer-events-none fixed right-5 z-[96] flex w-[380px] max-w-[calc(100vw-40px)] justify-end ${detailPath(pathname) ? 'bottom-6' : 'top-[68px]'}`} data-testid="desktop-toast-host" data-pos={detailPath(pathname) ? 'bottom' : 'top'}>
       <div key={toast.key} role={alert ? 'alert' : 'status'} aria-live={alert ? 'assertive' : 'polite'} data-testid="desktop-toast" data-kind={toast.kind}
         onMouseEnter={() => { paused.current = true }} onMouseLeave={() => { paused.current = false }}
         className={`desktop-toast pointer-events-auto relative w-full overflow-hidden rounded-[18px] border border-white/80 bg-white/[0.94] shadow-[0_18px_48px_rgb(11_31_58/0.22),inset_0_1px_0_rgb(255_255_255/0.9)] backdrop-blur-[20px] ${leaving ? 'desktop-toast-out' : ''}`}>

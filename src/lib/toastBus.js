@@ -18,3 +18,5 @@ export const favToastModel = (added, name = '', image = '') => (added
   : { kind: 'info', title: 'Sevimlilardan olib tashlandi', text: name, image })
 // Savat sahifasida/rasmiylashtirishda "qo‘shildi" toasti keraksiz
 export const quietCartPath = (path = '') => /^\/(savatcha|buyurtma)(\/|$)/.test(path)
+// Mahsulot sahifalarida o‘ng ustunda narx/xarid bloki turadi — toast pastki o‘ngda chiqadi
+export const detailPath = (path = '') => /^\/(product|forma|jihozlar|kitoblar)\/[^/]+\/?$/.test(path)

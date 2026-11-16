@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   House, ChevronRight, UserRound, MapPin, Truck, Store, Check, Lock, ShieldCheck,
-  CreditCard, Banknote, CalendarDays, Pencil, ArrowRight, ArrowLeft, X,
+  CreditCard, Banknote, CalendarDays, Pencil, ArrowRight, ArrowLeft, X, Copy, Clock3, Wallet, ShoppingBag,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import MapPicker, { MapPreview, withGeo } from '../components/MapPicker'
+import DeliveryWhenPicker from '../components/checkout/DeliveryWhenPicker'
+import { isAsap, whenError, whenLabel } from '../lib/deliveryWhen.js'
+import { showToast } from '../lib/toastBus'
+import DoneSteps from '../components/checkout/DoneSteps'
 import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
@@ -16,7 +20,7 @@ import CheckoutLogos from '../components/forma/CheckoutLogos'
 import { missingLogos, withLogos } from '../lib/formaLogo'
 import { currentUid } from '../recordSync'
 import { onlineMethods, payUrlFor, usePaymentConfig } from '../payments/paymentService'
-import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, earliestDeliveryISO, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../checkoutUtils'
+import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, invoiceError, earliestDeliveryISO, orderNote, readBuyNow } from '../checkoutUtils'
 import { CHECKOUT_CITIES } from '../lib/uzRegions'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG } from '../components/PhoneInput'
 
@@ -99,7 +103,7 @@ export default function Checkout() {
   const [promoMsg, setPromoMsg] = useState('')
   const [invoice, setInvoice] = useState(false)
   const [inv, setInv] = useState({ stir: '', company: '' })
-  const [delivery, setDelivery] = useState(() => (draft?.delivery?.date >= todayISO() ? draft.delivery : defaultDelivery()))
+  const [delivery, setDelivery] = useState(() => (draft?.delivery || defaultDelivery()))
   const [agree, setAgree] = useState(false)
   const [error, setError] = useState('')
   // 0066: «Logo tikish» qatorlari uchun shu sahifada yuklangan/almashtirilgan logo fayllari
@@ -180,10 +184,8 @@ export default function Checkout() {
         setError('Ism, telefon, shahar, tuman va aniq manzil majburiy.')
         return
       }
-      if (!delivery.date || delivery.date < earliestDeliveryISO(form.city, shipMode !== 'courier') || !windowsFor(delivery.date).includes(delivery.slot)) {
-        setError('Yetkazish sanasi va vaqtini tanlang (o‘tgan vaqt tanlab bo‘lmaydi).')
-        return
-      }
+      const whenErr = whenError(delivery, earliestDeliveryISO(form.city, shipMode !== 'courier'))
+      if (whenErr) { setError(whenErr); return }
     }
     if (step === 2) {
       const bad = invoiceError(invoice, inv)
@@ -204,6 +206,9 @@ export default function Checkout() {
     if (otherProblems.length) { setError(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
     if (logoMissing) { setLogoTried(true); setError('Logo faylini yuklang'); return }
     if (rxBlocked) { setError('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
+    // Sahifa uzoq ochiq qolgan bo‘lsa ham o‘tgan kun/vaqt bilan buyurtma ketmasin
+    const whenErr = whenError(delivery, earliestDeliveryISO(form.city, shipMode !== 'courier'))
+    if (whenErr) { setError(whenErr); onEdit(1); return }
     if (busy) return
     setError('')
     setBusy(true)
@@ -262,7 +267,7 @@ export default function Checkout() {
         </p>
 
         {placed ? (
-          <Done placed={placed} origin={origin} />
+          <CheckoutDone placed={placed} origin={origin} />
         ) : (
           <>
             <h1 className="text-[26px] font-extrabold tracking-tight text-ink">Buyurtma berish</h1>
@@ -485,7 +490,7 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, allSaved, se
         </div>
       </section>
 
-      <DeliveryWhen delivery={delivery} setDelivery={setDelivery} pickup={shipMode !== 'courier'} minDate={earliestDeliveryISO(form.city, shipMode !== 'courier')} />
+      <DeliveryWhenPicker value={delivery} onChange={setDelivery} pickup={shipMode !== 'courier'} minDate={earliestDeliveryISO(form.city, shipMode !== 'courier')} />
 
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <h2 className="text-[16px] font-bold">Qo‘shimcha ma’lumot</h2>
@@ -606,8 +611,8 @@ function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree,
                 <span className="text-[12px] text-muted">{shipMode === 'courier' ? 'Manzilingizga yetkazib berish' : 'Do‘kondan o‘zingiz olib ketasiz'}</span>
               </span>
             </div>
-            <p className="mt-2 text-[13px] font-semibold">{fmtDeliveryDate(delivery.date)}</p>
-            <p className="text-[12px] text-muted">{delivery.slot} oralig‘ida (Toshkent vaqti)</p>
+            <p className="mt-2 text-[13px] font-semibold">{whenLabel(delivery)}</p>
+            <p className="text-[12px] text-muted">{isAsap(delivery) ? 'Sotuvchi eng yaqin vaqtni siz bilan kelishadi' : 'Toshkent vaqti bo‘yicha'}</p>
           </section>
           <section className="rounded-2xl bg-white p-4 shadow-card">
             <Head n="4" title="To‘lov usuli" onEdit={() => onEdit(2)} />
@@ -702,37 +707,84 @@ function Summary({ items, goods, ship, discount, grand, step, promoOpen, setProm
   )
 }
 
-function Done({ placed, origin }) {
+export function CheckoutDone({ placed, origin }) {
+  const codes = String(placed.id || '').split(/,\s*/).filter(Boolean)
+  const pickup = placed.shipMode !== 'courier'
+  const trackTo = codes.length === 1 ? `/buyurtma/kuzatish/${codes[0]}` : '/profil/buyurtmalar'
+  const copy = async (c) => { try { await navigator.clipboard.writeText(c); showToast({ kind: 'info', title: 'Nusxalandi', text: `Buyurtma raqami #${c}` }) } catch { /* clipboard yo‘q */ } }
+  const address = pickup ? 'Do‘kondan olib ketasiz' : [placed.form.city, placed.form.district, placed.form.address].filter(Boolean).join(', ')
+  const rows = [
+    [CreditCard, 'To‘lov', placed.method.id === 'cash' ? `${placed.method.title} — mahsulotni olganda` : placed.method.title],
+    [pickup ? Store : Truck, 'Usul', pickup ? 'Olib ketish' : 'Kuryer orqali'],
+    [MapPin, pickup ? 'Joy' : 'Manzil', address || '—'],
+    [Clock3, pickup ? 'Olib ketish vaqti' : 'Yetkazish vaqti', placed.delivery ? whenLabel(placed.delivery) : 'Imkon qadar tezroq'],
+  ]
+  const items = placed.items || []
   return (
-    <div className="mx-auto max-w-[720px] rounded-2xl bg-white p-6 shadow-card">
-      <div className="flex items-start gap-3">
-        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#e5f7ea] text-[#17803d]"><Check className="size-6" /></span>
-        <div>
-          <h1 className="text-[22px] font-extrabold">Buyurtmangiz qabul qilindi</h1>
-          <p className="mt-1 text-[13px] text-muted">{placed.method.id === 'cash' ? 'To‘lov mahsulotni olganda naqd.' : 'To‘lov kutilmoqda — to‘lovdan so‘ng pul escrowda saqlanadi.'} Buyurtma raqami <b className="text-ink">#{placed.id}</b></p>
+    <div className="mx-auto max-w-[640px]" data-testid="order-done">
+      <div className="overflow-hidden rounded-3xl bg-white shadow-card">
+        <div className="bg-gradient-to-b from-[#e8f7f2] to-white px-6 pb-5 pt-8 text-center">
+          <span className="done-pop relative mx-auto grid size-[84px] place-items-center rounded-full bg-[#d4f1e6]">
+            <span className="done-ring absolute inset-0 rounded-full" aria-hidden="true" />
+            <span className="grid size-[62px] place-items-center rounded-full bg-[#17a36b] text-white shadow-[0_10px_24px_rgb(23_163_107/0.35)]"><Check className="done-check size-9" strokeWidth={3} /></span>
+          </span>
+          <h1 className="mt-4 text-[24px] font-extrabold tracking-tight text-[#0d2a4a]">{placed.method.id === 'cash' ? 'Buyurtmangiz qabul qilindi' : 'Buyurtma yaratildi — to‘lovni yakunlang'}</h1>
+          <p className="mx-auto mt-1 max-w-[440px] text-[13px] text-ink-2">Sotuvchi buyurtmani tasdiqlagach, yetkazish vaqti va narxini siz bilan kelishadi.</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {codes.map((c) => (
+              <span key={c} className="inline-flex items-center gap-1.5 rounded-full border border-sea/25 bg-white py-1 pl-3.5 pr-1 text-[14px] font-bold text-[#0d2a4a] shadow-sm" data-testid="done-code">
+                <span className="text-[12px] font-semibold text-muted">Buyurtma</span> #{c}
+                <button type="button" onClick={() => copy(c)} aria-label={`#${c} raqamini nusxalash`} className="grid size-7 place-items-center rounded-full text-sea hover:bg-sea-50"><Copy className="size-3.5" /></button>
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="mt-4 space-y-1 text-[13px]">
-        <Row k="To‘lov usuli" v={placed.method.title} />
-        <Row k="Usul" v={placed.shipMode === 'courier' ? 'Kuryer orqali' : 'Olib ketish'} />
-        <Row k="Manzil" v={[placed.form.city, placed.form.district, placed.form.address].filter(Boolean).join(', ')} />
-        {placed.delivery && <Row k={placed.shipMode === 'courier' ? 'Yetkazish' : 'Olib ketish'} v={`${fmtDeliveryDate(placed.delivery.date)}, ${placed.delivery.slot}`} />}
-        <Row k="Jami" v={som(placed.grand)} />
-      </div>
-      {!!placed.payLinks?.length && (
-        <div className="mt-4 space-y-2 rounded-xl bg-[#f6fafb] p-3">
-          {placed.payLinks.map((l) => (
-            <div key={l.code} className="flex items-center justify-between gap-2 text-[13px]">
-              <span>#{l.code} · <b>{som(l.amount)}</b></span>
-              {l.url ? <a href={l.url} className="inline-flex h-9 items-center rounded-lg bg-sea px-4 text-[12.5px] font-semibold text-white">To‘lash</a> : <span className="text-muted">Buyurtmalarim orqali to‘lang</span>}
+        <div className="px-6 pb-6">
+          <div className="rounded-2xl border border-[#edf1f5] px-3 py-4"><DoneSteps pickup={pickup} /></div>
+          <ul className="mt-4 divide-y divide-[#eef2f6] rounded-2xl border border-[#edf1f5]">
+            {rows.map(([Icon, k, v]) => (
+              <li key={k} className="flex items-start gap-3 px-4 py-2.5 text-[13px]">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Icon className="size-4" /></span>
+                <span className="w-[120px] shrink-0 pt-1.5 text-muted">{k}</span>
+                <span className="min-w-0 flex-1 pt-1.5 text-right font-semibold text-[#0d2a4a]">{v}</span>
+              </li>
+            ))}
+            <li className="flex items-center gap-3 px-4 py-3 text-[13px]">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sea-50 text-sea"><Wallet className="size-4" /></span>
+              <span className="flex-1 text-muted">Jami</span>
+              <b className="text-[18px] text-sea">{som(placed.grand)}</b>
+            </li>
+          </ul>
+          {!!items.length && (
+            <div className="mt-4">
+              <p className="text-[12.5px] font-bold text-[#0d2a4a]">Mahsulotlar ({items.length} ta)</p>
+              <ul className="mt-2 space-y-2" data-testid="done-items">
+                {items.slice(0, 4).map((it, i) => (
+                  <li key={`${it.id}-${it.variant || i}`} className="flex items-center gap-3 rounded-xl bg-[#f7fafc] p-2">
+                    {it.image ? <img src={it.image} alt="" className="size-11 shrink-0 rounded-lg bg-white object-contain p-0.5" /> : <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-white text-muted"><ShoppingBag className="size-4" /></span>}
+                    <span className="min-w-0 flex-1"><span className="line-clamp-1 text-[13px] font-semibold text-[#0d2a4a]">{it.name}</span><span className="text-[11.5px] text-muted">{it.qty} dona × {som(it.price)}</span></span>
+                    <b className="shrink-0 text-[13px] text-[#0d2a4a]">{som(it.price * it.qty)}</b>
+                  </li>
+                ))}
+                {items.length > 4 && <li className="text-center text-[12px] text-muted">yana {items.length - 4} ta mahsulot</li>}
+              </ul>
             </div>
-          ))}
+          )}
+          {!!placed.payLinks?.length && (
+            <div className="mt-4 space-y-2 rounded-xl bg-[#f6fafb] p-3">
+              {placed.payLinks.map((l) => (
+                <div key={l.code} className="flex items-center justify-between gap-2 text-[13px]">
+                  <span>#{l.code} · <b>{som(l.amount)}</b></span>
+                  {l.url ? <a href={l.url} className="inline-flex h-9 items-center rounded-lg bg-sea px-4 text-[12.5px] font-semibold text-white">To‘lash</a> : <span className="text-muted">Buyurtmalarim orqali to‘lang</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <Link to={trackTo} data-testid="done-track" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-sea text-[14px] font-semibold text-white shadow-[0_8px_18px_rgb(13_138_132/0.28)]"><Truck className="size-4" /> Buyurtmani kuzatish</Link>
+            <Link to={origin?.to || "/marketplace"} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#d7e0ea] text-[14px] font-semibold text-[#0d2a4a] hover:border-sea/50"><ShoppingBag className="size-4" /> Xaridni davom ettirish</Link>
+          </div>
         </div>
-      )}
-      <p className="mt-3 text-[12.5px] text-muted">Sotuvchi buyurtmani tasdiqlagach, yetkazish vaqti va narxini siz bilan kelishadi. Holatini “Buyurtmalarim”da kuzating.</p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link to={origin.to} className="inline-flex h-10 items-center rounded-xl bg-sea px-4 text-[13px] font-semibold text-white">{origin.label}ga qaytish</Link>
-        <Link to="/ombor" className="inline-flex h-10 items-center rounded-xl border border-[#d7e0ea] px-4 text-[13px] font-semibold">Omborni ko‘rish</Link>
       </div>
     </div>
   )
@@ -894,38 +946,3 @@ function downloadInvoice(snap) {
   URL.revokeObjectURL(url)
 }
 
-function DeliveryWhen({ delivery, setDelivery, pickup, minDate }) {
-  useEffect(() => {
-    if (delivery.date < minDate) setDelivery({ date: minDate, slot: windowsFor(minDate)[0] || '' })
-  }, [minDate]) // eslint-disable-line react-hooks/exhaustive-deps
-  const slots = windowsFor(delivery.date)
-  const setDate = (date) => {
-    if (!date || date < minDate) date = minDate
-    const open = windowsFor(date)
-    setDelivery((d) => ({ date, slot: open.includes(d.slot) ? d.slot : (open[0] || '') }))
-  }
-  return (
-    <section className="rounded-2xl bg-white p-4 shadow-card" data-testid="delivery-when">
-      <h2 className="flex items-center gap-2 text-[16px] font-bold"><CalendarDays className="size-4 text-sea" /> {pickup ? 'Olib ketish sanasi va vaqti' : 'Yetkazish sanasi va vaqti'}</h2>
-      <p className="mt-0.5 text-[12px] text-muted">Qulay kun va vaqt oralig‘ini tanlang (Toshkent vaqti). Sotuvchi tasdiqlaganda aniqlashtiriladi.</p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-[220px_1fr]">
-        <Field label="Sana" required>
-          <input type="date" min={minDate} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className={`${input} px-3`} />
-        </Field>
-        <div className="text-[12.5px] font-semibold">
-          <span>Vaqt oralig‘i <span className="text-[#e11d48]">*</span></span>
-          <div className="mt-1.5 font-normal">
-          {slots.length ? (
-            <div className="flex flex-wrap gap-2">
-              {slots.map((w) => (
-                <button key={w} type="button" onClick={() => setDelivery((d) => ({ ...d, slot: w }))} className={`h-11 rounded-xl border px-3 text-[13px] font-semibold ${delivery.slot === w ? 'border-sea bg-sea-50 text-sea' : 'border-[#e6ebf2] text-ink-2'}`}>{w}</button>
-              ))}
-            </div>
-          ) : <p className="flex h-11 items-center text-[12.5px] text-[#e11d48]">Bugun uchun bo‘sh vaqt qolmadi — boshqa kunni tanlang.</p>}
-          </div>
-        </div>
-      </div>
-      <p className="mt-2 text-[12px] text-ink-2">Tanlandi: <b>{fmtDeliveryDate(delivery.date)}{delivery.slot ? `, ${delivery.slot}` : ''}</b></p>
-    </section>
-  )
-}
