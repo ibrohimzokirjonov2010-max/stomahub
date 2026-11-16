@@ -16,7 +16,8 @@ export default function Yangiliklar() {
 }
 
 function Feed({ query }) {
-  useCatalogVersion()
+  // articles joyida yangilanadi — versiya memo bog‘liqligida bo‘lmasa, sahifa bo‘sh birinchi holatda qotib qoladi
+  const catalogVer = useCatalogVersion()
   const [cat, setCat] = useState('all')
   const [hot, setHot] = useState(false)
   const [saved, setSaved] = useState(() => new Set())
@@ -31,7 +32,7 @@ function Feed({ query }) {
     else rows = [...rows].sort((a, b) => a.rank - b.rank)
     const top = hot ? rows[0] : rows.find((a) => a.featured) || rows[0]
     return { hero: top, grid: rows.filter((a) => a !== top) }
-  }, [cat, query, hot])
+  }, [cat, query, hot, catalogVer])
 
   const toggle = (id) => setSaved((prev) => {
     const next = new Set(prev)
@@ -137,7 +138,8 @@ function Featured({ a, saved, onSave }) {
   return (
     <article className="overflow-hidden rounded-2xl bg-white shadow-card">
       <div className="yangilik-feature">
-        <Link to={`/yangiliklar/${a.id}`} className="relative block h-full min-h-[210px] overflow-hidden">
+        {/* Rasm to‘liq ko‘rinsin: ingichka tasma emas, manba rasmlari kabi 16:9 */}
+        <Link to={`/yangiliklar/${a.id}`} data-testid="news-featured-img" className="relative block aspect-[16/9] self-start overflow-hidden bg-[#eef3f6]">
           <img src={a.image} alt="" className="size-full object-cover" />
         </Link>
         <div className="relative flex flex-col p-3">
@@ -170,7 +172,7 @@ function Featured({ a, saved, onSave }) {
 function Card({ a, saved, onSave }) {
   return (
     <article className="overflow-hidden rounded-xl bg-white shadow-card">
-      <div className="relative h-[126px] overflow-hidden">
+      <div data-testid="news-card-img" className="relative aspect-[16/9] overflow-hidden bg-[#eef3f6]">
         <Link to={`/yangiliklar/${a.id}`} className="block size-full">
           <img src={a.image} alt="" className="size-full object-cover" />
         </Link>

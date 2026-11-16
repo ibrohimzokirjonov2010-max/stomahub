@@ -30,8 +30,13 @@ test('mobile product, forma and surplus details share the square hero', () => {
 
 test('desktop product, forma and surplus galleries are square and not cropped', () => {
   const product = read('src/pages/Product.jsx')
-  assert.match(product, /aspect-square overflow-hidden rounded-xl bg-\[#eef3f8\]/)
+  // Asosiy rasm: ramka rasmga moslashadi (katta rasm — kvadrat 100cqw, kichik rasm — asl o‘lchamida, cho‘zilmaydi)
+  assert.match(product, /data-testid="product-gallery-frame"[^>]*\[container-type:inline-size\]/)
+  assert.match(product, /<NaturalImg [^>]*boundH="calc\(100cqw - 2rem\)"/)
   assert.match(product, /object-contain p-1/)
+  const nat = read('src/components/NaturalImg.jsx')
+  assert.match(nat, /maxWidth: `min\(\$\{boundW\}, \$\{nat\.w\}px\)`/)
+  assert.match(nat, /object-contain/)
   assert.doesNotMatch(product, /aspect-\[380\/244\]|object-contain p-4/)
 
   const forma = read('src/pages/FormaItem.jsx')

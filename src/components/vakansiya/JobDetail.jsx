@@ -72,7 +72,8 @@ export default function JobDetail({ job, mobile = false }) {
             <p className="mt-3 text-[20px] font-extrabold text-sea">{salaryText(job.min, job.max)}</p>
             {job.posted && <p className="mt-0.5 text-[12px] text-muted">E’lon qilingan: {job.posted}</p>}
 
-            <dl className="mt-4 grid gap-2 sm:grid-cols-2">
+            {/* Kompyuterda: cheklangan enli 2–3 ustunli to‘r (katta ekranda butun eniga cho‘zilmasin) */}
+            <dl data-testid="job-facts" className={mobile ? 'mt-4 grid gap-2 sm:grid-cols-2' : 'mt-4 grid max-w-[900px] grid-cols-2 gap-2 xl:grid-cols-3'}>
               {facts.map(([Icon, k, v]) => (
                 <div key={k} className="flex items-start gap-2 rounded-xl bg-page px-3 py-2.5">
                   <Icon className="mt-0.5 size-4 shrink-0 text-sea" />
@@ -82,18 +83,18 @@ export default function JobDetail({ job, mobile = false }) {
             </dl>
 
             {reqs.length > 0 && (
-              <section className="mt-4">
+              <section className={`mt-4 ${mobile ? '' : 'max-w-[900px]'}`}>
                 <h2 className="text-[15px] font-bold text-ink">Talablar</h2>
                 <ul className="mt-1.5 grid gap-1.5 text-[13.5px] text-ink-2">{reqs.map((r, i) => <li key={i} className="flex gap-2 break-words"><span className="text-sea">•</span><span className="min-w-0">{r}</span></li>)}</ul>
               </section>
             )}
             {job.about && (
-              <section className="mt-4">
+              <section className={`mt-4 ${mobile ? '' : 'max-w-[900px]'}`}>
                 <h2 className="text-[15px] font-bold text-ink">Qo‘shimcha ma’lumot</h2>
                 <p className="mt-1.5 whitespace-pre-line break-words text-[13.5px] leading-relaxed text-ink-2">{job.about}</p>
               </section>
             )}
-            <p className="mt-4 flex gap-2 rounded-xl bg-[#f3fbf8] p-3 text-[12px] leading-relaxed text-ink-2">
+            <p className={`mt-4 flex gap-2 rounded-xl bg-[#f3fbf8] p-3 text-[12px] leading-relaxed text-ink-2 ${mobile ? '' : 'max-w-[900px]'}`}>
               <ShieldCheck className="mt-0.5 size-4 shrink-0 text-sea" />
               Vakansiyani foydalanuvchi joylagan. Bog‘lanishdan oldin ish beruvchi haqidagi ma’lumotlarni tekshiring, oldindan to‘lov qilmang.
             </p>

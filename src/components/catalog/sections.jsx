@@ -91,7 +91,7 @@ export function useFormaSection() {
       card: (p) => {
         const off = p.live ? (p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0) : realDiscount('uniform', p)
         return {
-          id: p.id, href: `/forma/${p.id}`, image: p.image, kicker: p.brand, title: p.title, price: p.price, oldPrice: off ? p.oldPrice : 0,
+          id: p.id, href: `/forma/${p.id}`, image: p.image, fit: 'contain', kicker: p.brand, title: p.title, price: p.price, oldPrice: off ? p.oldPrice : 0,
           badge: off ? { text: `-${off}%`, tone: 'sale' } : p.__owned && p.fresh ? { text: 'Yangi', tone: 'new' } : null,
           rating: realRating(p),
           extra: (
@@ -249,7 +249,7 @@ export function useJihozSection() {
       text: (p) => `${p.title} ${p.brand} ${p.model || ''} ${p.feature || ''}`,
       card: (p) => {
         const off = realDiscount('device', p)
-        return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.live ? p.seller : p.city, p.warranty ? `Kafolat: ${p.warranty} oy` : ''].filter(Boolean), cart: p.live && p.stock > 0 ? { prefix: p.id, line: jihozCartLine(p) } : null, price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
+        return { id: p.id, href: `/jihozlar/${p.id}`, image: p.image, fit: 'contain', kicker: [p.brand, p.year].filter(Boolean).join(' · '), title: p.title, meta: [p.live ? p.seller : p.city, p.warranty ? `Kafolat: ${p.warranty} oy` : ''].filter(Boolean), cart: p.live && p.stock > 0 ? { prefix: p.id, line: jihozCartLine(p) } : null, price: p.price, oldPrice: off ? p.oldPrice : 0, badge: off ? { text: `-${off}%`, tone: 'sale' } : { text: statusList.find(([k]) => k === p.status)?.[1] || 'Yangi', tone: p.status === 'new' ? 'new' : 'info' } }
       },
       slides: (list, ctx) => slidesFor({ key: 'jihozlar', icon: PMonitor, items: list, image: (p) => p.image, href: (p) => `/jihozlar/${p.id}`, ctx }),
     }
