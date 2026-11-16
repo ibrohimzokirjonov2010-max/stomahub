@@ -200,7 +200,7 @@ function DesktopTickets() {
           </div>
 
           <div className="space-y-3">
-            <Panel title="Chipta ko‘rinishi (namuna)" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Dizaynni sozlash</button>}>
+            <Panel title="Chipta ko‘rinishi" extra={<button type="button" onClick={() => setDesign(true)} className="text-[12.5px] font-semibold text-[var(--color-org-teal)]">Dizaynni sozlash</button>}>
               <VipTicket sem={sem} type={all[0]} />
               <Btn className="mt-3 w-full" onClick={() => { downloadText('qr-chiptalar.txt', all.map((t) => `${t.name} · ${t.sold || 0} ta · ${sem?.title || ''}`).join('\n')); notify('QR kod yuklab olindi') }}><Download className="size-4" /> QR kodni yuklab olish</Btn>
             </Panel>
@@ -246,7 +246,7 @@ function DesktopTickets() {
       <TicketModal open={open} initial={editing} onClose={() => { setOpen(false); setEditing(null) }} onSave={saveRow} />
       <PromoModal open={promo} onClose={() => setPromo(false)} onSave={async (code) => { const res = await upsertPromo({ id: Date.now(), code, name: code, kind: 'foiz', value: 10, used: 0, limit: 100, from: 'bugun', to: 'ochiq', status: 'faol', seminar: sem?.id || 'all' }); if (!res.ok) return notify(res.error || 'Promo-kod saqlanmadi'); setPromo(false); notify('Promo-kod qo‘shildi') }} />
       <Modal open={design} title="Dizaynni sozlash" onClose={() => setDesign(false)}>
-        <p className="text-[13px] text-[#5e787e]">Chipta foni hozircha StomaHub teal uslubida. Tish va implant rasmi namuna chiptada ko‘rinadi.</p>
+        <p className="text-[13px] text-[#5e787e]">Chipta foni hozircha StomaHub teal uslubida. Tish va implant rasmi chipta ko‘rinishida chiqadi.</p>
         <Btn className="mt-4" onClick={() => setDesign(false)}>Tayyor</Btn>
       </Modal>
     </div>

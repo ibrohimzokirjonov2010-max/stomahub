@@ -208,7 +208,7 @@ function ProductBody({ p }) {
 
           <p className="mt-3 text-[10px] text-muted">{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</p>
 
-          {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : block?.code === 'own' ? <BlockNotice className="mt-2.5" text={block.text} /> : <>
+          {rxBlocked ? <RestrictedNotice className="mt-2.5" /> : (block?.code === 'own' || block?.code === 'test') ? <BlockNotice className="mt-2.5" text={block.text} /> : <>
           <button
             disabled={p.stock < 1} onClick={() => add({ ...p, image: p.thumbs[0] }, Math.min(Math.max(1, minQty), Math.max(p.stock, 1)))}
             className="mt-2.5 flex h-[33px] w-full items-center justify-center gap-2.5 rounded-lg bg-sea text-[11.5px] font-semibold text-white transition hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-50"

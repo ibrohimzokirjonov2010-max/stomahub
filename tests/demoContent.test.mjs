@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
 import { DEMO_SECTIONS, demoRows } from '../scripts/demo-content/data.mjs'
-import { demoCard, isDemoItem, withDemoFlag } from '../src/demoContent.js'
 
 const root = new URL('..', import.meta.url)
 const read = (p) => readFileSync(new URL(p, root), 'utf8')
@@ -63,41 +62,14 @@ test('migratsiya 0063b faqat is_demo + egasiz qatorlarni o‘chiradi', () => {
   assert.equal((stmts.match(/delete/gi) || []).length, 1)
 })
 
-test('withDemoFlag: is_demo faqat egasiz qatorda ishonchli', () => {
-  assert.equal(withDemoFlag({ kind: 'ad', id: 'x', is_demo: true, owner_id: null, payload: { id: 'x' } }).payload.isDemo, true)
-  const owned = withDemoFlag({ kind: 'ad', id: 'y', is_demo: true, owner_id: 'u1', payload: { id: 'y', isDemo: true } })
-  assert.equal(owned.payload.isDemo, undefined)
-  const forged = withDemoFlag({ kind: 'ad', id: 'z', owner_id: 'u2', payload: { id: 'z', isDemo: true } })
-  assert.equal(forged.payload.isDemo, undefined)
-  const plain = { kind: 'ad', id: 'p', owner_id: 'u3', payload: { id: 'p' } }
-  assert.equal(withDemoFlag(plain), plain)
-})
-
-test('demoCard: Namuna belgisi, savat va chegirma yo‘q', () => {
-  const card = { id: 'a', badge: { text: '-20%', tone: 'sale' }, cart: { line: { id: 'a' } }, oldPrice: 500, rating: { value: 5, count: 3 } }
-  const d = demoCard({ isDemo: true }, card)
-  assert.deepEqual(d.badge, { text: 'Namuna', tone: 'demo' })
-  assert.equal(d.cart, null)
-  assert.equal(d.oldPrice, 0)
-  assert.equal(d.rating, null)
-  assert.equal(demoCard({}, card), card)
-  assert.equal(isDemoItem({ isDemo: 'true' }), false)
-})
-
-test('detail sahifalar namunada aloqa/savat o‘rniga DemoActionBar ko‘rsatadi', () => {
-  const files = {
-    'src/components/mobile/MobileFormaItem.jsx': /demo \? \(\s*<DemoActionBar/,
-    'src/components/mobile/MobileUsta.jsx': /demo \? \(\s*<div[^>]*><DemoActionBar/,
-    'src/components/mobile/MobileElon.jsx': /\{!demo && !isOwner/,
-    'src/components/mobile/MobileSurplusItem.jsx': /listing\?\.isDemo\) return <DemoActionBar/,
-    'src/pages/SurplusItem.jsx': /d\.isDemo\) return/,
-    'src/pages/FormaItem.jsx': /demo \? <><DemoNotice/,
-    'src/pages/Usta.jsx': /isDemoItem\(master\) \? <DemoNotice/,
-    'src/pages/Elon.jsx': /demo && <DemoNotice/,
-  }
-  for (const [f, re] of Object.entries(files)) assert.match(read(f), re, f)
-  assert.match(read('src/recordSync.js'), /!row\.payload\?\.isDemo/)
-  assert.match(read('src/components/catalog/CatalogLayout.jsx'), /demoCard\(it, section\.card\(it\)\)/)
+test('Namuna UI olib tashlandi: demoContent/DemoNotice yo‘q, is_demo qatorlar ko‘rsatilmaydi', () => {
+  assert.equal(existsSync(new URL('src/demoContent.js', root)), false)
+  assert.equal(existsSync(new URL('src/components/DemoNotice.jsx', root)), false)
+  const files = ['src/components/mobile/MobileFormaItem.jsx', 'src/components/mobile/MobileUsta.jsx', 'src/components/mobile/MobileElon.jsx',
+    'src/components/mobile/MobileElonlar.jsx', 'src/components/mobile/MobileSurplusItem.jsx', 'src/pages/SurplusItem.jsx', 'src/pages/FormaItem.jsx',
+    'src/pages/Usta.jsx', 'src/pages/Ustalar.jsx', 'src/pages/Elon.jsx', 'src/components/catalog/CatalogLayout.jsx', 'src/recordSync.js']
+  for (const f of files) assert.doesNotMatch(read(f), /DemoNotice|DemoActionBar|DemoChip|isDemoItem|demoCard|withDemoFlag|'Namuna'|Namuna —|Namuna e’lon|Namuna mahsulot/, f)
+  assert.match(read('src/recordSync.js'), /if \(r0\?\.is_demo\) return/)
 })
 
 test('adPriceShort: ish o‘rni oralig‘i ixcham', async () => {
@@ -116,7 +88,6 @@ test('elonlar desktop detail is full width and keeps the mobile screen', () => {
   assert.doesNotMatch(route, /max-w-\[560px\]/)
   const page = read('src/pages/Elon.jsx')
   assert.match(page, /data-testid="elon-desktop"/)
-  assert.match(page, /<DemoActionBar/)
   assert.doesNotMatch(page, /HubTopBar|MobileTabBar/)
 })
 

@@ -1,4 +1,5 @@
 import { isRestricted } from '../restricted.jsx'
+import { isTestProduct, TEST_ORDER_TEXT } from './testSeed.js'
 
 // Xarid cheklovlari — server (buyer_create_order + 0038 trigger) bilan bir xil qoidalar.
 // Mahsulot sahifasi, savat va rasmiylashtirishda bir xil matn ko‘rsatiladi.
@@ -16,6 +17,8 @@ export function stockOf(p) {
 /** Mahsulotni umuman savatga qo‘shib bo‘lmaydigan sabab (yoki null). */
 export function purchaseBlock(p, { uid, verified } = {}) {
   if (!p) return null
+  // Sinov ma’lumoti (0075): ko‘rinadi, lekin buyurtma qilinmaydi — server ham rad etadi (test_seed_order_gate)
+  if (isTestProduct(p)) return { code: 'test', text: TEST_ORDER_TEXT }
   if (uid && sellerOf(p) && sellerOf(p) === uid) return { code: 'own', text: OWN_PRODUCT_TEXT }
   if (isRestricted(p) && !verified) return { code: 'rx', text: RX_TEXT }
   const s = stockOf(p)

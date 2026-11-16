@@ -11,7 +11,6 @@ import { masters, cats, cities, districts, sorts, why } from '../ustalarData'
 import { getUstaM } from '../ustalarMobileData'
 import { OrderSheet, openUstaChat } from '../components/usta/UstaOrder'
 import { ustaTelegram, ustaPhone } from '../ustaContact'
-import { isDemoItem } from '../demoContent'
 
 const catIcon = { all: LayoutGrid, unit: Wrench, handpiece: Cog, compressor: Fan, autoclave: Container, cbct: Scan, scan: Monitor, install: Hammer }
 
@@ -187,9 +186,8 @@ function Catalog({ query }) {
 }
 
 function Card({ m, saved, onSave, onChat, onOrder }) {
-  const demo = isDemoItem(m)
-  const tg = demo ? '' : ustaTelegram(m)
-  const tel = demo ? '' : ustaPhone(m)
+  const tg = ustaTelegram(m)
+  const tel = ustaPhone(m)
   return (
     <article className="flex min-w-0 gap-3 rounded-xl bg-white p-2.5 shadow-card">
       <Link to={`/ustalar/${m.id}`} className="relative shrink-0 overflow-hidden rounded-lg" style={{ width: 118, height: 104 }}>
@@ -217,11 +215,9 @@ function Card({ m, saved, onSave, onChat, onOrder }) {
           </div>
         ))}
         <div className="mt-1.5 flex gap-1">
-          {demo ? <span className="flex h-7 flex-1 items-center justify-center rounded-lg bg-[#fff6e5] text-[9px] font-semibold text-[#8a5300]">Namuna — aloqa o‘chirilgan</span> : <>
           {tel && <a href={`tel:${tel}`} className="flex h-7 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sea px-1 text-[9px] font-semibold text-sea"><Phone className="size-3" /> Qo‘ng‘iroq</a>}
           {tg && <button onClick={onChat} className="flex h-7 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sea px-1 text-[9px] font-semibold text-sea"><Send className="size-3" /> Telegram</button>}
           <button onClick={onOrder} className="h-7 flex-1 whitespace-nowrap rounded-lg bg-sea px-1 text-[9px] font-semibold text-white">Buyurtma berish</button>
-          </>}
         </div>
       </div>
     </article>

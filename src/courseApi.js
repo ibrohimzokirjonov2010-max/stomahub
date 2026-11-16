@@ -6,6 +6,7 @@ function explain(error) {
   if (/could not find the function|schema cache|does not exist|PGRST202|PGRST205/i.test(msg)) {
     return 'Kurslar bazasi hali ulanmagan. supabase/migrations/0072_courses.sql ni qo‘llang.'
   }
+  if (/test_seed:/.test(msg)) return 'Hozircha kursga yozilish yopiq'
   if (/JWT|Kirish kerak/i.test(msg)) return 'Davom etish uchun kiring'
   return msg || 'Amal bajarilmadi'
 }

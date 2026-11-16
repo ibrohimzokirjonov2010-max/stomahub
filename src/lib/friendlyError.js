@@ -3,6 +3,9 @@ const RAW = /query|function|relation|column|syntax|violates|constraint|permissio
 
 // Ma’lum DB cheklovlari → tushunarli o‘zbekcha matn (xom SQL hech qachon ko‘rsatilmaydi)
 const KNOWN = [
+  [/test_seed:.*ro‘yxat/i, 'Hozircha ro‘yxatdan o‘tish yopiq'],
+  [/test_seed:.*kurs/i, 'Hozircha kursga yozilish yopiq'],
+  [/test_seed/i, 'Hozircha buyurtma qabul qilinmaydi'],
   [/zaxirada yetarli/i, 'Omborda yetarli mahsulot qolmagan — miqdorni kamaytiring'],
   [/stock_check|stock.*(>=|non.?negative)/i, 'Qoldiq manfiy bo‘lishi mumkin emas'],
   [/surplus_price.*asl/i, 'Narx asl narxdan past bo‘lishi kerak'],

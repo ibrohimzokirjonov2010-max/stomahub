@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { goBuyNow } from '../checkoutUtils'
+import { isTestProduct } from '../lib/testSeed'
+import NotForSale from '../components/NotForSale'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Star, Heart, ShoppingCart, ChevronRight, BadgeCheck, Truck, Check, Send, Phone, Wrench } from 'lucide-react'
 import { useCart } from '../cart'
@@ -79,6 +81,7 @@ export default function JihozItem() {
                 {product.city ? <span className="inline-flex items-center gap-1"><Truck className="size-3.5 text-sea" /> {product.city}</span> : null}
                 {product.install ? <span className="inline-flex items-center gap-1"><Wrench className="size-3.5 text-sea" /> O‘rnatish narxga kiradi</span> : null}
               </p>
+              {isTestProduct(product) ? <NotForSale className="mt-3" /> : <>
               <div className="mt-3 flex items-center gap-2">
                 <button onClick={put} disabled={!inStock} className={`flex h-10 flex-1 disabled:opacity-40 items-center justify-center gap-2 rounded-full text-[13px] font-semibold text-white ${inCart ? 'bg-[#1f8f4e]' : 'bg-sea hover:bg-sea-600'}`}>
                   <ShoppingCart className="size-4" /> {inCart ? 'Savatda' : 'Savatga qo‘shish'}
@@ -88,6 +91,7 @@ export default function JihozItem() {
                 </button>
               </div>
               <button disabled={!inStock} onClick={() => goBuyNow(navigate, line, 1, 'jihoz')} className="mt-2 h-10 w-full rounded-full bg-sea text-[13px] font-semibold text-white hover:bg-sea-600 disabled:opacity-40">Hozir sotib olish</button>
+              </>}
               {canAsk ? (
                 <button onClick={() => ask()} className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-sea text-[13px] font-semibold text-sea hover:bg-sea-50">{contact?.telegram ? <><Send className="size-4" /> Sotuvchiga yozish (Telegram)</> : <><Phone className="size-4" /> Sotuvchiga qo‘ng‘iroq</>}</button>
               ) : null}

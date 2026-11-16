@@ -93,7 +93,7 @@ function DesktopReader({ book }) {
 
             <article className={`min-w-0 overflow-x-auto rounded-xl p-3 ${card}`}>
               {section && <p className="mb-2 truncate text-[12px] text-sea">{section.title}</p>}
-              {!full && free > 0 && page <= free && <p className="mb-2 rounded-lg bg-[#e6f4f3] px-3 py-1.5 text-center text-[11.5px] text-[#0b5b60]">Bepul namuna: 1–{free} bet · to‘liq kitob {facts.total} bet xarid qilganlar uchun</p>}
+              {!full && free > 0 && page <= free && <p className="mb-2 rounded-lg bg-[#e6f4f3] px-3 py-1.5 text-center text-[11.5px] text-[#0b5b60]">Bepul qism: 1–{free} bet · to‘liq kitob {facts.total} bet xarid qilganlar uchun</p>}
               <div className="mx-auto max-w-[820px]">
                 <PageView book={book} facts={facts} page={page} zoom={zoom} night={night} reader={reader} />
               </div>

@@ -266,7 +266,7 @@ function ProductView({ id }) {
                 </p>
               )}
             </div>
-            {rxBlocked ? <RestrictedNotice className="flex-1 !p-2" /> : block?.code === 'own' ? <BlockNotice className="flex-1 !p-2" text={block.text} /> : <button type="button" onClick={addToCart} disabled={maxQty < 1 || (!p.variants && p.stock < 1)} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:opacity-50">
+            {rxBlocked ? <RestrictedNotice className="flex-1 !p-2" /> : (block?.code === 'own' || block?.code === 'test') ? <BlockNotice className="flex-1 !p-2" text={block.text} /> : <button type="button" onClick={addToCart} disabled={maxQty < 1 || (!p.variants && p.stock < 1)} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-sea text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_138_149/0.3)] active:scale-[0.98] disabled:opacity-50">
               <ShoppingCart className="size-[19px]" /> {(!p.variants && p.stock < 1) ? 'Tugagan' : 'Savatga qo‘shish'}
             </button>}
           </>

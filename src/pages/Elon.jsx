@@ -6,11 +6,9 @@ import {
 } from 'lucide-react'
 import { adCatName, adPrice, dealName, som } from '../elonlarData'
 import { adsStore, allAds, findAd, sellerOf, useAds } from '../components/mobile/MobileElonlar'
-import { useCatalogVersion, isOwned } from '../recordSync'
+import { useCatalogVersion, isMine } from '../recordSync'
 import { telegramUrl, setAdStatus } from '../elonApi'
 import { openTelegramWithListingMessage } from '../lib/telegramShare'
-import { isDemoItem } from '../demoContent'
-import { DemoNotice, DemoActionBar, DemoChip } from '../components/DemoNotice'
 import { friendlyError } from '../lib/friendlyError'
 import { ensureLogin } from '../loginPrompt'
 import Lightbox from '../components/Lightbox'
@@ -62,8 +60,7 @@ function ElonBody({ id }) {
   const images = a.images?.length ? a.images : ['/images/market/p3.jpg']
   const contain = a.cat === 'material' || a.cat === 'asbob'
   const isSaved = saved.has(a.id)
-  const isOwner = isOwned('ad', a.id)
-  const demo = isDemoItem(a)
+  const isOwner = isMine('ad', a.id)
   const tg = telegramUrl(seller.telegram || a.telegram)
   const phone = (seller.phone || '').replace(/\s/g, '')
   const active = (a.status || 'active') === 'active' && !a._pending
@@ -110,7 +107,7 @@ function ElonBody({ id }) {
           </div>
 
           <h1 className="mt-3 text-[26px] font-extrabold leading-tight tracking-tight text-[#0d2a4a] xl:text-[28px]">
-            {a.title}{demo && <DemoChip className="ml-2 align-middle" />}
+            {a.title}
           </h1>
           {a.sub && <p className="mt-1.5 text-[14.5px] leading-snug text-[#7d8fa9]">{a.sub}</p>}
           <p className="mt-3 text-[28px] font-extrabold leading-tight tracking-tight text-[#0b6d73]">
@@ -136,8 +133,6 @@ function ElonBody({ id }) {
             </div>
           )}
 
-          {demo && <DemoNotice className="mt-4" />}
-
           <div className="mt-4 flex items-center gap-3 rounded-2xl border border-line/70 p-3">
             <SellerPic s={seller} />
             <span className="min-w-0 flex-1">
@@ -154,7 +149,7 @@ function ElonBody({ id }) {
             </span>
           </div>
 
-          {demo ? <DemoActionBar className="mt-3" /> : active && !isOwner && (
+          {active && !isOwner && (
             <div className="mt-3 grid grid-cols-2 gap-2">
               {tg ? (
                 <button type="button" onClick={writeTg} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] text-[13.5px] font-semibold text-[#0b6d73] transition hover:bg-[#d8f0ed]">
@@ -261,7 +256,7 @@ function ElonBody({ id }) {
                 <Link to={`/elonlar/${x.id}`} className="group block">
                   <span className="relative block h-[150px] bg-[#eef3f6]">
                     <img src={x.images?.[0]} alt={x.title} className="size-full object-cover" />
-                    <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10.5px] font-semibold text-white ${x.isDemo ? 'bg-[#f59e0b]' : 'bg-sea'}`}>{x.isDemo ? 'Namuna' : (dealName[x.deal] || 'E’lon')}</span>
+                    <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10.5px] font-semibold text-white bg-sea`}>{dealName[x.deal] || 'E’lon'}</span>
                   </span>
                   <span className="block p-3">
                     <span className="line-clamp-2 text-[14px] font-bold leading-snug text-[#0d2a4a] group-hover:text-sea">{x.title}</span>

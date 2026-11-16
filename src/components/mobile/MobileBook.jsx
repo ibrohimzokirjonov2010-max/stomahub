@@ -119,7 +119,7 @@ function BookView({ id }) {
           </button>
           <div className="mt-2 flex gap-1.5">
             <button type="button" onClick={() => read()} className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#0b6d73]/50 bg-white px-1.5 text-left text-[12px] font-semibold leading-tight text-[#0b6d73]">
-              <BookOpen className="size-[18px] shrink-0" /> <span>O‘qib ko‘rish<span className="block text-[10px] font-medium text-muted">(Namuna)</span></span>
+              <BookOpen className="size-[18px] shrink-0" /> <span>O‘qib ko‘rish<span className="block text-[10px] font-medium text-muted">(bepul qism)</span></span>
             </button>
             <button type="button" onClick={toCart} aria-label={inCart ? 'Savatda' : 'Savatga qo‘shish'} className={`grid size-11 shrink-0 place-items-center rounded-xl border ${inCart ? 'border-sea bg-sea-50 text-sea' : 'border-[#0b6d73]/50 bg-white text-[#0b6d73]'}`}>
               {inCart ? <Check className="size-[18px]" /> : <ShoppingCart className="size-[18px]" />}

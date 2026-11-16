@@ -6,10 +6,10 @@ import { LOGO_BUCKET, LOGO_ACCEPT, LOGO_MAX_MB, logoFileError, logoType, logoPat
 
 /**
  * Logo yuklash (Forma → logo tikish). value: { path, name, size, preview } | null.
- * Haqiqiy mahsulotda fayl Supabase Storage’ga yuklanadi (faqat o‘z papkasiga); namuna (demo)da faqat
+ * Haqiqiy mahsulotda fayl Supabase Storage’ga yuklanadi (faqat o‘z papkasiga); local (egasiz yoki sinov mahsuloti)da faqat
  * ko‘rinish uchun mahalliy ko‘rinish (preview) — hech narsa yuklanmaydi.
  */
-export default function LogoUpload({ value, onChange, demo = false }) {
+export default function LogoUpload({ value, onChange, local = false }) {
   const ref = useRef(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -22,7 +22,7 @@ export default function LogoUpload({ value, onChange, demo = false }) {
     supabase.storage.from(LOGO_BUCKET).createSignedUrl(value.path, 3600).then(({ data }) => { if (!off) setSigned(data?.signedUrl || '') }, () => {})
     return () => { off = true }
   }, [value?.path, value?.preview])
-  // DEV namuna (/forma-shot, skrinshotlar): '/...' yo‘li to‘g‘ridan-to‘g‘ri ko‘rsatiladi
+  // DEV skrinshot (/forma-shot, skrinshotlar): '/...' yo‘li to‘g‘ridan-to‘g‘ri ko‘rsatiladi
   const devPath = import.meta.env.DEV && value?.path?.startsWith('/') ? value.path : ''
   const shown = value?.preview || devPath || signed
 
@@ -31,7 +31,7 @@ export default function LogoUpload({ value, onChange, demo = false }) {
     const bad = logoFileError(file)
     if (bad) { setErr(bad); return }
     const preview = URL.createObjectURL(file)
-    if (demo) { onChange({ path: '', name: file.name, size: file.size, preview }); return }
+    if (local) { onChange({ path: '', name: file.name, size: file.size, preview }); return }
     const uid = getSession().user?.id
     if (!supabase || !uid) { URL.revokeObjectURL(preview); setErr('Logo yuklash uchun hisobingizga kiring'); return }
     setBusy(true)
@@ -61,7 +61,7 @@ export default function LogoUpload({ value, onChange, demo = false }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] font-semibold text-ink">{value.name || 'Logo fayli'}</span>
-            <span className="block text-[11px] text-muted">{value.size ? `${fmtSize(value.size)} · ` : ''}{demo ? 'namuna — yuklanmaydi' : 'yuklandi'}</span>
+            <span className="block text-[11px] text-muted">{value.size ? `${fmtSize(value.size)} · ` : ''}{local ? 'tanlandi' : 'yuklandi'}</span>
           </span>
           <button type="button" onClick={() => ref.current?.click()} disabled={busy} aria-label="Logoni almashtirish" className="grid size-9 shrink-0 place-items-center rounded-lg border border-line text-ink disabled:opacity-40">{busy ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}</button>
           <button type="button" onClick={clear} disabled={busy} aria-label="Logoni o‘chirish" className="grid size-9 shrink-0 place-items-center rounded-lg border border-line text-sale disabled:opacity-40"><Trash2 className="size-4" /></button>

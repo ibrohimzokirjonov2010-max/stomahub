@@ -1,3 +1,4 @@
+import { isTestEvent } from '../lib/testSeed'
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import {
@@ -52,6 +53,15 @@ export default function SeminarReg() {
       <div className="py-16 text-center">
         <p className="text-[18px] font-bold text-ink">{seminar.cancelled ? 'Seminar bekor qilingan' : 'Seminar yakunlangan'}</p>
         <p className="mt-1 text-[13px] text-muted">Ro‘yxatdan o‘tish yopiq.</p>
+        <Link to={`/seminarlar/${id}`} className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminar sahifasi</Link>
+      </div>
+    )
+  }
+  if (isTestEvent(seminar) || isTestEvent(rec)) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-[18px] font-bold text-ink">Ro‘yxatdan o‘tish hozircha yopiq</p>
+        <p className="mt-1 text-[13px] text-muted">Bu seminarga hozircha joy band qilib bo‘lmaydi.</p>
         <Link to={`/seminarlar/${id}`} className="mt-3 inline-block text-[13px] font-semibold text-sea">Seminar sahifasi</Link>
       </div>
     )
