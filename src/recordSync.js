@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { supabase } from './supabaseClient'
 import { DEMO_ORGANIZER_ID } from './hubSeed'
 import { scrubBlobPayload } from './demoPurge'
+import { mergeCatalogList } from './lib/mergeCatalogList'
 
 const blobs = new Map()
 const accountListeners = new Set()
@@ -288,7 +289,8 @@ export async function loadCatalog() {
     if (!Array.isArray(list)) return
     const rows = grouped.get(kind) || []
     rows.sort((a, b) => (a.sort_at || 0) - (b.sort_at || 0))
-    const next = rows.map((row) => row.payload)
+    // catalog_items bo‘sh bo‘lsa ham stomahub-curated qatorlarni o‘chirma (masalan, Foydali kanallar).
+    const next = mergeCatalogList(list, rows.map((row) => row.payload))
     // id bir xil bo‘lsa ham tahrirlangan yozuv yangilanishi kerak (masalan, vakansiya matni/holati)
     const same = list.length === next.length && list.every((item, i) => item?.id === next[i]?.id && JSON.stringify(item) === JSON.stringify(next[i]))
     if (same && list.length === next.length) return
