@@ -57,7 +57,7 @@ export function Rating({ rating, reviews }) {
 }
 
 export function AddButton({ product, className = '' }) {
-  if (isTestProduct(product)) return <span title={TEST_CHIP_TEXT} className={`shrink-0 rounded-md bg-[#f1f4f5] px-1.5 py-1 text-[9px] font-semibold leading-none text-muted ${className}`}>{TEST_CHIP_TEXT}</span>
+  if (isTestProduct(product)) return <span data-testid="card-not-for-sale" title={TEST_CHIP_TEXT} className={`shrink-0 rounded-md bg-[#f1f4f5] px-1.5 py-1 text-[9px] font-semibold leading-none text-muted ${className}`}>{TEST_CHIP_TEXT}</span>
   if (isOwnProduct(product)) return <span title="Sizning mahsulotingiz" className={`shrink-0 rounded-md bg-[#eef4f4] px-1.5 py-1 text-[9px] font-semibold leading-none text-sea ${className}`}>Sizning mahsulotingiz</span>
   return <CardQtyStepper product={product} className={className} />
 }

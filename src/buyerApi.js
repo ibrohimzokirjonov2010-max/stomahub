@@ -1,6 +1,6 @@
 import { isTestProductRow } from './testData'
 import { attachOrderShops } from './lib/orderShops'
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
 import { marketProducts } from './marketData'
 import { normCategory } from './config/productCatalog'
@@ -123,7 +123,10 @@ export function useMarket() {
     document.addEventListener('visibilitychange', onVis)
     return () => document.removeEventListener('visibilitychange', onVis)
   }, [])
-  return { ...s, products: marketProducts }
+  // marketProducts joyida (splice) yangilanadi — massiv havolasi o‘zgarmaydi. Har yuklanishda yangi nusxa
+  // beramiz, aks holda useMemo([market.products]) dagi sahifalar (Brendlar) bo‘sh birinchi holatda qotib qoladi.
+  const products = useMemo(() => marketProducts.slice(), [s]) // eslint-disable-line react-hooks/exhaustive-deps
+  return { ...s, products }
 }
 
 // ---- checkout -----------------------------------------------------------------------

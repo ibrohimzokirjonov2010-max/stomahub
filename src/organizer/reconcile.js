@@ -10,10 +10,16 @@ import { tashkentToday } from '../tashkentDate'
 // Test / E2E seminarlar: UI da yashiriladi (o‘chirish SQL — 0030_organizer_audit.sql, qo‘llanmagan)
 // Faqat aniq avtomatik test yozuvlari: "E2E ..." prefiksi, "[test]" tegi, is_test bayrog‘i yoki E2E vaqt-belgisi.
 // Oddiy "test"/"demo" so‘zlari bor haqiqiy seminarlar (masalan "Demo-kun: implant") yashirilmaydi.
+// ID tekshiruvi faqat slug-ID uchun (masalan "e2e-...-1731234567890"). UUID ning oxirgi bo‘lagi ham 12 ta
+// raqam bo‘lishi mumkin (0075 sinov seminarlari: 7e57d000-…-000000000001, oddiy UUID ham ~0.4% holatda) —
+// UUID hech qachon test belgisi deb hisoblanmaydi, faqat sarlavha / is_test bo‘yicha.
 const TEST_TITLE = /^\s*e2e[\s_:-]|\[(test|e2e)\]|img check|live new|\b\d{12,}\b/i
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function isTestSeminar(s) {
   if (s?.is_test === true || s?.isTest === true) return true
-  return TEST_TITLE.test(String(s?.title || '')) || TEST_TITLE.test(String(s?.id || '').replace(/-/g, ' '))
+  if (TEST_TITLE.test(String(s?.title || ''))) return true
+  const id = String(s?.id || '')
+  return !!id && !UUID_RE.test(id) && TEST_TITLE.test(id.replace(/-/g, ' '))
 }
 
 /** Tugash sanasi (Toshkent vaqti) o‘tgan bo‘lsa — true. */
