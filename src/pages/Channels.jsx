@@ -38,10 +38,10 @@ function Channels({ query }) {
       .filter((c) => !onlySaved || saved.has(c.id))
       .filter((c) => !text || `${c.name} ${c.handle} ${c.about}`.toLowerCase().includes(text))
       .slice()
-      .sort((a, b) => sort === 'rating' ? b.rating - a.rating : sort === 'subs' ? b.subs - a.subs : channels.indexOf(a) - channels.indexOf(b))
+      .sort((a, b) => sort === 'rating' ? (b.rating || 0) - (a.rating || 0) : sort === 'subs' ? (b.subs || 0) - (a.subs || 0) : channels.indexOf(a) - channels.indexOf(b))
   }, [platform, topic, lang, sort, query, onlySaved, saved])
 
-  const editors = ['stom-uz', 'endo-masters', 'aesthetics', 'marketing', 'talk'].map((id) => channels.find((c) => c.id === id)).filter(Boolean)
+  const editors = ['ustom', 'dr-dobriyan', 'styleitaliano-yt', 'dentistry-notes-tg', 'protrusive-pod'].map((id) => channels.find((c) => c.id === id)).filter(Boolean)
   const savedList = channels.filter((c) => saved.has(c.id))
   const toggleSave = (id) => setSaved((prev) => {
     const next = new Set(prev)
@@ -117,11 +117,17 @@ function Channels({ query }) {
                 <Mark c={c} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[10.5px] font-semibold text-ink">{c.name}</p>
-                  <p className="text-[9px] text-muted">{subsShort(c.subs)}</p>
+                  {subsShort(c.subs) && <p className="text-[9px] text-muted">{subsShort(c.subs)}</p>}
                 </div>
-                <button onClick={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))} className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${joined[c.id] ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white'}`}>
-                  {joined[c.id] ? 'Obuna' : 'Obuna bo‘lish'}
-                </button>
+                {c.url ? (
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" onClick={() => setJoined((s) => ({ ...s, [c.id]: true }))} className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${joined[c.id] ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white'}`}>
+                    {joined[c.id] ? 'Ochish' : 'Obuna bo‘lish'}
+                  </a>
+                ) : (
+                  <button type="button" onClick={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))} className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${joined[c.id] ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white'}`}>
+                    {joined[c.id] ? 'Obuna' : 'Obuna bo‘lish'}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -152,11 +158,17 @@ function Channels({ query }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-[10.5px] font-semibold leading-tight text-ink">{c.name}</p>
                   <p className="text-[9px] text-muted">{c.handle}</p>
-                  <p className="text-[9px] text-muted">{subsShort(c.subs)}</p>
+                  {subsShort(c.subs) && <p className="text-[9px] text-muted">{subsShort(c.subs)}</p>}
                 </div>
-                <button onClick={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))} className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${joined[c.id] ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white'}`}>
-                  {joined[c.id] ? 'Obuna' : 'Obuna bo‘lish'}
-                </button>
+                {c.url ? (
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" onClick={() => setJoined((s) => ({ ...s, [c.id]: true }))} className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${joined[c.id] ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white'}`}>
+                    {joined[c.id] ? 'Ochish' : 'Obuna bo‘lish'}
+                  </a>
+                ) : (
+                  <button type="button" onClick={() => setJoined((s) => ({ ...s, [c.id]: !s[c.id] }))} className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${joined[c.id] ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white'}`}>
+                    {joined[c.id] ? 'Obuna' : 'Obuna bo‘lish'}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -188,6 +200,10 @@ function Channels({ query }) {
 }
 
 function ChannelCard({ c, saved, joined, onSave, onJoin }) {
+  const open = (e) => {
+    if (c.url) onJoin?.(e)
+  }
+  const subs = subsFull(c.subs)
   return (
     <article className="flex flex-col overflow-hidden rounded-xl bg-white shadow-card">
       <div className="relative h-[92px]">
@@ -202,20 +218,28 @@ function ChannelCard({ c, saved, joined, onSave, onJoin }) {
           <Heart className={`size-3.5 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
         </button>
       </div>
-      <div className="relative flex-1 px-2.5 pb-2.5">
+      <div className="relative flex min-h-0 flex-1 flex-col px-2.5 pb-2.5">
         <div className="-mt-4"><Mark c={c} /></div>
-        <h3 className="mt-1 truncate text-[12px] font-bold text-ink">{c.name}</h3>
+        <h3 className="mt-1 truncate text-[12px] font-bold text-ink">
+          {c.url ? <a href={c.url} target="_blank" rel="noopener noreferrer" className="hover:text-sea">{c.name}</a> : c.name}
+        </h3>
         <p className="truncate text-[9.5px] text-muted">{c.handle}</p>
-        <p className="mt-0.5 text-[9.5px] text-ink-2">{subsFull(c.subs)} · {langLabel(c.lang)}</p>
+        <p className="mt-0.5 text-[9.5px] text-ink-2">{subs ? `${subs} · ` : ''}{langLabel(c.lang)}</p>
         <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-ink-2">{c.about}</p>
         <div className="mt-1.5 flex flex-wrap gap-1">
-          {c.tags.map((t) => <span key={t} className="rounded-full bg-[#f3f6fa] px-1.5 py-0.5 text-[8.5px] text-ink-2">{t}</span>)}
+          {(c.tags || []).map((t) => <span key={t} className="rounded-full bg-[#f3f6fa] px-1.5 py-0.5 text-[8.5px] text-ink-2">{t}</span>)}
         </div>
         <div className="mt-auto flex items-center justify-between gap-1 pt-2">
           <p className="flex items-center gap-1 text-[9.5px] text-ink-2">{Number(c.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews})</span></> : 'Hali baho yo‘q'}</p>
-          <button onClick={onJoin} className={`h-[26px] rounded-full px-2.5 text-[10px] font-semibold ${joined ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white hover:bg-sea-600'}`}>
-            {joined ? 'Obuna' : 'Obuna bo‘lish'}
-          </button>
+          {c.url ? (
+            <a href={c.url} target="_blank" rel="noopener noreferrer" onClick={open} className={`inline-flex h-[26px] shrink-0 items-center whitespace-nowrap rounded-full px-2.5 text-[10px] font-semibold ${joined ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white hover:bg-sea-600'}`}>
+              {joined ? 'Ochish' : 'Obuna bo‘lish'}
+            </a>
+          ) : (
+            <button type="button" onClick={onJoin} className={`h-[26px] shrink-0 whitespace-nowrap rounded-full px-2.5 text-[10px] font-semibold ${joined ? 'bg-sea-50 text-sea-600' : 'bg-sea text-white hover:bg-sea-600'}`}>
+              {joined ? 'Obuna' : 'Obuna bo‘lish'}
+            </button>
+          )}
         </div>
       </div>
     </article>
