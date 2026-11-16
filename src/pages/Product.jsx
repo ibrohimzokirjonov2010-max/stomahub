@@ -203,7 +203,7 @@ function ProductBody({ p }) {
                 </p>
               )}
             </div>
-            <LikeButton productId={p.id} className="size-7 bg-[#f3f6fa]" />
+            <LikeButton productId={p.id} name={p.name} image={p.thumbs?.[0] || p.image} className="size-7 bg-[#f3f6fa]" />
           </div>
 
           <p className="mt-3 text-[10px] text-muted">{p.stock > 0 ? `${p.stock} ${p.uom || 'dona'} mavjud` : 'Tugagan'}</p>
@@ -314,7 +314,7 @@ function ProductBody({ p }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between">
                 <p className="truncate text-[10px] font-bold text-ink">{s.name}</p>
-                <LikeButton productId={s.id} className="-mr-1 -mt-1" />
+                <LikeButton productId={s.id} name={s.name} image={s.image} className="-mr-1 -mt-1" />
               </div>
               <p className="text-[9.5px] text-ink-2">{s.type}</p>
               <p className="text-[8.5px] text-muted">{s.brand}</p>

@@ -7,7 +7,7 @@ import {
   CreditCard, Banknote, CalendarDays, Pencil, ArrowRight, ArrowLeft, X,
 } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
-import MapPicker, { withGeo } from '../components/MapPicker'
+import MapPicker, { MapPreview, withGeo } from '../components/MapPicker'
 import { useCart } from '../cart'
 import { som } from '../marketData'
 import { profileStore, useProfile } from '../profileStore'
@@ -107,7 +107,6 @@ export default function Checkout() {
   const [logoTried, setLogoTried] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
   const [allSaved, setAllSaved] = useState(false)
-  const [zoom, setZoom] = useState(1)
   // Muvaffaqiyatli buyurtma: komponent qayta yuklansa ham (buyNow/savat bo‘shagach) tasdiq ekrani saqlanadi.
   const [placed, setPlacedState] = useState(() => readPlaced(loc.key))
   const setPlaced = (snap) => { savePlaced(loc.key, snap); setPlacedState(snap) }
@@ -296,8 +295,6 @@ export default function Checkout() {
                         setForm={setForm}
                         shipMode={shipMode}
                         setShipMode={setShipMode}
-                        zoom={zoom}
-                        setZoom={setZoom}
                         allSaved={allSaved}
                         setAllSaved={setAllSaved}
                         savedRows={savedRows}
@@ -411,7 +408,7 @@ function Stepper({ step }) {
   )
 }
 
-function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoom, allSaved, setAllSaved, savedRows, delivery, setDelivery }) {
+function StepAddress({ form, patch, setForm, shipMode, setShipMode, allSaved, setAllSaved, savedRows, delivery, setDelivery }) {
   const districts = CITIES[form.city] || []
   const saved = allSaved ? savedRows : savedRows.slice(0, 2)
   return (
@@ -459,9 +456,6 @@ function StepAddress({ form, patch, setForm, shipMode, setShipMode, zoom, setZoo
             </div>
           </Field>
           <MapPicker lat={form.lat} lng={form.lng} height={240} onChange={({ lat, lng, geo }) => setForm((f) => ({ ...f, lat, lng, ...(geo?.street ? { address: geo.street } : {}), saved: '' }))} />
-        </div>
-        <div className="mt-3">
-          <CityMap zoom={zoom} onZoom={setZoom} />
         </div>
         <div className="mt-4 flex items-center justify-between">
           <b className="text-[13px]">Saqlangan manzillarim</b>
@@ -601,7 +595,7 @@ function StepReview({ items, form, shipMode, pay, delivery, invoice, inv, agree,
             <p className="text-[12.5px] text-ink-2">+998 {form.phone}</p>
             <p className="text-[12.5px] text-ink-2">{form.city}, {form.district}</p>
             <p className="text-[12.5px] text-ink-2">{form.address}</p>
-            <div className="mt-2"><CityMap compact /></div>
+            <MapPreview lat={form.lat} lng={form.lng} />
           </section>
           <section className="rounded-2xl bg-white p-4 shadow-card">
             <Head n="3" title="Yetkazish vaqti" onEdit={() => onEdit(1)} />
@@ -849,44 +843,6 @@ function Flag() {
       <rect y="11" width="28" height="1" fill="#ce1126" />
       <rect y="12" width="28" height="6" fill="#1eb53a" />
     </svg>
-  )
-}
-
-function CityMap({ zoom = 1, onZoom, compact }) {
-  return (
-    <div className={`relative overflow-hidden rounded-xl bg-[#d7e7d4] ${compact ? 'h-[92px]' : 'h-[188px]'}`}>
-      <svg viewBox="0 0 640 240" className="h-full w-full" style={{ transform: `scale(${zoom})` }} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="640" height="240" fill="#e4f0dc" />
-        <g fill="#c9dcc4">
-          <rect x="16" y="16" width="70" height="40" rx="3" />
-          <rect x="100" y="18" width="90" height="36" rx="3" />
-          <rect x="210" y="20" width="60" height="48" rx="3" />
-          <rect x="290" y="14" width="80" height="40" rx="3" />
-          <rect x="390" y="22" width="70" height="36" rx="3" />
-          <rect x="480" y="16" width="140" height="44" rx="3" />
-          <rect x="20" y="150" width="100" height="50" rx="3" />
-          <rect x="150" y="160" width="80" height="46" rx="3" />
-          <rect x="260" y="154" width="120" height="52" rx="3" />
-          <rect x="410" y="162" width="90" height="44" rx="3" />
-          <rect x="520" y="150" width="96" height="56" rx="3" />
-        </g>
-        <g stroke="#fff" strokeWidth="14">
-          <path d="M0 80 H640 M0 140 H640 M140 0 V240 M300 0 V240 M460 0 V240" />
-        </g>
-        <g stroke="#f0d48a" strokeWidth="7">
-          <path d="M0 112 H640 M220 0 V240" />
-        </g>
-      </svg>
-      <span className="absolute left-1/2 top-1/2 grid size-8 -translate-x-1/2 -translate-y-full place-items-center rounded-full bg-white text-sea shadow">
-        <MapPin className="size-4 fill-sea" />
-      </span>
-      {!compact && onZoom && (
-        <span className="absolute bottom-2 right-2 flex flex-col overflow-hidden rounded-lg bg-white shadow">
-          <button type="button" aria-label="Yaqinlashtirish" onClick={() => onZoom((z) => Math.min(1.6, Math.round((z + 0.2) * 10) / 10))} className="grid size-7 place-items-center text-[16px]">+</button>
-          <button type="button" aria-label="Uzoqlashtirish" onClick={() => onZoom((z) => Math.max(1, Math.round((z - 0.2) * 10) / 10))} className="grid size-7 place-items-center border-t border-line text-[16px]">−</button>
-        </span>
-      )}
-    </div>
   )
 }
 
