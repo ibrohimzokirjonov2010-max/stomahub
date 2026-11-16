@@ -6,6 +6,7 @@ import { isOwnProduct } from '../../cart'
 import CardQtyStepper, { useCardQty } from '../CardQtyStepper'
 import { som } from '../../marketData'
 import { flushProfile, profileStore, useProfile } from '../../profileStore'
+import { favToastModel, showToast } from '../../lib/toastBus'
 
 export function SaleBadge({ badge, className = '' }) {
   if (!badge) return null
@@ -17,7 +18,7 @@ export function SaleBadge({ badge, className = '' }) {
   )
 }
 
-export function LikeButton({ className = '', productId = '', favKey = 'favProducts' }) {
+export function LikeButton({ className = '', productId = '', favKey = 'favProducts', name = '', image = '' }) {
   const profile = useProfile()
   const list = profile[favKey] || []
   const [local, setLocal] = useState(false)
@@ -28,7 +29,8 @@ export function LikeButton({ className = '', productId = '', favKey = 'favProduc
         e.preventDefault()
         e.stopPropagation()
         if (productId) {
-          profileStore.toggleFav(favKey, productId)
+          const res = profileStore.toggleFav(favKey, productId)
+          if (res !== null && res !== undefined) showToast(favToastModel(res, name, image))
           flushProfile().catch(() => {})
         } else {
           setLocal(!local)
@@ -64,7 +66,7 @@ export default function ProductCard({ product }) {
   return (
     <Link to={`/product/${p.id}`} className="group relative flex flex-col rounded-xl bg-white p-2.5 shadow-card transition hover:shadow-md">
       <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />
-      <LikeButton productId={product.id} className="absolute right-1.5 top-1.5 z-10" />
+      <LikeButton productId={product.id} name={product.name} image={product.image} className="absolute right-1.5 top-1.5 z-10" />
       {!p.badge && offPercent(p) > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[9px] font-bold text-white">-{offPercent(p)}%</span>}
       <div className="mt-3 h-[66px] overflow-hidden">
         <img src={p.image} alt={p.name} className="mx-auto h-full object-contain transition group-hover:scale-105" />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { parseWhenNote } from '../../lib/deliveryWhen.js'
 import { MapPreview, parseGeo, mapUrl as osmUrl } from '../../components/MapPicker'
 import { Link, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, Copy, Wallet, Check, Box, Truck, FileText, MessageSquare, X, Store, UserRound, Phone, MapPin, Navigation, Info, Printer, ArrowLeft, ShoppingCart, Banknote, Calculator, Ellipsis, BadgeCheck } from 'lucide-react'
@@ -73,6 +74,7 @@ export default function BuyurtmaDetail() {
   const saveNote = () => a.go(() => updateRow('seller_orders', o.id, { internal_note: note.slice(0, 500) }), () => toast('Ichki izoh saqlandi'))
   const doCancel = () => a.go(() => setOrderStatus(o.id, 'bekor_qilindi', reason === 'Boshqa sabab' ? other.trim() || reason : reason), () => { toast('Buyurtma bekor qilindi, qoldiq qaytarildi'); setCancel(false) })
   const deliv = DELIVERY.find((d) => d[0] === o.delivery_method)?.[1] || 'Kuryer orqali yetkazish'
+  const buyerWhen = parseWhenNote(o.note)
 
   const stepper = (mobile) => {
     const steps = mobile ? [['yangi', 'Yangi', FileText], ['tasdiqlandi', 'Tasdiq­langan', BadgeCheck], ['tayyorlanmoqda', 'Tayyor­lanmoqda', Box], ['yetkazilmoqda', 'Yetka­zilmoqda', Truck], ['yetkazildi', 'Yakunlangan', Check]] : O_FLOW.map((s) => [s, O_LABEL[s] === 'Tasdiqlangan' ? 'Tasdiqlangan' : O_LABEL[s], Check])
@@ -163,6 +165,7 @@ export default function BuyurtmaDetail() {
                   <tr key={it.id} className="border-t border-[#EEF3F4]"><Td>{i + 1}</Td><Td><ProductThumb src={it.image_url} className="h-9 w-11" /></Td><Td>{p ? <Link to={`/sotuvchi/mahsulotlar/${p.id}`} className="font-medium hover:text-[#0F766E]">{it.name}</Link> : it.name}</Td><Td>{p?.sku || '—'}</Td><Td>{itemVariantText(it, data.products) || '—'}{it.note ? <div className="mt-0.5 text-[12px] font-semibold text-[#B45309]">{it.note}</div> : null}{it.logo_path ? <OrderLogo path={it.logo_path} code={o.code} /> : null}</Td><Td>{it.qty}</Td><Td className="text-right">{num(it.price)}</Td><Td className="text-right">{num(it.price * it.qty)}</Td></tr>) })}</tbody>
               </table>
               <div className="mt-2 text-[12.5px] text-[#5C6E80]">Yetkazish: {deliv}{o.delivery_date ? `, ${dmy(o.delivery_date)}` : ''}</div>
+              {buyerWhen.when && <div data-testid="buyer-when" className={`mt-1.5 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12.5px] font-semibold ${buyerWhen.asap ? 'bg-[#FEF3C7] text-[#92400E]' : 'bg-[#E3F4F2] text-[#0F766E]'}`}>Xaridor tanlagan vaqt ({buyerWhen.kind === 'Olib ketish' ? 'olib ketish' : 'yetkazish'}): {buyerWhen.when}</div>}
             </div>
           </div>
           <div className={`${card} h-fit p-4 text-[13px]`}>
@@ -178,7 +181,7 @@ export default function BuyurtmaDetail() {
         <DeliveryInfo order={o} onEdit={() => setShip('edit')} />
 
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <div className={`${card} p-4`}><h3 className="flex items-center gap-2 text-[14px] font-bold text-[#0F766E]"><FileText className="size-4" />Izoh (xaridor)</h3><div className="mt-2 min-h-[42px] rounded-lg border border-[#E6EEF0] px-3 py-2.5 text-[13px] text-[#3D4E5F]">{o.note || 'Izoh qoldirilmagan.'}</div></div>
+          <div className={`${card} p-4`}><h3 className="flex items-center gap-2 text-[14px] font-bold text-[#0F766E]"><FileText className="size-4" />Izoh (xaridor)</h3><div className="mt-2 min-h-[42px] rounded-lg border border-[#E6EEF0] px-3 py-2.5 text-[13px] text-[#3D4E5F]">{buyerWhen.rest || 'Izoh qoldirilmagan.'}</div></div>
           <div className={`${card} p-4`}><h3 className="flex items-center gap-2 text-[14px] font-bold text-[#0F766E]"><FileText className="size-4" />Ichki izoh (sotuvchi)</h3><Textarea rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Faqat siz ko‘rasiz" className="mt-2" />{note !== (o.internal_note || '') && <Btn size="sm" className="mt-2" disabled={a.busy} onClick={saveNote}>Saqlash</Btn>}</div>
         </div>
       </div>

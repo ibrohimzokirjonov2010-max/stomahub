@@ -5,7 +5,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Banknote, Bell, Building, Hospital, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Coins,
   CreditCard, FileText, House, LoaderCircle, Map as MapIcon, MapPin, MessageSquareText, Phone, ShieldCheck, ShoppingBag, ShoppingCart,
-  Store, Truck, UserRound, X,
+  Copy, Store, Truck, UserRound, X,
 } from 'lucide-react'
 import { useCart } from '../../cart'
 import NotificationBell from '../NotificationBell'
@@ -19,9 +19,12 @@ import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
 import MapPicker, { MapPreview, withGeo, reverseGeocode } from '../MapPicker'
+import DeliveryWhenPicker from '../checkout/DeliveryWhenPicker'
+import DoneSteps from '../checkout/DoneSteps'
+import { whenError, whenLabel } from '../../lib/deliveryWhen.js'
 import { HubTopBar } from './MobileKategoriyalar'
 import { PayLogo } from './MobileSeminarReg'
-import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, fmtDeliveryDate, invoiceError, earliestDeliveryISO, maxDeliveryISO, orderNote, readBuyNow, todayISO, windowsFor } from '../../checkoutUtils'
+import { DEFAULT_PAYMENT, defaultDelivery, endBuyNow, invoiceError, earliestDeliveryISO, orderNote, readBuyNow } from '../../checkoutUtils'
 import { profileStore, useProfile } from '../../profileStore'
 import { CHECKOUT_CITIES_SHORT } from '../../lib/uzRegions'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
@@ -166,7 +169,7 @@ export default function MobileCheckout() {
     phone: phone.length !== 9 && PHONE_INCOMPLETE_MSG,
     city: mode === 'courier' && (!form.city || !form.district) && 'Shahar va tumanni tanlang',
     address: mode === 'courier' && form.address.trim().length < 5 && 'Aniq manzilni kiriting',
-    when: (!delivery.date || delivery.date < earliestDeliveryISO(form.city, mode === 'pickup') || !windowsFor(delivery.date).includes(delivery.slot)) && 'Sana va vaqt oralig‘ini tanlang',
+    when: whenError(delivery, earliestDeliveryISO(form.city, mode === 'pickup')),
   }
   const invErr = invoiceError(invoice, inv)
   const cardDigits = cardNo.num.replace(/\D/g, '')
@@ -201,7 +204,7 @@ export default function MobileCheckout() {
     )
   }
   if (!placed && items.length === 0) return <Navigate to="/buyurtma" replace />
-  if (placed) return <Done order={placed} />
+  if (placed) return <MobileCheckoutDone order={placed} />
 
   const next1 = () => {
     if (!currentUid()) { navigate(`/kirish?next=${encodeURIComponent('/buyurtma/rasmiylashtirish')}`); return }
@@ -232,6 +235,8 @@ export default function MobileCheckout() {
     if (otherProblems.length) { setPlaceErr(otherProblems.map((x) => `${x.it.name}: ${x.problem.text}`).join('. ')); return }
     if (missingLogos(items, logos).length) { setLogoTried(true); setPlaceErr('Logo faylini yuklang'); return }
     if (rxBlocked) { setPlaceErr('Savatda faqat tasdiqlangan shifokorlar uchun mahsulot bor. Avval shifokor sifatida tasdiqlang yoki uni savatdan olib tashlang.'); return }
+    const whenErr = whenError(delivery, earliestDeliveryISO(form.city, mode === 'pickup'))
+    if (whenErr) { setPlaceErr(whenErr); return }
     if (placing) return
     setPlacing(true)
     setPlaceErr('')
@@ -250,7 +255,7 @@ export default function MobileCheckout() {
         items: items.map((it) => ({ ...it })),
         goods, fee: 0, discount: 0, total: goods, method, months: 0, monthly: 0, paymentRef,
         payLinks: online ? (res.orders || []).map((o) => ({ code: o.code, amount: Number(o.amount) || 0, url: payUrlFor(method, o, payCfg) })) : [],
-        mode, eta: `${fmtDeliveryDate(delivery.date)}, ${delivery.slot}`, days: ship.days, invoice: invoice ? { ...inv } : null, name: form.name.trim(), phone,
+        mode, eta: whenLabel(delivery), days: ship.days, invoice: invoice ? { ...inv } : null, name: form.name.trim(), phone,
         address: mode === 'pickup' ? SHOP : [form.city, form.district, form.address].filter(Boolean).join(', '),
       }
       sessionStorage.setItem(ORDER_KEY, JSON.stringify(order))
@@ -395,7 +400,7 @@ export default function MobileCheckout() {
               </div>
             </section>
 
-            <WhenPicker delivery={delivery} setDelivery={setDelivery} pickup={mode === 'pickup'} minDate={earliestDeliveryISO(form.city, mode === 'pickup')} err={tried && errors.when} />
+            <DeliveryWhenPicker compact value={delivery} onChange={setDelivery} pickup={mode === 'pickup'} minDate={earliestDeliveryISO(form.city, mode === 'pickup')} err={tried ? errors.when : ''} />
 
             <section className={`${card} mt-3 p-3`}>
               <Head icon={Truck} title="Yetkazish usuli" text="Sizga qulay usulni tanlang" />
@@ -525,7 +530,7 @@ export default function MobileCheckout() {
               <div className="ml-[46px] mt-1 flex items-start justify-between gap-2">
                 <p className="text-[12px] text-ink-2"><b className="block text-[13px] text-[#0d2a4a]">{mode === 'pickup' ? 'Olib ketish' : 'Kuryer orqali'}</b>{mode === 'pickup' ? 'Do‘kondan olib ketasiz' : form.city === 'Toshkent' ? 'Toshkent bo‘ylab yetkazib berish' : `${form.city}ga yetkazib berish`}</p>
                 <span className="text-right">
-                  <span className="block whitespace-nowrap rounded-md bg-[#e3f4f1] px-1.5 py-0.5 text-[11px] font-medium text-[#0b6d73]">{fmtDeliveryDate(delivery.date)}, {delivery.slot}</span>
+                  <span className="block whitespace-nowrap rounded-md bg-[#e3f4f1] px-1.5 py-0.5 text-[11px] font-medium text-[#0b6d73]">{whenLabel(delivery)}</span>
                   <span className="mt-0.5 block text-[12px] font-semibold text-[#0d2a4a]">{mode === 'pickup' ? 'Bepul' : 'Kelishiladi'}</span>
                 </span>
               </div>
@@ -786,7 +791,7 @@ function Paying({ method, amount, onCancel, onDone }) {
 
 /* ---------- Yakuniy: tasdiqlandi ---------- */
 
-function Done({ order }) {
+export function MobileCheckoutDone({ order }) {
   const navigate = useNavigate()
   const { items } = useCart()
   const [all, setAll] = useState(false)
@@ -826,6 +831,7 @@ function Done({ order }) {
         </div>
         <h1 className="mt-2 text-center text-[24px] font-extrabold text-[#0d2a4a]">{cash ? 'Buyurtma qabul qilindi!' : 'Buyurtma yaratildi — to‘lovni yakunlang'}</h1>
         <p className="text-center text-[13px] text-ink-2">{cash ? (order.mode === 'pickup' ? 'To‘lov mahsulotni olganingizda amalga oshiriladi.' : 'To‘lov yetkazilganda amalga oshiriladi.') : 'To‘lovdan so‘ng pul escrowda saqlanadi va siz tasdiqlagach sotuvchiga o‘tadi.'}</p>
+        <div className={`${card} mt-4 px-2 py-3`}><DoneSteps pickup={order.mode === 'pickup'} /></div>
         {!!order.payLinks?.length && (
           <div className="mt-3 space-y-2">
             {order.payLinks.map((l) => l.url && (
@@ -838,7 +844,7 @@ function Done({ order }) {
           <div className="flex items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded-full bg-[#e3f4f1] text-[#0b6d73]"><FileText className="size-[18px]" /></span>
             <h2 className="flex-1 text-[15px] font-bold text-[#0d2a4a]">Buyurtma ma’lumotlari</h2>
-            <span className="rounded-lg bg-[#e3f4f1] px-2 py-1 text-[11.5px] font-bold text-[#0b6d73]">#{order.id}</span>
+            <button type="button" onClick={() => { navigator.clipboard?.writeText(order.id).then(() => setToast('Buyurtma raqami nusxalandi'), () => {}) }} aria-label="Buyurtma raqamini nusxalash" className="flex items-center gap-1 rounded-lg bg-[#e3f4f1] px-2 py-1 text-[11.5px] font-bold text-[#0b6d73]">#{order.id}<Copy className="size-3" /></button>
           </div>
           <div className="mt-1.5 divide-y divide-line">
             <InfoRow icon={CalendarDays} k="Buyurtma sanasi" v={order.at} />
@@ -872,11 +878,11 @@ function Done({ order }) {
           </ul>
         </section>
 
-        <button type="button" onClick={() => navigate(`/buyurtma/kuzatish/${order.id}`)} className="mt-3 flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#0b6d73] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)]">
+        <button type="button" onClick={() => navigate(/,/.test(order.id) ? '/profil/buyurtmalar' : `/buyurtma/kuzatish/${order.id}`)} className="mt-3 flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#0b6d73] text-[14.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.3)]">
           <Truck className="size-5" /> Buyurtmani kuzatish <ArrowRight className="size-4" />
         </button>
-        <button type="button" onClick={() => navigate('/')} className="mt-2.5 flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-[#0b6d73] bg-white text-[14px] font-semibold text-[#0b6d73]">
-          <House className="size-5" /> Bosh sahifaga qaytish
+        <button type="button" onClick={() => navigate('/marketplace')} className="mt-2.5 flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-[#0b6d73] bg-white text-[14px] font-semibold text-[#0b6d73]">
+          <ShoppingBag className="size-5" /> Xaridni davom ettirish
         </button>
       </div>
 
@@ -916,35 +922,3 @@ function GeoSheet({ lat, lng, onClose, onPick }) {
   )
 }
 
-function WhenPicker({ delivery, setDelivery, pickup, err, minDate }) {
-  useEffect(() => {
-    if (delivery.date < minDate) setDelivery({ date: minDate, slot: windowsFor(minDate)[0] || '' })
-  }, [minDate]) // eslint-disable-line react-hooks/exhaustive-deps
-  const slots = windowsFor(delivery.date)
-  const setDate = (date) => {
-    if (!date || date < minDate) date = minDate
-    const open = windowsFor(date)
-    setDelivery((d) => ({ date, slot: open.includes(d.slot) ? d.slot : (open[0] || '') }))
-  }
-  return (
-    <section data-f="when" className="mt-3 rounded-2xl bg-white p-3 shadow-[0_1px_6px_rgb(11_31_58/0.06)]">
-      <div className="flex items-center gap-2.5">
-        <span className="grid size-9 place-items-center rounded-xl bg-[#e3f4f1] text-[#0b6d73]"><CalendarDays className="size-5" /></span>
-        <span><b className="block text-[14px] text-[#0d2a4a]">{pickup ? 'Olib ketish vaqti' : 'Yetkazish vaqti'}</b><span className="text-[11.5px] text-ink-2">Toshkent vaqti bo‘yicha</span></span>
-      </div>
-      <label className="mt-3 block text-[12px] font-semibold text-[#0d2a4a]">Sana
-        <input type="date" min={minDate} max={maxDeliveryISO()} value={delivery.date} onChange={(e) => setDate(e.target.value)} className="mt-1 h-11 w-full rounded-xl border border-[#dfe8ec] bg-white px-3 text-[14px] font-normal outline-none focus:border-[#0b8a7a]" />
-      </label>
-      <p className="mt-2 text-[12px] font-semibold text-[#0d2a4a]">Vaqt oralig‘i</p>
-      {slots.length ? (
-        <div className="mt-1 grid grid-cols-2 gap-2">
-          {slots.map((w) => (
-            <button key={w} type="button" aria-pressed={delivery.slot === w} onClick={() => setDelivery((d) => ({ ...d, slot: w }))} className={`h-10 rounded-xl border text-[12.5px] font-semibold ${delivery.slot === w ? 'border-[#0b8a7a] bg-[#e3f4f1] text-[#0b6d73]' : 'border-[#dfe8ec] text-ink-2'}`}>{w}</button>
-          ))}
-        </div>
-      ) : <p className="mt-1 text-[12px] text-sale">Bugun uchun bo‘sh vaqt qolmadi — boshqa kunni tanlang.</p>}
-      {err && <p className="mt-1 text-[11px] text-sale">{err}</p>}
-      <p className="mt-2 text-[11.5px] text-ink-2">Tanlandi: <b>{fmtDeliveryDate(delivery.date)}{delivery.slot ? `, ${delivery.slot}` : ''}</b></p>
-    </section>
-  )
-}

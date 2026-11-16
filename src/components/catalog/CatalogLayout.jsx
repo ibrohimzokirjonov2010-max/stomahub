@@ -6,6 +6,7 @@ import { useMobile } from '../../useMobile'
 import { ensureLogin } from '../../loginPrompt'
 import { BottomSheet } from '../mobile/MobileSeminars'
 import { MobileTopBar, MobileToast } from '../mobile/parts'
+import { showToast } from '../../lib/toastBus'
 import MobileTabBar from '../mobile/MobileTabBar'
 import ShopLayout from '../market/ShopLayout'
 import { som } from '../../marketData'
@@ -305,7 +306,7 @@ function AdCard({ ad, item, section, desktop, setToast }) {
   return (
     <div data-testid="ad-card" className="flex flex-col [&>a]:flex-1" onClickCapture={() => trackAd('click', ad.campaign_id, item.id)}>
       <CatalogCard card={card} desktop={desktop}
-        onAdd={() => setToast(`${card.title} savatga qo‘shildi`)} />
+        onAdd={() => { if (!desktop) setToast(`${card.title} savatga qo‘shildi`) }} />
     </div>
   )
 }
@@ -434,8 +435,8 @@ export function CatalogPage({ section }) {
                   card={card}
                   desktop={desktop}
                   liked={liked.has(card.id)}
-                  onLike={() => setLiked((s) => { const n = new Set(s); if (n.has(card.id)) n.delete(card.id); else { n.add(card.id); setToast('Sevimlilarga qo‘shildi') } return n })}
-                  onAdd={() => setToast(`${card.title} savatga qo‘shildi`)}
+                  onLike={() => setLiked((s) => { const n = new Set(s); if (n.has(card.id)) n.delete(card.id); else { n.add(card.id); if (desktop) showToast({ kind: 'fav', title: 'Sevimlilarga qo‘shildi', text: card.title, image: card.image }); else setToast('Sevimlilarga qo‘shildi') } return n })}
+                  onAdd={() => { if (!desktop) setToast(`${card.title} savatga qo‘shildi`) }} // desktop: DesktopToaster
                 />
               )
             })}

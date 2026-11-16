@@ -1,4 +1,5 @@
 import GlassToast from './components/GlassToast'
+import { useMobile } from './useMobile'
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from './cart'
@@ -31,7 +32,9 @@ export function RestrictedNotice({ className = '', onNavigate }) {
 /** Kartochkadagi tezkor “savatga” tugmasi cheklangan mahsulotni bosganda chiqadigan oyna. */
 export function RxPrompt() {
   const { rxPrompt, closeRxPrompt, cartNotice, closeCartNotice } = useCart()
-  if (!rxPrompt && cartNotice) return <CartNotice text={cartNotice} onClose={closeCartNotice} />
+  const mobile = useMobile()
+  // Desktopda cheklov xabarini DesktopToaster (o‘ng yuqorida) ko‘rsatadi
+  if (!rxPrompt && cartNotice && mobile) return <CartNotice text={cartNotice} onClose={closeCartNotice} />
   if (!rxPrompt) return null
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center" onClick={closeRxPrompt}>

@@ -129,7 +129,7 @@ function Card({ deal }) {
   return (
     <article className="relative flex min-w-0 flex-col rounded-xl bg-white p-2.5 shadow-card">
       <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-sea px-1.5 py-0.5 text-[11px] font-bold text-white">-{deal.off}%</span>
-      <LikeButton productId={deal.productId} className="absolute right-2.5 top-2.5 z-10 size-7 bg-white shadow-card" />
+      <LikeButton productId={deal.productId} name={deal.name} image={deal.image} className="absolute right-2.5 top-2.5 z-10 size-7 bg-white shadow-card" />
       <Link to={deal.link} className="grid h-[128px] place-items-center overflow-hidden">
         {deal.image ? <img src={deal.image} alt={deal.name} className="max-h-[118px] max-w-full object-contain" loading="lazy" /> : <span className="text-[12px] text-muted">Rasm yo‘q</span>}
       </Link>

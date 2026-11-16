@@ -10,61 +10,16 @@ export const DEFAULT_PAYMENT = 'cash'
 const pad = (n) => String(n).padStart(2, '0')
 export const toISODate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
-/** Current wall-clock in Asia/Tashkent regardless of the device zone. */
-export function tashkentNow() {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
-    .formatToParts(new Date()).map((x) => [x.type, x.value]))
-  return { iso: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) % 24, minute: Number(parts.minute) }
-}
+import { ASAP, TIME_WINDOWS, defaultWhen, earliestISO, fmtDate, openSlots, tashkentNow, addDays, whenNote } from './lib/deliveryWhen.js'
+export { ASAP, TIME_WINDOWS, tashkentNow }
 export const todayISO = () => tashkentNow().iso
-const isoToDate = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d) }
-
-/** Next working day (Mon–Sat; Sunday is skipped). */
-export function nextWorkingDayISO() {
-  const d = isoToDate(todayISO())
-  d.setDate(d.getDate() + 1)
-  if (d.getDay() === 0) d.setDate(d.getDate() + 1)
-  return toISODate(d)
-}
-
-/** Never return a past date: anything earlier than today is bumped to the next working day. */
-/** Eng erta yetkazish sanasi: Toshkent / olib ketish — bugun; viloyatlar — kamida 2 kun keyin (kuryer 2–4 kun). */
-export function earliestDeliveryISO(city, pickup) {
-  const today = todayISO()
-  if (pickup || !city || city === 'Toshkent') return today
-  const d = isoToDate(today); d.setDate(d.getDate() + 2)
-  if (d.getDay() === 0) d.setDate(d.getDate() + 1)
-  return toISODate(d)
-}
-export const maxDeliveryISO = () => { const d = isoToDate(todayISO()); d.setDate(d.getDate() + 30); return toISODate(d) }
-
-export const TIME_WINDOWS = ['09:00–12:00', '12:00–15:00', '15:00–18:00', '18:00–21:00']
-/** Time windows still available on the given date (for today: window must start at least 1h from now, Tashkent time). */
-export function windowsFor(iso) {
-  const now = tashkentNow()
-  if (iso !== now.iso) return TIME_WINDOWS
-  return TIME_WINDOWS.filter((w) => Number(w.slice(0, 2)) * 60 >= now.hour * 60 + now.minute + 60)
-}
-/** Default: today if a window is still open, otherwise the next working day. */
-export function defaultDelivery() {
-  const today = todayISO()
-  const left = isoToDate(today).getDay() !== 0 ? windowsFor(today) : []
-  return left.length ? { date: today, slot: left[0] } : { date: nextWorkingDayISO(), slot: TIME_WINDOWS[0] }
-}
-
-export function clampDeliveryDate(iso) {
-  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < todayISO()) return nextWorkingDayISO()
-  return iso
-}
-
-const MON = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
-const WD = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba']
-export function fmtDeliveryDate(iso) {
-  if (!iso) return ''
-  const [y, m, d] = iso.split('-').map(Number)
-  const dt = isoToDate(iso)
-  return `${d}-${MON[m - 1]} ${y}, ${WD[dt.getDay()]}`
-}
+export const earliestDeliveryISO = (city, pickup) => earliestISO(city, pickup)
+export const maxDeliveryISO = () => addDays(todayISO(), 30)
+/** Ochiq oraliqlar (bugun uchun — tugashiga kamida 1 soat qolganlari). */
+export const windowsFor = (iso) => openSlots(iso)
+/** Sukut: «Imkon qadar tezroq». */
+export const defaultDelivery = () => defaultWhen()
+export const fmtDeliveryDate = fmtDate
 
 /** Hisob-faktura: STIR (9 digits) and company name are required. Returns an error string or ''. */
 export function invoiceError(on, inv) {
@@ -77,7 +32,7 @@ export function invoiceError(on, inv) {
 /** Delivery date and invoice details travel to the seller inside the order note (no schema change). */
 export function orderNote(note, { date, slot, pickup, invoice, inv } = {}) {
   const parts = []
-  if (date) parts.push(`${pickup ? 'Olib ketish' : 'Yetkazish'} sanasi: ${fmtDeliveryDate(date)}${slot ? `, ${slot}` : ''}`)
+  if (date || slot === ASAP) parts.push(whenNote({ date, slot }, pickup))
   if (invoice) parts.push(`Hisob-faktura: ${String(inv.company).trim()}, STIR ${String(inv.stir).trim()}`)
   if (note && note.trim()) parts.push(note.trim())
   return parts.join(' | ')
