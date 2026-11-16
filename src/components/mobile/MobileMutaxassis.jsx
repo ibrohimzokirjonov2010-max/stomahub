@@ -22,7 +22,13 @@ export default function MobileMutaxassis() {
   return <DoctorView key={id} id={id} />
 }
 
-function DoctorView({ id }) {
+/** Kompyuter: ikki ustunli sahifa (rasm + ma’lumot), mobil sarlavha va pastki menyusiz. */
+export function DesktopMutaxassis() {
+  const { id } = useParams()
+  return <DoctorView key={id} id={id} desktop />
+}
+
+function DoctorView({ id, desktop = false }) {
   const d = getDoctor(id)
   const navigate = useNavigate()
   const [fav, toggleFav] = useFav()
@@ -40,7 +46,7 @@ function DoctorView({ id }) {
 
   if (!d) {
     return (
-      <div className="grid min-h-screen place-items-center bg-white px-6 text-center">
+      <div className={`grid ${desktop ? 'min-h-[50vh] bg-transparent' : 'min-h-screen bg-white'} place-items-center px-6 text-center`}>
         <div>
           <p className="text-[15px] font-semibold text-ink">Mutaxassis topilmadi</p>
           <Link to="/mutaxassislar" className="mt-3 inline-block text-[13px] font-semibold text-sea">Mutaxassislarga qaytish</Link>
@@ -56,6 +62,107 @@ function DoctorView({ id }) {
   }
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/mutaxassislar'))
   const total = d.reviews + reviews.length - d.reviewsList.length
+
+  const favBtn = (cls) => (
+    <button type="button" onClick={() => setToast(toggleFav(d.id) ? 'Sevimlilarga qo‘shildi' : 'Sevimlilardan olib tashlandi')} aria-label="Sevimlilarga" aria-pressed={isFav} className={`grid size-10 place-items-center rounded-full bg-white shadow-[0_1px_4px_rgb(11_31_58/0.15)] ${cls}`}>
+      <Heart className={`size-5 ${isFav ? 'fill-sale text-sale' : 'text-[#0b6d73]'}`} />
+    </button>
+  )
+  const facts = [[GraduationCap, `${d.exp}+ yil`, 'Tajriba'], [ToothIcon, d.focus, 'Asosiy yo‘nalish'], [Building2, d.clinic, 'Klinika'], [CalendarCheck, '09:00–18:00', 'Qabul: Dush–Shan']]
+
+  if (desktop) {
+    return (
+      <div data-testid="doctor-desktop" className="pb-8 pt-3">
+        <p className="mb-3 flex flex-wrap items-center gap-1 text-[11px] text-muted">
+          <Link to="/ustalar" className="hover:text-sea">Xizmatlar</Link><ChevronRight className="size-3" />
+          <Link to="/mutaxassislar" className="hover:text-sea">Mutaxassislar</Link><ChevronRight className="size-3" />
+          <span className="text-ink">{d.name}</span>
+        </p>
+
+        <section className="grid grid-cols-[240px_minmax(0,1fr)] gap-5 rounded-2xl bg-white p-4 shadow-card xl:grid-cols-[280px_minmax(0,1fr)]">
+          <div className="relative overflow-hidden rounded-xl bg-[#eef6f6]">
+            <img src={d.photo} alt={d.name} className="h-[280px] w-full object-cover object-top xl:h-[320px]" />
+            {favBtn('absolute right-2.5 top-2.5')}
+          </div>
+          <div className="flex min-w-0 flex-col">
+            <h1 className="flex items-center gap-2 text-[24px] font-extrabold leading-tight text-[#0d2a4a]">{d.name}<BadgeCheck className="size-[22px] shrink-0 fill-[#0b6d73] text-white" /></h1>
+            <p className="mt-0.5 text-[14px] text-[#5f8f93]">{d.role}</p>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-ink-2">
+              <span className="inline-flex items-center gap-1"><MapPin className="size-4 text-[#0b6d73]" /> {d.city}, {d.district}</span>
+              <span className="inline-flex items-center gap-1">{Number(total) > 0 ? <><Stars value={d.rating} size="size-3.5" /> <b className="font-semibold text-ink">{d.rating}</b> <span className="text-muted">({total} ta sharh)</span></> : 'Hali baho yo‘q'}</span>
+            </p>
+            <div className="mt-3 grid max-w-[860px] grid-cols-2 gap-2 xl:grid-cols-4">
+              {facts.map(([Icon, v, l]) => (
+                <div key={l} className="flex min-w-0 items-center gap-2 rounded-xl border border-line/70 px-2.5 py-2">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#e6f4f3] text-[#0b6d73]"><Icon className="size-[18px]" strokeWidth={1.7} /></span>
+                  <span className="min-w-0">
+                    <b className="block truncate text-[12px] font-semibold leading-tight text-ink" title={v}>{v}</b>
+                    <span className="block text-[10.5px] leading-tight text-muted">{l}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+            {d.tags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {d.tags.map((t) => <span key={t} className="rounded-full bg-[#e6f4f3] px-2.5 py-1 text-[11.5px] text-[#0b6d73]">{t}</span>)}
+              </div>
+            )}
+            <div className="mt-auto flex flex-wrap gap-2 pt-4">
+              <button type="button" onClick={() => setSheet({ book: d.services[0] })} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0b6d73] px-5 text-[13.5px] font-semibold text-white shadow-[0_6px_16px_rgb(11_109_115/0.25)]"><CalendarCheck className="size-[18px]" /> Qabulga yozilish</button>
+              <button type="button" onClick={() => setSheet('call')} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[#0b6d73] px-5 text-[13.5px] font-semibold text-[#0b6d73]"><Phone className="size-[18px]" /> Qo‘ng‘iroq qilish</button>
+              <button type="button" onClick={() => setSheet('chat')} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[#bfe3df] bg-[#e6f4f3] px-5 text-[13.5px] font-semibold text-[#0b6d73]"><MessageCircle className="size-[18px]" /> Chat</button>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-3 grid grid-cols-2 items-start gap-3">
+          <div className="flex min-w-0 flex-col gap-3">
+            <Card icon={FileText} title="Mutaxassis haqida">
+              <p className="text-[13px] leading-[1.6] text-ink-2">{d.about}</p>
+              <p className="mt-2.5 flex items-center gap-1.5 text-[12px] text-muted"><CalendarCheck className="size-4 text-[#0b6d73]" /> Qabul: Dush–Shan, 09:00–18:00 · {d.patients} bemor</p>
+            </Card>
+            <Card icon={ToothIcon} title="Xizmatlar" action={d.services.length > 4 && <More onClick={() => setSheet('services')} />}>
+              <ServiceList list={d.services.slice(0, 4)} onPick={(s) => setSheet({ book: s })} />
+            </Card>
+          </div>
+          <div className="flex min-w-0 flex-col gap-3">
+            <Card icon={ImageIcon} title="Ishlar" action={d.works.length > 0 && <More onClick={() => setZoom(0)} />}>
+              {d.works.length ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {d.works.slice(0, 6).map((src, i) => (
+                    <button key={src} type="button" onClick={() => setZoom(i)} aria-label={`Ish ${i + 1}`} className="aspect-[4/3] overflow-hidden rounded-lg bg-page"><img src={src} alt="" className="size-full object-cover" /></button>
+                  ))}
+                </div>
+              ) : <p className="text-[12.5px] text-muted">Hozircha ishlar qo‘shilmagan.</p>}
+            </Card>
+            <Card icon={MessageSquareText} title={`Sharhlar (${total})`} action={<More onClick={() => setSheet('reviews')} />}>
+              <div className="flex items-center gap-3 rounded-xl bg-[#f2f8f8] p-3">
+                <b className="text-[30px] font-extrabold leading-none text-[#0d2a4a]">{d.rating}</b>
+                <span>
+                  <Stars value={d.rating} size="size-4" />
+                  <span className="mt-0.5 block text-[11.5px] text-muted">{total} ta sharh asosida</span>
+                </span>
+              </div>
+              {reviews.slice(0, 3).map((r) => <Review key={r.name + r.date} r={r} />)}
+            </Card>
+          </div>
+        </div>
+
+      {sheet === 'chat' && <ChatSheet d={d} onClose={() => setSheet(null)} onSent={() => { setSheet(null); setToast('Xabar yuborildi. Mutaxassis tez orada javob beradi') }} />}
+      {sheet === 'call' && <CallSheet d={d} onClose={() => setSheet(null)} onChat={() => setSheet('chat')} onToast={setToast} />}
+      {sheet === 'services' && (
+        <BottomSheet title="Barcha xizmatlar" onClose={() => setSheet(null)}>
+          <div className="pb-2 pt-2"><ServiceList list={d.services} onPick={(s) => setSheet({ book: s })} /></div>
+        </BottomSheet>
+      )}
+      {sheet === 'reviews' && <ReviewsSheet reviews={reviews} onClose={() => setSheet(null)} onAdd={(r) => { setReviews((l) => [r, ...l]); setToast('Sharhingiz qo‘shildi') }} />}
+      {sheet?.book && <BookSheet d={d} service={sheet.book} onClose={() => setSheet(null)} onDone={(msg) => { setSheet(null); setToast(msg) }} />}
+      {zoom !== null && <Lightbox images={d.works} index={zoom} onClose={() => setZoom(null)} />}
+
+        <MobileToast text={toast} onClose={closeToast} />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef8f7_0%,#f6faf9_30%)] pb-[86px]">

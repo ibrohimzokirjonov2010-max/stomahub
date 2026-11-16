@@ -95,7 +95,10 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="relative overflow-hidden bg-[#f3faf9]">
-        <img src="/images/landing/hero-clinic-bg.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 size-full object-cover object-[70%_50%] opacity-90" />
+        {/* Fon rasmi 1280×720 — katta (QHD) ekranda 2× cho‘ziladi. Xiralikni yashirish uchun keng ekranda
+            yengil «chuqurlik» xiraligi (blur) va kuchliroq oq gradient: diqqat aniq shifokor rasmi va matnda qoladi. */}
+        <img data-testid="hero-bg" src="/images/landing/hero-clinic-bg.jpg" alt="" aria-hidden className="pointer-events-none absolute inset-0 size-full object-cover object-[70%_50%] opacity-90 min-[1700px]:scale-[1.03] min-[1700px]:opacity-80 min-[1700px]:blur-[2px]" />
+        <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_at_72%_45%,rgba(255,255,255,0)_0%,rgba(255,255,255,.35)_55%,rgba(255,255,255,.7)_100%)] min-[1700px]:block" />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,.96)_0%,rgba(255,255,255,.85)_34%,rgba(255,255,255,.2)_62%,rgba(255,255,255,0)_100%)]" />
         <div className="pointer-events-none absolute inset-0 bg-white/75 lg:hidden" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,transparent,#fff)]" />

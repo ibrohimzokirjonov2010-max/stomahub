@@ -15,6 +15,7 @@ import { useCart } from '../cart'
 import { SaleBadge, LikeButton, Rating, AddButton } from '../components/market/ProductCard'
 import { ToothIcon } from '../components/icons'
 import Lightbox from '../components/Lightbox'
+import NaturalImg from '../components/NaturalImg'
 import ReviewList from '../components/ReviewList'
 
 export default function Product() {
@@ -118,9 +119,10 @@ function ProductBody({ p }) {
       <div className="mt-2.5 grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] xl:gap-x-6">
         {/* Galereya */}
         <div>
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-[#eef3f8]">
-            <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="block size-full cursor-zoom-in">
-              <img src={p.images[img]} alt={p.name} className="size-full object-contain p-1" />
+          {/* Ramka rasmga moslashadi: katta rasm — kvadrat, kichik/keng rasm — asl o‘lchamida, markazda (cho‘zilmaydi) */}
+          <div data-testid="product-gallery-frame" className="relative overflow-hidden rounded-xl bg-[#f3f6f8] [container-type:inline-size]">
+            <button type="button" onClick={() => setZoom(true)} aria-label="Rasmni kattalashtirish" className="flex min-h-[300px] w-full cursor-zoom-in items-center justify-center p-4">
+              <NaturalImg key={p.images[img]} src={p.images[img]} alt={p.name} className="rounded-md" boundW="100%" boundH="calc(100cqw - 2rem)" />
             </button>
             {n > 1 && <span className="pointer-events-none absolute bottom-2.5 right-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11.5px] font-semibold text-white">{img + 1} / {n}</span>}
             {n > 1 && <GalleryArrow side="left" onClick={() => setImg((img - 1 + n) % n)} />}

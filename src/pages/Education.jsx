@@ -161,7 +161,7 @@ function Education({ headerQuery, mobile }) {
         {list.length === 0 ? (
           <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">{catalog.status === 'loading' ? 'Yuklanmoqda…' : courses.length ? 'Kurs topilmadi' : 'Hali kurslar qo‘shilmagan'}</div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-4 min-[1900px]:grid-cols-5 min-[2400px]:grid-cols-6">
       {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
           </div>
         ) : (
@@ -319,7 +319,7 @@ function CourseRow({ c, saved, onSave, onOpen }) {
 
 function Cover({ c, saved, onSave }) {
   return (
-    <div className="relative bg-[linear-gradient(135deg,#0b6d73,#143044)]" style={{ height: 108 }}>
+    <div className="relative aspect-[16/9] min-h-[108px] overflow-hidden bg-[linear-gradient(135deg,#0b6d73,#143044)]">
       {c.cover ? <img src={c.cover} alt="" className="size-full object-cover" /> : null}
       <Badge c={c} />
       <button onClick={onSave} aria-label="Saqlash" className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white/90">

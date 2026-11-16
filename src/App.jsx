@@ -103,7 +103,7 @@ import MobileSertifikatlar from './components/mobile/MobileSertifikatlar'
 import MobileCommunity from './components/mobile/MobileCommunity'
 import MobilePost from './components/mobile/MobilePost'
 import MobileMutaxassislar from './components/mobile/MobileMutaxassislar'
-import MobileMutaxassis from './components/mobile/MobileMutaxassis'
+import MobileMutaxassis, { DesktopMutaxassis } from './components/mobile/MobileMutaxassis'
 import MobileIsh from './components/mobile/MobileIsh'
 import MobileUstalar from './components/mobile/MobileUstalar'
 import MobileUsta from './components/mobile/MobileUsta'
@@ -288,7 +288,7 @@ export default function App() {
           <Route path="/buyurtma" element={<Responsive mobile={<MobileCart />}><Checkout /></Responsive>} />
           <Route path="/buyurtma/rasmiylashtirish" element={<RequireAuth><Responsive mobile={<MobileCheckout />}><Navigate to="/buyurtma" replace /></Responsive></RequireAuth>} />
           <Route path="/mutaxassislar" element={<DoctorsCatalog />} />
-          <Route path="/mutaxassislar/:id" element={<Responsive mobile={<MobileMutaxassis />}><ShopLayout active="mutaxassislar" search="plain"><div className="mx-auto max-w-[560px] py-4 [transform:translateZ(0)]"><MobileMutaxassis /></div></ShopLayout></Responsive>} />
+          <Route path="/mutaxassislar/:id" element={<Responsive mobile={<MobileMutaxassis />}><ShopLayout active="mutaxassislar" search="plain" placeholder="Mutaxassis, yo‘nalish yoki klinika qidiring..."><DesktopMutaxassis /></ShopLayout></Responsive>} />
           <Route path="/elonlar" element={<ElonlarCatalog />} />
           <Route path="/elonlar/:id" element={<Responsive mobile={<MobileElon />}><ShopLayout active="elonlar" search="plain" placeholder="E’lon, uskuna yoki shahar qidiring..."><Elon /></ShopLayout></Responsive>} />
           <Route path="/community" element={<Responsive mobile={<MobileCommunity />}><Community /></Responsive>} />
