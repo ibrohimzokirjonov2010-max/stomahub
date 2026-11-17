@@ -1,6 +1,7 @@
 /**
  * Xizmat bajarilganda bemor tish kartasini avtomatik yangilash (sof funksiyalar, store importi yo'q).
- * Chaqiruvchilar: rejaData (bosqich "bajarildi"), bemorData (profil tashrifi done), uchrashuvData (kalendar "yakun"/"keldi").
+ * Yagona chaqiruvchi: rejaData savePlan/patchPlan (bosqich "bajarildi"). Kalendar "Tugatish" va profil
+ * Tashriflar "bajarildi" ham bog'langan bosqichlarni patchPlan orqali yakunlaydi — tish faqat shu yo'l bilan o'zgaradi.
  * Qoidalar: faqat "bajarilmagan → bajarildi" o'tishida; noma'lum xizmat — hech narsa;
  * qaytarilsa (bajarildi → boshqa) avvalgi holat tiklanadi, agar tish holati shu orada qo'lda o'zgarmagan bo'lsa.
  * Avvalgi holat yozuvning o'zida saqlanadi: item.autoTooth = { status, prev: { [tish]: eski holat } }.
@@ -65,8 +66,10 @@ export function restoreStatus(teeth, auto) {
  * Qaytaradi: { item, teeth, changed } — item (autoTooth yangilangan), teeth (bemor tish xaritasi).
  */
 export function reconcile(prevItem, nextItem, patientTeeth, { wasDone, isDone, text, teeth }) {
-  if (!prevItem || !nextItem) return { item: nextItem, teeth: patientTeeth, changed: false }
-  const before = wasDone(prevItem)
+  if (!nextItem) return { item: nextItem, teeth: patientTeeth, changed: false }
+  // Yangi yozuv (masalan, Tugatish'da yaratilgan reja bosqichi) — "bajarilmagan" deb hisoblanadi.
+  if (!prevItem && nextItem.autoTooth) return { item: nextItem, teeth: patientTeeth, changed: false }
+  const before = prevItem ? wasDone(prevItem) : false
   const after = isDone(nextItem)
   if (!before && after) {
     const status = statusFromService(text(nextItem))
@@ -120,8 +123,8 @@ export const PROFILE_VISIT_OPTS = {
   teeth: (v) => v.teeth || v.tooth,
 }
 
-/** Kalendar uchrashuvi: 'yakun' (bajarildi) yoki 'keldi'. */
-const CAL_DONE = new Set(['yakun', 'keldi', 'bajarildi', 'done'])
+/** Kalendar uchrashuvi: faqat yakuniy holat ('keldi'/'qabulda' — yo'q). Hozir ishlatilmaydi, bosqichlar orqali. */
+const CAL_DONE = new Set(['yakun', 'yakunlangan', 'bajarildi', 'done'])
 export const CALENDAR_OPTS = {
   wasDone: (v) => CAL_DONE.has(v.status),
   isDone: (v) => CAL_DONE.has(v.status),

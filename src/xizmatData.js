@@ -65,6 +65,8 @@ bindBlob('services', {
   },
 })
 
+export const getXizmatlar = () => rows
+
 export function useXizmatlar() {
   return useSyncExternalStore(
     (fn) => {

@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
-import { PROFILE_VISIT_OPTS, profileVisitKey, reconcileList } from './teeth/autoToothStatus'
 
 const photo = (name) => `/images/bemorlar/${name}.jpg`
 export const som = (n) => `${n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m`
@@ -54,17 +53,10 @@ export function addBemor(p) {
   emit()
 }
 
-// Profil tashrifi "bajarildi" bo'lsa, shu tishning holati xizmatga qarab avtomatik qo'yiladi.
-function withAutoTeeth(p, patch) {
-  if (!Array.isArray(patch.visits)) return patch
-  const r = reconcileList(p.visits, patch.visits, patch.teeth ?? p.teeth ?? {}, profileVisitKey, PROFILE_VISIT_OPTS)
-  return r.changed ? { ...patch, visits: r.list, teeth: r.teeth } : patch
-}
-
 export function patchBemor(id, patch0) {
   rows = rows.map((p) => {
     if (p.id !== id) return p
-    const patch = withAutoTeeth(p, patch0)
+    const patch = patch0
     return { ...p, ...patch, debt: Math.max(0, (patch.total ?? p.total) - (patch.paid ?? p.paid)) }
   })
   emit()

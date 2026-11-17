@@ -1,20 +1,22 @@
+import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ChevronLeft, MoreVertical, Camera, Phone, CalendarDays, CreditCard, PencilLine, AlertCircle, ChevronRight, CheckCircle2, Wallet,
-  PieChart, PlusCircle, Check, Trash2, Copy, ImagePlus, FileText, Clock, Stethoscope,
+  PieChart, PlusCircle, Check, Trash2, Copy, FileText, Clock, Stethoscope,
 } from 'lucide-react'
 import { CITIES, getBemor, patchBemor, removeBemor, som, useBemorlar } from '../../bemorData'
 import { MobileToast } from './parts'
 import { BottomSheet } from './MobileSeminars'
-import { Lightbox } from './MobileCommunity'
-import { DOCTORS, Face, MSTATUS, STATUS_TABS, TOOTH_STATES, TeethChart, Tooth, fmtDate, todayDots, toothName } from './bemorParts'
-import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
+import { Face, MSTATUS, STATUS_TABS, TOOTH_STATES, TeethChart, Tooth, toothName } from './bemorParts'
+import { DocsPanel, MedicalFields, MedicalView, PlansPanel, SaveErrorToast, medicalForm, saveMedical, useDocUpload, usePatientRecords } from '../crm/PatientTabs'
+import { VISIT_STATUS, addPatientDoc, afterVisitSaved, isUpcoming, markVisitDone, methodLabel, niceDate, removeCalendarVisit, setPatientPhoto, usePatientPhoto } from '../crm/patientRecords'
 import AppointmentForm from '../crm/AppointmentForm'
 import PaymentForm from '../crm/PaymentForm'
-import { dotsFromIso, recordClinicPayment, recordPatientPayment, recordPatientVisit } from '../crm/syncPatientRecords'
+import { savePatientPayment } from '../crm/syncPatientRecords'
+import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
-const TABS = [['umumiy', 'Umumiy'], ['tish', 'Tish kartasi'], ['reja', 'Rejalar'], ['tashrif', 'Tashriflar'], ['tolov', 'To‘lovlar'], ['rentgen', 'Rentgen']]
+const TABS = [['umumiy', 'Umumiy'], ['tish', 'Tish kartasi'], ['reja', 'Rejalar'], ['tashrif', 'Tashriflar'], ['tolov', 'To‘lovlar'], ['rentgen', 'Rentgen'], ['tibbiy', 'Tibbiy']]
 const PLAN_OF = { caries: ['Karies davolash (plomba)', 'Davolash'], missing: ['Implant yoki protez', 'Implant'], endo: ['Endo nazorat rentgeni', 'Konsultatsiya'] }
 
 export default function MobileBemor() {
@@ -25,17 +27,18 @@ export default function MobileBemor() {
 function BemorView({ id }) {
   const patients = useBemorlar()
   const p = getBemor(id)
+  const rec = usePatientRecords(p)
+  const photo = usePatientPhoto(p)
   const navigate = useNavigate()
   const location = useLocation()
   const [tab, setTab] = useState('umumiy')
   const [sheet, setSheet] = useState(() => (location.state?.visit ? { visit: {} } : null))
   // Oxirgi bosilgan tish kartada ajralib turadi (oyna yopilgandan keyin ham).
   const [pickedTooth, setPickedTooth] = useState(null)
-  const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState(() => location.state?.toast || '')
   const closeToast = useCallback(() => setToast(''), [])
   const photoRef = useRef(null)
-  const docRef = useRef(null)
+  const docs = useDocUpload(p, addPatientDoc, setToast)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -53,28 +56,23 @@ function BemorView({ id }) {
   }
 
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/bemorlar'))
-  const read = (file, fn) => {
-    const r = new FileReader()
-    r.onload = () => fn(r.result)
-    r.readAsDataURL(file)
-  }
-  const onPhoto = (e) => {
+  const onPhoto = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (file) read(file, (src) => { patchBemor(p.id, { photo: src }); setToast('Rasm yangilandi') })
+    if (!file) return
+    try {
+      await setPatientPhoto(p, file)
+      setToast('Rasm yangilandi')
+    } catch (err) {
+      setToast(err.message || 'Rasmni yuklab bo‘lmadi')
+    }
   }
-  const onDoc = (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (file) read(file, (src) => { patchBemor(p.id, { docs: [{ name: file.name.replace(/\.[^.]+$/, ''), date: fmtDate(todayDots()), image: src }, ...(p.docs || [])] }); setToast('Rentgen yuklandi') })
-  }
-  const medical = [...p.allergy.map((a) => `${a} allergiyasi`), ...p.diseases]
-  const payments = p.payments || (p.paid ? [{ date: fmtDate(p.last) || '—', sum: p.paid, method: 'Naqd' }] : [])
-  const pct = p.total ? Math.round((p.paid / p.total) * 100) : 100
-  const visits = p.visits || []
-  const planned = visits.filter((v) => v.done === false)
-  const plans = Object.entries(p.teeth || {}).filter(([, s]) => PLAN_OF[s]).map(([n, s]) => ({ n, s, title: PLAN_OF[s][0], kind: PLAN_OF[s][1] }))
-  const images = (p.docs || []).filter((d) => d.image)
+  const medical = [...(p.allergy || []).map((a) => `${a} allergiyasi`), ...(p.diseases || [])]
+  const m = rec.money
+  const pct = m.total ? Math.min(100, Math.round((m.paid / m.total) * 100)) : 100
+  const visits = rec.visits
+  const planned = visits.filter(isUpcoming)
+  const suggestions = Object.entries(p.teeth || {}).filter(([, s]) => PLAN_OF[s]).map(([n, s]) => ({ n, s, title: PLAN_OF[s][0], kind: PLAN_OF[s][1] }))
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef8f7_0%,#f6faf9_30%)] pb-[92px]">
@@ -88,7 +86,7 @@ function BemorView({ id }) {
         <section className="rounded-2xl bg-white p-3 shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
           <div className="flex gap-3">
             <button type="button" onClick={() => photoRef.current?.click()} aria-label="Rasmni o‘zgartirish" className="relative h-fit shrink-0">
-              <Face p={p} className="size-[84px]" text="text-[24px]" />
+              <Face key={photo || 'none'} p={{ ...p, photo }} className="size-[84px]" text="text-[24px]" />
               <span className="absolute bottom-0 right-0 grid size-7 place-items-center rounded-full bg-[#0b8a95] text-white ring-2 ring-white"><Camera className="size-3.5" /></span>
             </button>
             <input ref={photoRef} type="file" accept="image/*" onChange={onPhoto} className="hidden" />
@@ -98,7 +96,7 @@ function BemorView({ id }) {
                 <p className="truncate text-[12px] text-muted">ID: <b className="font-semibold text-ink">#{p.code}</b></p>
                 <span className={`flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10.5px] font-semibold ${MSTATUS[p.status]}`}><CheckCircle2 className="size-3.5" /> {p.status === 'Faol' ? 'Faol bemor' : p.status}</span>
               </div>
-              <p className="mt-0.5 text-[12px] text-ink-2">{p.age} <span className="text-line">•</span> {p.birth} <span className="text-line">•</span> {p.gender}</p>
+              <p className="mt-0.5 text-[12px] text-ink-2">{[p.age, p.birth, p.gender].filter(Boolean).map((x, i) => <span key={i}>{i > 0 && <span className="text-line"> • </span>}{x}</span>)}</p>
               <a href={`tel:${p.phone.replace(/\s/g, '')}`} className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-ink"><Phone className="size-4 text-sea" /> {p.phone}</a>
             </div>
           </div>
@@ -118,7 +116,7 @@ function BemorView({ id }) {
             <button type="button" onClick={() => setSheet('medical')} className="mt-2.5 flex w-full items-center gap-2.5 rounded-xl bg-[#fdecec] px-3 py-2.5 text-left">
               <AlertCircle className="size-6 shrink-0 fill-[#e0454f] text-white" />
               <span className="min-w-0 flex-1">
-                <b className="block text-[13px] font-bold text-[#d23b45]">{p.allergy.length ? 'Allergiya' : 'Kasalliklar'}</b>
+                <b className="block text-[13px] font-bold text-[#d23b45]">{p.allergy?.length ? 'Allergiya' : 'Kasalliklar'}</b>
                 <span className="block text-[11.5px] leading-snug text-[#7a3a3f]">{medical.join(' • ')}</span>
               </span>
               <ChevronRight className="size-5 shrink-0 text-[#d23b45]" />
@@ -153,14 +151,14 @@ function BemorView({ id }) {
           <div className="grid grid-cols-2 gap-2.5">
             <button type="button" onClick={() => setTab('tolov')} className="rounded-2xl bg-white p-3 text-left shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
               <span className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded-xl bg-[#e6f4f3] text-[#0b8a95]"><Wallet className="size-5" /></span><span className="text-[12px] text-muted">Balans</span></span>
-              <b className="mt-1.5 block whitespace-nowrap text-[17px] font-extrabold tracking-tight text-[#0b6d73]">{som(p.debt)}</b>
-              <span className="mt-1 block text-[10.5px] text-muted">Umumiy: {som(p.total)}</span>
-              <span className="block text-[10.5px] text-muted">To‘langan: {som(p.paid)}</span>
+              <b className="mt-1.5 block whitespace-nowrap text-[17px] font-extrabold tracking-tight text-[#0b6d73]">{som(m.debt)}</b>
+              <span className="mt-1 block text-[10.5px] text-muted">Umumiy: {som(m.total)}</span>
+              <span className="block text-[10.5px] text-muted">To‘langan: {som(m.paid)}</span>
             </button>
             <button type="button" onClick={() => setSheet('pay')} className="relative rounded-2xl bg-white p-3 text-left shadow-[0_1px_4px_rgb(11_31_58/0.06)]">
-              <span className="flex items-center gap-2"><span className={`grid size-9 place-items-center rounded-xl ${p.debt ? 'bg-[#fdecec] text-[#e0454f]' : 'bg-[#e6f8ec] text-[#1c9a52]'}`}><PieChart className="size-5" /></span><span className="text-[12px] text-muted">To‘lov holati</span></span>
-              <b className={`mt-1.5 block text-[17px] font-extrabold ${p.debt ? 'text-[#e0454f]' : 'text-[#1c9a52]'}`}>{p.debt ? 'Qarzdor' : 'To‘langan'}</b>
-              <span className="mt-1 block text-[10.5px] text-muted">Qarz: {som(p.debt)}</span>
+              <span className="flex items-center gap-2"><span className={`grid size-9 place-items-center rounded-xl ${m.debt ? 'bg-[#fdecec] text-[#e0454f]' : 'bg-[#e6f8ec] text-[#1c9a52]'}`}><PieChart className="size-5" /></span><span className="text-[12px] text-muted">To‘lov holati</span></span>
+              <b className={`mt-1.5 block text-[17px] font-extrabold ${m.debt ? 'text-[#e0454f]' : 'text-[#1c9a52]'}`}>{m.debt ? 'Qarzdor' : 'To‘langan'}</b>
+              <span className="mt-1 block text-[10.5px] text-muted">Qarz: {som(m.debt)}</span>
               <span className="block text-[10.5px] text-muted">To‘langan: {pct}%</span>
               <ChevronRight className="absolute right-2 top-1/2 size-4 -translate-y-1/2 text-muted" />
             </button>
@@ -171,61 +169,56 @@ function BemorView({ id }) {
           <Card title="To‘lovlar tarixi" action={<button type="button" onClick={() => setSheet('pay')} className="text-[12px] font-semibold text-sea">+ To‘lov</button>}>
             <div className="h-2 overflow-hidden rounded-full bg-[#eef1f5]"><span className="block h-full rounded-full bg-[#0b8a95]" style={{ width: `${pct}%` }} /></div>
             <p className="mt-1 text-[11px] text-muted">{pct}% to‘langan</p>
-            <div className="mt-2 flex flex-col divide-y divide-line/70">
-              {payments.map((x, i) => (
-                <p key={i} className="flex items-center gap-2.5 py-2.5 text-[12.5px]">
-                  <span className="grid size-9 place-items-center rounded-xl bg-[#e6f8ec] text-[#1c9a52]"><CreditCard className="size-4" /></span>
-                  <span className="min-w-0 flex-1"><b className="block font-semibold text-ink">{x.method}</b><span className="text-[11px] text-muted">{x.date}</span></span>
-                  <b className="font-bold text-[#1c9a52]">+{som(x.sum)}</b>
+            <div className="mt-2 flex flex-col divide-y divide-line/70" data-testid="m-payments">
+              {m.list.map((x) => (
+                <p key={x.key} className="flex items-center gap-2.5 py-2.5 text-[12.5px]">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#e6f8ec] text-[#1c9a52]"><CreditCard className="size-4" /></span>
+                  <span className="min-w-0 flex-1"><b className="block truncate font-semibold text-ink">{x.method ? methodLabel(x.method) : 'To‘lov'}{x.source === 'legacy' ? <span className="font-normal text-muted"> · eski</span> : null}</b><span className="block truncate text-[11px] text-muted">{x.iso ? niceDate(x.iso) : x.dateText || '—'}{x.note ? ` · ${x.note}` : ''}</span></span>
+                  <b className="shrink-0 whitespace-nowrap font-bold text-[#1c9a52]">+{som(x.sum)}</b>
                 </p>
               ))}
-              {!payments.length && <p className="py-3 text-[12px] text-muted">Hali to‘lov yo‘q</p>}
+              {!m.list.length && <p className="py-3 text-[12px] text-muted">Hali to‘lov yo‘q</p>}
             </div>
           </Card>
         )}
 
         {(tab === 'umumiy' || tab === 'tashrif') && (
           <Card title={tab === 'umumiy' ? 'So‘nggi tashriflar' : `Tashriflar (${visits.length})`} action={tab === 'umumiy' && visits.length > 0 && <button type="button" onClick={() => setTab('tashrif')} className="text-[12px] font-semibold text-sea">Barchasini ko‘rish</button>}>
-            <Timeline list={tab === 'umumiy' ? visits.slice(0, 4) : visits} onOpen={(i) => setSheet({ visitInfo: i })} />
+            <Timeline list={tab === 'umumiy' ? visits.slice(0, 4) : visits} onOpen={(v) => setSheet({ visitInfo: v })} />
             {!visits.length && <p className="text-[12px] text-muted">Hali tashrif yo‘q. Pastdagi tugma orqali qabul qo‘shing.</p>}
           </Card>
         )}
 
         {tab === 'reja' && (
           <>
+            <PlansPanel p={p} plans={rec.plans} onToast={setToast} />
             <Card title="Rejalashtirilgan qabullar">
-              {planned.length ? <Timeline list={planned} offset={(v) => visits.indexOf(v)} onOpen={(i) => setSheet({ visitInfo: i })} /> : <p className="text-[12px] text-muted">Rejalashtirilgan qabul yo‘q</p>}
+              {planned.length ? <Timeline list={planned} onOpen={(v) => setSheet({ visitInfo: v })} /> : <p className="text-[12px] text-muted">Rejalashtirilgan qabul yo‘q</p>}
             </Card>
-            <Card title="Davolash rejasi">
-              <div className="flex flex-col gap-1.5">
-                {plans.map((x) => (
-                  <div key={x.n} className="flex items-center gap-2.5 rounded-xl border border-line/70 p-2">
-                    <Tooth n={Number(x.n)} state={x.s} className="h-[30px] w-[17px]" />
-                    <span className="min-w-0 flex-1"><b className="block text-[12.5px] font-semibold text-ink">{x.title}</b><span className="text-[11px] text-muted">{x.n}-tish · {toothName[x.s]}</span></span>
-                    <button type="button" onClick={() => setSheet({ visit: { kind: x.kind, tooth: x.n } })} className="h-8 shrink-0 rounded-lg bg-[#e6f4f3] px-2.5 text-[11.5px] font-semibold text-[#0b6d73]">Qabulga</button>
-                  </div>
-                ))}
-                {!plans.length && <p className="text-[12px] text-muted">Tish kartasida davolash talab qiladigan tish yo‘q</p>}
-              </div>
-            </Card>
+            {suggestions.length > 0 && (
+              <Card title="Tish kartasi bo‘yicha tavsiyalar">
+                <div className="flex flex-col gap-1.5">
+                  {suggestions.map((x) => (
+                    <div key={x.n} className="flex items-center gap-2.5 rounded-xl border border-line/70 p-2">
+                      <Tooth n={Number(x.n)} state={x.s} className="h-[30px] w-[17px]" />
+                      <span className="min-w-0 flex-1"><b className="block text-[12.5px] font-semibold text-ink">{x.title}</b><span className="text-[11px] text-muted">{x.n}-tish · {toothName[x.s]}</span></span>
+                      <button type="button" onClick={() => setSheet({ visit: { kind: x.kind, tooth: x.n } })} className="h-8 shrink-0 rounded-lg bg-[#e6f4f3] px-2.5 text-[11.5px] font-semibold text-[#0b6d73]">Qabulga</button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </>
         )}
 
-        {tab === 'rentgen' && (
-          <Card title={`Rentgen va hujjatlar (${(p.docs || []).length})`} action={<button type="button" onClick={() => docRef.current?.click()} className="text-[12px] font-semibold text-sea">+ Yuklash</button>}>
-            <div className="grid grid-cols-2 gap-2">
-              {(p.docs || []).map((d, i) => (
-                <button key={d.name + i} type="button" onClick={() => d.image && setZoom(images.indexOf(d))} className="text-left">
-                  {d.image ? <img src={d.image} alt={d.name} className="h-[100px] w-full rounded-xl object-cover" /> : <span className="grid h-[100px] place-items-center rounded-xl bg-[#f3f7fa] text-muted"><FileText className="size-8" /></span>}
-                  <b className="mt-1 block truncate text-[12px] font-semibold text-ink">{d.name}</b>
-                  <span className="text-[10.5px] text-muted">{d.date}</span>
-                </button>
-              ))}
-              <button type="button" onClick={() => docRef.current?.click()} className="grid h-[100px] place-items-center rounded-xl border-2 border-dashed border-[#a9d7d3] bg-[#f3faf9] text-sea"><span className="flex flex-col items-center gap-1 text-[12px] font-semibold"><ImagePlus className="size-6" /> Rentgen yuklash</span></button>
-            </div>
-            <input ref={docRef} type="file" accept="image/*" onChange={onDoc} className="hidden" />
+        {tab === 'rentgen' && <DocsPanel p={p} onUpload={docs.pick} busy={docs.busy} error={docs.error} onToast={setToast} />}
+
+        {tab === 'tibbiy' && (
+          <Card title="Tibbiy ma’lumotlar" action={<button type="button" onClick={() => setSheet('medical')} className="text-[12px] font-semibold text-sea">Tahrirlash</button>}>
+            <MedicalView p={p} />
           </Card>
         )}
+        {docs.input}
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-white/95 px-3.5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-2 backdrop-blur">
@@ -236,23 +229,22 @@ function BemorView({ id }) {
 
       {sheet?.visit && (
         <AppointmentForm
-          initial={{
-            patient: p,
-            note: [sheet.visit.tooth && `${sheet.visit.tooth}-tish`, sheet.visit.kind].filter(Boolean).join(' · '),
-          }}
+          initial={{ patient: p, service: sheet.visit.kind || '', tooth: sheet.visit.tooth || '' }}
           lockPatient
           onClose={() => setSheet(null)}
-          onSaved={(row) => { recordPatientVisit(p, row); setSheet(null); setToast(`Qabul belgilandi: ${fmtDate(dotsFromIso(row.date))}, ${row.start}`) }}
+          onSaved={(row) => { afterVisitSaved(p, row); setSheet(null); setToast(`Qabul belgilandi: ${niceDate(row.date)}, ${row.start}`) }}
         />
       )}
-      {sheet?.visitInfo !== undefined && <VisitInfo p={p} i={sheet.visitInfo} onClose={() => setSheet(null)} onToast={setToast} />}
+      {sheet?.visitInfo && <VisitInfo p={p} v={sheet.visitInfo} onClose={() => setSheet(null)} onToast={setToast} />}
       {sheet === 'pay' && (
         <PaymentForm
           patients={patients}
           patient={p}
           lockPatient
+          plans={rec.plans}
+          money={m}
           onClose={() => setSheet(null)}
-          onSave={(row) => { recordClinicPayment(row); recordPatientPayment(p, row); setSheet(null); setToast(`${som(row.amount)} qabul qilindi`) }}
+          onSave={(row, opts) => { savePatientPayment(row, { ...opts, patient: p }); setSheet(null); setToast(`${som(row.amount)} qabul qilindi`) }}
         />
       )}
       {sheet === 'edit' && <EditSheet p={p} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setToast('Ma’lumotlar saqlandi') }} />}
@@ -268,9 +260,9 @@ function BemorView({ id }) {
           onRemove={() => { removeBemor(p.id); navigate('/bemorlar', { replace: true, state: { toast: `${p.name} o‘chirildi` } }) }}
         />
       )}
-      {zoom !== null && <Lightbox images={images.map((d) => d.image)} index={zoom} onClose={() => setZoom(null)} />}
 
       <MobileToast text={toast} onClose={closeToast} bottom={84} />
+      <SaveErrorToast bottom={84} />
     </div>
   )
 }
@@ -284,25 +276,24 @@ function Card({ title, action, children }) {
   )
 }
 
-function Timeline({ list, onOpen, offset = (_, i) => i }) {
+function Timeline({ list, onOpen }) {
   return (
     <ol className="flex flex-col">
       {list.map((v, i) => {
-        const idx = offset(v, i)
-        const dot = v.done === false ? 'border-[#3b82f6] bg-white' : i === 0 ? 'border-[#0b8a95] bg-[#0b8a95]' : 'border-[#b8c4d0] bg-[#b8c4d0]'
+        const dot = !v.done ? 'border-[#3b82f6] bg-white' : i === 0 ? 'border-[#0b8a95] bg-[#0b8a95]' : 'border-[#b8c4d0] bg-[#b8c4d0]'
+        const st = VISIT_STATUS[v.status]
         return (
-          <li key={idx} className="relative">
+          <li key={v.key} className="relative">
             {i < list.length - 1 && <span className="absolute bottom-0 left-[6px] top-5 w-px bg-line" />}
-            <button type="button" onClick={() => onOpen(idx)} className="flex w-full items-center gap-3 py-2 text-left">
+            <button type="button" onClick={() => onOpen(v)} className="flex w-full items-center gap-3 py-2 text-left">
               <span className={`relative z-10 size-[13px] shrink-0 self-start rounded-full border-[3px] ${dot}`} style={{ marginTop: 3 }} />
               <span className="min-w-0 flex-1">
-                <span className="block text-[11.5px] text-ink-2">{fmtDate(v.date)}{v.time ? `, ${v.time}` : ''}{v.done === false && <span className="ml-1.5 rounded bg-[#e8f0fe] px-1 text-[10px] font-semibold text-[#3b82f6]">Rejada</span>}</span>
-                <b className="block text-[13px] font-bold text-ink">{v.kind}</b>
+                <span className="block text-[11.5px] text-ink-2">{v.iso ? niceDate(v.iso) : v.dateText}{v.time ? `, ${v.time}` : ''}{!v.done && st && <span className={`ml-1.5 rounded px-1 text-[10px] font-semibold ${st.cls}`}>{v.status === 'bekor' ? 'Bekor' : 'Rejada'}</span>}{v.readOnly && <span className="ml-1.5 text-[10px] text-muted">eski</span>}</span>
+                <b className="block truncate text-[13px] font-bold text-ink">{v.kind}</b>
                 <span className="block truncate text-[11px] text-muted">{v.note || (v.tooth ? `${v.tooth}-tish` : '—')}</span>
               </span>
               <span className="flex shrink-0 items-center gap-1.5">
-                <img src={DOCTORS[v.doctor] || ''} alt="" className="size-7 rounded-full object-cover object-top" />
-                <span className="text-[11.5px] font-medium text-ink">{v.doctor}</span>
+                {v.doctor && <span className="max-w-[90px] truncate text-[11.5px] font-medium text-ink">{v.doctor}</span>}
                 <ChevronRight className="size-4 text-muted" />
               </span>
             </button>
@@ -316,49 +307,69 @@ function Timeline({ list, onOpen, offset = (_, i) => i }) {
 const chip = (on) => `flex h-9 items-center gap-1 rounded-xl border px-3 text-[12.5px] font-medium ${on ? 'border-sea bg-sea-50 text-sea' : 'border-line text-ink'}`
 const input = (bad) => `h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${bad ? 'border-sale' : 'border-line'}`
 
-function VisitInfo({ p, i, onClose, onToast }) {
-  const v = p.visits[i]
-  if (!v) return null
+function VisitInfo({ p, v, onClose, onToast }) {
+  const [ask, setAsk] = useState(false)
+  const st = VISIT_STATUS[v.readOnly ? 'eski' : v.status] || VISIT_STATUS.tasdiq
   const toggle = () => {
-    patchBemor(p.id, { visits: p.visits.map((x, j) => (j === i ? { ...x, done: x.done === false } : x)), last: v.done === false ? v.date : p.last })
-    onToast(v.done === false ? 'Qabul bajarildi deb belgilandi' : 'Qabul rejaga qaytarildi')
+    markVisitDone(p, v, !v.done)
+    onToast(v.done ? 'Qabul rejaga qaytarildi' : 'Qabul bajarildi deb belgilandi')
     onClose()
   }
   const remove = () => {
-    patchBemor(p.id, { visits: p.visits.filter((_, j) => j !== i) })
+    removeCalendarVisit(v.id)
     onToast('Tashrif o‘chirildi')
     onClose()
   }
   return (
     <BottomSheet title={v.kind} onClose={onClose}>
       <div className="mt-2 flex flex-col divide-y divide-line/70 rounded-2xl border border-line/70">
-        {[[CalendarDays, 'Sana', `${fmtDate(v.date)}${v.time ? `, ${v.time}` : ''}`], [Stethoscope, 'Shifokor', v.doctor], [Clock, 'Holat', v.done === false ? 'Rejada' : 'Bajarilgan'], ...(v.tooth ? [[FileText, 'Tish', `${v.tooth}-tish`]] : []), ...(v.note ? [[FileText, 'Izoh', v.note]] : [])].map(([Icon, k, val]) => (
-          <p key={k} className="flex items-center gap-2 px-3 py-2.5 text-[13px]"><Icon className="size-4 text-sea" /><span className="text-muted">{k}</span><span className="ml-auto text-right font-semibold text-ink">{val}</span></p>
+        {[[CalendarDays, 'Sana', `${v.iso ? niceDate(v.iso) : v.dateText}${v.time ? `, ${v.time}` : ''}`], ...(v.doctor ? [[Stethoscope, 'Shifokor', v.doctor]] : []), [Clock, 'Holat', v.readOnly ? `${v.done ? 'Bajarilgan' : 'Rejada'} (eski yozuv)` : st.label], ...(v.tooth ? [[FileText, 'Tish', `${v.tooth}-tish`]] : []), ...(v.note ? [[FileText, 'Izoh', v.note]] : [])].map(([Icon, k, val]) => (
+          <p key={k} className="flex items-center gap-2 px-3 py-2.5 text-[13px]"><Icon className="size-4 shrink-0 text-sea" /><span className="text-muted">{k}</span><span className="ml-auto text-right font-semibold text-ink">{val}</span></p>
         ))}
       </div>
-      <div className="mb-2 mt-3 grid grid-cols-[1fr_auto] gap-2">
-        <button type="button" onClick={toggle} className="h-11 rounded-xl bg-[#0b8a95] text-[13.5px] font-semibold text-white">{v.done === false ? 'Bajarildi deb belgilash' : 'Rejaga qaytarish'}</button>
-        <button type="button" onClick={remove} aria-label="Tashrifni o‘chirish" className="grid size-11 place-items-center rounded-xl border border-line text-sale"><Trash2 className="size-5" /></button>
-      </div>
+      {v.readOnly ? <p className="mb-2 mt-3 text-[12px] text-muted">Bu eski yozuv — faqat ko‘rish uchun. Yangi qabullar Uchrashuvlar kalendarida saqlanadi.</p> : ask ? (
+        <div className="mb-2 mt-3 grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setAsk(false)} className="h-11 rounded-xl border border-line text-[13.5px] font-semibold">Bekor qilish</button>
+          <button type="button" onClick={remove} className="h-11 rounded-xl bg-sale text-[13.5px] font-semibold text-white">Ha, o‘chirish</button>
+        </div>
+      ) : (
+        <div className="mb-2 mt-3 grid grid-cols-[1fr_auto] gap-2">
+          <button type="button" onClick={toggle} className="h-11 rounded-xl bg-[#0b8a95] text-[13.5px] font-semibold text-white">{v.done ? 'Rejaga qaytarish' : 'Bajarildi deb belgilash'}</button>
+          <button type="button" onClick={() => setAsk(true)} aria-label="Tashrifni o‘chirish" className="grid size-11 place-items-center rounded-xl border border-line text-sale"><Trash2 className="size-5" /></button>
+        </div>
+      )}
     </BottomSheet>
   )
 }
 
 function EditSheet({ p, onClose, onDone }) {
-  const [f, setF] = useState({ name: p.name, phone: p.phone, email: p.email || '', city: p.city, address: p.address || '' })
+  const birthIso = p.birthIso || (/^\d{2}\.\d{2}\.\d{4}$/.test(p.birth || '') ? p.birth.split('.').reverse().join('-') : '')
+  const [f, setF] = useState({ name: p.name, phone: p.phone, email: p.email || '', city: p.city, address: p.address || '', birth: birthIso, gender: p.gender || 'Erkak' })
   const [tried, setTried] = useState(false)
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
   const errs = { name: f.name.trim().length < 3, phone: f.phone.replace(/\D/g, '').length < 9 }
   const save = () => {
     setTried(true)
     if (errs.name || errs.phone) return
-    patchBemor(p.id, { ...f, name: f.name.trim() })
+    const today = tashkentToday()
+    const birth = f.birth && f.birth <= today ? f.birth : ''
+    let age = p.age
+    if (birth) {
+      let y = Number(today.slice(0, 4)) - Number(birth.slice(0, 4))
+      if (today.slice(5) < birth.slice(5)) y -= 1
+      age = `${y} yosh`
+    }
+    patchBemor(p.id, { ...f, name: f.name.trim(), birthIso: birth, birth: birth ? birth.split('-').reverse().join('.') : p.birth, age })
     onDone()
   }
   return (
     <BottomSheet title="Tahrirlash" onClose={onClose} footer={<button type="button" onClick={save} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Saqlash</button>}>
       <div className="mt-2 flex flex-col gap-2 pb-2">
         <label className="text-[12px] text-muted">Ism, familiya<input value={f.name} onChange={set('name')} className={`mt-1 ${input(tried && errs.name)}`} /></label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-[12px] text-muted">Tug‘ilgan sana<input type="date" max={tashkentToday()} value={f.birth} onChange={set('birth')} className={`mt-1 ${input(false)}`} /></label>
+          <label className="text-[12px] text-muted">Jinsi<select value={f.gender} onChange={set('gender')} className={`mt-1 ${input(false)} bg-white`}><option>Erkak</option><option>Ayol</option></select></label>
+        </div>
         <label className="text-[12px] text-muted">Telefon
           <PhoneInput className={`mt-1 ${input(tried && errs.phone)}`} value={f.phone} onChange={(v) => setF((s) => ({ ...s, phone: toE164(v) || extractUzLocalDigits(v) }))} valueMode="e164" invalid={tried && errs.phone} />
           {tried && errs.phone && <p className="mt-1 text-[11px] text-sale">{PHONE_INCOMPLETE_MSG}</p>}
@@ -372,15 +383,10 @@ function EditSheet({ p, onClose, onDone }) {
 }
 
 function MedicalSheet({ p, onClose, onDone }) {
-  const [allergy, setAllergy] = useState(p.allergy.join(', '))
-  const [diseases, setDiseases] = useState(p.diseases.join(', '))
-  const split = (s) => s.split(',').map((x) => x.trim()).filter(Boolean)
+  const [f, setF] = useState(() => medicalForm(p))
   return (
-    <BottomSheet title="Tibbiy ma’lumotlar" onClose={onClose} footer={<button type="button" onClick={() => { patchBemor(p.id, { allergy: split(allergy), diseases: split(diseases) }); onDone() }} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Saqlash</button>}>
-      <label className="mt-2 block text-[12px] text-muted">Allergiya (vergul bilan)<input value={allergy} onChange={(e) => setAllergy(e.target.value)} className={`mt-1 ${input(false)}`} /></label>
-      <label className="mt-2 block text-[12px] text-muted">Kasalliklar (vergul bilan)<input value={diseases} onChange={(e) => setDiseases(e.target.value)} className={`mt-1 ${input(false)}`} /></label>
-      <p className="mt-3 text-[12px] text-muted">Doimiy dorilar: <b className="text-ink">{p.meds || 'Yo‘q'}</b></p>
-      {p.note && <p className="mb-2 mt-2 rounded-xl bg-[#fff8e8] p-2.5 text-[12px] leading-snug text-[#8a5a00]">{p.note}</p>}
+    <BottomSheet title="Tibbiy ma’lumotlar" onClose={onClose} footer={<button type="button" onClick={() => { saveMedical(p, f); onDone() }} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Saqlash</button>}>
+      <div className="mt-2 pb-2"><MedicalFields f={f} setF={setF} compact /></div>
     </BottomSheet>
   )
 }

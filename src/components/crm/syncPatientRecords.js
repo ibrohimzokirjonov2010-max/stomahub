@@ -1,4 +1,5 @@
-import { patchBemor } from '../../bemorData'
+import { getBemor, patchBemor } from '../../bemorData'
+import { addPayment as addPlanPayment } from '../../rejaData'
 import { replaceClinicPayments } from '../../tolovData'
 
 export function dotsFromIso(iso) {
@@ -44,11 +45,35 @@ export function recordPatientPayment(patient, payment) {
   if (!sum || payment.status === 'Qaytarilgan') return
   const prev = (patient.payments || []).find((x) => x.id === payment.id)
   const paid = (patient.paid || 0) - (prev?.sum || 0) + sum
-  const row = { id: payment.id, date: payment.date, sum, method: payment.method, receipt: payment.receipt }
+  const row = { id: payment.id, date: payment.date, sum, method: payment.method, receipt: payment.receipt, clinic: true }
   patchBemor(patient.id, {
     paid,
     payments: prev
       ? (patient.payments || []).map((x) => (x.id === payment.id ? { ...x, ...row } : x))
       : [row, ...(patient.payments || [])],
   })
+}
+
+/**
+ * Yagona saqlash yo‘li (PaymentForm → bemor profili / kalendar / To‘lovlar):
+ *   1) clinic_payments (asosiy manba, /tolovlar ko‘radi) — id bo‘yicha upsert;
+ *   2) bemor kartasidagi nusxa (receipt + clinic belgisi bilan — patientPayments ikki marta sanamaydi);
+ *   3) planId bo‘lsa — davolash rejasining to‘langan summasi (faqat yangi to‘lovda, bir marta).
+ */
+export function savePatientPayment(row, { patient, planId = '', isNew = true } = {}) {
+  if (!row) return null
+  const payment = planId ? { ...row, planId } : row
+  recordClinicPayment(payment)
+  const p = (patient?.id && getBemor(patient.id)) || patient
+  if (p?.id) recordPatientPayment(p, payment)
+  const sum = Number(payment.amount) || 0
+  if (planId && isNew && sum > 0 && payment.status !== 'Qaytarilgan') {
+    addPlanPayment(planId, sum, payment.method, isoFromDots(payment.date))
+  }
+  return payment
+}
+
+function isoFromDots(s) {
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(String(s || '').trim())
+  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : String(s || '')
 }

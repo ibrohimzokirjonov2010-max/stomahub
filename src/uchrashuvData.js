@@ -1,8 +1,7 @@
 import { tashkentToday } from './tashkentDate'
 import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
-import { getBemor, patchBemor } from './bemorData'
-import { CALENDAR_OPTS, reconcile } from './teeth/autoToothStatus'
+import { syncVisitPlans } from './visitPlanSync'
 
 export const ANCHOR = '2026-10-20'
 export const FOCUS = '2026-10-22'
@@ -52,27 +51,13 @@ export function useVisits() {
   }, () => visits)
 }
 
-// Uchrashuv "yakun"/"keldi" bo'lsa va tishi ko'rsatilgan bo'lsa, bemor tish kartasi avtomatik yangilanadi.
-function withAutoTeeth(prevList, nextList) {
-  if (!Array.isArray(nextList)) return nextList
-  const byId = new Map((prevList || []).map((v) => [v.id, v]))
-  const teethOf = new Map()
-  const out = nextList.map((v) => {
-    const prev = byId.get(v.id)
-    const patient = v?.patientId && prev && getBemor(v.patientId)
-    if (!patient) return v
-    const r = reconcile(prev, v, teethOf.get(v.patientId) ?? patient.teeth ?? {}, CALENDAR_OPTS)
-    if (r.changed) teethOf.set(v.patientId, r.teeth)
-    return r.item
-  })
-  teethOf.forEach((teeth, pid) => patchBemor(pid, { teeth }))
-  return out
-}
-
 export function setVisits(next) {
-  visits = withAutoTeeth(visits, typeof next === 'function' ? next(visits) : next)
+  const prev = visits
+  visits = typeof next === 'function' ? next(visits) : next
   listeners.forEach((fn) => fn())
   touchBlob('visits')
+  // Qabuldagi xizmatlar -> bemorning davolash rejasi (barcha kirish nuqtalari uchun)
+  try { syncVisitPlans(prev, visits) } catch (error) { if (import.meta.env.DEV) console.error('visit->plan sync', error) }
 }
 
 export function todayIso() {

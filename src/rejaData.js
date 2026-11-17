@@ -26,15 +26,17 @@ export const STAGE_STATUS = {
   bajarildi: { label: 'Bajarildi', bg: '#e3f6ee', color: '#15803d', tint: '#5fd3b8' },
   jarayonda: { label: 'Jarayonda', bg: '#fff1df', color: '#c2410c', tint: '#f5a524' },
   rejada: { label: 'Rejalashtirilgan', bg: '#efeaff', color: '#6d4fd6', tint: '#a78bfa' },
+  bekor: { label: 'Bekor qilingan', bg: '#ffecee', color: '#d23b45', tint: '#f3a3ad' },
 }
 
 export const money = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')
 export const dmy = (iso) => (iso ? iso.split('-').reverse().join('.') : '—')
-export const totalOf = (p) => p.stages.reduce((s, x) => s + x.price, 0)
+export const totalOf = (p) => p.stages.reduce((s, x) => s + (x.status === 'bekor' ? 0 : Number(x.price) || 0), 0)
 export const debtOf = (p) => Math.max(0, totalOf(p) - p.paid)
 export const progressOf = (p) => {
-  const n = p.stages.filter((s) => s.status !== 'rejada').length
-  return { n, of: p.stages.length, pct: p.stages.length ? Math.round((n / p.stages.length) * 100) : 0 }
+  const live = p.stages.filter((s) => s.status !== 'bekor')
+  const n = live.filter((s) => s.status !== 'rejada').length
+  return { n, of: live.length, pct: live.length ? Math.round((n / live.length) * 100) : 0 }
 }
 
 const KINDS = {
@@ -144,6 +146,7 @@ const subscribe = (fn) => {
 export const usePlans = () => useSyncExternalStore(subscribe, () => plans)
 export const useTemplates = () => useSyncExternalStore(subscribe, () => templates)
 export const getPlan = (id) => plans.find((p) => p.id === id)
+export const getPlans = () => plans
 
 export function nextPlanCode() {
   const n = plans.reduce((m, p) => Math.max(m, Number(p.code.replace(/\D/g, '')) || 0), 0) + 1
@@ -151,8 +154,9 @@ export function nextPlanCode() {
 }
 
 function sync(p) {
-  if (!p.stages.length) return p
-  const all = p.stages.every((s) => s.status === 'bajarildi')
+  const live = p.stages.filter((s) => s.status !== 'bekor')
+  if (!live.length) return p
+  const all = live.every((s) => s.status === 'bajarildi')
   if (all) return { ...p, status: 'yakunlangan' }
   if (p.status === 'yakunlangan') return { ...p, status: 'jarayonda' }
   if (p.stages.some((s) => s.status === 'jarayonda') && (p.status === 'reja' || p.status === 'kutilmoqda')) return { ...p, status: 'jarayonda' }
@@ -163,8 +167,8 @@ function sync(p) {
 function withAutoTeeth(prev, next) {
   const pid = next?.patient?.id
   const patient = pid && getBemor(pid)
-  if (!prev || !patient || !Array.isArray(next.stages)) return next
-  const r = reconcileList(prev.stages, next.stages, patient.teeth || {}, (s) => s.id, STAGE_OPTS)
+  if (!patient || !Array.isArray(next.stages)) return next
+  const r = reconcileList(prev?.stages || [], next.stages, patient.teeth || {}, (s) => s.id, STAGE_OPTS)
   if (!r.changed) return next
   patchBemor(pid, { teeth: r.teeth })
   return { ...next, stages: r.list }

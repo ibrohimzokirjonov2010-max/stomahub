@@ -36,8 +36,11 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
   const [patient, setPatient] = useState(initial.patient || null)
   const [find, setFind] = useState('')
   const [creating, setCreating] = useState(false)
-  const [serviceId, setServiceId] = useState('')
-  const svc = services.find((s) => s.id === serviceId)
+  // Bir nechta xizmat: tanlanganlari bemorning davolash rejasiga bosqich bo‘lib tushadi (visitPlanSync)
+  const [serviceIds, setServiceIds] = useState([])
+  const picked = serviceIds.map((id) => services.find((s) => s.id === id)).filter(Boolean)
+  const svc = picked[0]
+  const [teeth, setTeeth] = useState('')
   const [dur, setDur] = useState(30)
   const [date, setDate] = useState(initial.date && initial.date >= today ? initial.date : today)
   const [room, setRoom] = useState(chairs.includes(initial.room) ? initial.room : chairs[0] || '')
@@ -53,12 +56,14 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
 
   const save = () => {
     if (!patient) return setErr('Bemorni ro‘yxatdan tanlang yoki yangi bemor qo‘shing.')
-    if (!svc) return setErr('Xizmatni tanlang.')
+    if (!svc) return setErr('Kamida bitta xizmatni tanlang.')
     if (!roomNow) return setErr('Avval kreslo sonini kiriting.')
     if (!timeNow) return setErr('Bo‘sh vaqtni tanlang.')
     const visit = {
       id: `n${Date.now()}`, date, start: timeNow, dur, name: patient.name, photo: patient.photo || '', phone: patient.phone || '', patientId: patient.id || '',
-      service: svc.name, serviceId: svc.id, price: Number(svc.price) || 0, status: 'tasdiq', doctor, room: roomNow, note: note.trim(), isNew: patient.status === 'Yangi',
+      service: picked.map((s) => s.name).join(', '), serviceId: svc.id, price: picked.reduce((sum, s) => sum + (Number(s.price) || 0), 0),
+      services: picked.map((s) => ({ id: s.id, name: s.name, price: Number(s.price) || 0 })), tooth: teeth.trim(),
+      status: 'tasdiq', doctor, room: roomNow, note: note.trim(), isNew: patient.status === 'Yangi',
     }
     setVisits((list) => [...list, visit])
     onSaved?.(visit)
@@ -93,11 +98,24 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
             )}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Xizmat *</span>
+            <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Xizmatlar *</span>
               {services.length ? (
-                <select value={serviceId} onChange={(e) => { setServiceId(e.target.value); const s = services.find((x) => x.id === e.target.value); if (s?.duration) setDur(Number(s.duration)) }} className={input}>
-                  <option value="">Xizmatni tanlang</option>
-                  {services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                <select
+                  aria-label="Xizmat qo‘shish"
+                  value=""
+                  onChange={(e) => {
+                    const s = services.find((x) => x.id === e.target.value)
+                    if (!s) return
+                    const next = [...serviceIds, s.id]
+                    setServiceIds(next)
+                    const total = next.reduce((m, id) => m + (Number(services.find((x) => x.id === id)?.duration) || 0), 0)
+                    if (total) setDur(Math.min(240, total))
+                    setErr('')
+                  }}
+                  className={input}
+                >
+                  <option value="">{picked.length ? '+ Yana xizmat qo‘shish' : 'Xizmatni tanlang'}</option>
+                  {services.filter((s) => !serviceIds.includes(s.id)).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               ) : <p className="rounded-xl bg-[#fff8e6] px-3 py-2 text-[12px]">Xizmatlar ro‘yxati bo‘sh. <Link to="/xizmatlar" className="font-semibold text-sea underline">Xizmat qo‘shing</Link></p>}
             </div>
@@ -118,6 +136,25 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
               <input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value && e.target.value >= today ? e.target.value : today)} className={input} />
             </label>
           </div>
+          {picked.length > 0 && (
+            <div data-testid="appt-services" className="rounded-xl border border-line bg-[#f8fbfc] p-2">
+              <ul className="flex flex-wrap gap-1.5">
+                {picked.map((s) => (
+                  <li key={s.id} className="flex items-center gap-1.5 rounded-lg bg-white px-2 py-1 text-[12px] shadow-[0_0_0_1px_rgb(225_230_238)]">
+                    <span className="font-semibold text-ink">{s.name}</span>
+                    {Number(s.price) > 0 && <span className="text-muted">{Number(s.price).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m</span>}
+                    <button type="button" onClick={() => setServiceIds((ids) => ids.filter((x) => x !== s.id))} aria-label={`${s.name} xizmatini olib tashlash`} className="text-muted hover:text-[#e11d48]"><X className="size-3.5" /></button>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1.5 text-[12px] text-ink-2">Tish (FDI)
+                  <input value={teeth} onChange={(e) => setTeeth(e.target.value.replace(/[^\d,\s]/g, '').slice(0, 30))} inputMode="numeric" placeholder="masalan, 36, 37" className="h-8 w-[130px] rounded-lg border border-line bg-white px-2 text-[12.5px] outline-none focus:border-sea" />
+                </label>
+                <span className="text-[11.5px] text-muted">Jami: <b className="text-ink">{picked.reduce((m, s) => m + (Number(s.price) || 0), 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m</b> · bemorning davolash rejasiga qo‘shiladi</span>
+              </div>
+            </div>
+          )}
           <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Vaqt * <span className="font-normal text-muted">({slots.length} ta bo‘sh)</span></span>
             {slots.length ? (
               <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-8">
