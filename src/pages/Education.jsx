@@ -5,11 +5,12 @@ import { useMobile } from '../useMobile'
 import { BottomSheet } from '../components/mobile/MobileSeminars'
 import { useCatalogVersion } from '../recordSync'
 import { useProfile } from '../profileStore'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { directions, levels, formats, prices, sorts, why, money } from '../educationData'
 import { useCourseCatalog, useMyCourses } from '../courseApi'
-import { formatDuration, toCatalogCard } from '../courseRules'
+import { catalogCtaLabel, formatDuration, toCatalogCard } from '../courseRules'
 import { profileStore } from '../profileStore'
+import { isTestEvent, isTestSeedId } from '../lib/testSeed'
 
 export default function EducationRoute() {
   const [q, setQ] = useState('')
@@ -27,6 +28,7 @@ function Education({ headerQuery, mobile }) {
   const catalog = useCourseCatalog()
   const mine = useMyCourses()
   const courses = catalog.rows.map(toCatalogCard)
+  const mineById = Object.fromEntries((mine.rows || []).map((row) => [row.id, row]))
   const continuing = (mine.rows || []).filter((row) => row.access && !row.complete && (row.done || 0) > 0).map((row) => ({
     id: row.id,
     title: row.title,
@@ -75,8 +77,6 @@ function Education({ headerQuery, mobile }) {
 
   const saved = new Set(profile.favCourses || [])
   const toggle = (cid) => profileStore.toggleFav('favCourses', cid)
-  const openCourse = (cid) => navigate(`/talim/${cid}`)
-
   return (
     <div className="grid gap-4 pb-8 pt-3 xl:grid-cols-[minmax(0,1fr)_250px]">
       <div className="min-w-0">
@@ -122,7 +122,7 @@ function Education({ headerQuery, mobile }) {
                   </div>
                   <div className="mt-auto flex items-center justify-between pt-1.5">
                     <span className="text-[10px] font-bold text-sea">{c.progress.pct}%</span>
-                    <button onClick={() => openCourse(c.id)} className="flex h-[24px] items-center gap-1 rounded-full bg-sea px-2 text-[9px] font-semibold text-white hover:bg-sea-600">
+                    <button type="button" onClick={() => navigate(`/talim/${c.id}/dars`)} className="flex h-[24px] items-center gap-1 rounded-full bg-sea px-2 text-[9px] font-semibold text-white hover:bg-sea-600">
                       Davom ettirish <Play className="size-2.5 fill-white" />
                     </button>
                   </div>
@@ -162,11 +162,11 @@ function Education({ headerQuery, mobile }) {
           <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">{catalog.status === 'loading' ? 'Yuklanmoqda…' : courses.length ? 'Kurs topilmadi' : 'Hali kurslar qo‘shilmagan'}</div>
         ) : view === 'grid' ? (
           <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-3 min-[1280px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2200px]:grid-cols-6">
-      {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
+      {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} enrollment={mineById[c.id]} />)}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {list.map((c) => <CourseRow key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} onOpen={() => openCourse(c.id)} />)}
+            {list.map((c) => <CourseRow key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} enrollment={mineById[c.id]} />)}
           </div>
         )}
       </div>
@@ -278,54 +278,61 @@ function ChipRow({ label, value, onChange, items }) {
   )
 }
 
-function CourseCard({ c, saved, onSave, onOpen }) {
+function CourseCard({ c, saved, onSave, enrollment }) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl bg-white shadow-card">
-      <Cover c={c} saved={saved} onSave={onSave} tall />
-      <div className="flex flex-1 flex-col px-2.5 pb-2.5 pt-2">
-        <h3 className="line-clamp-2 text-[12px] font-bold leading-snug text-ink">{c.title}</h3>
-        <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-ink-2">{c.about}</p>
+    <article className="relative flex flex-col overflow-hidden rounded-xl bg-white shadow-card transition hover:shadow-[0_8px_24px_rgb(11_31_58/0.08)]">
+      <Link to={`/talim/${c.id}`} className="absolute inset-0 z-0" aria-label={c.title} />
+      <Cover c={c} saved={saved} onSave={onSave} tall to={`/talim/${c.id}`} />
+      <div className="relative z-10 flex flex-1 flex-col px-2.5 pb-2.5 pt-2">
+        <Link to={`/talim/${c.id}`} className="block">
+          <h3 className="line-clamp-2 text-[12px] font-bold leading-snug text-ink">{c.title}</h3>
+          <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-ink-2">{c.about}</p>
+        </Link>
         <Teacher c={c} />
         <Meta c={c} />
-        <Footer c={c} onOpen={onOpen} />
+        <Footer c={c} enrollment={enrollment} />
       </div>
     </article>
   )
 }
 
-function CourseRow({ c, saved, onSave, onOpen }) {
+function CourseRow({ c, saved, onSave, enrollment }) {
   return (
-    <article className="flex gap-3 rounded-xl bg-white p-2 shadow-card">
+    <article className="relative flex gap-3 rounded-xl bg-white p-2 shadow-card transition hover:shadow-[0_8px_24px_rgb(11_31_58/0.08)]">
+      <Link to={`/talim/${c.id}`} className="absolute inset-0 z-0" aria-label={c.title} />
       <div className="relative shrink-0 overflow-hidden rounded-lg bg-[linear-gradient(135deg,#0b6d73,#143044)]" style={{ width: 168, height: 96 }}>
         {c.cover ? <img src={c.cover} alt="" className="size-full object-cover" /> : null}
         <Badge c={c} />
         <span className="absolute bottom-1.5 left-1.5 rounded bg-black/75 px-1 text-[8px] text-white">{c.duration}</span>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col py-0.5">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col py-0.5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-[13px] font-bold text-ink">{c.title}</h3>
-          <button onClick={onSave} aria-label="Saqlash"><Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} /></button>
+          <Link to={`/talim/${c.id}`} className="min-w-0">
+            <h3 className="text-[13px] font-bold text-ink">{c.title}</h3>
+          </Link>
+          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave() }} aria-label="Saqlash"><Heart className={`size-4 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} /></button>
         </div>
         <p className="text-[11px] text-ink-2">{c.about}</p>
         <Teacher c={c} />
         <div className="mt-auto flex items-end justify-between">
           <Meta c={c} />
-          <Footer c={c} onOpen={onOpen} />
+          <Footer c={c} enrollment={enrollment} />
         </div>
       </div>
     </article>
   )
 }
 
-function Cover({ c, saved, onSave }) {
+function Cover({ c, saved, onSave, to }) {
   return (
-    <div className="relative aspect-[16/9] min-h-[108px] overflow-hidden bg-[linear-gradient(135deg,#0b6d73,#143044)]">
-      {c.cover ? <img src={c.cover} alt="" className="size-full object-cover" /> : null}
+    <div className="relative z-10 aspect-[16/9] min-h-[108px] overflow-hidden bg-[linear-gradient(135deg,#0b6d73,#143044)]">
+      {to ? <Link to={to} className="absolute inset-0 z-0" aria-hidden tabIndex={-1} /> : null}
+      {c.cover ? <img src={c.cover} alt="" className="pointer-events-none size-full object-cover" /> : null}
       <Badge c={c} />
-      <button onClick={onSave} aria-label="Saqlash" className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white/90">
+      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave() }} aria-label="Saqlash" className="absolute right-2 top-2 z-10 grid size-6 place-items-center rounded-full bg-white/90">
         <Heart className={`size-3.5 ${saved ? 'fill-sale text-sale' : 'text-ink-2'}`} />
       </button>
-      <span className="absolute bottom-1.5 left-1.5 rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-medium text-white">{c.duration}</span>
+      <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-medium text-white">{c.duration}</span>
     </div>
   )
 }
@@ -353,21 +360,26 @@ function Meta({ c }) {
   return (
     <div className="mt-1">
       <p className="flex items-center gap-1 text-[9.5px] text-ink-2">{Number(c.reviews) > 0 ? <><Star className="size-3 fill-star text-star" /> {c.rating} <span className="text-muted">({c.reviews} ta sharh)</span></> : 'Hali baho yo‘q'}</p>
-      <p className="mt-0.5 text-[9.5px] text-ink-2">{c.lessons} dars{c.duration ? ` · ${c.duration}` : ''} · O‘zbek</p>
+      <p className="mt-0.5 text-[9.5px] text-ink-2">{c.lessons} dars{c.duration ? ` · ${c.duration}` : ''}</p>
     </div>
   )
 }
 
-function Footer({ c, onOpen }) {
+function cardLabel(c, enrollment) {
+  if (isTestSeedId(c.id) || isTestEvent(c)) return 'Batafsil'
+  return catalogCtaLabel(c, enrollment)
+}
+
+function Footer({ c, enrollment }) {
   return (
     <div className="mt-auto flex items-end justify-between gap-1 pt-2">
       <div>
         {c.oldPrice ? <p className="text-[9px] text-muted line-through">{money(c.oldPrice)}</p> : null}
         <p className={`text-[12px] font-extrabold ${c.price ? 'text-ink' : 'text-sea'}`}>{money(c.price)}</p>
       </div>
-      <button onClick={onOpen} className="h-[26px] shrink-0 rounded-full bg-sea px-2.5 text-[10px] font-semibold text-white hover:bg-sea-600">
-        {c.price ? 'Kursni boshlash' : 'Tomosha qilish'}
-      </button>
+      <Link to={`/talim/${c.id}`} className="relative z-10 grid h-[26px] shrink-0 place-items-center rounded-full bg-sea px-2.5 text-[10px] font-semibold text-white hover:bg-sea-600">
+        {cardLabel(c, enrollment)}
+      </Link>
     </div>
   )
 }

@@ -30,7 +30,7 @@ export function MyCourseCards({ courses, mobile }) {
                     <Award className="size-3.5" /> Sertifikat
                   </Link>
                 ) : (
-                  <Link to={`/talim/${c.id}`} className="text-[12px] font-semibold text-[#0F766E]">{pct ? 'Davom ettirish' : 'Boshlash'}</Link>
+                  <Link to={`/talim/${c.id}/dars`} className="text-[12px] font-semibold text-[#0F766E]">{pct ? 'Davom ettirish' : 'Tomosha qilish'}</Link>
                 )}
               </div>
             </div>

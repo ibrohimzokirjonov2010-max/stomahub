@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import ShopLayout from '../components/market/ShopLayout'
 import { LessonPlayer } from '../components/course/LessonPlayer'
 import { Certificate, printCert } from './Sertifikatlar'
@@ -43,7 +43,11 @@ function PlayerBody({ mobile }) {
     const body = await loadPlayer(id)
     if (!body?.ok) throw new Error(body?.error || 'Kurs topilmadi')
     setData(body)
-    setActiveId((prev) => prev && body.lessons.some((lesson) => lesson.id === prev) ? prev : (body.lessons.find((lesson) => !lesson.locked)?.id || body.lessons[0]?.id || ''))
+    const wanted = new URLSearchParams(window.location.search).get('dars')
+    setActiveId((prev) => {
+      const pick = (id) => id && body.lessons.some((lesson) => lesson.id === id && !lesson.locked) ? id : ''
+      return pick(prev) || pick(wanted) || (body.lessons.find((lesson) => !lesson.locked && !lesson.complete)?.id || body.lessons.find((lesson) => !lesson.locked)?.id || body.lessons[0]?.id || '')
+    })
     const course = body.course
     if (!course.access && !course.preview) setPhase('enroll')
     else setPhase((prev) => (prev === 'quiz' || prev === 'result' ? prev : 'watch'))
@@ -226,6 +230,10 @@ function PlayerBody({ mobile }) {
     scorePct: course.certificate.scorePct,
     place: 'Onlayn',
   }) : null
+
+  if (phase === 'enroll' && course && !course.preview) {
+    return <Navigate to={`/talim/${id}`} replace />
+  }
 
   return (
     <>

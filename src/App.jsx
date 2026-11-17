@@ -50,6 +50,7 @@ import ChannelsRoute from './pages/Channels'
 import { FormaCatalog, MarketCatalog, SeminarsCatalog, BooksCatalog, UstalarCatalog, JihozCatalog, IshlarCatalog, SurplusCatalog, DoctorsCatalog, ElonlarCatalog } from './pages/CatalogRoutes'
 import EducationRoute from './pages/Education'
 import CoursePlayer from './pages/CoursePlayer'
+import CourseDetailRoute from './pages/CourseDetail'
 import BooksRoute from './pages/Books'
 import Book from './pages/Book'
 import Reader from './pages/Reader'
@@ -143,6 +144,7 @@ const AksiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/AksiyaShot')) 
 const OrdersShot = import.meta.env.DEV ? lazy(() => import('./dev/OrdersShot')) : null
 const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : null
 const CourseShot = import.meta.env.DEV ? lazy(() => import('./dev/CourseShot')) : null
+const CourseDetailShot = import.meta.env.DEV ? lazy(() => import('./dev/CourseDetailShot')) : null
 const QuizEditorShot = import.meta.env.DEV ? lazy(() => import('./dev/QuizEditorShot')) : null
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
@@ -224,6 +226,7 @@ export default function App() {
           {import.meta.env.DEV && <Route path="/dev/rasmiylashtirish" element={<MobileCheckout />} />}
           {IconSheet && <Route path="/icon-sheet" element={<Suspense fallback={null}><IconSheet /></Suspense>} />}
           {CourseShot && <Route path="/dev/kurs/:screen" element={<Suspense fallback={null}><CourseShot /></Suspense>} />}
+          {CourseDetailShot && <Route path="/dev/kurs-sahifa/:state" element={<Suspense fallback={null}><CourseDetailShot /></Suspense>} />}
           {QuizEditorShot && <Route path="/dev/kurs-tahrir/:screen" element={<Suspense fallback={null}><QuizEditorShot /></Suspense>} />}
           {ReviewPhotosShot && <Route path="/review-photos-shot/:sec" element={<Suspense fallback={null}><ReviewPhotosShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
@@ -255,7 +258,8 @@ export default function App() {
           <Route path="/seminarlar/:id" element={<Responsive mobile={<MobileSeminarV2 />}><ShopLayout active="seminars" search="plain" placeholder="Stomatologga nima kerak?"><Seminar /></ShopLayout></Responsive>} />
           <Route path="/kanallar" element={<ChannelsRoute />} />
           <Route path="/talim" element={<EducationRoute />} />
-          <Route path="/talim/:id" element={<CoursePlayer />} />
+          <Route path="/talim/:id/dars" element={<CoursePlayer />} />
+          <Route path="/talim/:id" element={<CourseDetailRoute />} />
           <Route path="/kitoblar" element={<BooksCatalog />} />
           <Route path="/kitoblar/:id/oqish" element={<Responsive mobile={<MobileReader />}><Reader /></Responsive>} />
           <Route path="/kitoblar/:id" element={<Responsive mobile={<MobileBook />}><ShopLayout active="books" search="plain" placeholder="Mahsulot, kurs, kitob yoki maqola qidiring..."><Book /></ShopLayout></Responsive>} />
