@@ -50,6 +50,9 @@ export const VISIT_STATUS = {
   davol: { label: 'Davolanmoqda', cls: 'bg-[#e7f1ff] text-[#3a6fd6]' },
   yakun: { label: 'Bajarildi', cls: 'bg-[#eef1f5] text-[#5b6b80]' },
   bekor: { label: 'Bekor qilingan', cls: 'bg-[#ffecee] text-[#d23b45]' },
+  keldi: { label: 'Keldi', cls: 'bg-[#e7f8ee] text-[#1c9a52]' },
+  qabulda: { label: 'Qabulda', cls: 'bg-[#e3f4f5] text-[#0b6d73]' },
+  kelmadi: { label: 'Kelmadi', cls: 'bg-[#ffecee] text-[#d23b45]' },
   eski: { label: 'Eski yozuv', cls: 'bg-[#f3f6fb] text-[#6b7a90]' },
 }
 
@@ -100,7 +103,7 @@ export function patientVisits(p, calendar = []) {
   return [...cal, ...legacy].sort((a, b) => `${b.iso} ${b.time}`.localeCompare(`${a.iso} ${a.time}`))
 }
 
-export const isUpcoming = (v) => v.status !== 'yakun' && v.status !== 'bekor' && (!v.iso || v.iso >= todayIso())
+export const isUpcoming = (v) => !['yakun', 'bekor', 'kelmadi'].includes(v.status) && (!v.iso || v.iso >= todayIso())
 
 /** Profil yoki boshqa joydan yangi qabul -> kalendar. */
 export function addCalendarVisit(p, { date, start, dur = 30, service, doctor = 'me', room = 'Kreslo 1', note = '', tooth = '', price = 0, serviceId = '' }) {

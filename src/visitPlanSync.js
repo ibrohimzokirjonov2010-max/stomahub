@@ -35,6 +35,7 @@ export function visitServices(v) {
 const stageStatus = (v, prev) => {
   if (v.status === 'yakun') return 'bajarildi'
   if (v.status === 'bekor') return 'bekor'
+  if (v.status === 'qabulda' || v.status === 'keldi' || v.status === 'davol') return 'jarayonda'
   if (!prev || prev.status === 'bekor' || prev.status === 'bajarildi') return 'rejada'
   return prev.status
 }
