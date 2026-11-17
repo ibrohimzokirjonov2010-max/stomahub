@@ -35,7 +35,8 @@ test('desktop product, forma and surplus galleries are square and not cropped', 
   assert.match(product, /<NaturalImg [^>]*boundH="calc\(100cqw - 2rem\)"/)
   assert.match(product, /object-contain p-1/)
   const nat = read('src/components/NaturalImg.jsx')
-  assert.match(nat, /maxWidth: `min\(\$\{boundW\}, \$\{nat\.w\}px\)`/)
+  assert.match(nat, /maxWidth: `min\(\$\{boundW\}, \$\{nat\.w \* maxScale\}px\)`/)
+  assert.match(nat, /maxScale = 2/)
   assert.match(nat, /object-contain/)
   assert.doesNotMatch(product, /aspect-\[380\/244\]|object-contain p-4/)
 
@@ -53,7 +54,7 @@ test('desktop product, forma and surplus galleries are square and not cropped', 
 })
 
 test('listing cards keep their own image frames', () => {
-  assert.match(read('src/components/market/ProductCard.jsx'), /h-\[66px\] overflow-hidden/)
+  assert.match(read('src/components/market/ProductCard.jsx'), /relative aspect-square w-full overflow-hidden/)
   assert.match(read('src/components/mobile/MobileMarketplace.jsx'), /h-\[118px\] overflow-hidden rounded-xl/)
   assert.match(read('src/components/mobile/MobileForma.jsx'), /h-\[150px\] bg-\[#eef3f6\]/)
   assert.match(read('src/components/mobile/MobileSurplus.jsx'), /h-\[112px\] overflow-hidden rounded-xl/)

@@ -114,7 +114,7 @@ export default function Marketplace() {
                 <div>{market.error}<br /><button type="button" onClick={loadMarketProducts} className="mt-2 font-semibold text-sea">Qayta urinish</button></div>
               </div>
             ) : list.length ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="catalog-card-grid">
                 {list.map((p) => <ProductCard key={p.id} product={p} />)}
               </div>
             ) : (

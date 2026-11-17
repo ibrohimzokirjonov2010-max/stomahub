@@ -66,37 +66,39 @@ export default function ProductCard({ product }) {
   const p = product
   const qty = useCardQty(isOwnProduct(p) || isTestProduct(p) ? '' : p.id)
   return (
-    <Link to={`/product/${p.id}`} className="group relative flex flex-col rounded-xl bg-white p-2.5 shadow-card transition hover:shadow-md">
-      <SaleBadge badge={p.badge} className="absolute left-2.5 top-2.5 z-10" />
+    <Link to={`/product/${p.id}`} className="group relative flex flex-col overflow-hidden rounded-xl bg-white shadow-card transition hover:shadow-md">
+      <SaleBadge badge={p.badge} className="absolute left-2 top-2 z-10" />
       <LikeButton productId={product.id} name={product.name} image={product.image} className="absolute right-1.5 top-1.5 z-10" />
       {!p.badge && offPercent(p) > 0 && <span className="absolute left-2 top-2 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[9px] font-bold text-white">-{offPercent(p)}%</span>}
-      <div className="mt-3 h-[66px] overflow-hidden">
-        <img src={p.image} alt={p.name} className="mx-auto h-full object-contain transition group-hover:scale-105" />
+      <div className="relative aspect-square w-full overflow-hidden bg-[#f7fafb]">
+        <img src={p.image} alt={p.name} className="absolute inset-0 size-full object-contain p-1.5 transition group-hover:scale-105" />
       </div>
-      <h3 className="mt-2.5 truncate text-[10px] font-bold text-ink">{p.name}</h3>
-      <p className="truncate text-[9.5px] text-ink-2">{p.type}</p>
-      <p className="text-[8.5px] text-muted">{p.brand}</p>
-      <div className="mt-0.5"><Rating rating={p.rating} reviews={p.reviews} /></div>
-      <p className="mt-0.5 flex items-center gap-1 text-[8.5px] text-ok">
-        <CircleCheck className="size-[10px]" /> Omborda bor
-      </p>
-      {qty > 0 ? (
-        <div className="mt-auto flex flex-col gap-1 pt-1.5">
-          <div className="leading-tight">
-            {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
-            <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+      <div className="flex flex-1 flex-col p-2.5">
+        <h3 className="truncate text-[10px] font-bold text-ink">{p.name}</h3>
+        <p className="truncate text-[9.5px] text-ink-2">{p.type}</p>
+        <p className="text-[8.5px] text-muted">{p.brand}</p>
+        <div className="mt-0.5"><Rating rating={p.rating} reviews={p.reviews} /></div>
+        <p className="mt-0.5 flex items-center gap-1 text-[8.5px] text-ok">
+          <CircleCheck className="size-[10px]" /> Omborda bor
+        </p>
+        {qty > 0 ? (
+          <div className="mt-auto flex flex-col gap-1 pt-1.5">
+            <div className="leading-tight">
+              {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
+              <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+            </div>
+            <AddButton product={p} />
           </div>
-          <AddButton product={p} />
-        </div>
-      ) : (
-        <div className="mt-auto flex flex-wrap items-end gap-x-1 gap-y-1 pt-1.5">
-          <div className="leading-tight">
-            {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
-            <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+        ) : (
+          <div className="mt-auto flex flex-wrap items-end gap-x-1 gap-y-1 pt-1.5">
+            <div className="leading-tight">
+              {p.oldPrice && <p className="whitespace-nowrap text-[8.5px] text-muted line-through">{som(p.oldPrice)}</p>}
+              <p className={`whitespace-nowrap text-[11.5px] font-bold ${p.oldPrice ? 'text-sale' : 'text-sea-600'}`}>{som(p.price)}</p>
+            </div>
+            <span className="ml-auto shrink-0"><AddButton product={p} /></span>
           </div>
-          <span className="ml-auto shrink-0"><AddButton product={p} /></span>
-        </div>
-      )}
+        )}
+      </div>
     </Link>
   )
 }
