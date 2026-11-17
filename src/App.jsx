@@ -137,6 +137,7 @@ const ReviewPhotosShot = import.meta.env.DEV ? lazy(() => import('./dev/ReviewPh
 const FormaShot = import.meta.env.DEV ? lazy(() => import('./dev/FormaShot')) : null
 const CartToastShot = import.meta.env.DEV ? lazy(() => import('./dev/CartToastShot')) : null
 const DoneShot = import.meta.env.DEV ? lazy(() => import('./dev/DoneShot')) : null
+const TeethShot = import.meta.env.DEV ? lazy(() => import('./dev/TeethShot')) : null
 const DeliveryShot = import.meta.env.DEV ? lazy(() => import('./dev/DeliveryShot')) : null
 const TestSeedShot = import.meta.env.DEV ? lazy(() => import('./dev/TestSeedShot')) : null
 const VakansiyaShot = import.meta.env.DEV ? lazy(() => import('./dev/VakansiyaShot')) : null
@@ -210,6 +211,7 @@ export default function App() {
           {SellerProfileShot && <Route path="/seller-profile-shot/:sec" element={<Suspense fallback={null}><SellerProfileShot /></Suspense>} />}
           {ShotHarness && <Route path="/admin-shot/:sec" element={<Suspense fallback={null}><ShotHarness /></Suspense>} />}
           {ToastShot && <Route path="/toast-shot/:mode" element={<Suspense fallback={null}><ToastShot /></Suspense>} />}
+          {TeethShot && <Route path="/teeth-shot" element={<Suspense fallback={null}><TeethShot /></Suspense>} />}
           {NotifyShot && <Route path="/notify-shot/:mode" element={<Suspense fallback={null}><NotifyShot /></Suspense>} />}
           {EscrowShot && <Route path="/escrow-shot/:who" element={<Suspense fallback={null}><EscrowShot /></Suspense>} />}
           {FormaShot && <Route path="/forma-shot/:sec/:id?" element={<Suspense fallback={null}><FormaShot /></Suspense>} />}

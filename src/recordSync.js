@@ -73,8 +73,29 @@ export function touchBlob(kind) {
   if (applying || !ready || !uid || !blobs.has(kind)) return
   dirty.add(kind)
   clearTimeout(blobTimer)
-  blobTimer = setTimeout(() => { flushBlobs().catch((error) => { syncError = error.message }) }, 400)
+  blobTimer = setTimeout(() => {
+    flushBlobs()
+      .then(() => setSaveError(''))
+      .catch((error) => { syncError = error.message; setSaveError(error.message || 'Saqlab bo‘lmadi') })
+  }, 400)
 }
+
+// Avtomatik saqlash (touchBlob) xatosi: UI kichik toast bilan ko‘rsatadi (useBlobSaveError).
+let saveError = { msg: '', at: 0 }
+const saveErrorListeners = new Set()
+function setSaveError(msg) {
+  if (!msg && !saveError.msg) return
+  saveError = { msg, at: msg ? Date.now() : 0 }
+  saveErrorListeners.forEach((fn) => fn())
+}
+export function useBlobSaveError() {
+  return useSyncExternalStore((fn) => {
+    saveErrorListeners.add(fn)
+    return () => saveErrorListeners.delete(fn)
+  }, () => saveError)
+}
+/** DEV-only: skrinshot uchun saqlash xatosini taqlid qiladi. */
+export const __shotSaveError = import.meta.env.DEV ? (msg) => setSaveError(msg) : undefined
 
 export async function saveBlob(kind, payload) {
   if (!supabase || !uid) return { ok: false }

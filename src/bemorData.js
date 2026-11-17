@@ -53,8 +53,12 @@ export function addBemor(p) {
   emit()
 }
 
-export function patchBemor(id, patch) {
-  rows = rows.map((p) => (p.id === id ? { ...p, ...patch, debt: Math.max(0, (patch.total ?? p.total) - (patch.paid ?? p.paid)) } : p))
+export function patchBemor(id, patch0) {
+  rows = rows.map((p) => {
+    if (p.id !== id) return p
+    const patch = patch0
+    return { ...p, ...patch, debt: Math.max(0, (patch.total ?? p.total) - (patch.paid ?? p.paid)) }
+  })
   emit()
 }
 

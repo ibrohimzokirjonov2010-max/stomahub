@@ -30,22 +30,29 @@ function artOf(name = '') {
 }
 
 function fromPlan(p) {
-  if (p.items) return { ...p, items: p.items.map((r) => ({ ...r })), groups: (p.groups || []).map((g) => ({ ...g })) }
+  if (p.items) return { ...p, teeth: p.teeth || {}, items: p.items.map((r) => ({ ...r })), groups: (p.groups || []).map((g) => ({ ...g })) }
   const items = p.stages.map((s) => ({ id: `row-${s.id}`, service: s.title, tooth: s.teeth.join(', '), qty: 1, price: s.price }))
   const groups = p.stages.map((s) => ({ id: s.id, title: s.title, rowIds: [`row-${s.id}`], duration: s.duration || '' }))
-  return { ...p, items, groups }
+  return { ...p, teeth: p.teeth || {}, items, groups }
 }
+
+const withPatient = (f, b) => (b ? {
+  ...f,
+  patient: { id: b.id, name: b.name, phone: b.phone, age: b.age, gender: b.gender, city: b.city, photo: b.photo, code: b.code },
+  teeth: { ...(b.teeth || {}) },
+} : f)
 
 const blank = () => ({
   id: '', code: nextPlanCode(), patient: null, doctor: 'me', title: '', status: 'reja', start: TODAY, chair: 'Kreslo 1',
   teeth: {}, surfaces: {}, items: [], groups: [], discount: 0, payMode: 'full', note: '', paid: 0, payments: [], visits: [], stages: [],
 })
 
-export default function RejaDialog({ initial, onClose, onSave }) {
+// patient: bemor profilidan ochilganda yangi reja shu bemor bilan boshlanadi.
+export default function RejaDialog({ initial, onClose, onSave, patient = null }) {
   const bemorlar = useBemorlar()
   const xizmatlar = useXizmatlar()
   const templates = useTemplates()
-  const [form, setForm] = useState(() => (initial ? fromPlan(initial) : blank()))
+  const [form, setForm] = useState(() => (initial ? fromPlan(initial) : withPatient(blank(), patient)))
   const [errors, setErrors] = useState({})
   const [dent, setDent] = useState('doimiy')
   const [picked, setPicked] = useState(null)
@@ -181,6 +188,7 @@ export default function RejaDialog({ initial, onClose, onSave }) {
         date: prev?.date ?? (i === 0 ? form.start : ''),
         status: prev?.status || 'rejada',
         duration: g.duration,
+        ...(prev?.visitId ? { visitId: prev.visitId } : {}),
       }
     })
     const id = form.id || `dr-${Date.now().toString(36)}`
@@ -202,7 +210,7 @@ export default function RejaDialog({ initial, onClose, onSave }) {
   const lower = dent === 'doimiy' ? LOWER : BABY_LOWER
   const chart = (height) => (
     <div>
-      <ToothChart upper={upper} lower={lower} height={height} stateOf={(n) => form.teeth[n]} surfacesOf={(n) => (form.surfaces || {})[n]} onPick={tapTooth} />
+      <ToothChart upper={upper} lower={lower} height={height} stateOf={(n) => form.teeth[n]} surfacesOf={(n) => (form.surfaces || {})[n]} selected={picked} onPick={tapTooth} />
       {picked && (upper.includes(picked) || lower.includes(picked)) && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
           <span className="font-semibold text-ink-2">{picked}-tish yuzalari:</span>
@@ -216,16 +224,16 @@ export default function RejaDialog({ initial, onClose, onSave }) {
     </div>
   )
   const legend = (
-    <ul className="space-y-0.5 rounded-xl bg-[#f6f9fc] p-2">
+    <ul className="grid grid-cols-2 gap-0.5 rounded-xl bg-[#f6f9fc] p-2 sm:block sm:max-h-[300px] sm:space-y-0.5 sm:overflow-y-auto">
       {CONDITIONS.map(([k, label]) => (
         <li key={k}>
           <button type="button" onClick={() => setTool(tool === k ? '' : k)} className={`flex w-full items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left text-[10.5px] transition ${tool === k ? 'bg-sea text-white' : 'text-ink-2 hover:bg-white'}`}>
-            <span className="grid w-4 shrink-0 place-items-center"><Tooth n={11} state={k} height={17} /></span>
+            <span className="grid w-[14px] shrink-0 place-items-center"><Tooth n={11} state={k} height={26} /></span>
             <span className="leading-tight">{label}</span>
           </button>
         </li>
       ))}
-      <li className="px-1.5 pt-1 text-[9.5px] leading-snug text-muted">{tool ? 'Tishni bosing — holat qo‘yiladi' : 'Holatni tanlang yoki tishni bosib almashtiring'}</li>
+      <li className="col-span-2 px-1.5 pt-1 text-[9.5px] leading-snug text-muted">{tool ? 'Tishni bosing — holat qo‘yiladi' : 'Holatni tanlang yoki tishni bosib almashtiring'}</li>
     </ul>
   )
 
@@ -292,9 +300,9 @@ export default function RejaDialog({ initial, onClose, onSave }) {
                     <ToolBtn label="Kattalashtirish" onClick={() => setBig(true)}><Maximize2 className="size-4" /></ToolBtn>
                   </div>
                 </div>
-                <div className="flex items-start gap-2.5">
+                <div className="flex flex-col items-stretch gap-2.5 sm:flex-row sm:items-start">
                   <div className="min-w-0 flex-1">{chart(50)}</div>
-                  <div className="w-[134px] shrink-0">{legend}</div>
+                  <div className="shrink-0 sm:w-[150px]">{legend}</div>
                 </div>
               </section>
 
@@ -469,9 +477,9 @@ export default function RejaDialog({ initial, onClose, onSave }) {
               <h3 className="text-[16px] font-bold text-ink">Tishlar (FDI) — {form.patient?.name || 'bemor tanlanmagan'}</h3>
               <button type="button" onClick={() => setBig(false)} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-[12px]"><Minimize2 className="size-4" /> Kichraytirish</button>
             </div>
-            <div className="flex items-start gap-3">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
               <div className="min-w-0 flex-1">{chart(84)}</div>
-              <div className="w-[140px] shrink-0">{legend}</div>
+              <div className="shrink-0 sm:w-[150px]">{legend}</div>
             </div>
           </div>
         </div>

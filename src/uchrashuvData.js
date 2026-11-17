@@ -1,6 +1,8 @@
 import { tashkentToday } from './tashkentDate'
 import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
+import { syncVisitPlans } from './visitPlanSync'
+import { VISIT_TONES, normVisits } from './visitStatus'
 
 export const ANCHOR = '2026-10-20'
 export const FOCUS = '2026-10-22'
@@ -13,13 +15,7 @@ export const doctors = []
 export const rooms = ['Kreslo 1', 'Kreslo 2', 'Kreslo 3', 'Kreslo 4']
 export const services = ['Konsultatsiya', 'Gigiyena', 'Implant', 'Ortodontik', 'Davolash', 'Nazorat', 'Jarrohlik']
 
-export const tones = {
-  tasdiq: { bg: '#e7f8ee', bd: '#b7e4c7', dot: '#3dbe74', label: 'Tasdiqlangan' },
-  kutil: { bg: '#fff6dc', bd: '#f0dc9a', dot: '#f0b429', label: 'Kutilmoqda' },
-  davol: { bg: '#e7f1ff', bd: '#c5daf6', dot: '#5b93e6', label: 'Davolanmoqda' },
-  yakun: { bg: '#f2f4f7', bd: '#e1e6ee', dot: '#98a2b3', label: 'Yakunlangan' },
-  bekor: { bg: '#ffecee', bd: '#f6c9cf', dot: '#ef6b7b', label: 'Bekor qilingan' },
-}
+export const tones = VISIT_TONES
 
 const pic = (name) => (name ? `/images/bemorlar/${name}.jpg` : '')
 
@@ -38,7 +34,7 @@ bindBlob('visits', {
   get: () => visits,
   empty: () => [],
   set: (next) => {
-    visits = Array.isArray(next) ? next : visits
+    visits = Array.isArray(next) ? normVisits(next) : visits
     listeners.forEach((fn) => fn())
   },
 })
@@ -51,9 +47,12 @@ export function useVisits() {
 }
 
 export function setVisits(next) {
-  visits = typeof next === 'function' ? next(visits) : next
+  const prev = visits
+  visits = normVisits(typeof next === 'function' ? next(visits) : next)
   listeners.forEach((fn) => fn())
   touchBlob('visits')
+  // Qabuldagi xizmatlar -> bemorning davolash rejasi (barcha kirish nuqtalari uchun)
+  try { syncVisitPlans(prev, visits) } catch (error) { if (import.meta.env.DEV) console.error('visit->plan sync', error) }
 }
 
 export function todayIso() {

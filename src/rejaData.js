@@ -2,6 +2,8 @@ import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
 import { shiftIso } from './klinikaData'
 import { tashkentToday } from './tashkentDate'
+import { getBemor, patchBemor } from './bemorData'
+import { STAGE_OPTS, reconcileList } from './teeth/autoToothStatus'
 
 // Bugungi sana (Asia/Tashkent) — avval '2026-10-25' qattiq yozilgan edi
 export const TODAY = tashkentToday()
@@ -11,7 +13,7 @@ export const PAY_METHODS = ['Naqd', 'Plastik karta', 'Click', 'Payme', 'Bank o�
 
 export const DEMO_DOCTORS = []
 export const DOCTORS = []
-export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DEMO_DOCTORS.find((d) => d.id === id) || { id: id || 'me', name: 'Shifokor', role: 'Stomatolog', photo: '' }
+export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DEMO_DOCTORS.find((d) => d.id === id) || { id: id || 'me', name: id && id !== 'me' ? String(id) : 'Shifokor', role: 'Stomatolog', photo: '' }
 
 export const PLAN_STATUS = {
   reja: { label: 'Reja qilingan', bg: '#e8f0ff', color: '#3b6fd8', dot: '#3b82f6' },
@@ -24,15 +26,17 @@ export const STAGE_STATUS = {
   bajarildi: { label: 'Bajarildi', bg: '#e3f6ee', color: '#15803d', tint: '#5fd3b8' },
   jarayonda: { label: 'Jarayonda', bg: '#fff1df', color: '#c2410c', tint: '#f5a524' },
   rejada: { label: 'Rejalashtirilgan', bg: '#efeaff', color: '#6d4fd6', tint: '#a78bfa' },
+  bekor: { label: 'Bekor qilingan', bg: '#ffecee', color: '#d23b45', tint: '#f3a3ad' },
 }
 
 export const money = (n) => Math.round(Number(n) || 0).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')
 export const dmy = (iso) => (iso ? iso.split('-').reverse().join('.') : '—')
-export const totalOf = (p) => p.stages.reduce((s, x) => s + x.price, 0)
+export const totalOf = (p) => p.stages.reduce((s, x) => s + (x.status === 'bekor' ? 0 : Number(x.price) || 0), 0)
 export const debtOf = (p) => Math.max(0, totalOf(p) - p.paid)
 export const progressOf = (p) => {
-  const n = p.stages.filter((s) => s.status !== 'rejada').length
-  return { n, of: p.stages.length, pct: p.stages.length ? Math.round((n / p.stages.length) * 100) : 0 }
+  const live = p.stages.filter((s) => s.status !== 'bekor')
+  const n = live.filter((s) => s.status !== 'rejada').length
+  return { n, of: live.length, pct: live.length ? Math.round((n / live.length) * 100) : 0 }
 }
 
 const KINDS = {
@@ -142,6 +146,7 @@ const subscribe = (fn) => {
 export const usePlans = () => useSyncExternalStore(subscribe, () => plans)
 export const useTemplates = () => useSyncExternalStore(subscribe, () => templates)
 export const getPlan = (id) => plans.find((p) => p.id === id)
+export const getPlans = () => plans
 
 export function nextPlanCode() {
   const n = plans.reduce((m, p) => Math.max(m, Number(p.code.replace(/\D/g, '')) || 0), 0) + 1
@@ -149,16 +154,28 @@ export function nextPlanCode() {
 }
 
 function sync(p) {
-  if (!p.stages.length) return p
-  const all = p.stages.every((s) => s.status === 'bajarildi')
+  const live = p.stages.filter((s) => s.status !== 'bekor')
+  if (!live.length) return p
+  const all = live.every((s) => s.status === 'bajarildi')
   if (all) return { ...p, status: 'yakunlangan' }
   if (p.status === 'yakunlangan') return { ...p, status: 'jarayonda' }
   if (p.stages.some((s) => s.status === 'jarayonda') && (p.status === 'reja' || p.status === 'kutilmoqda')) return { ...p, status: 'jarayonda' }
   return p
 }
 
+// Bosqich "bajarildi" bo'lsa bemor tish kartasi avtomatik yangilanadi (src/teeth/autoToothStatus.js).
+function withAutoTeeth(prev, next) {
+  const pid = next?.patient?.id
+  const patient = pid && getBemor(pid)
+  if (!patient || !Array.isArray(next.stages)) return next
+  const r = reconcileList(prev?.stages || [], next.stages, patient.teeth || {}, (s) => s.id, STAGE_OPTS)
+  if (!r.changed) return next
+  patchBemor(pid, { teeth: r.teeth })
+  return { ...next, stages: r.list }
+}
+
 export function savePlan(plan) {
-  const next = sync(plan)
+  const next = withAutoTeeth(plans.find((p) => p.id === plan.id), sync(plan))
   plans = plans.some((p) => p.id === plan.id) ? plans.map((p) => (p.id === plan.id ? next : p)) : [next, ...plans]
   emit()
 }
@@ -167,7 +184,7 @@ export function patchPlan(id, patch) {
   plans = plans.map((p) => {
     if (p.id !== id) return p
     const changes = typeof patch === 'function' ? patch(p) : patch
-    const next = { ...p, ...changes }
+    const next = withAutoTeeth(p, { ...p, ...changes })
     return 'status' in changes ? next : sync(next)
   })
   emit()
@@ -185,4 +202,80 @@ export function addPayment(id, sum, method, date = TODAY) {
 export function saveTemplate(t) {
   templates = [{ ...t, id: `tpl-${Date.now()}` }, ...templates.filter((x) => x.name !== t.name)]
   emit()
+}
+
+export function plansForPatient(list, patient) {
+  if (!patient) return []
+  const id = patient.id || patient.patientId || ''
+  const name = (patient.name || '').toLowerCase()
+  return (list || []).filter((p) => (id && p.patient?.id === id) || (name && p.patient?.name?.toLowerCase() === name))
+}
+
+export function planForVisit(list, visit, patient) {
+  if (!visit) return null
+  const all = list || []
+  const byVisit = all.find((p) => p.visitId === visit.id || (Array.isArray(p.visitIds) && p.visitIds.includes(visit.id)) || (p.stages || []).some((s) => s.visitId === visit.id))
+  if (byVisit) return byVisit
+  const mine = plansForPatient(all, patient || { id: visit.patientId, name: visit.name })
+  return mine.find((p) => p.status !== 'yakunlangan') || mine[0] || null
+}
+
+/** Bosqichlarni "bajarildi" qiladi (sana + tashrif id). PR #172 dagi tish kartasi hook'i patchPlan orqali ishlaydi. */
+export function completeVisitStages(planId, stageIds, { date = TODAY, visitId } = {}) {
+  const ids = new Set(stageIds)
+  patchPlan(planId, (p) => ({
+    stages: (p.stages || []).map((s) => (ids.has(s.id) ? { ...s, status: 'bajarildi', date: date || s.date, visitId: s.visitId || visitId, doneVisitId: visitId || s.doneVisitId } : s)),
+  }))
+}
+
+const doneIn = (s, visitId) => s.status === 'bajarildi' && (s.doneVisitId ? s.doneVisitId === visitId : s.visitId === visitId)
+
+/** "Bajarildi"ni qaytarish: shu qabulda yakunlangan bosqichlar rejaga qaytadi (tish avvalgi holatiga — hook). */
+export function reopenVisitStages(visitId) {
+  for (const plan of plans) {
+    if (!(plan.stages || []).some((s) => doneIn(s, visitId))) continue
+    patchPlan(plan.id, (p) => ({
+      stages: p.stages.map((s) => (doneIn(s, visitId) ? { ...s, status: 'rejada', doneVisitId: undefined } : s)),
+    }))
+  }
+}
+
+export function saveDonePlanFromServices(patient, services, { date = TODAY, visitId } = {}) {
+  const stages = (services || []).map((s, i) => ({
+    id: `st-${Date.now().toString(36)}-${i}`,
+    title: s.name || s.title || 'Xizmat',
+    desc: '',
+    teeth: Array.isArray(s.teeth) ? s.teeth : (s.tooth ? [s.tooth] : []),
+    art: null,
+    price: Number(s.price) || 0,
+    date: '',
+    status: 'rejada',
+    visitId,
+  }))
+  const plan = {
+    id: `dr-${Date.now().toString(36)}`,
+    code: nextPlanCode(),
+    patient: patient ? { id: patient.id, name: patient.name, phone: patient.phone, age: patient.age, gender: patient.gender, city: patient.city, photo: patient.photo, code: patient.code } : null,
+    doctor: 'me',
+    title: stages.map((s) => s.title).slice(0, 2).join(' + ') || 'Davolash rejasi',
+    subtitle: '',
+    status: 'jarayonda',
+    start: date,
+    chair: 'Kreslo 1',
+    teeth: {},
+    surfaces: {},
+    items: [],
+    groups: [],
+    discount: 0,
+    payMode: 'full',
+    note: '',
+    paid: 0,
+    payments: [],
+    visits: [],
+    stages,
+    visitId,
+  }
+  savePlan(plan)
+  completeVisitStages(plan.id, stages.map((s) => s.id), { date, visitId })
+  return getPlan(plan.id) || plan
 }
