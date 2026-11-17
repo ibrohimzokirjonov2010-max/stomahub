@@ -1,9 +1,15 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  AlertTriangle, Calendar, Camera, ChevronRight, Mail, MapPin, Phone, Plus, Send, X,
+  AlertTriangle, Calendar, Camera, ChevronRight, MapPin, Phone, Send,
 } from 'lucide-react'
 import { getBemor, patchBemor, som, statusClass, useBemorlar } from '../bemorData'
+import AppointmentForm from '../components/crm/AppointmentForm'
+import { tashkentToday } from '../tashkentDate'
+import {
+  DocThumb, DocsPanel, MedicalCard, PaymentDialog, PaymentsPanel, PlansPanel, SaveErrorToast, VisitsPanel, useDocUpload, usePatientRecords,
+} from '../components/crm/PatientTabs'
+import { VISIT_STATUS, addPatientDoc, afterVisitSaved, docDate, niceDate, openPatientFile, isPdf, setPatientPhoto, usePatientPhoto } from '../components/crm/patientRecords'
 
 const UPPER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
 const LOWER = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
@@ -21,19 +27,48 @@ const LEGEND = [
   ['missing', 'Yo‘q tish'],
 ]
 
+const ageOf = (iso) => {
+  if (!iso) return ''
+  const t = tashkentToday()
+  let a = Number(t.slice(0, 4)) - Number(iso.slice(0, 4))
+  if (t.slice(5) < iso.slice(5)) a -= 1
+  return a >= 0 ? `${a} yosh` : ''
+}
+const birthIsoOf = (p) => p.birthIso || (/^\d{2}\.\d{2}\.\d{4}$/.test(p.birth || '') ? p.birth.split('.').reverse().join('-') : '')
+const inputCls = 'h-8 w-full rounded-lg border border-line px-2 text-[12.5px] outline-none focus:border-sea'
+
 export default function Bemor() {
   const { id } = useParams()
+  return <BemorView key={id} id={id} />
+}
+
+function BemorView({ id }) {
   useBemorlar()
   const p = getBemor(id)
+  const rec = usePatientRecords(p)
+  const photo = usePatientPhoto(p)
   const [tab, setTab] = useState('umumiy')
   const [dent, setDent] = useState('doimiy')
   const [edit, setEdit] = useState(false)
   const [visit, setVisit] = useState(false)
   const [pay, setPay] = useState(false)
-  const [form, setForm] = useState(p ? { phone: p.phone, email: p.email, city: p.city, address: p.address || '' } : {})
-  const fileRef = useRef(null)
+  const [form, setForm] = useState({})
+  const [formErr, setFormErr] = useState('')
+  const [toast, setToast] = useState('')
+  const [photoErr, setPhotoErr] = useState('')
+  const toastTimer = useRef(0)
+  const photoRef = useRef(null)
+  const flash = useCallback((text) => {
+    setToast(text)
+    window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => setToast(''), 2600)
+  }, [])
+  const docs = useDocUpload(p, addPatientDoc, flash)
 
   if (!p) return <p className="pt-6 text-[13px] text-muted">Bemor topilmadi.</p>
+
+  const m = rec.money
+  const visits = rec.visits
 
   const setTooth = (n) => {
     const cur = p.teeth?.[n] || 'healthy'
@@ -41,34 +76,37 @@ export default function Bemor() {
     patchBemor(p.id, { teeth: { ...p.teeth, [n]: next } })
   }
 
-  const addVisit = (e) => {
-    e.preventDefault()
-    const data = new FormData(e.target)
-    const row = { date: String(data.get('date')).split('-').reverse().join('.'), kind: data.get('kind'), doctor: data.get('doctor'), done: false }
-    patchBemor(p.id, { visits: [row, ...(p.visits || [])], next: row.date })
-    setVisit(false)
+  const startEdit = () => {
+    setForm({ name: p.name || '', birth: birthIsoOf(p), gender: p.gender || 'Erkak', phone: p.phone || '', email: p.email || '', city: p.city || '', address: p.address || '' })
+    setFormErr('')
+    setEdit(true)
   }
-
-  const addPay = (e) => {
-    e.preventDefault()
-    const sum = Number(new FormData(e.target).get('sum')) || 0
-    patchBemor(p.id, { paid: p.paid + sum })
-    setPay(false)
-  }
-
   const saveInfo = () => {
-    patchBemor(p.id, form)
+    if (form.name.trim().length < 3) return setFormErr('Ism kamida 3 harf bo‘lsin.')
+    if (form.phone.replace(/\D/g, '').length < 9) return setFormErr('Telefon raqami to‘liq emas.')
+    if (form.birth && form.birth > tashkentToday()) return setFormErr('Tug‘ilgan sana kelajakda bo‘lishi mumkin emas.')
+    patchBemor(p.id, {
+      ...form,
+      name: form.name.trim(),
+      birthIso: form.birth,
+      birth: form.birth ? form.birth.split('-').reverse().join('.') : '',
+      age: form.birth ? ageOf(form.birth) : p.age,
+    })
     setEdit(false)
+    flash('Ma’lumotlar saqlandi')
   }
 
-  const addFile = (e) => {
+  const onPhoto = async (e) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      patchBemor(p.id, { docs: [...(p.docs || []), { name: file.name, date: 'Bugun', image: reader.result }] })
+    setPhotoErr('')
+    try {
+      await setPatientPhoto(p, file)
+      flash('Rasm yangilandi')
+    } catch (err) {
+      setPhotoErr(err.message || 'Rasmni yuklab bo‘lmadi')
     }
-    reader.readAsDataURL(file)
   }
 
   const upper = dent === 'doimiy' ? UPPER : BABY_U
@@ -76,6 +114,8 @@ export default function Bemor() {
 
   return (
     <div className="pb-6 pt-3">
+      {docs.input}
+      <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} data-testid="photo-input" />
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-1 text-[12.5px] text-muted">
           <Link to="/bemorlar" className="hover:text-sea">Bemorlar</Link>
@@ -85,16 +125,16 @@ export default function Bemor() {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setVisit(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12.5px] font-semibold text-white"><Calendar className="size-3.5" /> Qabul qo‘shish</button>
           <button onClick={() => setPay(true)} className="h-9 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold">To‘lov</button>
-          <button onClick={() => setEdit((v) => !v)} className="h-9 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold">Tahrirlash</button>
+          <button onClick={() => { setTab('umumiy'); startEdit() }} className="h-9 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold">Tahrirlash</button>
         </div>
       </div>
 
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <div className="flex flex-wrap items-start gap-4">
-          <div className="relative">
-            <Face src={p.photo} name={p.name} />
+          <button type="button" onClick={() => photoRef.current?.click()} aria-label="Bemor rasmini o‘zgartirish" title="Rasmni o‘zgartirish" className="relative shrink-0">
+            <Face key={photo || 'none'} src={photo} name={p.name} />
             <span className="absolute bottom-0 right-0 grid size-6 place-items-center rounded-full bg-white shadow-card"><Camera className="size-3 text-sea" /></span>
-          </div>
+          </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-2">
               <h1 className="text-[20px] font-bold text-ink">{p.name}</h1>
@@ -114,6 +154,7 @@ export default function Bemor() {
                 <span key={t} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${t === 'Faol bemor' ? statusClass.Faol : t === 'VIP' ? 'bg-[#fff3d6] text-[#b07d00]' : 'bg-sea-50 text-sea'}`}>{t}</span>
               ))}
             </div>
+            {photoErr && <p role="alert" className="mt-2 text-[12px] text-[#e11d48]">{photoErr}</p>}
           </div>
           <div className="flex min-w-[220px] flex-1 flex-wrap gap-2 lg:max-w-[460px]">
             {p.allergy?.length > 0 && (
@@ -130,9 +171,9 @@ export default function Bemor() {
             )}
             <div className="min-w-[180px] flex-1 rounded-xl border border-line p-2.5">
               <div className="flex items-center justify-between text-[12px]"><span className="font-bold">Moliyaviy holat</span><button onClick={() => setTab('tolov')} className="font-semibold text-sea">Batafsil</button></div>
-              <Row k="Umumiy summa" v={som(p.total)} />
-              <Row k="To‘langan" v={som(p.paid)} green />
-              <Row k="Qarz" v={som(p.debt)} red />
+              <Row k="Umumiy summa" v={som(m.total)} />
+              <Row k="To‘langan" v={som(m.paid)} green />
+              <Row k="Qarz" v={som(m.debt)} red />
             </div>
           </div>
         </div>
@@ -142,8 +183,8 @@ export default function Bemor() {
         {[
           ['umumiy', 'Umumiy'],
           ['tish', 'Tish kartasi'],
-          ['davolash', 'Davolash rejalari'],
-          ['tashrif', 'Tashriflar'],
+          ['davolash', `Davolash rejalari${rec.plans.length ? ` (${rec.plans.length})` : ''}`],
+          ['tashrif', `Tashriflar${visits.length ? ` (${visits.length})` : ''}`],
           ['tolov', 'To‘lovlar'],
           ['hujjat', 'Hujjatlar / Rentgen'],
           ['tibbiy', 'Tibbiy'],
@@ -151,6 +192,7 @@ export default function Bemor() {
           <button key={k} onClick={() => setTab(k)} className={`shrink-0 border-b-2 pb-2 ${tab === k ? 'border-sea text-sea' : 'border-transparent text-muted'}`}>{label}</button>
         ))}
       </div>
+
 
       {(tab === 'umumiy' || tab === 'tish') && (
         <div className="bemor-mid mt-3">
@@ -179,120 +221,96 @@ export default function Bemor() {
           <section className="rounded-2xl bg-white p-4 shadow-card">
             <div className="flex items-center justify-between gap-2"><h2 className="min-w-0 truncate text-[14px] font-bold">So‘nggi tashriflar</h2><button onClick={() => setTab('tashrif')} className="shrink-0 whitespace-nowrap text-[12px] font-semibold text-sea">Barchasini ko‘rish</button></div>
             <ul className="mt-3 space-y-3">
-              {(p.visits || []).slice(0, 4).map((v, i) => (
-                <li key={i} className="flex items-start justify-between gap-2 text-[12.5px]">
-                  <span>
-                    <span className="block text-[11px] text-muted">{v.date}</span>
+              {visits.slice(0, 4).map((v) => (
+                <li key={v.key} className="flex items-start justify-between gap-2 text-[12.5px]">
+                  <span className="min-w-0">
+                    <span className="block text-[11px] text-muted">{v.iso ? niceDate(v.iso) : v.dateText}{v.time ? `, ${v.time}` : ''}</span>
                     <span className="font-semibold text-ink">{v.kind}</span>
                     {v.tooth && <span className="ml-1 text-muted">{v.tooth}</span>}
-                    <span className="block text-[11px] text-muted">{v.doctor}</span>
+                    {v.doctor && <span className="block text-[11px] text-muted">{v.doctor}</span>}
                   </span>
-                  <span className="rounded-full bg-[#e5f8ee] px-2 py-0.5 text-[10.5px] font-semibold text-[#1c9a52]">{v.done === false ? 'Rejada' : 'Bajarildi'}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${(VISIT_STATUS[v.status] || VISIT_STATUS.tasdiq).cls}`}>{v.done ? 'Bajarildi' : v.status === 'bekor' ? 'Bekor' : 'Rejada'}</span>
                 </li>
               ))}
             </ul>
+            {!visits.length && <p className="mt-3 text-[12.5px] text-muted">Hali tashrif yo‘q. <button type="button" onClick={() => setVisit(true)} className="font-semibold text-sea">Qabul qo‘shish</button></p>}
           </section>
         </div>
       )}
 
-      {tab === 'tashrif' && (
-        <ul className="mt-3 space-y-2 rounded-2xl bg-white p-4 shadow-card">
-          {(p.visits || []).map((v, i) => <li key={i} className="flex justify-between border-b border-line py-2 text-[13px]"><span>{v.date} — {v.kind} {v.tooth || ''}</span><span className="text-muted">{v.doctor}</span></li>)}
-        </ul>
-      )}
-      {tab === 'davolash' && <p className="mt-3 rounded-2xl bg-white p-4 text-[13px] text-ink-2 shadow-card">{(p.visits || []).map((v) => `${v.date}: ${v.kind}`).join(' · ') || 'Reja yo‘q.'}</p>}
-      {tab === 'tolov' && (
-        <div className="mt-3 rounded-2xl bg-white p-4 text-[13px] shadow-card">
-          <Row k="Umumiy summa" v={som(p.total)} />
-          <Row k="To‘langan" v={som(p.paid)} green />
-          <Row k="Qarz" v={som(p.debt)} red />
-          <button onClick={() => setPay(true)} className="mt-3 h-9 rounded-lg bg-sea px-3 text-[12.5px] font-semibold text-white">To‘lov qilish</button>
-        </div>
-      )}
-      {(tab === 'umumiy' || tab === 'tibbiy') && (
+      {tab === 'davolash' && <div className="mt-3"><PlansPanel p={p} plans={rec.plans} onToast={flash} /></div>}
+      {tab === 'tashrif' && <div className="mt-3"><VisitsPanel p={p} visits={visits} onAdd={() => setVisit(true)} onToast={flash} /></div>}
+      {tab === 'tolov' && <div className="mt-3"><PaymentsPanel m={m} onAdd={() => setPay(true)} /></div>}
+      {tab === 'hujjat' && <div className="mt-3"><DocsPanel p={p} onUpload={docs.pick} busy={docs.busy} error={docs.error} onToast={flash} /></div>}
+      {tab === 'tibbiy' && <div className="mt-3 max-w-[760px]"><MedicalCard p={p} onToast={flash} /></div>}
+
+      {tab === 'umumiy' && (
         <div className="bemor-bot mt-3">
-          <Card title="Asosiy ma’lumotlar" action={edit ? 'Saqlash' : 'Tahrirlash'} onAction={edit ? saveInfo : () => setEdit(true)}>
+          <Card title="Asosiy ma’lumotlar" action={edit ? 'Saqlash' : 'Tahrirlash'} onAction={edit ? saveInfo : startEdit}>
             {edit ? (
-              <div className="space-y-2">
-                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-8 w-full rounded-lg border border-line px-2 text-[12.5px]" />
-                <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-8 w-full rounded-lg border border-line px-2 text-[12.5px]" />
-                <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="h-8 w-full rounded-lg border border-line px-2 text-[12.5px]" />
-                <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="h-8 w-full rounded-lg border border-line px-2 text-[12.5px]" />
+              <div className="space-y-2" data-testid="info-form">
+                <Field t="Ism, familiya"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputCls} /></Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field t="Tug‘ilgan sana"><input type="date" max={tashkentToday()} value={form.birth} onChange={(e) => setForm({ ...form, birth: e.target.value })} className={inputCls} /></Field>
+                  <Field t="Jinsi"><select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })} className={`${inputCls} bg-white`}><option>Erkak</option><option>Ayol</option></select></Field>
+                </div>
+                <Field t="Telefon"><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputCls} /></Field>
+                <Field t="Email"><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputCls} /></Field>
+                <Field t="Shahar"><input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputCls} /></Field>
+                <Field t="Manzil"><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={inputCls} /></Field>
+                {formErr && <p className="text-[12px] text-[#e11d48]">{formErr}</p>}
+                <div className="flex justify-end gap-2 pt-1">
+                  <button type="button" onClick={() => setEdit(false)} className="h-8 rounded-lg border border-line px-3 text-[12px] font-semibold">Bekor qilish</button>
+                  <button type="button" onClick={saveInfo} className="h-8 rounded-lg bg-sea px-3 text-[12px] font-semibold text-white">Saqlash</button>
+                </div>
               </div>
             ) : (
               <dl className="text-[12.5px]">
                 <Info k="Ism, familiya" v={p.name} />
-                <Info k="Tug‘ilgan sana" v={`${p.birth}${p.age ? ` (${p.age})` : ''}`} />
-                <Info k="Jinsi" v={p.gender} />
+                <Info k="Tug‘ilgan sana" v={p.birth ? `${p.birth}${p.age ? ` (${p.age})` : ''}` : '—'} />
+                <Info k="Jinsi" v={p.gender || '—'} />
                 <Info k="Telefon" v={p.phone} />
                 <Info k="Email" v={p.email || '—'} />
-                <Info k="Shahar" v={p.city} />
+                <Info k="Shahar" v={p.city || '—'} />
                 <Info k="Manzil" v={p.address || '—'} />
                 <Info k="Qayerdan bildi?" v={p.source || '—'} />
               </dl>
             )}
           </Card>
-          <Card title="Tibbiy ma’lumotlar">
-            <p className="text-[12px] text-muted">Allergiya</p>
-            <div className="mt-1 flex flex-wrap gap-1">{(p.allergy || []).map((a) => <span key={a} className="rounded-full bg-[#ffe6ea] px-2 py-0.5 text-[11px] text-[#d4524e]">{a}</span>)}{!p.allergy?.length && <span className="text-[12px]">Yo‘q</span>}</div>
-            <p className="mt-2 text-[12px] text-muted">Kasalliklar</p>
-            <div className="mt-1 flex flex-wrap gap-1">{(p.diseases || []).map((a) => <span key={a} className="rounded-full bg-[#fff3d6] px-2 py-0.5 text-[11px] text-[#b07d00]">{a}</span>)}{!p.diseases?.length && <span className="text-[12px]">Yo‘q</span>}</div>
-            <Info k="Doimiy dori vositalari" v={p.meds || 'Yo‘q'} />
-            <Info k="Chekish / spirtli ichimlik" v={p.habits || 'Yo‘q'} />
-            {p.note && <p className="mt-2 text-[12px] leading-relaxed text-ink-2">{p.note}</p>}
-          </Card>
+          <MedicalCard p={p} onToast={flash} />
           <Card title="Hujjatlar / Rentgen" action="Barchasini ko‘rish" onAction={() => setTab('hujjat')}>
             <div className="grid grid-cols-3 gap-2">
-              {(p.docs || []).map((d) => (
-                <figure key={d.name} className="min-w-0">
-                  {d.image ? <img src={d.image} alt="" className="h-14 w-full rounded-lg object-cover" /> : <div className="grid h-14 place-items-center rounded-lg bg-[#f4f7fb] text-[10px] text-muted">PDF</div>}
+              {(p.docs || []).slice(0, 5).map((d, i) => (
+                <figure key={d.id || `${d.name}-${i}`} className="min-w-0">
+                  <DocThumb d={d} className="h-14" onOpen={() => (isPdf(d) ? openPatientFile(d).catch(() => {}) : setTab('hujjat'))} />
                   <figcaption className="mt-1 truncate text-[10.5px] font-semibold">{d.name}</figcaption>
-                  <p className="text-[10px] text-muted">{d.date}</p>
+                  <p className="text-[10px] text-muted">{docDate(d)}</p>
                 </figure>
               ))}
-              <button onClick={() => fileRef.current?.click()} className="grid h-14 place-items-center rounded-lg border border-dashed border-line text-[11px] font-semibold text-sea">+ Fayl yuklash</button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={addFile} />
+              <button onClick={docs.pick} disabled={docs.busy} className="grid h-14 place-items-center rounded-lg border border-dashed border-line text-[11px] font-semibold text-sea">{docs.busy ? 'Yuklanmoqda…' : '+ Fayl yuklash'}</button>
             </div>
+            {docs.error && <p role="alert" className="mt-2 text-[11.5px] text-[#e11d48]">{docs.error}</p>}
           </Card>
-        </div>
-      )}
-      {tab === 'hujjat' && (
-        <div className="mt-3 rounded-2xl bg-white p-4 shadow-card">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {(p.docs || []).map((d) => (
-              <figure key={d.name}>
-                {d.image ? <img src={d.image} alt="" className="h-28 w-full rounded-xl object-cover" /> : <div className="grid h-28 place-items-center rounded-xl bg-[#f4f7fb]">PDF</div>}
-                <figcaption className="mt-1 text-[12px] font-semibold">{d.name}</figcaption>
-                <p className="text-[11px] text-muted">{d.date}</p>
-              </figure>
-            ))}
-          </div>
-          {!p.docs?.length && <p className="text-[13px] text-muted">Hujjat yo‘q.</p>}
-          <button onClick={() => fileRef.current?.click()} className="mt-3 h-9 rounded-lg bg-sea px-3 text-[12.5px] font-semibold text-white">Fayl yuklash</button>
         </div>
       )}
 
       {visit && (
-        <Modal title="Qabul qo‘shish" onClose={() => setVisit(false)}>
-          <form onSubmit={addVisit} className="space-y-2">
-            <input name="date" type="date" required className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <input name="kind" required placeholder="Qabul turi" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <input name="doctor" defaultValue="" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <button className="h-9 rounded-lg bg-sea px-4 text-[13px] font-semibold text-white">Saqlash</button>
-          </form>
-        </Modal>
+        <AppointmentForm
+          initial={{ patient: p }}
+          onClose={() => setVisit(false)}
+          onSaved={(row) => { afterVisitSaved(p, row); setVisit(false); flash('Qabul kalendarga yozildi') }}
+        />
       )}
-      {pay && (
-        <Modal title="To‘lov" onClose={() => setPay(false)}>
-          <form onSubmit={addPay} className="space-y-2">
-            <input name="sum" type="number" min="1" required placeholder="Summa" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <p className="text-[12px] text-muted">Hozirgi qarz: {som(p.debt)}</p>
-            <button className="h-9 rounded-lg bg-sea px-4 text-[13px] font-semibold text-white">Qabul qilish</button>
-          </form>
-        </Modal>
-      )}
+      {pay && <PaymentDialog p={p} m={m} plans={rec.plans} onClose={() => setPay(false)} onSaved={(msg) => { setPay(false); flash(msg) }} />}
+
+      {toast && <p role="status" className="fixed bottom-6 left-1/2 z-[70] -translate-x-1/2 rounded-xl bg-ink px-4 py-2.5 text-[12.5px] font-semibold text-white shadow-card">{toast}</p>}
+      <SaveErrorToast />
     </div>
   )
+}
+
+function Field({ t, children }) {
+  return <label className="block text-[11.5px] text-muted"><span className="mb-0.5 block">{t}</span>{children}</label>
 }
 
 function Face({ src, name }) {
@@ -349,13 +367,3 @@ function Row({ k, v, green, red }) {
   return <div className="mt-1 flex justify-between gap-2 text-[12px]"><span className="text-muted">{k}</span><span className={`font-semibold ${green ? 'text-[#1c9a52]' : ''} ${red ? 'text-[#e15b4c]' : ''}`}>{v}</span></div>
 }
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between"><h3 className="text-[16px] font-bold">{title}</h3><button onClick={onClose} aria-label="Yopish"><X className="size-4 text-muted" /></button></div>
-        {children}
-      </div>
-    </div>
-  )
-}

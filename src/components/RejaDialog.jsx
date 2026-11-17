@@ -36,16 +36,23 @@ function fromPlan(p) {
   return { ...p, items, groups }
 }
 
+const withPatient = (f, b) => (b ? {
+  ...f,
+  patient: { id: b.id, name: b.name, phone: b.phone, age: b.age, gender: b.gender, city: b.city, photo: b.photo, code: b.code },
+  teeth: { ...(b.teeth || {}) },
+} : f)
+
 const blank = () => ({
   id: '', code: nextPlanCode(), patient: null, doctor: 'me', title: '', status: 'reja', start: TODAY, chair: 'Kreslo 1',
   teeth: {}, surfaces: {}, items: [], groups: [], discount: 0, payMode: 'full', note: '', paid: 0, payments: [], visits: [], stages: [],
 })
 
-export default function RejaDialog({ initial, onClose, onSave }) {
+// patient: bemor profilidan ochilganda yangi reja shu bemor bilan boshlanadi.
+export default function RejaDialog({ initial, onClose, onSave, patient = null }) {
   const bemorlar = useBemorlar()
   const xizmatlar = useXizmatlar()
   const templates = useTemplates()
-  const [form, setForm] = useState(() => (initial ? fromPlan(initial) : blank()))
+  const [form, setForm] = useState(() => (initial ? fromPlan(initial) : withPatient(blank(), patient)))
   const [errors, setErrors] = useState({})
   const [dent, setDent] = useState('doimiy')
   const [picked, setPicked] = useState(null)
@@ -181,6 +188,7 @@ export default function RejaDialog({ initial, onClose, onSave }) {
         date: prev?.date ?? (i === 0 ? form.start : ''),
         status: prev?.status || 'rejada',
         duration: g.duration,
+        ...(prev?.visitId ? { visitId: prev.visitId } : {}),
       }
     })
     const id = form.id || `dr-${Date.now().toString(36)}`

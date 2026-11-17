@@ -75,7 +75,7 @@ export default function MobileUchrashuvNew() {
       service, doctor, room, note: note.trim(), sms,
     }
     if (edit) {
-      const stale = service !== edit.service ? { detail: '', info: '' } : {}
+      const stale = service !== edit.service ? { detail: '', info: '', services: undefined, serviceId: '' } : {}
       setVisits((list) => list.map((v) => (v.id === edit.id ? { ...v, ...row, ...stale } : v)))
     } else {
       setVisits((list) => [...list, { ...row, id: `n${Date.now()}`, status: 'tasdiq' }])

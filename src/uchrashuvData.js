@@ -1,6 +1,7 @@
 import { tashkentToday } from './tashkentDate'
 import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
+import { syncVisitPlans } from './visitPlanSync'
 
 export const ANCHOR = '2026-10-20'
 export const FOCUS = '2026-10-22'
@@ -51,9 +52,12 @@ export function useVisits() {
 }
 
 export function setVisits(next) {
+  const prev = visits
   visits = typeof next === 'function' ? next(visits) : next
   listeners.forEach((fn) => fn())
   touchBlob('visits')
+  // Qabuldagi xizmatlar -> bemorning davolash rejasi (barcha kirish nuqtalari uchun)
+  try { syncVisitPlans(prev, visits) } catch (error) { if (import.meta.env.DEV) console.error('visit->plan sync', error) }
 }
 
 export function todayIso() {
