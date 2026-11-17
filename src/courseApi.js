@@ -89,6 +89,40 @@ export async function uploadLessonVideo(lessonId, file, title, onProgress) {
   return refreshVideo(lessonId)
 }
 
+/** 0078 qo‘llanmaguncha null — sahifa eski ko‘rinishda qoladi. */
+export async function loadPublicExtras(courseId) {
+  try {
+    const body = await rpc('course_public_extras', { p_course_id: courseId })
+    return body?.ok ? body : null
+  } catch {
+    return null
+  }
+}
+
+export function mergeCourseExtras(body, extras) {
+  if (!body || !extras) return body
+  const byId = new Map((extras.lessons || []).map((row) => [row.id, row]))
+  return {
+    ...body,
+    course: {
+      ...body.course,
+      subtitle: extras.subtitle || '',
+      language: extras.language || 'uz',
+      trailerUrl: extras.trailerUrl || '',
+      learnPoints: Array.isArray(extras.learnPoints) ? extras.learnPoints : [],
+      audience: Array.isArray(extras.audience) ? extras.audience : [],
+      discountPrice: extras.discountPrice ?? null,
+      discountUntil: extras.discountUntil ?? null,
+      certificateEnabled: extras.certificateEnabled !== false,
+      certificateMinScore: Number(extras.certificateMinScore) || 0,
+    },
+    lessons: (body.lessons || []).map((lesson) => {
+      const extra = byId.get(lesson.id)
+      return extra ? { ...lesson, takeaways: extra.takeaways || [], materials: extra.materials || [], materialsCount: extra.materialsCount || 0 } : lesson
+    }),
+  }
+}
+
 export function devShot(key) {
   try {
     if (!import.meta.env?.DEV || typeof window === 'undefined') return null

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Award, BookOpen, Check, ChevronDown, Clock, Lock, Play, Star, UserRound } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import { Certificate } from './Sertifikatlar'
-import { courseError, enrollCourse, loadPlayer, devShot } from '../courseApi'
+import { courseError, enrollCourse, loadPlayer, loadPublicExtras, mergeCourseExtras, devShot } from '../courseApi'
 import { courseDurationSeconds, formatDuration, groupLessons, hoursNumber, lessonTakeaways, nextWatchLesson } from '../courseRules'
 import { directions, formats, levels, money } from '../educationData'
 import { isTestEvent, isTestSeedId, TEST_ORDER_TEXT } from '../lib/testSeed'
@@ -41,10 +41,10 @@ function CourseDetailPage() {
       setError('')
       return Promise.resolve(shot)
     }
-    return loadPlayer(id)
-      .then((body) => {
+    return Promise.all([loadPlayer(id), loadPublicExtras(id)])
+      .then(([body, extras]) => {
         if (!body?.ok) throw new Error(body?.error || 'Kurs topilmadi')
-        setData(body)
+        setData(mergeCourseExtras(body, extras))
         setStatus('ready')
         setError('')
         return body
@@ -169,7 +169,8 @@ export function CourseDetailView({ course, lessons, message, enrolling, testSeed
           </div>
 
           {String(course.about || '').trim().length > 220 ? <AboutSection about={course.about} /> : null}
-          <LearningsSection lessons={lessons} />
+          <LearningsSection lessons={lessons} points={course.learnPoints} />
+          <AudienceSection items={course.audience} />
           <CurriculumSection lessons={lessons} access={access} />
           <AuthorCard course={course} />
           <CertificateSection course={course} hours={hours} />
@@ -199,7 +200,7 @@ export function CourseDetailView({ course, lessons, message, enrolling, testSeed
       <div className="app-action-bar fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-3.5 py-2.5 shadow-[0_-8px_24px_rgb(11_31_58/0.08)] backdrop-blur lg:hidden">
         <div className="flex items-center gap-3">
           <div className="min-w-0">
-            <p className={`text-[16px] font-extrabold leading-tight ${paid && !access ? 'text-ink' : 'text-sea'}`}>{money(course.price)}</p>
+            <p className={`text-[16px] font-extrabold leading-tight ${paid && !access ? 'text-ink' : 'text-sea'}`}>{money(Number(course.discountPrice) > 0 && Number(course.discountPrice) < Number(course.price) ? course.discountPrice : course.price)}</p>
             {unpaid && <p className="text-[11px] text-muted">To‘lov kutilmoqda</p>}
           </div>
           <CtaButton cta={cta} enrolling={enrolling} testSeed={testSeed} onClick={onCta} className="h-12 flex-1" />
@@ -243,7 +244,7 @@ function PurchaseBlock({ course, duration, lessons, cta, unpaid, testSeed, messa
   ].filter(Boolean)
   return (
     <>
-      <p className={`text-[28px] font-extrabold leading-none ${course.price ? 'text-ink' : 'text-sea'}`}>{money(course.price)}</p>
+      <PriceLine course={course} />
       {unpaid && (
         <p className="mt-2 rounded-xl bg-[#fff6e8] px-3 py-2 text-[12.5px] leading-relaxed text-[#8a4b12]">
           Yozuv saqlandi. To‘lov ulanmaguncha darslar yopiq.
@@ -262,7 +263,7 @@ function PurchaseBlock({ course, duration, lessons, cta, unpaid, testSeed, messa
           ))}
           <li className="flex items-center gap-2 text-[13px] text-ink-2">
             <Award className="size-4 shrink-0 text-sea" strokeWidth={2.5} />
-            Sertifikat: barcha testlardan o‘tilgach
+            {course.certificateEnabled === false ? 'Sertifikat berilmaydi' : 'Sertifikat: barcha testlardan o‘tilgach'}
           </li>
           <li className="flex items-start gap-2 text-[13px] leading-snug text-ink-2">
             <Lock className="mt-0.5 size-4 shrink-0 text-sea" strokeWidth={2.5} />
@@ -278,6 +279,35 @@ function PurchaseBlock({ course, duration, lessons, cta, unpaid, testSeed, messa
 }
 
 
+const UZ_MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr']
+function untilLabel(value) {
+  if (!value) return ''
+  const raw = String(value)
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00+05:00`) : new Date(raw)
+  if (Number.isNaN(d.getTime())) return ''
+  const t = new Date(d.getTime() + 5 * 3600 * 1000)
+  return `${t.getUTCDate()}-${UZ_MONTHS[t.getUTCMonth()]}`
+}
+
+function PriceLine({ course }) {
+  const price = Number(course.price) || 0
+  const discount = Number(course.discountPrice) || 0
+  if (price > 0 && discount > 0 && discount < price) {
+    const pct = Math.round((1 - discount / price) * 100)
+    return (
+      <div>
+        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <p className="text-[28px] font-extrabold leading-none text-ink">{money(discount)}</p>
+          <p className="text-[15px] font-semibold text-muted line-through">{money(price)}</p>
+          <span className="rounded-full bg-[#fff1e6] px-2 py-0.5 text-[12px] font-bold text-[#c2410c]">−{pct}%</span>
+        </div>
+        {untilLabel(course.discountUntil) ? <p className="mt-1.5 text-[12px] font-semibold text-[#c2410c]">Chegirma {untilLabel(course.discountUntil)} gacha</p> : null}
+      </div>
+    )
+  }
+  return <p className={`text-[28px] font-extrabold leading-none ${price ? 'text-ink' : 'text-sea'}`}>{money(price)}</p>
+}
+
 function HeroInfo({ course, duration, lessons, compact = false }) {
   return (
     <div>
@@ -285,8 +315,8 @@ function HeroInfo({ course, duration, lessons, compact = false }) {
         <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-sea">{DIRECTION_OF[course.direction]}</p>
       )}
       <h1 className={`mt-1 font-extrabold leading-[1.2] tracking-tight text-ink ${compact ? 'text-[28px] xl:text-[32px]' : 'text-[24px]'}`}>{course.title}</h1>
-      {course.about && (
-        <p className={`mt-2.5 leading-relaxed text-ink-2 ${compact ? 'text-[15px]' : 'text-[14.5px]'}`}>{shortAbout(course.about)}</p>
+      {(course.subtitle || course.about) && (
+        <p className={`mt-2.5 leading-relaxed text-ink-2 ${compact ? 'text-[15px]' : 'text-[14.5px]'}`}>{course.subtitle || shortAbout(course.about)}</p>
       )}
       <MetaRow course={course} duration={duration} lessons={lessons} />
       <AuthorInline course={course} />
@@ -344,8 +374,9 @@ function AboutSection({ about }) {
   )
 }
 
-function LearningsSection({ lessons }) {
-  const items = (lessons || []).map((lesson) => String(lesson.title || '').trim()).filter(Boolean)
+function LearningsSection({ lessons, points }) {
+  const own = (Array.isArray(points) ? points : []).map((item) => String(item || '').trim()).filter(Boolean)
+  const items = own.length ? own : (lessons || []).map((lesson) => String(lesson.title || '').trim()).filter(Boolean)
   if (!items.length) return null
   return (
     <section className="mt-4 rounded-2xl bg-white p-5 shadow-card lg:mt-5 lg:p-6">
@@ -355,6 +386,26 @@ function LearningsSection({ lessons }) {
           <li key={`${i}-${item}`} className="flex items-start gap-2.5 text-[14px] leading-snug text-ink-2">
             <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-sea-50 text-sea">
               <Check className="size-3" strokeWidth={3} />
+            </span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function AudienceSection({ items }) {
+  const list = (Array.isArray(items) ? items : []).map((item) => String(item || '').trim()).filter(Boolean)
+  if (!list.length) return null
+  return (
+    <section className="mt-4 rounded-2xl bg-white p-5 shadow-card lg:mt-5 lg:p-6">
+      <h2 className="text-[18px] font-extrabold tracking-tight text-ink lg:text-[20px]">Kimlar uchun</h2>
+      <ul className="mt-4 space-y-2.5">
+        {list.map((item, i) => (
+          <li key={`${i}-${item}`} className="flex items-start gap-2.5 text-[14px] leading-snug text-ink-2">
+            <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-sea-50 text-sea">
+              <UserRound className="size-3" strokeWidth={2.5} />
             </span>
             {item}
           </li>
@@ -415,7 +466,7 @@ function CurriculumSection({ lessons, access }) {
 
 function LessonItem({ lesson, locked }) {
   const [open, setOpen] = useState(false)
-  const takeaways = lessonTakeaways(lesson.description)
+  const takeaways = Array.isArray(lesson.takeaways) && lesson.takeaways.length ? lesson.takeaways : lessonTakeaways(lesson.description)
   const duration = formatDuration(lesson.durationSeconds)
   return (
     <li className="rounded-xl">
@@ -499,10 +550,14 @@ function CertificateSection({ course, hours }) {
   return (
     <section className="mt-4 rounded-2xl bg-white p-5 shadow-card lg:mt-5 lg:p-6">
       <h2 className="text-[18px] font-extrabold tracking-tight text-ink lg:text-[20px]">Sertifikat</h2>
-      <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">
-        <span className="font-bold text-ink">Beriladi.</span> Shart: barcha darslar yakunlanib, testdan o‘tishi kerak bo‘lgan darslar muvaffaqiyatli topshirilishi.
-      </p>
-      {issued ? (
+      {course.certificateEnabled === false && !issued ? (
+        <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2"><span className="font-bold text-ink">Berilmaydi.</span> Muallif bu kurs uchun sertifikatni o‘chirgan.</p>
+      ) : (
+        <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">
+          <span className="font-bold text-ink">Beriladi.</span> Shart: barcha darslar yakunlanib, testdan o‘tishi kerak bo‘lgan darslar muvaffaqiyatli topshirilishi{Number(course.certificateMinScore) > 0 ? `, o‘rtacha ball kamida ${Number(course.certificateMinScore)}%` : ''}.
+        </p>
+      )}
+      {course.certificateEnabled === false && !issued ? null : issued ? (
         <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-line">
           <Certificate c={certFromRow({ ...issued, courseId: `course:${course.id}`, speaker: issued.speaker || course.doctor, title: issued.title || course.title, kind: 'online' })} big />
         </div>

@@ -23,7 +23,7 @@ const MAIN = [
 ]
 const ORG_NAV = [
   { to: '/tashkilotchi/seminarlar', label: 'Mening seminarlarim', icon: CalendarDays },
-  { to: '/tashkilotchi/kurslar', label: 'Kurslar', icon: GraduationCap },
+  { to: '/kurs-muallifi', label: 'Onlayn kurslar', icon: GraduationCap },
   { to: '/tashkilotchi/ishtirokchilar', label: 'Ishtirokchilar', icon: Users },
   { to: '/tashkilotchi/chiptalar', label: 'Chiptalar', icon: Ticket },
   { to: '/tashkilotchi/qr', label: 'QR Check-in', icon: QrCode },
@@ -95,7 +95,7 @@ function Item({ to, icon: Icon, label, end, onClick, locked }) {
 const OPEN = ['/tashkilotchi/sozlamalar', '/tashkilotchi/yordam']
 function useLocked() {
   const session = useSession()
-  return (to) => to.startsWith('/tashkilotchi') && !OPEN.includes(to) && !canUseOrganizer(session.profile)
+  return (to) => (to.startsWith('/tashkilotchi') || to.startsWith('/kurs-muallifi')) && !OPEN.includes(to) && !canUseOrganizer(session.profile)
 }
 
 function ApprovalNotice({ uid }) {

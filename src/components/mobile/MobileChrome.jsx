@@ -11,6 +11,7 @@ const NONE = [
   /^\/davolash-rejalari(\/.*)?$/,
   /^\/tashkilotchi(\/.*)?$/,
   /^\/sotuvchi(\/.*)?$/,
+  /^\/kurs-muallifi(\/.*)?$/,
 ]
 
 const BAR = [

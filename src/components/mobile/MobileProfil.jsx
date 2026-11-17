@@ -16,7 +16,7 @@ import { allOrders, flushProfile, profileStore, useProfile } from '../../profile
 import { useMyCourses } from '../../courseApi'
 import { sumCoursePoints } from '../../courseRules'
 import { MyCourseCards } from '../course/MyCourseCards'
-import { canEnterSeller, canEnterOrganizer, signOut, useSession } from '../../sessionStore'
+import { canEnterSeller, canEnterOrganizer, canUseOrganizer, signOut, useSession } from '../../sessionStore'
 import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -126,6 +126,7 @@ export default function MobileProfil() {
       { id: 'notif', icon: M.bildirishnomalar, tone: 'bg-[#fff4e0] text-[#e8a20c]', title: 'Bildirishnomalar', text: 'Yangiliklar va xabarlar' },
       { id: 'seller', icon: Store, tone: 'bg-[#e3f5f3] text-sea', title: member ? 'Sotuvchi kabineti' : 'Sotuvchi bo‘lish', text: member ? 'Do‘koningizni boshqaring' : 'StomaHub’da mahsulot soting', go: () => navigate(member ? '/sotuvchi' : '/sotuvchi-bolish') },
       { id: 'organizer', icon: CalendarDays, tone: 'bg-[#e3f5f3] text-sea', title: orgMember ? 'Tashkilotchi kabineti' : 'Tashkilotchi bo‘lish', text: orgMember ? 'Seminarlaringizni boshqaring' : 'Seminar va kurslar tashkil qiling', go: () => navigate(orgMember ? '/tashkilotchi' : '/tashkilotchi-bolish') },
+      ...(canUseOrganizer(sessionNow.profile) ? [{ id: 'author', icon: GraduationCap, tone: 'bg-[#e3f5f3] text-sea', title: 'Kurs muallifi kabineti', text: 'Onlayn kurslar, o‘quvchilar va to‘lovlar', go: () => navigate('/kurs-muallifi') }] : []),
       { id: 'lang', icon: Globe, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Til', text: LANGS.find((l) => l[0] === profile.lang)?.[1] },
       { id: 'help', icon: M.yordam, tone: 'bg-[#e6f0fc] text-[#1f6fd1]', title: 'Yordam', text: 'Savollar va qo‘llab-quvvatlash' },
       { id: 'logout', icon: M.chiqish, tone: 'bg-[#fdecec] text-sale', title: 'Chiqish', text: 'Hisobdan chiqish' },

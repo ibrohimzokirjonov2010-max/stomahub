@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Store, GraduationCap, Megaphone, ShoppingBag,
-  Coins, BadgeCheck, Sparkles, Wallet, CircleHelp, ChartNoAxesColumn, Settings, PackageCheck, ShieldAlert, Landmark,
+  Coins, BadgeCheck, BookOpenCheck, Sparkles, Wallet, CircleHelp, ChartNoAxesColumn, Settings, PackageCheck, ShieldAlert, Landmark,
 } from 'lucide-react'
 
 export const ADMIN_NAV = [
@@ -12,6 +12,7 @@ export const ADMIN_NAV = [
   { to: '/admin/tashkilotchilar', label: 'Seminar tashkilotchilari', icon: GraduationCap },
   { to: '/admin/elonlar', label: 'Reklama kampaniyalari', icon: Megaphone },
   { to: '/admin/moderatsiya', label: 'Kontent moderatsiyasi', icon: ShieldAlert },
+  { to: '/admin/kurslar', label: 'Kurs moderatsiyasi', icon: BookOpenCheck },
   { to: '/admin/buyurtmalar', label: 'Buyurtmalar', icon: ShoppingBag },
   { to: '/admin/escrow', label: 'Escrow va pul aylanmasi', icon: Coins },
   { to: '/admin/sotuvchiga-tolov', label: 'Sotuvchiga to‘lov', icon: Landmark },
