@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowRight, ClipboardList, Globe, Stethoscope, BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, UserPlus, UserRound, Users } from 'lucide-react'
+import { ArrowRight, ClipboardList, Globe, Stethoscope, BookOpen, ChevronDown, Eye, EyeOff, GraduationCap, Lock, LogIn, Mail, Phone, ShoppingCart, Store, UserPlus, UserRound, Users } from 'lucide-react'
 import { profileStore, useProfile } from '../profileStore'
 import { retryHub } from '../hubStore'
 import { supabase } from '../supabaseClient'
@@ -30,6 +30,8 @@ const COPY = {
     kind: 'Hisob turi',
     customer: 'Mijoz',
     organizer: 'Tashkilotchi',
+    seller: 'Sotuvchi bo‘lish',
+    sellerHint: 'Do‘kon ochib mahsulot soting — ariza sahifasiga o‘ting',
     telegram: 'Telegram orqali kirish',
     phoneLead: 'Telefon orqali kirish',
     sendCode: 'Kod yuborish',
@@ -86,6 +88,8 @@ const COPY = {
     kind: 'Тип аккаунта',
     customer: 'Клиент',
     organizer: 'Организатор',
+    seller: 'Стать продавцом',
+    sellerHint: 'Откройте магазин и продавайте товары — перейдите к заявке',
     telegram: 'Войти через Telegram',
     phoneLead: 'Вход по телефону',
     sendCode: 'Отправить код',
@@ -142,6 +146,8 @@ const COPY = {
     kind: 'Account type',
     customer: 'Customer',
     organizer: 'Organizer',
+    seller: 'Become a seller',
+    sellerHint: 'Open a shop and sell products — go to the application',
     telegram: 'Continue with Telegram',
     phoneLead: 'Sign in with phone',
     sendCode: 'Send code',
@@ -556,6 +562,26 @@ function Auth({ mode }) {
               <h2 className={`pr-32 font-extrabold tracking-tight text-[#0f2438] ${isLogin ? 'mt-14 text-[40px]' : 'mt-8 text-[34px]'}`}>{isLogin ? t.login : t.reg}</h2>
               <p className="mt-2 max-w-[360px] text-[14.5px] leading-relaxed text-[#5c6e80]">{isLogin ? t.loginLead : t.regLead}</p>
             </div>
+            {!isLogin && (
+              <div className="mt-5">
+                <p className="text-[13.5px] font-semibold text-[#0f2438]">{t.kind}</p>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  <button type="button" onClick={() => setRoleIntent('customer')} aria-pressed={roleIntent === 'customer'} className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center text-[12.5px] font-semibold transition ${roleIntent === 'customer' ? 'border-[#0F766E] bg-[#effaf8] text-[#0F766E]' : 'border-[#e3eaee] text-[#24384d] hover:border-[#b9dfd9]'}`}>
+                    <UserRound className="size-5" />
+                    {t.customer}
+                  </button>
+                  <button type="button" onClick={() => setRoleIntent('organizer')} aria-pressed={roleIntent === 'organizer'} className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center text-[12.5px] font-semibold transition ${roleIntent === 'organizer' ? 'border-[#0F766E] bg-[#effaf8] text-[#0F766E]' : 'border-[#e3eaee] text-[#24384d] hover:border-[#b9dfd9]'}`}>
+                    <Users className="size-5" />
+                    {t.organizer}
+                  </button>
+                  <Link to="/sotuvchi-bolish" className="flex flex-col items-center gap-1 rounded-xl border border-[#0F766E]/50 bg-[#f7fbfa] px-2 py-3 text-center text-[12.5px] font-semibold text-[#0F766E] hover:bg-[#effaf8]">
+                    <Store className="size-5" />
+                    {t.seller}
+                  </Link>
+                </div>
+                <p className="mt-1.5 text-[12px] leading-snug text-[#5c6e80]">{t.sellerHint}</p>
+              </div>
+            )}
             <form onSubmit={submit} className={`mt-5 ${isLogin ? 'space-y-5' : 'space-y-4'}`}>
               {!isLogin && <Field label={t.name} icon={UserRound} value={name} onChange={setName} placeholder={t.namePh} autoComplete="name" />}
               {isLogin ? (
@@ -590,7 +616,6 @@ function Auth({ mode }) {
                     </select>
                     <ChevronDown className="pointer-events-none size-4 text-[#5c6e80]" />
                   </span>
-                  <span className="mt-1 block text-[12px] text-[#5c6e80]">Mahsulot sotmoqchimisiz? <Link to="/sotuvchi-bolish" className="font-semibold text-[#0F766E]">Sotuvchi sifatida ariza bering</Link></span>
                 </label>
               )}
               {isLogin ? (
@@ -646,13 +671,6 @@ function Auth({ mode }) {
               {isLogin ? t.noAcc : t.hasAcc}
               <Link to={isLogin ? '/royxat' : '/kirish'} className="inline-flex items-center gap-1.5 font-semibold text-[#0F766E]">{isLogin ? t.toReg : t.login} <ArrowRight className="size-4" /></Link>
             </div>
-            {/* Hisob turi: kirishda rol profildan avtomatik aniqlanadi; bu faqat yangi hisob uchun */}
-            <p className="mt-4 text-center text-[12.5px] text-[#7d8f99]">
-              {t.kind}:{' '}
-              {[['customer', t.customer], ['organizer', t.organizer]].map(([key, label], k) => (
-                <span key={key}>{k ? ' · ' : ''}<button type="button" onClick={() => setRoleIntent(key)} aria-pressed={roleIntent === key} className={roleIntent === key ? 'font-semibold text-[#0F766E]' : 'underline-offset-2 hover:underline'}>{label}</button></span>
-              ))}
-            </p>
           </div>
         </div>
       </main>

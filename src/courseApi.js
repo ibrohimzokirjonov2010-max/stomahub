@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import { useSession } from './sessionStore'
 
 function explain(error) {
   const msg = error?.message || String(error || '')
@@ -150,12 +151,19 @@ export function useCourseCatalog() {
 }
 
 export function useMyCourses() {
+  const session = useSession()
+  const authed = session.status === 'authed'
   const [state, setState] = useState({ rows: [], status: 'loading', error: '' })
   const reload = () => {
     const shot = devShot('mine')
     if (shot) {
       setState({ rows: shot, status: 'ready', error: '' })
       return Promise.resolve(shot)
+    }
+    // Mehmon (anon) uchun my_courses RPC yopiq — so‘rov yuborilsa 401 chiqadi.
+    if (session.status !== 'authed') {
+      setState({ rows: [], status: session.status === 'loading' ? 'loading' : 'ready', error: '' })
+      return Promise.resolve([])
     }
     return myCourses()
       .then((rows) => {
@@ -168,7 +176,7 @@ export function useMyCourses() {
         return []
       })
   }
-  useEffect(() => { reload() }, [])
+  useEffect(() => { reload() }, [authed, session.status])
   return { ...state, reload }
 }
 

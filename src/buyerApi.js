@@ -1,4 +1,4 @@
-import { isTestProductRow } from './testData'
+import { isHiddenMarketProductRow } from './testData'
 import { attachOrderShops } from './lib/orderShops'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { supabase, friendlySupabaseError } from './supabaseClient'
@@ -104,7 +104,7 @@ export async function loadMarketProducts() {
     // Sotuvchi aksiyalari (0047 seller_promotions → catalog_items kind='deal'): aksiya narxi marketplace kartasida ham.
     const promos = await supabase.from('catalog_items').select('payload').eq('kind', 'deal')
       .then((r) => (r.error ? [] : (r.data || []).map((x) => x.payload).filter(Boolean)), () => [])
-    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isTestProductRow(r)).map(toMarketProduct).map((p) => applyPromotion(applyDiscount(p, disc), promos)))
+    marketProducts.splice(0, marketProducts.length, ...(rows || []).filter((r) => !isHiddenMarketProductRow(r)).map(toMarketProduct).map((p) => applyPromotion(applyDiscount(p, disc), promos)))
     marketState = { status: 'ready', error: '' }
     marketLoadedAt = Date.now()
   }

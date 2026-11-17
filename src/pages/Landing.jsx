@@ -8,11 +8,11 @@ import {
   ArrowRight, BarChart3, BookOpen, CalendarDays, CheckCircle2, ChevronDown, Globe, GraduationCap, Home, Mail, MapPin, Megaphone,
   Menu, MessageSquareMore, Phone, Search, ShoppingCart, Users, X, LayoutGrid, Bell, Wallet, FileText, Settings, Package, UserRound, Store,
 } from 'lucide-react'
-import { payPromo } from '../payments/paymentService'
+import { payPromo, usePaymentConfig } from '../payments/paymentService'
 import { SectionIcons, MenuIcons } from '../components/tealIcons'
 
 const T = '#0F766E'
-const NAV = [['Marketplace', '/marketplace'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Klinika CRM', '/klinika'], ['Ustalar', '/ustalar']]
+const NAV = [['Marketplace', '/marketplace'], ['Tibbiy forma', '/forma'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Klinika CRM', '/klinika'], ['Ustalar', '/ustalar']]
 
 function Tooth(props) {
   return (
@@ -67,8 +67,8 @@ export default function Landing() {
       <header className="sticky top-0 z-40 border-b border-[#edf2f4] bg-white/95 backdrop-blur">
         <div className={`${wrap} flex h-[64px] items-center gap-6 lg:h-[76px]`}>
           <Link to="/" aria-label="StomaHub" className="shrink-0"><img src="/images/landing/logo-mark.png" alt="StomaHub" className="h-8 w-auto lg:h-[42px]" /></Link>
-          <nav className="mx-auto hidden items-center gap-8 lg:flex">
-            {NAV.map(([l, to]) => <Link key={to} to={to} className="text-[15px] font-medium text-[#24384d] hover:text-[#0F766E]">{l}</Link>)}
+          <nav className="mx-auto hidden items-center gap-5 xl:gap-8 lg:flex">
+            {NAV.map(([l, to]) => <Link key={to} to={to} className="whitespace-nowrap text-[15px] font-medium text-[#24384d] hover:text-[#0F766E]">{l}</Link>)}
           </nav>
           <div className="ml-auto flex items-center gap-2 lg:ml-0 lg:gap-3">
             <Link to="/marketplace" aria-label="Qidirish" className="grid size-10 place-items-center rounded-full text-[#24384d] hover:bg-[#eef7f5] lg:size-11"><Search className="size-5" /></Link>
@@ -114,7 +114,7 @@ export default function Landing() {
               <Link to="/marketplace" className={`${btn} h-14 border border-[#0F766E] bg-white px-8 text-[16px] text-[#0F766E] hover:bg-[#eef7f5]`}><ShoppingCart className="size-5" /> Marketplace’ni ko‘rish</Link>
             </div>
             <ul className="mt-8 grid grid-cols-3 gap-3 sm:max-w-[560px]">
-              {[[Tooth, 'Barcha imkoniyatlar bir joyda'], [Globe, 'O‘rtoqlashish oson uchun mos'], [Users, 'Professional hamjamiyat']].map(([I, t]) => (
+              {[[Tooth, 'Barcha imkoniyatlar bir joyda'], [Globe, 'Hamkasblar bilan oson o‘rtoqlashish'], [Users, 'Professional hamjamiyat']].map(([I, t]) => (
                 <li key={t} className="flex flex-col items-start gap-2 text-[12px] leading-snug text-[#3d5168] sm:flex-row sm:items-center sm:text-[13.5px]"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e3f3f0] text-[#0F766E]"><I className="size-5" /></span>{t}</li>
               ))}
             </ul>
@@ -256,7 +256,7 @@ export default function Landing() {
               ))}
             </div>
           </div>
-          <Foot title="Platforma" links={[['Marketplace', '/marketplace'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Ustalar', '/ustalar']]} />
+          <Foot title="Platforma" links={[['Marketplace', '/marketplace'], ['Tibbiy forma', '/forma'], ['Ta’lim', '/talim'], ['Seminarlar', '/seminarlar'], ['Kitoblar', '/kitoblar'], ['Ustalar', '/ustalar']]} />
           <Foot title="Klinika uchun" links={[['Klinika CRM', '/klinika'], ['Ustalar laboratoriyalari', '/ustalar'], ['Konsultatsiyalar', '/community'], ['E’lonlar', '/elonlar']]} />
           <Foot title="Yordam" links={[['Savol-javob', '#faq'], ['Foydalanish shartlari', '/foydalanish-shartlari'], ['Maxfiylik siyosati', '/maxfiylik'], ['Sayt xaritasi', '/kategoriyalar']]} />
           <div>
@@ -265,11 +265,7 @@ export default function Landing() {
             <a href="mailto:info@stomahub.uz" className="mt-2.5 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><Mail className="size-4 text-[#0F766E]" /> info@stomahub.uz</a>
             <p className="mt-2.5 flex items-center gap-2 text-[13.5px] text-[#3d5168]"><MapPin className="size-4 text-[#0F766E]" /> Toshkent, O‘zbekiston</p>
           </div>
-          <div>
-            <p className="text-[14px] font-bold text-[#0f2438]">To‘lov usullari</p>
-            <div className="mt-3 flex items-center gap-1.5 text-[17px] font-extrabold tracking-tight text-[#1c2b3a]"><span className="grid size-6 place-items-center rounded-full bg-[conic-gradient(#00aeef_0_25%,#7ac143_0_50%,#fbb040_0_75%,#ee3d6d_0)]"><span className="size-2.5 rounded-full bg-white" /></span>CLICK</div>
-            <div className="mt-3 text-[22px] font-extrabold leading-none tracking-tight"><span className="text-[#1c2b3a]">Pay</span><span className="text-[#33cccc] underline decoration-[#33cccc] decoration-2 underline-offset-4">me</span></div>
-          </div>
+          <FooterPayments />
         </div>
         <div className={`${wrap} flex items-center justify-between border-t border-[#edf2f4] py-5 text-[13px] text-[#5c6e80]`}>
           <span>© 2026 StomaHub. Barcha huquqlar himoyalangan.</span>
@@ -299,11 +295,25 @@ function Foot({ title, links }) {
 function StoreBadge({ kind }) {
   const apple = kind === 'apple'
   return (
-    <a href={apple ? 'https://apps.apple.com/' : 'https://play.google.com/store'} target="_blank" rel="noreferrer" className="inline-flex h-14 items-center gap-3 whitespace-nowrap rounded-xl bg-[#0b0f14] px-4 text-white sm:px-5">
-      {apple ? <svg viewBox="0 0 24 24" className="size-7" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.6 1.3-.1 1.7-.8 3.3-.8 1.5 0 1.9.8 3.3.8 1.4 0 2.2-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.5-1-2.5-4.1ZM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5Z" /></svg>
-        : <svg viewBox="0 0 24 24" className="size-7"><path fill="#00d7fe" d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z" /><path fill="#ffce00" d="m16.7 15.3-3.3-3.3 3.3-3.3 3.8 2.2c1 .6 1 1.6 0 2.2l-3.8 2.2Z" /><path fill="#ff3a44" d="M16.7 15.3 13.4 12l-9.8 9.7c.4.2.9.2 1.4-.1l11.7-6.3Z" /><path fill="#00f076" d="M16.7 8.7 5 2.4c-.5-.3-1-.3-1.4-.1L13.4 12l3.3-3.3Z" /></svg>}
-      <span className="text-left text-[13px] font-semibold leading-tight sm:text-[14px]">{apple ? 'App Store’dan' : 'Google Play’dan'}<br />yuklab oling</span>
-    </a>
+    <div role="text" aria-label={`${apple ? 'App Store' : 'Google Play'} — tez orada`} className="inline-flex h-14 cursor-default items-center gap-3 whitespace-nowrap rounded-xl bg-[#0b0f14] px-4 text-white sm:px-5">
+      {apple ? <svg viewBox="0 0 24 24" className="size-7" fill="currentColor" aria-hidden><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.6 1.3-.1 1.7-.8 3.3-.8 1.5 0 1.9.8 3.3.8 1.4 0 2.2-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.5-1-2.5-4.1ZM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5Z" /></svg>
+        : <svg viewBox="0 0 24 24" className="size-7" aria-hidden><path fill="#00d7fe" d="M3.6 2.3 13.4 12 3.6 21.7c-.4-.2-.6-.6-.6-1.1V3.4c0-.5.2-.9.6-1.1Z" /><path fill="#ffce00" d="m16.7 15.3-3.3-3.3 3.3-3.3 3.8 2.2c1 .6 1 1.6 0 2.2l-3.8 2.2Z" /><path fill="#ff3a44" d="M16.7 15.3 13.4 12l-9.8 9.7c.4.2.9.2 1.4-.1l11.7-6.3Z" /><path fill="#00f076" d="M16.7 8.7 5 2.4c-.5-.3-1-.3-1.4-.1L13.4 12l3.3-3.3Z" /></svg>}
+      <span className="text-left text-[13px] font-semibold leading-tight sm:text-[14px]">{apple ? 'App Store' : 'Google Play'}<br />Tez orada</span>
+    </div>
+  )
+}
+
+function FooterPayments() {
+  const cfg = usePaymentConfig()
+  const showClick = !!cfg?.click?.configured
+  const showPayme = !!cfg?.payme?.configured
+  if (!showClick && !showPayme) return null
+  return (
+    <div>
+      <p className="text-[14px] font-bold text-[#0f2438]">To‘lov usullari</p>
+      {showClick && <div className="mt-3 flex items-center gap-1.5 text-[17px] font-extrabold tracking-tight text-[#1c2b3a]"><span className="grid size-6 place-items-center rounded-full bg-[conic-gradient(#00aeef_0_25%,#7ac143_0_50%,#fbb040_0_75%,#ee3d6d_0)]"><span className="size-2.5 rounded-full bg-white" /></span>CLICK</div>}
+      {showPayme && <div className="mt-3 text-[22px] font-extrabold leading-none tracking-tight"><span className="text-[#1c2b3a]">Pay</span><span className="text-[#33cccc] underline decoration-[#33cccc] decoration-2 underline-offset-4">me</span></div>}
+    </div>
   )
 }
 

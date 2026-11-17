@@ -14,11 +14,12 @@ import { MenuDrawer } from './MobileKategoriyalar'
 import { DetailSheet, timeline } from './MobileBuyurtmalar'
 import CourierCard from '../CourierCard'
 import { orderShopSummary } from '../../lib/orderShops'
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, SOCIAL_LINKS } from '../../config/contact'
 
 const teal = 'text-[#0b6d73]'
 const navy = 'text-[#0d2a4a]'
 const card = 'rounded-2xl border border-[#e5eef0] bg-white shadow-[0_1px_6px_rgb(11_31_58/0.04)]'
-const OPERATOR_TEL = '+998712000000'
+const OPERATOR_TEL = (CONTACT_PHONE_TEL || '').replace(/^tel:/, '') || CONTACT_PHONE.replace(/[^\d+]/g, '')
 // NB: every contact must carry an `icon` (rendered as <contact.icon/> when there is no photo).
 // COURIER used to have no icon, so the page crashed as soon as an order became 'shipping'/'delivered'.
 const COURIER = { name: 'Kuryer', sub: 'StomaHub kuryeri', icon: Truck, tel: OPERATOR_TEL }
@@ -403,18 +404,22 @@ function HelpSheet({ canCancel, onChat, onCancel, onClose }) {
   return (
     <BottomSheet title="Yordam" onClose={onClose}>
       <div className="mt-1 divide-y divide-[#eef2f4]">
-        <a href={`tel:${OPERATOR_TEL}`} className={row}>
+        {CONTACT_PHONE && (
+        <a href={CONTACT_PHONE_TEL || `tel:${OPERATOR_TEL}`} className={row}>
           <span className={ico}><Phone className="size-[18px]" /></span>
-          <span className="min-w-0 flex-1"><span className={`block text-[14px] font-semibold ${navy}`}>Operatorga qo‘ng‘iroq</span><span className="block text-[11.5px] text-muted">+998 71 200 00 00 · 09:00–21:00</span></span>
+          <span className="min-w-0 flex-1"><span className={`block text-[14px] font-semibold ${navy}`}>Operatorga qo‘ng‘iroq</span><span className="block text-[11.5px] text-muted">{CONTACT_PHONE} · 09:00–21:00</span></span>
         </a>
+        )}
         <button type="button" onClick={onChat} className={row}>
           <span className={ico}><MessagesSquare className="size-[18px]" /></span>
           <span className="min-w-0 flex-1"><span className={`block text-[14px] font-semibold ${navy}`}>Operator bilan chat</span><span className="block text-[11.5px] text-muted">Odatda 2 daqiqada javob beramiz</span></span>
         </button>
-        <a href="https://t.me/stomahub" target="_blank" rel="noreferrer" className={row}>
+        {SOCIAL_LINKS.Telegram && (
+        <a href={SOCIAL_LINKS.Telegram} target="_blank" rel="noreferrer" className={row}>
           <span className={ico}><SendHorizontal className="size-[18px]" /></span>
-          <span className="min-w-0 flex-1"><span className={`block text-[14px] font-semibold ${navy}`}>Telegram orqali yozish</span><span className="block text-[11.5px] text-muted">@stomahub</span></span>
+          <span className="min-w-0 flex-1"><span className={`block text-[14px] font-semibold ${navy}`}>Telegram orqali yozish</span><span className="block text-[11.5px] text-muted">StomaHub Telegram kanali</span></span>
         </a>
+        )}
         {canCancel && (
           <button type="button" onClick={onCancel} className={row}>
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#fdecec] text-sale"><CircleX className="size-[18px]" /></span>
