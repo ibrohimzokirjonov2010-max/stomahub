@@ -161,7 +161,7 @@ function Education({ headerQuery, mobile }) {
         {list.length === 0 ? (
           <div className="grid h-[160px] place-items-center rounded-xl bg-white text-[12px] text-muted shadow-card">{catalog.status === 'loading' ? 'Yuklanmoqda…' : courses.length ? 'Kurs topilmadi' : 'Hali kurslar qo‘shilmagan'}</div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-4 min-[1900px]:grid-cols-5 min-[2400px]:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2.5 min-[768px]:grid-cols-3 min-[1280px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2200px]:grid-cols-6">
       {list.map((c) => <CourseCard key={c.id} c={c} saved={saved.has(c.id)} onSave={() => toggle(c.id)} enrollment={mineById[c.id]} />)}
           </div>
         ) : (
