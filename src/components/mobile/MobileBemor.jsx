@@ -29,6 +29,8 @@ function BemorView({ id }) {
   const location = useLocation()
   const [tab, setTab] = useState('umumiy')
   const [sheet, setSheet] = useState(() => (location.state?.visit ? { visit: {} } : null))
+  // Oxirgi bosilgan tish kartada ajralib turadi (oyna yopilgandan keyin ham).
+  const [pickedTooth, setPickedTooth] = useState(null)
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState(() => location.state?.toast || '')
   const closeToast = useCallback(() => setToast(''), [])
@@ -130,7 +132,7 @@ function BemorView({ id }) {
 
         {(tab === 'umumiy' || tab === 'tish') && (
           <Card>
-            <TeethChart teeth={p.teeth} big={tab === 'tish'} onPick={(n) => setSheet({ tooth: n })} />
+            <TeethChart teeth={p.teeth} selected={sheet?.tooth || pickedTooth} onPick={(n) => { setPickedTooth(n); setSheet({ tooth: n }) }} />
             {tab === 'tish' && (
               <div className="mt-3 border-t border-line/70 pt-3">
                 <p className="text-[13px] font-semibold text-ink">Belgilangan tishlar</p>

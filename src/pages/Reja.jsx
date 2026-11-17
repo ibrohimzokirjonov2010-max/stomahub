@@ -8,6 +8,7 @@ import ShopLayout from '../components/market/ShopLayout'
 import PersonAvatar from '../components/PersonAvatar'
 import RejaDialog from '../components/RejaDialog'
 import ToothChart from '../components/ToothChart'
+import { kindFromText } from '../teeth/toothArt'
 import { getBemor } from '../bemorData'
 import {
   PLAN_STATUS, STAGE_STATUS, TIMES, PAY_METHODS, TODAY, usePlans, getPlan, patchPlan, savePlan, removePlan, addPayment, saveTemplate,
@@ -15,6 +16,8 @@ import {
 } from '../rejaData'
 
 const ART_RANK = ['implant', 'missing', 'post', 'endo', 'crown', 'filling']
+// Bir tishda bir nechta ish bo'lsa, rasm shu tartibda tanlanadi.
+const KIND_RANK = ['protez-implant', 'implant', 'protez-babochka', 'protez-syomniy', 'missing', 'metal-keramika', 'sirkon', 'breket', 'shtift', 'endo', 'plomba', 'caries']
 const LEGEND = [
   ['Reja tishlari', '#0b8a95'],
   ['Bajarilgan', STAGE_STATUS.bajarildi.tint],
@@ -64,7 +67,6 @@ export default function Reja() {
   const hasProfile = plan.patient.id && getBemor(plan.patient.id)
 
   const stagesOf = (n) => plan.stages.filter((s) => s.teeth.includes(n))
-  const planTeeth = new Set(plan.stages.flatMap((s) => s.teeth))
   const tintOf = (n) => {
     const list = stagesOf(n)
     if (!list.length) return undefined
@@ -75,6 +77,10 @@ export default function Reja() {
   const artOfTooth = (n) => {
     const arts = stagesOf(n).map((s) => s.art).filter(Boolean)
     return ART_RANK.find((a) => arts.includes(a))
+  }
+  const kindOfTooth = (n) => {
+    const kinds = stagesOf(n).map((s) => kindFromText(s.title) || kindFromText(s.desc)).filter(Boolean)
+    return KIND_RANK.find((k) => kinds.includes(k))
   }
 
   const setStage = (sid, status) => {
@@ -236,8 +242,9 @@ export default function Reja() {
                 sideLabels={false}
                 tintOf={tintOf}
                 stateOf={artOfTooth}
-                ringOf={(n) => (n === tooth ? '#0b8a95' : undefined)}
-                numberClass={(n) => (planTeeth.has(n) ? 'font-bold text-ink text-[10.5px]' : 'text-muted')}
+                kindOf={kindOfTooth}
+                dimOthers
+                selected={tooth}
                 onPick={(n) => setTooth(tooth === n ? null : n)}
               />
               <p className="mt-2 min-h-[18px] text-[11.5px] text-ink-2">

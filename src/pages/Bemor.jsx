@@ -7,29 +7,21 @@ import { getBemor, patchBemor, som, statusClass, useBemorlar } from '../bemorDat
 import AppointmentForm from '../components/crm/AppointmentForm'
 import PaymentForm from '../components/crm/PaymentForm'
 import { recordClinicPayment, recordPatientPayment, recordPatientVisit } from '../components/crm/syncPatientRecords'
+import DentalChart, { ToothArt } from '../components/teeth/DentalChart'
+import { CONDITIONS } from '../components/ToothChart'
+import { TOOTH_STATUS_LABELS } from '../teeth/toothArt'
 
 const UPPER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
 const LOWER = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
 const BABY_U = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65]
 const BABY_L = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75]
-const CYCLE = ['healthy', 'caries', 'filling', 'endo', 'crown', 'implant', 'missing']
-const LEGEND = [
-  ['healthy', 'Sog‘lom tish'],
-  ['caries', 'Karies'],
-  ['filling', 'Plomba'],
-  ['endo', 'Endodontik davolash'],
-  ['crown', 'Shift'],
-  ['implant', 'Implant'],
-  ['crown', 'Krona'],
-  ['missing', 'Yo‘q tish'],
-]
-
 export default function Bemor() {
   const { id } = useParams()
   const patients = useBemorlar()
   const p = getBemor(id)
   const [tab, setTab] = useState('umumiy')
   const [dent, setDent] = useState('doimiy')
+  const [picked, setPicked] = useState(null)
   const [edit, setEdit] = useState(false)
   const [visit, setVisit] = useState(false)
   const [pay, setPay] = useState(false)
@@ -38,10 +30,11 @@ export default function Bemor() {
 
   if (!p) return <p className="pt-6 text-[13px] text-muted">Bemor topilmadi.</p>
 
-  const setTooth = (n) => {
-    const cur = p.teeth?.[n] || 'healthy'
-    const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length]
-    patchBemor(p.id, { teeth: { ...p.teeth, [n]: next } })
+  const setTooth = (n, next) => {
+    const teeth = { ...(p.teeth || {}) }
+    if (next === 'healthy') delete teeth[n]
+    else teeth[n] = next
+    patchBemor(p.id, { teeth })
   }
 
   const saveInfo = () => {
@@ -146,23 +139,19 @@ export default function Bemor() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-[14px] font-bold">Tish kartasi (FDI)</h2>
               <div className="flex rounded-full bg-[#f3f6fb] p-0.5 text-[12px] font-semibold">
-                <button onClick={() => setDent('doimiy')} className={`rounded-full px-3 py-1 ${dent === 'doimiy' ? 'bg-sea text-white' : 'text-ink-2'}`}>Doimiy tishlar</button>
-                <button onClick={() => setDent('sut')} className={`rounded-full px-3 py-1 ${dent === 'sut' ? 'bg-sea text-white' : 'text-ink-2'}`}>Sut tishlar</button>
+                <button onClick={() => { setDent('doimiy'); setPicked(null) }} className={`rounded-full px-3 py-1 ${dent === 'doimiy' ? 'bg-sea text-white' : 'text-ink-2'}`}>Doimiy tishlar</button>
+                <button onClick={() => { setDent('sut'); setPicked(null) }} className={`rounded-full px-3 py-1 ${dent === 'sut' ? 'bg-sea text-white' : 'text-ink-2'}`}>Sut tishlar</button>
               </div>
             </div>
-            <div className="mt-3 flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 flex justify-between text-[10px] text-muted"><span>O‘ng</span><span>Chap</span></p>
-                <Arch nums={upper} teeth={p.teeth} flip={false} onPick={setTooth} />
-                <div className="my-1 border-t border-dashed border-line" />
-                <Arch nums={lower} teeth={p.teeth} flip onPick={setTooth} />
-              </div>
-              <ul className="hidden w-[132px] shrink-0 space-y-0.5 text-[11px] text-ink-2 sm:block">
-                {LEGEND.map(([k, label]) => (
-                  <li key={label} className="flex items-center gap-1.5"><ToothIcon state={k} tiny /><span>{label}</span></li>
-                ))}
-              </ul>
-            </div>
+            <DentalChart
+              className="mt-3"
+              upper={upper}
+              lower={lower}
+              stateOf={(n) => p.teeth?.[n]}
+              selected={picked}
+              onPick={(n) => setPicked(picked === n ? null : n)}
+            />
+            <ToothPanel n={picked} state={picked ? p.teeth?.[picked] || 'healthy' : null} teeth={p.teeth} onSet={(k) => setTooth(picked, k)} onClose={() => setPicked(null)} />
           </section>
           <section className="rounded-2xl bg-white p-4 shadow-card">
             <div className="flex items-center justify-between gap-2"><h2 className="min-w-0 truncate text-[14px] font-bold">So‘nggi tashriflar</h2><button onClick={() => setTab('tashrif')} className="shrink-0 whitespace-nowrap text-[12px] font-semibold text-sea">Barchasini ko‘rish</button></div>
@@ -288,30 +277,37 @@ function Face({ src, name }) {
   return <img src={src} alt="" onError={() => setOk(false)} className="size-[72px] rounded-full object-cover" />
 }
 
-function Arch({ nums, teeth, flip, onPick }) {
-  const mid = Math.ceil(nums.length / 2)
+/** Tanlangan tish: katta rasm, joriy holat va holatni tanlash tugmalari. */
+function ToothPanel({ n, state, teeth, onSet, onClose }) {
+  if (!n) {
+    const used = [...new Set(Object.values(teeth || {}).filter((k) => k && k !== 'healthy'))]
+    return (
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-[#f6f9fc] px-3 py-2 text-[11px] text-ink-2">
+        <span className="font-semibold text-ink">Tishni bosing — tanlanadi va holatini belgilaysiz.</span>
+        {['healthy', ...used].map((k) => (
+          <span key={k} className="inline-flex items-center gap-1"><ToothArt n={11} state={k} style={{ height: 20 }} /> {TOOTH_STATUS_LABELS[k] || k}</span>
+        ))}
+      </div>
+    )
+  }
   return (
-    <div className="flex justify-center gap-1">
-      {nums.map((n, i) => (
-        <button key={n} onClick={() => onPick(n)} className={`flex flex-col items-center ${i === mid ? 'ml-2' : ''}`} title={String(n)}>
-          {!flip && <span className="text-[9px] text-muted">{n}</span>}
-          <ToothIcon state={teeth?.[n] || 'healthy'} flip={flip} />
-          {flip && <span className="text-[9px] text-muted">{n}</span>}
-        </button>
-      ))}
+    <div className="mt-3 rounded-xl border border-sea/30 bg-sea-50/60 p-3" data-testid="tooth-panel">
+      <div className="flex items-center gap-3">
+        <span className="grid h-[64px] w-[44px] place-items-center rounded-lg bg-white ring-1 ring-sea/30"><ToothArt n={n} state={state} style={{ height: 56 }} /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-bold text-ink"><span className="mr-1.5 inline-grid h-[20px] min-w-[26px] place-items-center rounded-full bg-sea px-1.5 text-[11px] text-white">{n}</span>tish tanlandi</p>
+          <p className="text-[12px] text-ink-2">Holati: <b className="text-ink">{TOOTH_STATUS_LABELS[state] || state}</b></p>
+        </div>
+        <button type="button" onClick={onClose} className="h-8 shrink-0 rounded-lg border border-line bg-white px-3 text-[12px] font-semibold text-ink-2">Bekor qilish</button>
+      </div>
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
+        {CONDITIONS.map(([k, label]) => (
+          <button key={k} type="button" aria-pressed={state === k} onClick={() => onSet(k)} className={`inline-flex h-8 items-center gap-1.5 rounded-lg border pl-1 pr-2.5 text-[11.5px] font-medium transition ${state === k ? 'border-sea bg-sea text-white' : 'border-line bg-white text-ink hover:border-sea/50'}`}>
+            <ToothArt n={n} state={k} style={{ height: 24 }} /> {label}
+          </button>
+        ))}
+      </div>
     </div>
-  )
-}
-
-function ToothIcon({ state, flip, tiny }) {
-  const fill = { healthy: '#fff', caries: '#8d939c', filling: '#8ec6ea', endo: '#f2c14b', crown: '#f3b4c6', implant: '#6aa4ee', missing: 'transparent' }[state] || '#fff'
-  return (
-    <svg viewBox="0 0 22 30" className={`${tiny ? 'h-4 w-3' : 'h-7 w-4'} ${flip ? 'rotate-180' : ''}`}>
-      <path d="M6 3h10c2.4 0 4 1.8 4 4.2v6.2c0 6-2.2 10.5-4.6 13.4-1.2 1.4-3.2 1.6-4.4.2-1.4-3-4.6-7.6-4.6-13.6V7.2C6.4 4.8 8 3 6 3z" fill={fill} stroke={state === 'missing' ? '#e7b4bc' : '#c5d0dc'} strokeDasharray={state === 'missing' ? '2 2' : '0'} />
-      {state === 'endo' && <path d="M11 8 v12" stroke="#e25b4a" strokeWidth="1.4" />}
-      {state === 'implant' && <rect x="9" y="8" width="4" height="14" rx="1" fill="#3d7ed6" />}
-      {state === 'missing' && <path d="M7 8 l8 12 M15 8 l-8 12" stroke="#e25b4a" strokeWidth="1.2" />}
-    </svg>
   )
 }
 
