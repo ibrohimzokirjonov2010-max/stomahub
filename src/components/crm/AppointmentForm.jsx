@@ -7,6 +7,7 @@ import { setVisits, useVisits } from '../../uchrashuvData'
 import { chairNames, dayOffReason, freeSlots, useClinicSettings } from '../../clinicSettings'
 import { tashkentToday } from '../../tashkentDate'
 import PatientForm from './PatientForm'
+import PersonAvatar from '../PersonAvatar'
 
 const input = 'h-10 w-full rounded-xl border border-line bg-white px-3 text-[13px] outline-none focus:border-sea'
 
@@ -23,9 +24,10 @@ export function serviceOptions(list) {
 
 /**
  * Yagona "Qabulga yozish" formasi. Natija uchrashuvData 'visits' ga yoziladi.
- * initial: { date, start, patient, room }. onSaved(visit)
+ * initial: { date, start, patient, room, note, serviceId, service, dur }.
+ * lockPatient: bemorni o‘zgartirib bo‘lmaydi. onSaved(visit)
  */
-export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
+export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPatient = false }) {
   const patients = useBemorlar()
   const services = serviceOptions(useXizmatlar())
   const settings = useClinicSettings()
@@ -36,17 +38,22 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
   const [patient, setPatient] = useState(initial.patient || null)
   const [find, setFind] = useState('')
   const [creating, setCreating] = useState(false)
-  const [serviceId, setServiceId] = useState('')
-  const svc = services.find((s) => s.id === serviceId)
-  const [dur, setDur] = useState(30)
+  const [serviceId, setServiceId] = useState(initial.serviceId || '')
+  const carried = initial.service && !services.some((s) => s.id === initial.serviceId || s.name === initial.service)
+    ? [{ id: initial.serviceId || 'carried-service', name: initial.service, duration: initial.dur }]
+    : []
+  const serviceList = [...carried, ...services]
+  const matchedId = serviceId || serviceList.find((s) => s.id === initial.serviceId || (initial.service && s.name === initial.service))?.id || ''
+  const svc = serviceList.find((s) => s.id === matchedId)
+  const [dur, setDur] = useState(Number(initial.dur) || 30)
   const [date, setDate] = useState(initial.date && initial.date >= today ? initial.date : today)
   const [room, setRoom] = useState(chairs.includes(initial.room) ? initial.room : chairs[0] || '')
   const [doctor, setDoctor] = useState(staff[0]?.name || 'me')
   const [time, setTime] = useState(initial.start || '')
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(initial.note || '')
   const [err, setErr] = useState('')
   const roomNow = chairs.includes(room) ? room : chairs[0] || ''
-  const busy = visits.filter((v) => v.date === date && v.room === roomNow && v.status !== 'bekor')
+  const busy = visits.filter((v) => v.date === date && v.room === roomNow && v.status !== 'bekor' && v.status !== 'kelmadi')
   const slots = useMemo(() => freeSlots(settings, date, { dur, busy }), [settings, date, dur, busy])
   const timeNow = slots.includes(time) ? time : ''
   const found = patients.filter((p) => `${p.name} ${p.phone}`.toLowerCase().includes(find.trim().toLowerCase())).slice(0, 8)
@@ -77,9 +84,9 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
           <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Bemor *</span>
             {patient ? (
               <span className="flex items-center gap-2 rounded-xl border border-line px-3 py-2">
-                <span className="grid size-8 place-items-center rounded-full bg-sea-50 text-[11px] font-bold text-sea">{patient.name.split(' ').slice(0, 2).map((w) => w[0]).join('')}</span>
+                <PersonAvatar src={patient.photo} name={patient.name} size={32} />
                 <span className="min-w-0 flex-1"><b className="block truncate text-[13px] text-ink">{patient.name}</b><span className="text-[11px] text-muted">{[patient.phone, patient.age].filter(Boolean).join(' · ')}</span></span>
-                <button type="button" onClick={() => setPatient(null)} aria-label="Bemorni o‘zgartirish"><X className="size-4 text-muted" /></button>
+                {!lockPatient && <button type="button" onClick={() => setPatient(null)} aria-label="Bemorni o‘zgartirish"><X className="size-4 text-muted" /></button>}
               </span>
             ) : (
               <div className="rounded-xl border border-line">
@@ -94,10 +101,10 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Xizmat *</span>
-              {services.length ? (
-                <select value={serviceId} onChange={(e) => { setServiceId(e.target.value); const s = services.find((x) => x.id === e.target.value); if (s?.duration) setDur(Number(s.duration)) }} className={input}>
+              {serviceList.length ? (
+                <select value={matchedId} onChange={(e) => { setServiceId(e.target.value); const s = services.find((x) => x.id === e.target.value); if (s?.duration) setDur(Number(s.duration)) }} className={input}>
                   <option value="">Xizmatni tanlang</option>
-                  {services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {serviceList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               ) : <p className="rounded-xl bg-[#fff8e6] px-3 py-2 text-[12px]">Xizmatlar ro‘yxati bo‘sh. <Link to="/xizmatlar" className="font-semibold text-sea underline">Xizmat qo‘shing</Link></p>}
             </div>

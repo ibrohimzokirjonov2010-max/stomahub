@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import ProfilePlans from '../components/crm/ProfilePlans'
 import {
   AlertTriangle, Calendar, Camera, ChevronRight, Mail, MapPin, Phone, Plus, Send, X,
 } from 'lucide-react'
@@ -23,9 +24,19 @@ const LEGEND = [
 
 export default function Bemor() {
   const { id } = useParams()
+  const [params] = useSearchParams()
   useBemorlar()
   const p = getBemor(id)
-  const [tab, setTab] = useState('umumiy')
+  const tabFromUrl = (raw) => {
+    if (!raw) return ''
+    if (raw === 'reja' || raw === 'davolash' || raw === 'plan') return 'davolash'
+    return raw
+  }
+  const [tab, setTab] = useState(() => tabFromUrl(params.get('tab')) || 'umumiy')
+  useEffect(() => {
+    const next = tabFromUrl(params.get('tab'))
+    if (next) setTab(next)
+  }, [params])
   const [dent, setDent] = useState('doimiy')
   const [edit, setEdit] = useState(false)
   const [visit, setVisit] = useState(false)
@@ -200,7 +211,7 @@ export default function Bemor() {
           {(p.visits || []).map((v, i) => <li key={i} className="flex justify-between border-b border-line py-2 text-[13px]"><span>{v.date} — {v.kind} {v.tooth || ''}</span><span className="text-muted">{v.doctor}</span></li>)}
         </ul>
       )}
-      {tab === 'davolash' && <p className="mt-3 rounded-2xl bg-white p-4 text-[13px] text-ink-2 shadow-card">{(p.visits || []).map((v) => `${v.date}: ${v.kind}`).join(' · ') || 'Reja yo‘q.'}</p>}
+      {tab === 'davolash' && <ProfilePlans patient={p} highlightId={params.get('plan')} visitId={params.get('visit')} />}
       {tab === 'tolov' && (
         <div className="mt-3 rounded-2xl bg-white p-4 text-[13px] shadow-card">
           <Row k="Umumiy summa" v={som(p.total)} />

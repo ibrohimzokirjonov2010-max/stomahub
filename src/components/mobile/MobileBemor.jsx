@@ -1,6 +1,7 @@
 import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import ProfilePlans from '../crm/ProfilePlans'
 import {
   ChevronLeft, MoreVertical, Camera, Phone, CalendarDays, CreditCard, PencilLine, AlertCircle, ChevronRight, CheckCircle2, Wallet,
   PieChart, PlusCircle, Check, Trash2, Copy, ImagePlus, FileText, Clock, Stethoscope,
@@ -28,7 +29,12 @@ function BemorView({ id }) {
   const p = getBemor(id)
   const navigate = useNavigate()
   const location = useLocation()
-  const [tab, setTab] = useState('umumiy')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState(() => params.get('tab') || 'umumiy')
+  useEffect(() => {
+    const next = params.get('tab')
+    if (next) setTab(next)
+  }, [params])
   const [sheet, setSheet] = useState(() => (location.state?.visit ? { visit: {} } : null))
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState(() => location.state?.toast || '')
@@ -192,6 +198,7 @@ function BemorView({ id }) {
 
         {tab === 'reja' && (
           <>
+            <ProfilePlans patient={p} highlightId={params.get('plan')} visitId={params.get('visit')} />
             <Card title="Rejalashtirilgan qabullar">
               {planned.length ? <Timeline list={planned} offset={(v) => visits.indexOf(v)} onOpen={(i) => setSheet({ visitInfo: i })} /> : <p className="text-[12px] text-muted">Rejalashtirilgan qabul yo‘q</p>}
             </Card>

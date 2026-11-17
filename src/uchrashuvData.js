@@ -19,6 +19,10 @@ export const tones = {
   davol: { bg: '#e7f1ff', bd: '#c5daf6', dot: '#5b93e6', label: 'Davolanmoqda' },
   yakun: { bg: '#f2f4f7', bd: '#e1e6ee', dot: '#98a2b3', label: 'Yakunlangan' },
   bekor: { bg: '#ffecee', bd: '#f6c9cf', dot: '#ef6b7b', label: 'Bekor qilingan' },
+  keldi: { bg: '#e7f8ee', bd: '#b7e4c7', dot: '#3dbe74', label: 'Keldi' },
+  kelmadi: { bg: '#ffecee', bd: '#f6c9cf', dot: '#ef6b7b', label: 'Kelmadi' },
+  qabulda: { bg: '#e3f4f5', bd: '#b7e0e4', dot: '#0b8a95', label: 'Qabulda' },
+  yakunlangan: { bg: '#f2f4f7', bd: '#e1e6ee', dot: '#98a2b3', label: 'Yakunlangan' },
 }
 
 const pic = (name) => (name ? `/images/bemorlar/${name}.jpg` : '')

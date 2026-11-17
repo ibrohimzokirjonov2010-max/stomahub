@@ -186,3 +186,67 @@ export function saveTemplate(t) {
   templates = [{ ...t, id: `tpl-${Date.now()}` }, ...templates.filter((x) => x.name !== t.name)]
   emit()
 }
+
+export function plansForPatient(list, patient) {
+  if (!patient) return []
+  const id = patient.id || patient.patientId || ''
+  const name = (patient.name || '').toLowerCase()
+  return (list || []).filter((p) => (id && p.patient?.id === id) || (name && p.patient?.name?.toLowerCase() === name))
+}
+
+export function planForVisit(list, visit, patient) {
+  if (!visit) return null
+  const all = list || []
+  const byVisit = all.find((p) => p.visitId === visit.id || (Array.isArray(p.visitIds) && p.visitIds.includes(visit.id)) || (p.stages || []).some((s) => s.visitId === visit.id))
+  if (byVisit) return byVisit
+  const mine = plansForPatient(all, patient || { id: visit.patientId, name: visit.name })
+  return mine.find((p) => p.status !== 'yakunlangan') || mine[0] || null
+}
+
+/** Bosqichlarni "bajarildi" qiladi (sana + tashrif id). PR #172 dagi tish kartasi hook'i patchPlan orqali ishlaydi. */
+export function completeVisitStages(planId, stageIds, { date = TODAY, visitId } = {}) {
+  const ids = new Set(stageIds)
+  patchPlan(planId, (p) => ({
+    stages: (p.stages || []).map((s) => (ids.has(s.id) ? { ...s, status: 'bajarildi', date: date || s.date, visitId: visitId || s.visitId } : s)),
+  }))
+}
+
+export function saveDonePlanFromServices(patient, services, { date = TODAY, visitId } = {}) {
+  const stages = (services || []).map((s, i) => ({
+    id: `st-${Date.now().toString(36)}-${i}`,
+    title: s.name || s.title || 'Xizmat',
+    desc: '',
+    teeth: Array.isArray(s.teeth) ? s.teeth : (s.tooth ? [s.tooth] : []),
+    art: null,
+    price: Number(s.price) || 0,
+    date: '',
+    status: 'rejada',
+    visitId,
+  }))
+  const plan = {
+    id: `dr-${Date.now().toString(36)}`,
+    code: nextPlanCode(),
+    patient: patient ? { id: patient.id, name: patient.name, phone: patient.phone, age: patient.age, gender: patient.gender, city: patient.city, photo: patient.photo, code: patient.code } : null,
+    doctor: 'me',
+    title: stages.map((s) => s.title).slice(0, 2).join(' + ') || 'Davolash rejasi',
+    subtitle: '',
+    status: 'jarayonda',
+    start: date,
+    chair: 'Kreslo 1',
+    teeth: {},
+    surfaces: {},
+    items: [],
+    groups: [],
+    discount: 0,
+    payMode: 'full',
+    note: '',
+    paid: 0,
+    payments: [],
+    visits: [],
+    stages,
+    visitId,
+  }
+  savePlan(plan)
+  completeVisitStages(plan.id, stages.map((s) => s.id), { date, visitId })
+  return getPlan(plan.id) || plan
+}

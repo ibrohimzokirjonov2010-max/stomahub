@@ -4,6 +4,8 @@ import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
+if (import.meta.env.DEV) import('./dev/crmShotBridge.js')
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>

@@ -1,19 +1,24 @@
-import { useMemo, useState } from 'react'
-import { Bell, Calendar, Check, ChevronLeft, ChevronRight, Clock, Plus, Search, Users, X } from 'lucide-react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Plus, Users, X } from 'lucide-react'
 import ShopLayout from '../components/market/ShopLayout'
 import AppointmentForm from '../components/crm/AppointmentForm'
+import VisitDetails, { bookDraftFromVisit, patientOfVisit } from '../components/crm/VisitDetails'
+import VisitPayDialog from '../components/crm/VisitPayDialog'
+import PersonAvatar from '../components/PersonAvatar'
+import { useBemorlar } from '../bemorData'
 import { chairNames, useClinicSettings } from '../clinicSettings'
 import { tashkentToday } from '../tashkentDate'
 import {
   MONTHS, WDS, alignWeek, clockRange, doctors, isoOf, labelRange, longDate, minutes, parts, setVisits, useVisits, shift, tones, weekDays, weekdayIndex,
 } from '../uchrashuvData'
 
-const HOUR = 44
 const START = 8 * 60
-const SLOTS = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30']
+const HOURS = Array.from({ length: 11 }, (_, i) => 8 + i)
+const SLOT_COUNT = 20
 
 export default function Uchrashuvlar() {
   const clinic = useClinicSettings()
+  const patients = useBemorlar()
   const rows = useVisits()
   const setRows = setVisits
   const [anchor, setAnchor] = useState(() => alignWeek(tashkentToday()))
@@ -26,6 +31,8 @@ export default function Uchrashuvlar() {
   const [draft, setDraft] = useState(null)
   const [sideAll, setSideAll] = useState(false)
   const [menu, setMenu] = useState(null)
+  const [picked, setPicked] = useState(null)
+  const [payFor, setPayFor] = useState(null)
 
   const days = weekDays(anchor)
   const list = useMemo(() => rows.filter((r) => {
@@ -38,12 +45,13 @@ export default function Uchrashuvlar() {
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date) || minutes(a.start) - minutes(b.start))
 
-  const filtered = doc !== 'all' || room !== 'all' || q
+  const livePicked = picked ? list.find((r) => r.id === picked.visit.id) || picked.visit : null
+
   const stats = {
         n: dayRows.length,
         neu: dayRows.filter((r) => r.isNew).length,
-        done: dayRows.filter((r) => r.status === 'yakun').length,
-        cancel: dayRows.filter((r) => r.status === 'bekor').length,
+        done: dayRows.filter((r) => r.status === 'yakun' || r.status === 'yakunlangan').length,
+        cancel: dayRows.filter((r) => r.status === 'bekor' || r.status === 'kelmadi').length,
         avg: dayRows.length ? Math.round(dayRows.reduce((s, r) => s + r.dur, 0) / dayRows.length) : 0,
         load: Math.min(100, Math.round(dayRows.reduce((s, r) => s + r.dur, 0) / 4.2)),
       }
@@ -59,10 +67,21 @@ export default function Uchrashuvlar() {
     setOpen(true)
   }
 
+  const openBook = (visit, patient, { reschedule } = {}) => {
+    const who = patient || patientOfVisit(visit, patients)
+    setPicked(null)
+    setDraft(bookDraftFromVisit(visit, who, { reschedule }))
+    setOpen(true)
+  }
+
   const save = (visit) => {
+    if (draft?.rescheduledFrom) {
+      setRows((list) => list.map((it) => (it.id === visit.id ? { ...it, rescheduledFrom: draft.rescheduledFrom } : it)))
+    }
     setFocus(visit.date)
     if (!weekDays(anchor).some((day) => day.iso === visit.date)) setAnchor(alignWeek(visit.date))
     setOpen(false)
+    setDraft(null)
   }
 
   return (
@@ -74,7 +93,7 @@ export default function Uchrashuvlar() {
             <p className="mt-1 text-[13px] text-muted">Klinika jadvali va bemor qabuli</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => jump('2026-10-24')} className="h-9 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold">Bugun</button>
+            <button onClick={() => jump(tashkentToday())} className="h-9 rounded-lg border border-line bg-white px-3 text-[12.5px] font-semibold">Bugun</button>
             <button onClick={() => openNew(focus, '10:30')} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sea px-3 text-[12.5px] font-semibold text-white"><Plus className="size-4" /> Yangi uchrashuv</button>
           </div>
         </div>
@@ -102,12 +121,12 @@ export default function Uchrashuvlar() {
           <Chip on={doc === 'all'} onClick={() => setDoc('all')}>Barchasi</Chip>
           {doctors.map((d) => (
             <Chip key={d.id} on={doc === d.id} onClick={() => setDoc(d.id)}>
-              <b className="grid size-5 place-items-center rounded-full bg-sea-50 text-[9px] text-sea">{d.name.split(' ')[1][0]}</b>
+              <b className="grid size-5 place-items-center rounded-full bg-sea-50 text-[9px] text-sea">{d.name.split(' ')[1]?.[0] || d.name[0]}</b>
               <span className="text-left leading-tight"><span className="block">{d.name}</span><span className="block text-[9px] font-normal text-muted">{d.role}</span></span>
             </Chip>
           ))}
           <span className="ml-auto hidden flex-wrap items-center gap-2 text-[10.5px] text-muted xl:flex">
-            {Object.values(tones).map((t) => <span key={t.label} className="inline-flex items-center gap-1"><i className="size-2 rounded-full" style={{ background: t.dot }} />{t.label}</span>)}
+            {Object.values(tones).filter((t, i, arr) => arr.findIndex((x) => x.label === t.label) === i).map((t) => <span key={t.label} className="inline-flex items-center gap-1"><i className="size-2 rounded-full" style={{ background: t.dot }} />{t.label}</span>)}
           </span>
         </div>
 
@@ -116,7 +135,7 @@ export default function Uchrashuvlar() {
             {mode === 'oy' ? (
               <Month anchor={anchor} rows={list} focus={focus} onPick={(iso) => { setFocus(iso); setMode('kun') }} />
             ) : (
-              <Week days={mode === 'kun' ? days.filter((d) => d.iso === focus) : days} rows={list} focus={focus} onFocus={setFocus} onSlot={openNew} />
+              <Week days={mode === 'kun' ? days.filter((d) => d.iso === focus) : days} rows={list} focus={focus} onFocus={setFocus} onSlot={openNew} onVisit={(visit, el) => setPicked({ visit, anchor: el })} />
             )}
           </section>
 
@@ -131,20 +150,22 @@ export default function Uchrashuvlar() {
             <ul className="mt-2 space-y-2">
               {sideRows.map((r) => (
                 <li key={r.id} className="flex items-start gap-2 text-[12px]">
-                  <span className="w-10 shrink-0 pt-1 text-[10.5px] leading-tight text-muted">{r.start}<br />{clockRange(r.start, r.dur).slice(-5)}</span>
-                  <Face src={r.photo} name={r.name} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{r.name}</span>
-                    <span className="block text-[11px] text-muted">{r.service}</span>
-                    <span className="block text-[11px] text-muted">{r.room}</span>
-                  </span>
-                  <span className="relative">
-                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: tones[r.status].bg, color: '#245' }}>{tones[r.status].label}</span>
-                    <button aria-label="Holat" onClick={() => setMenu(menu === r.id ? null : r.id)} className="ml-1 text-muted">···</button>
+                  <button type="button" onClick={(e) => setPicked({ visit: r, anchor: e.currentTarget })} className="flex min-w-0 flex-1 items-start gap-2 text-left">
+                    <span className="w-10 shrink-0 pt-1 text-[10.5px] leading-tight text-muted">{r.start}<br />{clockRange(r.start, r.dur).slice(-5)}</span>
+                    <PersonAvatar src={r.photo} name={r.name} size={32} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">{r.name}</span>
+                      <span className="block text-[11px] text-muted">{r.service}</span>
+                      <span className="block text-[11px] text-muted">{r.room}</span>
+                    </span>
+                  </button>
+                  <span className="relative shrink-0">
+                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: (tones[r.status] || tones.tasdiq).bg, color: '#245' }}>{(tones[r.status] || tones.tasdiq).label}</span>
+                    <button type="button" aria-label="Holat" onClick={() => setMenu(menu === r.id ? null : r.id)} className="ml-1 text-muted">···</button>
                     {menu === r.id && (
                       <div className="absolute right-0 z-10 mt-1 w-36 rounded-lg bg-white py-1 shadow-card">
-                        {Object.entries(tones).map(([k, t]) => (
-                          <button key={k} onClick={() => { setRows((list) => list.map((it) => it.id === r.id ? { ...it, status: k } : it)); setMenu(null) }} className="block w-full px-2 py-1 text-left text-[11.5px] hover:bg-sea-50">{t.label}</button>
+                        {Object.entries(tones).filter(([, t], i, arr) => arr.findIndex(([, x]) => x.label === t.label) === i).map(([k, t]) => (
+                          <button key={k} type="button" onClick={() => { setRows((list) => list.map((it) => it.id === r.id ? { ...it, status: k } : it)); setMenu(null) }} className="block w-full px-2 py-1 text-left text-[11.5px] hover:bg-sea-50">{t.label}</button>
                         ))}
                       </div>
                     )}
@@ -173,68 +194,114 @@ export default function Uchrashuvlar() {
           </aside>
         </div>
       </div>
-      {open && <AppointmentForm initial={draft || {}} onClose={() => setOpen(false)} onSaved={save} />}
+      {livePicked && !open && !payFor && (
+        <VisitDetails
+          visit={livePicked}
+          anchor={picked.anchor}
+          onClose={() => setPicked(null)}
+          onPay={(_v, patient) => setPayFor(patient)}
+          onBook={openBook}
+        />
+      )}
+      {payFor && <VisitPayDialog patient={payFor} onClose={() => setPayFor(null)} />}
+      {open && <AppointmentForm initial={draft || {}} lockPatient={Boolean(draft?.lockPatient)} onClose={() => { setOpen(false); setDraft(null) }} onSaved={save} />}
     </ShopLayout>
   )
 }
 
-function Week({ days, rows, focus, onFocus, onSlot }) {
-  const hours = Array.from({ length: 11 }, (_, i) => 8 + i)
+function Week({ days, rows, focus, onFocus, onSlot, onVisit }) {
+  const scroller = useRef(null)
+  const hours = HOURS
+  const today = tashkentToday()
+  const nowMins = new Date().getHours() * 60 + new Date().getMinutes()
+
+  useLayoutEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    const hour = Number.parseFloat(getComputedStyle(el).getPropertyValue('--uch-hour')) || 80
+    const start = START
+    const end = start + hours.length * 60
+    let top = 0
+    if (nowMins >= start && nowMins < end) {
+      top = ((nowMins - start) / 60) * hour - Math.min(96, el.clientHeight / 3)
+    }
+    el.scrollTop = Math.max(0, top)
+  }, [days.length, focus, hours.length, nowMins])
+
   return (
-    <div className="min-w-0">
-      <div className="grid" style={{ gridTemplateColumns: `48px repeat(${days.length}, minmax(0, 1fr))` }}>
-        <div />
-        {days.map((d) => (
-          <button key={d.iso} onClick={() => onFocus(d.iso)} className="pb-1 text-center">
-            <span className="block text-[11px] text-muted">{d.wd}</span>
-            <span className={`mx-auto mt-0.5 grid size-7 place-items-center rounded-full text-[12px] font-bold ${d.iso === focus ? 'bg-sea text-white' : 'text-ink'}`}>{d.d}</span>
-          </button>
-        ))}
-      </div>
-      <div className="uch-scroll">
-        <div className="grid min-w-[720px]" style={{ gridTemplateColumns: `48px repeat(${days.length}, minmax(0, 1fr))` }}>
-          <div>
-            {hours.map((h) => <div key={h} className="pr-1 text-right text-[10px] text-muted" style={{ height: HOUR }}>{String(h).padStart(2, '0')}:00</div>)}
+    <div className="min-w-0" data-testid="uch-week">
+      <div ref={scroller} className="uch-scroll" data-testid="uch-scroll">
+        <div className="min-w-[720px]">
+          <div className="uch-head grid" style={{ gridTemplateColumns: `48px repeat(${days.length}, minmax(0, 1fr))` }}>
+            <div className="uch-time" />
+            {days.map((d) => (
+              <button key={d.iso} onClick={() => onFocus(d.iso)} className="pb-1 text-center">
+                <span className="block text-[11px] text-muted">{d.wd}</span>
+                <span className={`mx-auto mt-0.5 grid size-7 place-items-center rounded-full text-[12px] font-bold ${d.iso === focus ? 'bg-sea text-white' : 'text-ink'}`}>{d.d}</span>
+              </button>
+            ))}
+          </div>
+          <div className="grid" style={{ gridTemplateColumns: `48px repeat(${days.length}, minmax(0, 1fr))` }}>
+          <div className="uch-time">
+            {hours.map((h) => <div key={h} className="pr-1 text-right text-[10px] leading-none text-muted" style={{ height: 'var(--uch-hour)' }}>{String(h).padStart(2, '0')}:00</div>)}
           </div>
           {days.map((d) => (
             <div
               key={d.iso}
               className="relative border-l border-line"
-              style={{ height: hours.length * HOUR, backgroundImage: `repeating-linear-gradient(#eef2f6 0 1px, transparent 1px ${HOUR}px)` }}
+              style={{
+                height: `calc(${hours.length} * var(--uch-hour))`,
+                backgroundImage: 'repeating-linear-gradient(to bottom, #e4e9f0 0 1px, transparent 1px calc(var(--uch-hour) / 2 - 1px), #eef2f6 calc(var(--uch-hour) / 2 - 1px) calc(var(--uch-hour) / 2), transparent calc(var(--uch-hour) / 2) var(--uch-hour))',
+              }}
             >
-              {Array.from({ length: 20 }, (_, i) => {
+              {Array.from({ length: SLOT_COUNT }, (_, i) => {
                 const mins = START + i * 30
                 const label = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
                 return (
                   <button
                     key={label}
                     type="button"
-                    aria-label={`${d.d} okt ${label}`}
+                    data-testid={`uch-slot-${d.iso}-${label}`}
+                    aria-label={`Yangi uchrashuv: ${d.d} ${MONTHS[d.m - 1]}, ${label}`}
                     onClick={() => onSlot(d.iso, label)}
-                    className="absolute left-0 right-0 z-0 hover:bg-sea-50"
-                    style={{ top: i * (HOUR / 2), height: HOUR / 2 }}
-                  />
+                    className="uch-slot absolute left-0 right-0 z-0"
+                    style={{ top: `calc(${i} * var(--uch-hour) / 2)`, height: 'calc(var(--uch-hour) / 2)' }}
+                  >
+                    <span className="uch-slot-label">+ {label}</span>
+                  </button>
                 )
               })}
+              {d.iso === today && nowMins >= START && nowMins < START + hours.length * 60 && (
+                <div className="uch-now" style={{ top: `calc(${(nowMins - START) / 60} * var(--uch-hour))` }} />
+              )}
               {rows.filter((r) => r.date === d.iso).map((r) => {
-                const top = ((minutes(r.start) - START) / 60) * HOUR
-                const height = Math.max(26, (r.dur / 60) * HOUR - 3)
-                const tone = tones[r.status]
+                const tone = tones[r.status] || tones.tasdiq
+                const top = `calc(${(minutes(r.start) - START) / 60} * var(--uch-hour))`
+                const height = `max(calc(var(--uch-hour) / 2 - 4px), calc(${r.dur / 60} * var(--uch-hour) - 4px))`
                 return (
                   <button
                     key={r.id}
                     type="button"
-                    className="absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-md border px-1 py-0.5 text-left text-[10px] leading-tight"
+                    data-testid={`uch-visit-${r.id}`}
+                    aria-label={`${r.name}, ${clockRange(r.start, r.dur)}, ${r.service}`}
+                    onClick={(e) => { e.stopPropagation(); onVisit(r, e.currentTarget) }}
+                    className="absolute left-0.5 right-0.5 z-10 overflow-hidden rounded-md border px-1 py-0.5 text-left leading-tight"
                     style={{ top, height, background: tone.bg, borderColor: tone.bd }}
                   >
-                    <b className="block">{clockRange(r.start, r.dur)}</b>
-                    <span className="block truncate font-semibold">{r.name}</span>
-                    <span className="block truncate text-muted">{r.service}</span>
+                    <span className="flex h-full min-w-0 gap-1 overflow-hidden">
+                      <PersonAvatar src={r.photo} name={r.name} size={22} className="mt-px shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <b className="block truncate text-[10px] font-bold">{clockRange(r.start, r.dur)}</b>
+                        <span className="block truncate text-[11px] font-semibold">{r.name}</span>
+                        <span className="block truncate text-[10px] text-muted">{r.service}</span>
+                      </span>
+                    </span>
                   </button>
                 )
               })}
             </div>
           ))}
+          </div>
         </div>
       </div>
     </div>
@@ -248,7 +315,6 @@ function Month({ anchor, rows, focus, onPick }) {
   const cells = [...Array(lead).fill(null), ...Array.from({ length: count }, (_, i) => i + 1)]
   return (
     <div>
-      <p className="mb-2 text-center text-[13px] font-bold capitalize">{MONTHS[m - 1]} {y}</p>
       <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted">{WDS.map((w) => <span key={w}>{w}</span>)}</div>
       <div className="mt-1 grid grid-cols-7 gap-1">
         {cells.map((d, i) => {
@@ -268,13 +334,6 @@ function Month({ anchor, rows, focus, onPick }) {
 
 function Chip({ on, onClick, children }) {
   return <button onClick={onClick} className={`inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold ${on ? 'bg-sea text-white' : 'bg-white text-ink shadow-card'}`}>{children}</button>
-}
-
-function Face({ src, name }) {
-  const [ok, setOk] = useState(Boolean(src))
-  const letters = name.split(' ').slice(0, 2).map((w) => w[0]).join('')
-  if (!src || !ok) return <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sea-50 text-[10px] font-bold text-sea">{letters}</span>
-  return <img src={src} alt="" onError={() => setOk(false)} className="size-8 shrink-0 rounded-full object-cover" />
 }
 
 function Stat({ icon: Icon, n, label }) {

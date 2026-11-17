@@ -142,10 +142,37 @@
 .bemor-dialog-body { min-height: 0; flex: 1; overflow-y: auto; }
 .uch-layout { display: grid; width: 100%; min-width: 0; gap: 12px; align-items: start; }
 .uch-layout > * { min-width: 0; }
-.uch-scroll { min-width: 0; overflow-x: auto; }
+.uch-scroll { min-width: 0; overflow: auto; max-height: calc(100dvh / var(--z) - 240px); }
 @media (min-width: 1100px) {
   .uch-layout { grid-template-columns: minmax(0, 1fr) 280px; }
 }
+:root { --uch-hour: 80px; }
+@media (max-width: 767.98px) { :root { --uch-hour: 96px; } }
+.uch-time { position: sticky; left: 0; z-index: 6; background: #fff; }
+.uch-now { pointer-events: none; position: absolute; right: 0; left: 0; z-index: 15; border-top: 2px solid #e11d48; }
+.uch-slot { cursor: pointer; }
+.uch-slot-label {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0b8a95;
+  opacity: 0;
+  pointer-events: none;
+}
+.uch-slot:hover,
+.uch-slot:focus-visible,
+.uch-slot:active { background: var(--color-sea-50); }
+.uch-slot:hover .uch-slot-label,
+.uch-slot:focus-visible .uch-slot-label,
+.uch-slot:active .uch-slot-label { opacity: 1; }
+@media (hover: none) {
+  .uch-slot:active .uch-slot-label { opacity: 1; }
+}
+.uch-head { position: sticky; top: 0; z-index: 20; background: #fff; }
+.uch-head .uch-time { z-index: 21; }
 .bemor-table { width: 100%; min-width: 720px; border-collapse: collapse; }
 .tolov-stats { display: grid; width: 100%; min-width: 0; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tolov-stats > * { min-width: 0; }
