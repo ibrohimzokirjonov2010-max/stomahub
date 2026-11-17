@@ -260,8 +260,8 @@ export function CatalogCard({ card, liked, onLike, onAdd, desktop }) {
   )
   return (
     <Link to={card.href} data-testid="catalog-card" className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgb(11_31_58/0.07)] active:scale-[0.99]">
-      <div className={`relative ${card.fit === 'contain' ? 'bg-[#f5f8f9]' : 'bg-[#eef3f6]'} ${desktop ? 'h-[180px] min-[1900px]:h-[160px]' : 'h-[150px]'}`}>
-        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`size-full ${card.fit === 'contain' ? 'object-contain p-3' : 'object-cover object-[50%_18%]'}`} /> : card.tile ? <div aria-hidden="true" className="grid size-full place-items-center bg-[linear-gradient(135deg,#0b8a95,#0b5b66)] text-[30px] font-extrabold tracking-wide text-white">{card.tile}</div> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
+      <div data-testid="catalog-card-img" className={`relative aspect-square w-full overflow-hidden ${card.fit === 'contain' ? 'bg-[#f7fafb]' : 'bg-[#eef3f6]'}`}>
+        {card.image ? <img src={card.image} alt={card.title} loading="lazy" className={`absolute inset-0 size-full ${card.fit === 'contain' ? 'object-contain p-1.5' : 'object-cover object-[50%_18%]'}`} /> : card.tile ? <div aria-hidden="true" className="grid size-full place-items-center bg-[linear-gradient(135deg,#0b8a95,#0b5b66)] text-[30px] font-extrabold tracking-wide text-white">{card.tile}</div> : <div className="grid size-full place-items-center text-muted"><Tag className="size-8" /></div>}
         {card.badge && <span data-testid="catalog-badge" className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${badgeCls[card.badge.tone] || badgeCls.info}`}>{card.badge.text}</span>}
         {onLike && (
           <button type="button" onClick={(e) => { e.preventDefault(); onLike() }} aria-label="Sevimlilarga" aria-pressed={liked} className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/95 shadow-[0_1px_4px_rgb(11_31_58/0.15)]">
@@ -422,11 +422,11 @@ export function CatalogPage({ section }) {
       </div>
       <div className="mt-2.5">
         {section.loading && !section.items.length ? (
-          <div className={`grid gap-2.5 ${desktop ? 'grid-cols-3 min-[1280px]:grid-cols-4 min-[1536px]:grid-cols-5 min-[1900px]:grid-cols-6 min-[2400px]:grid-cols-7' : 'grid-cols-2'}`}>
-            {[0, 1, 2, 3].map((k) => <div key={k} className="h-[250px] animate-pulse rounded-2xl bg-white" />)}
+          <div className="catalog-card-grid">
+            {[0, 1, 2, 3].map((k) => <div key={k} className="aspect-[3/4] animate-pulse rounded-2xl bg-white" />)}
           </div>
         ) : list.length || sponsored.length ? (
-          <div data-testid="catalog-grid" className={`grid gap-2.5 ${desktop ? 'grid-cols-3 gap-4 min-[1280px]:grid-cols-4 min-[1536px]:grid-cols-5 min-[1900px]:grid-cols-6 min-[2400px]:grid-cols-7' : 'grid-cols-2'}`}>
+          <div data-testid="catalog-grid" className="catalog-card-grid">
             {sponsored.map(({ ad, item }) => <AdCard key={`ad-${ad.campaign_id}`} ad={ad} item={item} {...adProps} />)}
             {list.filter((it) => !sponsoredIds.has(it.id)).slice(0, limit).map((it) => {
               const card = section.card(it)

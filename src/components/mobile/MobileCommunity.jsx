@@ -47,11 +47,22 @@ const TAG_TEXT = { oldin: 'Oldin', keyin: 'Keyin' }
 export function PostImages({ p, onOpen }) {
   const im = p.images || []
   if (!im.length) return null
-  // absolute img + min-h-0: panjara balandligi kontent bilan yorilib ketmasin
-  const cell = (i, cls, overlay = null) => (
-    <button key={`${im[i]}-${i}`} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} className={`relative min-h-0 min-w-0 overflow-hidden rounded-xl bg-page ${cls}`}>
-      <img src={im[i]} alt={TAG_TEXT[labelOf(p, i)] || ''} loading="lazy" className="absolute inset-0 size-full object-cover" />
-      {TAG_TEXT[labelOf(p, i)] && <span className={`absolute bottom-1.5 left-1.5 z-[1] rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${labelOf(p, i) === 'oldin' ? 'bg-[#c2410c]/85' : 'bg-[#047857]/85'}`}>{TAG_TEXT[labelOf(p, i)]}</span>}
+  const badge = (i) => TAG_TEXT[labelOf(p, i)] ? (
+    <span className={`absolute bottom-1.5 left-1.5 z-[1] rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white ${labelOf(p, i) === 'oldin' ? 'bg-[#c2410c]/85' : 'bg-[#047857]/85'}`}>{TAG_TEXT[labelOf(p, i)]}</span>
+  ) : null
+  const moreBadge = (n) => n > 0 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[16px] font-bold text-white">+{n}</span> : null
+  // Bitta rasm: eni avto (posta sig‘adigan), balandligi telefonida 260, kompyuterda 320 px. Qora fon yo‘q.
+  const single = (i) => (
+    <button key={`${im[i]}-${i}`} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} aria-label="Rasmni kattalashtirish" className="relative mx-auto flex w-fit max-w-full items-center justify-center overflow-hidden rounded-xl bg-[#f4f7fa]">
+      <img src={im[i]} alt={TAG_TEXT[labelOf(p, i)] || ''} loading="lazy" className="h-auto max-h-[260px] w-auto max-w-full object-contain md:max-h-[320px]" />
+      {badge(i)}
+    </button>
+  )
+  // Miniatyuralar: ochiq fonda object-contain, qirqilmaydi
+  const thumb = (i, overlay = null) => (
+    <button key={`${im[i]}-${i}`} type="button" onClick={(e) => { e.stopPropagation(); onOpen(i) }} className="relative aspect-square min-h-0 min-w-0 overflow-hidden rounded-xl bg-[#f4f7fa]">
+      <img src={im[i]} alt={TAG_TEXT[labelOf(p, i)] || ''} loading="lazy" className="absolute inset-0 size-full object-contain p-1" />
+      {badge(i)}
       {overlay}
     </button>
   )
@@ -68,44 +79,31 @@ export function PostImages({ p, onOpen }) {
       return (
         <div className="min-w-0 overflow-hidden">
           <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${tone}`}>{title}</p>
-          <div className="grid gap-1.5 overflow-hidden">
-            {shown.map((i, k) => cell(i, list.length > 1 ? 'aspect-[4/3]' : 'aspect-[4/3]', more > 0 && k === shown.length - 1 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[16px] font-bold text-white">+{more}</span> : null))}
+          <div className="grid grid-cols-1 gap-1.5 overflow-hidden sm:grid-cols-2">
+            {shown.map((i, k) => thumb(i, more > 0 && k === shown.length - 1 ? moreBadge(more) : null))}
           </div>
         </div>
       )
     }
     return (
-      <div className="overflow-hidden">
+      <div data-testid="post-images" className="overflow-hidden">
         <div className="grid grid-cols-2 gap-2 overflow-hidden">{col('Oldin', before, 'text-[#c2410c]')}{col('Keyin', after, 'text-[#047857]')}</div>
         {shownRest.length > 0 && (
           <div className="mt-1.5 grid grid-cols-3 gap-1.5 overflow-hidden">
-            {shownRest.map((i, k) => cell(i, 'aspect-square', moreRest > 0 && k === shownRest.length - 1 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[16px] font-bold text-white">+{moreRest}</span> : null))}
+            {shownRest.map((i, k) => thumb(i, moreRest > 0 && k === shownRest.length - 1 ? moreBadge(moreRest) : null))}
           </div>
         )}
       </div>
     )
   }
-  if (im.length === 1) return <div className="overflow-hidden">{cell(0, 'block aspect-[4/3] w-full')}</div>
-  if (im.length === 2) {
-    return (
-      <div className="grid grid-cols-2 gap-1.5 overflow-hidden">
-        {[0, 1].map((i) => cell(i, 'aspect-square'))}
-      </div>
-    )
-  }
-  if (im.length === 3) {
-    return (
-      <div className="grid h-[168px] grid-cols-[1.3fr_1fr] gap-1.5 overflow-hidden">
-        {cell(0, 'h-full')}
-        <div className="grid min-h-0 grid-rows-2 gap-1.5">{[1, 2].map((i) => cell(i, 'h-full'))}</div>
-      </div>
-    )
-  }
-  // 4+: 2×2, ortiqchasi "+N"
-  const more = im.length - 4
+  if (im.length === 1) return <div data-testid="post-images">{single(0)}</div>
+  const cols = im.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+  const cap = im.length === 2 ? 2 : 6
+  const shown = idx.slice(0, cap)
+  const more = im.length - shown.length
   return (
-    <div className="grid grid-cols-2 gap-1.5 overflow-hidden">
-      {[0, 1, 2, 3].map((i) => cell(i, 'aspect-square', more > 0 && i === 3 ? <span className="absolute inset-0 z-[1] grid place-items-center bg-ink/55 text-[18px] font-bold text-white">+{more}</span> : null))}
+    <div data-testid="post-images" className={`grid ${cols} gap-1.5 overflow-hidden`}>
+      {shown.map((i, k) => thumb(i, more > 0 && k === shown.length - 1 ? moreBadge(more) : null))}
     </div>
   )
 }
