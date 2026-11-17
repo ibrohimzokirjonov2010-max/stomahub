@@ -174,7 +174,7 @@ function BemorView({ id }) {
                 <span className="mt-1 block text-[11.5px] text-[#c4841d]">{p.diseases.join(', ')}</span>
               </button>
             )}
-            <div className="min-w-[180px] flex-1 rounded-xl border border-line p-2.5">
+            <div className="min-w-[220px] flex-1 rounded-xl border border-line p-2.5">
               <div className="flex items-center justify-between text-[12px]"><span className="font-bold">Moliyaviy holat</span><button onClick={() => setTab('tolov')} className="font-semibold text-sea">Batafsil</button></div>
               <Row k="Umumiy summa" v={som(m.total)} />
               <Row k="To‘langan" v={som(m.paid)} green />
@@ -347,7 +347,7 @@ function Info({ k, v }) {
 }
 
 function Row({ k, v, green, red }) {
-  return <div className="mt-1 flex justify-between gap-2 text-[12px]"><span className="text-muted">{k}</span><span className={`font-semibold ${green ? 'text-[#1c9a52]' : ''} ${red ? 'text-[#e15b4c]' : ''}`}>{v}</span></div>
+  return <div className="mt-1 flex justify-between gap-2 text-[12px]"><span className="text-muted">{k}</span><span className={`whitespace-nowrap font-semibold ${green ? 'text-[#1c9a52]' : ''} ${red ? 'text-[#e15b4c]' : ''}`}>{v}</span></div>
 }
 
 /** Tanlangan tish: katta rasm, joriy holat va holatni tanlash tugmalari. */

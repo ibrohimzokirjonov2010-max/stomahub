@@ -178,7 +178,7 @@ export function syncVisitPlans(prev = [], next = []) {
       id,
       code: nextPlanCode(),
       patient: patientRef(v),
-      doctor: 'me',
+      doctor: v.doctor || 'me',
       title: 'Davolash rejasi',
       subtitle: list.slice(0, 2).map((s) => s.name).join(' + '),
       status: 'reja',

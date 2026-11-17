@@ -106,7 +106,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
             )}
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Xizmatlar *</span>
+            <div className="text-[12px] font-medium text-ink-2 max-sm:col-span-2"><span className="mb-1 block">Xizmatlar *</span>
               {serviceList.length ? (
                 <select
                   aria-label="Xizmat qo‘shish"

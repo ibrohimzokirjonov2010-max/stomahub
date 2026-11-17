@@ -58,7 +58,6 @@ const dayTitle = (iso) => {
 export default function MobileUchrashuvlar() {
   const visits = useVisits()
   const patients = useBemorlar()
-  const navigate = useNavigate()
   const location = useLocation()
   const [date, setDate] = useState(() => location.state?.date || TODAY)
   const [tab, setTab] = useState('all')
@@ -150,11 +149,11 @@ export default function MobileUchrashuvlar() {
           <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#e6f4f3] text-[#0b6d73]"><CalendarClock className="size-7" strokeWidth={1.6} /></span>
           <p className="mt-3 text-[14px] font-semibold text-ink">{day.length ? 'Bu bo‘limda uchrashuv yo‘q' : visits.length ? 'Bu kunga uchrashuv yo‘q' : 'Hali uchrashuvlar yo‘q'}</p>
           <p className="mt-1 text-[12px] text-muted">{day.length ? 'Boshqa bo‘limni tanlang' : 'Yangi uchrashuv belgilashingiz mumkin'}</p>
-          {date >= TODAY && <button type="button" onClick={() => navigate('/uchrashuvlar/yangi', { state: { date } })} className="mt-3 h-9 rounded-xl bg-sea-50 px-4 text-[12.5px] font-semibold text-sea">Uchrashuv qo‘shish</button>}
+          {date >= TODAY && <button type="button" onClick={() => setDraft({ date })} className="mt-3 h-9 rounded-xl bg-sea-50 px-4 text-[12.5px] font-semibold text-sea">Uchrashuv qo‘shish</button>}
         </div>
       )}
 
-      <button type="button" onClick={() => navigate('/uchrashuvlar/yangi', { state: { date: date >= TODAY ? date : TODAY } })} className="fixed bottom-[76px] right-3.5 z-30 flex h-12 items-center gap-2 rounded-full bg-[#0b6d73] pl-4 pr-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgb(11_109_115/0.4)] active:scale-95">
+      <button type="button" onClick={() => setDraft({ date: date >= TODAY ? date : TODAY })} data-testid="m-new-visit" className="fixed bottom-[76px] right-3.5 z-30 flex h-12 items-center gap-2 rounded-full bg-[#0b6d73] pl-4 pr-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgb(11_109_115/0.4)] active:scale-95">
         <Plus className="size-5" /> Uchrashuv
       </button>
 
@@ -207,7 +206,7 @@ function VisitCard({ v, p, onOpen, onMenu, onChat, onCall }) {
       <div className="flex gap-2.5" onClick={onOpen} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.() } }} role="button" tabIndex={0} data-testid={`uch-visit-${v.id}`}>
         {p ? <Link to={`/bemorlar/${p.id}`} onClick={(e) => e.stopPropagation()} className="h-fit shrink-0">{head}</Link> : <span className="h-fit shrink-0">{head}</span>}
         <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-1.5 pr-5">
+          <div className="flex items-start gap-1.5 pr-8">
             {p ? (
               <Link to={`/bemorlar/${p.id}`} onClick={(e) => e.stopPropagation()} className="min-w-0 flex-1 truncate text-[13.5px] font-bold leading-tight text-[#0d2a4a]">{v.name}</Link>
             ) : (
@@ -265,7 +264,7 @@ function WeekStrip({ date, onPick }) {
               const on = iso === date
               const { d, m } = parts(iso)
               return (
-                <button key={iso} type="button" aria-pressed={on} onClick={() => onPick(iso)} className={`flex h-[64px] flex-col items-center justify-center rounded-xl border text-center transition ${on ? 'border-[#0b6d73] bg-[#0b6d73] text-white shadow-[0_4px_10px_rgb(11_109_115/0.3)]' : 'border-line/70 bg-white text-ink'}`}>
+                <button key={iso} type="button" aria-pressed={on} data-testid={`m-day-${iso}`} onClick={() => onPick(iso)} className={`flex h-[64px] flex-col items-center justify-center rounded-xl border text-center transition ${on ? 'border-[#0b6d73] bg-[#0b6d73] text-white shadow-[0_4px_10px_rgb(11_109_115/0.3)]' : 'border-line/70 bg-white text-ink'}`}>
                   <span className={`text-[10.5px] ${on ? 'text-white/85' : 'text-ink-2'}`}>{DAY_SHORT[i]}</span>
                   <b className="text-[16px] font-bold leading-tight">{d}</b>
                   <span className={`text-[10.5px] capitalize ${on ? 'text-white/85' : 'text-ink-2'}`}>{MON_SHORT[m - 1]}</span>

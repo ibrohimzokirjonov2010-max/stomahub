@@ -13,7 +13,7 @@ export const PAY_METHODS = ['Naqd', 'Plastik karta', 'Click', 'Payme', 'Bank oâ€
 
 export const DEMO_DOCTORS = []
 export const DOCTORS = []
-export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DEMO_DOCTORS.find((d) => d.id === id) || { id: id || 'me', name: 'Shifokor', role: 'Stomatolog', photo: '' }
+export const doctorOf = (id) => DOCTORS.find((d) => d.id === id) || DEMO_DOCTORS.find((d) => d.id === id) || { id: id || 'me', name: id && id !== 'me' ? String(id) : 'Shifokor', role: 'Stomatolog', photo: '' }
 
 export const PLAN_STATUS = {
   reja: { label: 'Reja qilingan', bg: '#e8f0ff', color: '#3b6fd8', dot: '#3b82f6' },

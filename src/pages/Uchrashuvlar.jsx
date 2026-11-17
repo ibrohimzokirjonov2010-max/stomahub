@@ -301,12 +301,12 @@ function Week({ days, rows, focus, onFocus, onSlot, onVisit }) {
                     className={`uch-block ${tall ? 'uch-block-tall' : ''}`}
                     style={{ top, height, background: tone.bg, borderColor: tone.bd, borderLeftColor: tone.dot, color: tone.text }}
                   >
-                    <PersonAvatar src={r.photo} name={r.name} size={tall ? 32 : 26} className="uch-block-avatar" />
-                    <span className="uch-block-text">
+                    <span className="uch-block-top">
+                      <PersonAvatar src={r.photo} name={r.name} size={tall && days.length === 1 ? 24 : 20} className="uch-block-avatar" />
                       <span className="uch-block-time">{clockRange(r.start, r.dur)}</span>
-                      <span className="uch-block-name">{r.name}</span>
-                      <span className="uch-block-service">{r.service}</span>
                     </span>
+                    <span className="uch-block-name">{r.name}</span>
+                    <span className="uch-block-service">{r.service}</span>
                   </button>
                 )
               })}

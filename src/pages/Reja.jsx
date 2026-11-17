@@ -136,13 +136,13 @@ export default function Reja() {
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-ink">Davolash rejasi tafsiloti</h1>
+            <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-ink max-sm:text-[22px]">Davolash rejasi tafsiloti</h1>
             <p className="text-[12.5px] text-muted">Bemorning davolash rejasi va bosqichlari</p>
           </div>
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <OutlineBtn onClick={exportPdf}><Download className="size-4" /> PDF yuklab olish</OutlineBtn>
-            <OutlineBtn onClick={() => setDialog('visit')}><CalendarPlus className="size-4" /> Uchrashuv belgilash</OutlineBtn>
-            <button type="button" onClick={() => setDialog('pay')} disabled={!debt} className="inline-flex h-10 items-center gap-2 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white hover:bg-sea-600 disabled:opacity-50"><Plus className="size-4" /> To‘lov qo‘shish</button>
+          <div className="flex flex-wrap items-center gap-2 max-sm:w-full" onClick={(e) => e.stopPropagation()}>
+            <OutlineBtn onClick={exportPdf}><Download className="size-4 shrink-0" /> <span className="max-sm:hidden">PDF yuklab olish</span><span className="sm:hidden">PDF</span></OutlineBtn>
+            <OutlineBtn onClick={() => setDialog('visit')}><CalendarPlus className="size-4 shrink-0" /> <span className="max-sm:hidden">Uchrashuv belgilash</span><span className="sm:hidden">Uchrashuv</span></OutlineBtn>
+            <button type="button" onClick={() => setDialog('pay')} disabled={!debt} className="inline-flex h-10 items-center gap-2 rounded-xl bg-sea px-5 text-[12.5px] font-semibold text-white hover:bg-sea-600 disabled:opacity-50 max-sm:flex-1 max-sm:justify-center max-sm:px-3"><Plus className="size-4 shrink-0" /> <span className="max-sm:hidden">To‘lov qo‘shish</span><span className="sm:hidden">To‘lov</span></button>
             <div className="relative">
               <button type="button" aria-label="Boshqa amallar" onClick={() => setMenu(menu === 'head' ? '' : 'head')} className="grid size-10 place-items-center rounded-xl border border-line bg-white text-ink-2 hover:border-sea"><MoreVertical className="size-4" /></button>
               {menu === 'head' && (
@@ -273,16 +273,16 @@ export default function Reja() {
                         {i < plan.stages.length - 1 && <span className="absolute bottom-[-8px] top-1/2 w-0.5 bg-[#cfe8ea]" />}
                         <span className={`relative z-10 my-auto grid size-7 place-items-center rounded-full text-[12px] font-bold ${s.status === 'bajarildi' ? 'bg-[#dff3f3] text-sea' : s.status === 'jarayonda' ? 'bg-sea text-white' : 'border border-line bg-white text-ink-2'}`}>{i + 1}</span>
                       </div>
-                      <div className={`flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2.5 transition ${hit ? 'border-sea bg-[#f2fbfb]' : 'border-line'}`}>
+                      <div className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3 py-2.5 transition sm:flex-nowrap ${hit ? 'border-sea bg-[#f2fbfb]' : 'border-line'}`}>
                         <span className="grid w-4 shrink-0 place-items-center">{s.status === 'bajarildi' && <span className="grid size-4 place-items-center rounded-full bg-[#16a34a]"><Check className="size-2.5 text-white" strokeWidth={4} /></span>}</span>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 max-sm:basis-[calc(100%-72px)]">
                           <p className="truncate text-[12.5px] font-bold text-ink">{s.title}</p>
                           <p className="line-clamp-2 text-[11px] leading-snug text-muted">{s.desc}</p>
                         </div>
-                        <Cell label="Tish(lar)" w="w-[64px]">{s.teeth.join(', ') || '-'}</Cell>
-                        <Cell label="Sana" w="w-[76px]">{s.date ? dmy(s.date) : '-'}</Cell>
-                        <Cell label="Narx" w="w-[96px]">{money(s.price)} so‘m</Cell>
-                        <div className="w-[104px] shrink-0">
+                        <Cell label="Tish(lar)" w="w-[64px] max-sm:order-2 max-sm:w-[calc(50%-6px)]">{s.teeth.join(', ') || '-'}</Cell>
+                        <Cell label="Sana" w="w-[76px] max-sm:order-2 max-sm:w-[calc(50%-6px)]">{s.date ? dmy(s.date) : '-'}</Cell>
+                        <Cell label="Narx" w="w-[96px] max-sm:order-2 max-sm:w-[calc(50%-6px)]">{money(s.price)} so‘m</Cell>
+                        <div className="w-[104px] shrink-0 max-sm:order-2 max-sm:w-[calc(50%-6px)]">
                           <p className="text-[10px] text-muted">Holat</p>
                           <span className="mt-0.5 inline-block whitespace-nowrap rounded-md px-2 py-0.5 text-[10.5px] font-semibold" style={{ background: ss.bg, color: ss.color }}>{ss.label}</span>
                         </div>
@@ -418,7 +418,7 @@ function Cell({ label, w, children }) {
 }
 
 function OutlineBtn({ onClick, children }) {
-  return <button type="button" onClick={onClick} className="inline-flex h-10 items-center gap-2 rounded-xl border border-sea bg-white px-4 text-[12.5px] font-semibold text-sea hover:bg-[#f2fbfb]">{children}</button>
+  return <button type="button" onClick={onClick} className="inline-flex h-10 items-center gap-2 rounded-xl border border-sea bg-white px-4 text-[12.5px] font-semibold text-sea hover:bg-[#f2fbfb] max-sm:flex-1 max-sm:justify-center max-sm:px-2.5">{children}</button>
 }
 
 function MenuBtn({ danger, onClick, children }) {

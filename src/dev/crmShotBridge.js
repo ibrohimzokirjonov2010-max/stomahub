@@ -1,9 +1,10 @@
+// Faqat DEV: skrinshot / E2E uchun soxta ma'lumot kiritish ko'prigi (production build'ga kirmaydi).
 import { __shotSession } from '../sessionStore'
 import { addBemor, getBemor } from '../bemorData'
 import { setVisits } from '../uchrashuvData'
 import { setClinicSettings } from '../clinicSettings'
 import { saveXizmat } from '../xizmatData'
-import { savePlan } from '../rejaData'
+import { getPlans, savePlan } from '../rejaData'
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   window.__shotSession = __shotSession
@@ -13,4 +14,5 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   window.__setClinicSettings = setClinicSettings
   window.__saveXizmat = saveXizmat
   window.__savePlan = savePlan
+  window.__getPlans = getPlans
 }
