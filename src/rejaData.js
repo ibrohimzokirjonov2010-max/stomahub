@@ -2,6 +2,8 @@ import { useSyncExternalStore } from 'react'
 import { bindBlob, touchBlob } from './recordSync'
 import { shiftIso } from './klinikaData'
 import { tashkentToday } from './tashkentDate'
+import { getBemor, patchBemor } from './bemorData'
+import { STAGE_OPTS, reconcileList } from './teeth/autoToothStatus'
 
 // Bugungi sana (Asia/Tashkent) — avval '2026-10-25' qattiq yozilgan edi
 export const TODAY = tashkentToday()
@@ -157,8 +159,19 @@ function sync(p) {
   return p
 }
 
+// Bosqich "bajarildi" bo'lsa bemor tish kartasi avtomatik yangilanadi (src/teeth/autoToothStatus.js).
+function withAutoTeeth(prev, next) {
+  const pid = next?.patient?.id
+  const patient = pid && getBemor(pid)
+  if (!prev || !patient || !Array.isArray(next.stages)) return next
+  const r = reconcileList(prev.stages, next.stages, patient.teeth || {}, (s) => s.id, STAGE_OPTS)
+  if (!r.changed) return next
+  patchBemor(pid, { teeth: r.teeth })
+  return { ...next, stages: r.list }
+}
+
 export function savePlan(plan) {
-  const next = sync(plan)
+  const next = withAutoTeeth(plans.find((p) => p.id === plan.id), sync(plan))
   plans = plans.some((p) => p.id === plan.id) ? plans.map((p) => (p.id === plan.id ? next : p)) : [next, ...plans]
   emit()
 }
@@ -167,7 +180,7 @@ export function patchPlan(id, patch) {
   plans = plans.map((p) => {
     if (p.id !== id) return p
     const changes = typeof patch === 'function' ? patch(p) : patch
-    const next = { ...p, ...changes }
+    const next = withAutoTeeth(p, { ...p, ...changes })
     return 'status' in changes ? next : sync(next)
   })
   emit()
