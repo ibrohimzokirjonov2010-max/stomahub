@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-import { advanceWatch, formatRetry, gradeQuiz, gradeQuizSubmission, lessonOpen, mistakeRule, parseBunnyMessage, quizRetryGate, shouldReportProgress, subscribeBunnyPlayer, sumCoursePoints, BUNNY_PLAYER_EVENTS, BUNNY_PLAYER_ORIGIN, PROGRESS_REPORT_MS, WATCH_UNLOCK_RATIO } from '../src/courseRules.js'
+import { advanceWatch, catalogCtaLabel, courseDurationSeconds, formatRetry, gradeQuiz, gradeQuizSubmission, lessonOpen, lessonTakeaways, mistakeRule, nextWatchLesson, parseBunnyMessage, quizRetryGate, shouldReportProgress, subscribeBunnyPlayer, sumCoursePoints, BUNNY_PLAYER_EVENTS, BUNNY_PLAYER_ORIGIN, PROGRESS_REPORT_MS, WATCH_UNLOCK_RATIO } from '../src/courseRules.js'
 import { certFromRow, hoursLine, isCourseCertificate, pointsBadge } from '../src/sertifikatData.js'
 import { bunnySignature, mapBunnyStatus } from '../api/_lib/bunny.js'
 
@@ -231,4 +231,18 @@ test('kurs sertifikati ball, seminar CME', () => {
   assert.equal(hoursLine(course), '1 soat · 10 ball')
   assert.equal(hoursLine(seminar), '6 soat · 10 CME')
   assert.equal(sumCoursePoints([{ points: 10 }, { points: 4 }, { points: 0 }]), 14)
+})
+
+test('katalog tugmasi holatga qarab yoziladi', () => {
+  assert.equal(catalogCtaLabel({ price: 0 }), 'Boshlash')
+  assert.equal(catalogCtaLabel({ price: 120000 }), 'Sotib olish')
+  assert.equal(catalogCtaLabel({ price: 120000 }, { access: true, done: 0 }), 'Tomosha qilish')
+  assert.equal(catalogCtaLabel({ price: 0 }, { access: true, done: 2, complete: false }), 'Davom ettirish')
+})
+
+test('dars tavsifidan faqat haqiqiy bandlar olinadi', () => {
+  assert.deepEqual(lessonTakeaways(''), [])
+  assert.deepEqual(lessonTakeaways('Birinchi\nIkkinchi'), ['Birinchi', 'Ikkinchi'])
+  assert.equal(courseDurationSeconds({}, [{ durationSeconds: 60 }, { durationSeconds: 120 }]), 180)
+  assert.equal(nextWatchLesson([{ locked: true }, { locked: false, complete: true, id: 'a' }, { locked: false, complete: false, id: 'b' }]).id, 'b')
 })

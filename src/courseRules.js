@@ -258,3 +258,35 @@ export function toCatalogCard(row, index = 0) {
     rank: index,
   }
 }
+
+/** Dars tavsifidan haqiqiy bandlar. Bo‘sh bo‘lsa hech narsa qo‘shilmaydi. */
+export function lessonTakeaways(text) {
+  const raw = String(text || '').trim()
+  if (!raw) return []
+  const parts = raw
+    .split(/\n+|•|–|—/)
+    .map((part) => part.replace(/^\s*[-*]\s*/, '').trim())
+    .filter(Boolean)
+  return parts.length ? parts : [raw]
+}
+
+export function courseDurationSeconds(course, lessons = []) {
+  const fromCourse = Number(course?.durationSeconds ?? course?.duration_seconds) || 0
+  if (fromCourse > 0) return fromCourse
+  return (Array.isArray(lessons) ? lessons : []).reduce((sum, lesson) => sum + (Number(lesson?.durationSeconds ?? lesson?.duration_seconds) || 0), 0)
+}
+
+/** Katalog kartasi tugmasi: holatga qarab. Sinov seedni chaqiruvchi tomoni «Batafsil» qiladi. */
+export function catalogCtaLabel(course, enrollment) {
+  if (enrollment?.access) {
+    const progressing = (Number(enrollment.done) || 0) > 0 && !enrollment.complete
+    return progressing ? 'Davom ettirish' : 'Tomosha qilish'
+  }
+  if ((Number(course?.price) || 0) > 0) return 'Sotib olish'
+  return 'Boshlash'
+}
+
+export function nextWatchLesson(lessons = []) {
+  const list = Array.isArray(lessons) ? lessons : []
+  return list.find((lesson) => !lesson.locked && !lesson.complete) || list.find((lesson) => !lesson.locked) || null
+}
