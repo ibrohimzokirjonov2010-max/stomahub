@@ -12,7 +12,7 @@ export const TOOTH_KINDS = [
   'sirkon', 'protez-syomniy', 'protez-implant', 'protez-babochka', 'missing',
 ]
 
-/** Har bir FDI rasmining eni (balandlik 320px) — jag'da tishlar tabiiy nisbatda joylashadi. */
+/** Har bir rasm faylining eni (balandlik 320px; kalit — fayl raqami, artFdi orqali oling) — jag'da tishlar tabiiy nisbatda joylashadi. */
 export const TOOTH_W = {
   11: 109, 12: 110, 13: 97, 14: 109, 15: 117, 16: 146, 17: 150, 18: 151,
   21: 134, 22: 110, 23: 97, 24: 109, 25: 117, 26: 150, 27: 148, 28: 150,
@@ -80,13 +80,28 @@ export function normalizeFdi(raw) {
   return null
 }
 
+/**
+ * Rasm fayli raqami. My Clinic CRM pastki jag'ni 38→31 | 41→48 tartibda chizadi (3-chorak ekranning chap tomonida),
+ * StomaHub esa standart FDI: 48→41 | 31→38. Shuning uchun pastki jag' fayllari 3↔4 chorak almashtiriladi
+ * (31↔41 … 38↔48), aks holda tishlar ko'zguda aks etgandek (ildizlar teskari tomonga egilgan) chiqadi.
+ * Sut tishlari (71–75 / 81–85) ham shu orqali to'g'ri tomonga tushadi.
+ */
+export function artFdi(raw) {
+  const fdi = normalizeFdi(raw)
+  if (!fdi) return null
+  const quad = Math.floor(fdi / 10)
+  if (quad === 3) return fdi + 10
+  if (quad === 4) return fdi - 10
+  return fdi
+}
+
 export function artOfStatus(state) {
   if (state && TOOTH_KINDS.includes(state)) return { kind: state }
   return STATUS_ART[state] || STATUS_ART.healthy
 }
 
 export function toothSrc(n, kind = 'healthy') {
-  const fdi = normalizeFdi(n)
+  const fdi = artFdi(n)
   if (!fdi) return null
   const folder = TOOTH_KINDS.includes(kind) ? kind : 'healthy'
   return `/teeth/${folder}/${fdi}.webp?v=${TOOTH_ASSET_VERSION}`

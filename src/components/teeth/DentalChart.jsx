@@ -1,4 +1,4 @@
-import { TOOTH_H, TOOTH_STATUS_LABELS, TOOTH_W, artOfStatus, isLowerTooth, normalizeFdi, toothSrc } from '../../teeth/toothArt'
+import { TOOTH_H, TOOTH_STATUS_LABELS, TOOTH_W, artFdi, artOfStatus, isLowerTooth, toothSrc } from '../../teeth/toothArt'
 
 const asPicked = (selected) => {
   if (typeof selected === 'function') return selected
@@ -11,8 +11,8 @@ const asPicked = (selected) => {
 /** Bitta realistik tish rasmi. state — saqlangan holat kaliti (filling, endo...), kind — to'g'ridan-to'g'ri rasm turi. */
 export function ToothArt({ n, state = 'healthy', kind, className = '', style, glow = false }) {
   const art = kind ? { kind } : artOfStatus(state)
-  const fdi = normalizeFdi(n) || 11
-  const src = toothSrc(fdi, art.kind)
+  const fdi = artFdi(n) || 11
+  const src = toothSrc(n, art.kind)
   const lower = isLowerTooth(n)
   return (
     <span className={`relative inline-flex justify-center ${className}`} style={style}>
@@ -52,7 +52,7 @@ export default function DentalChart({
 }) {
   const isPicked = asPicked(selected)
   const cell = (n, isLower) => {
-    const fdi = normalizeFdi(n) || 11
+    const fdi = artFdi(n) || 11
     const w = TOOTH_W[fdi]
     const state = stateOf?.(n) || 'healthy'
     const kind = kindOf?.(n) || undefined
