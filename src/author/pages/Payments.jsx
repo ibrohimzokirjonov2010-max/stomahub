@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { CheckCircle2, Clock3, Download, Landmark, Search, ShieldAlert, Wallet } from 'lucide-react'
 import { downloadCsv, listPayments, markPaid, useLoad } from '../api'
 import {
-  Avatar, Empty, Kpi, METHOD, MigrationNotice, PAY, PageHead, Panel, PayPill, Segmented, Sheet, btn, cx, dmy, input, shortSom, som,
+  Avatar, CourseTitle, Empty, Kpi, METHOD, MigrationNotice, PAY, PageHead, Panel, PayPill, Segmented, Sheet, btn, cx, dmy, input, shortSom, som,
 } from '../ui'
 
 export default function Payments() {
@@ -110,7 +110,7 @@ export default function Payments() {
                         <Avatar src={r.avatar} name={r.name} size={38} />
                         <div className="min-w-0">
                           <p className="truncate text-[14px] font-semibold text-[#0B1F3A]">{r.name}</p>
-                          <p className="truncate text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</p>
+                          <CourseTitle className="text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</CourseTitle>
                         </div>
                       </div>
                     </td>
@@ -134,7 +134,7 @@ export default function Payments() {
                   <Avatar src={r.avatar} name={r.name} size={42} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14.5px] font-semibold text-[#0B1F3A]">{r.name}</p>
-                    <p className="truncate text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</p>
+                    <CourseTitle className="text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</CourseTitle>
                   </div>
                   <p className="text-[14.5px] font-bold text-[#0B1F3A]">{som(r.amount)}</p>
                 </div>

@@ -163,7 +163,7 @@
 .bemor-layout > *, .bemor-mid > *, .bemor-bot > * { min-width: 0; }
 .bemor-scroll { min-width: 0; overflow-x: auto; }
 .bemor-shade { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding-top: max(10px, env(safe-area-inset-top, 0px), var(--safe-top-sim, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); padding-bottom: max(10px, env(safe-area-inset-bottom, 0px), var(--safe-bottom-sim, 0px)); padding-left: max(10px, env(safe-area-inset-left, 0px)); background: rgb(11 31 58 / 0.45); }
-.bemor-dialog { display: flex; width: min(680px, 100%); max-height: 100%; flex-direction: column; overflow: hidden; border-radius: 16px; background: #fff; }
+.bemor-dialog { display: flex; width: min(680px, 100%); max-height: 100%; min-height: 0; flex-direction: column; overflow: hidden; border-radius: 16px; background: #fff; }
 .bemor-dialog-head, .bemor-dialog-foot { flex-shrink: 0; }
 .bemor-dialog-body { min-height: 0; flex: 1; overflow-y: auto; }
 .uch-layout { display: grid; width: 100%; min-width: 0; gap: 12px; align-items: start; }
