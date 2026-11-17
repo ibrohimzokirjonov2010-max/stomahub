@@ -85,7 +85,7 @@ export async function listStudents(courseId = null) {
   const shot = authorShot()
   if (shot?.students) return { rows: courseId ? shot.students.filter((row) => row.courseId === courseId) : shot.students, legacy: !!shot.missing }
   try {
-    const rows = await rpc('course_author_students', { p_course_id: courseId })
+    const rows = await rpc('course_author_students', courseId ? { p_course_id: courseId } : {})
     return { rows: Array.isArray(rows) ? rows : [], legacy: false }
   } catch (error) {
     if (!isMissing(error)) throw error
@@ -141,6 +141,21 @@ export async function duplicateCourse(courseId) {
 export async function removeCourse(courseId) {
   if (authorShot()) return { ok: true }
   return okOrThrow(await deleteCourse(courseId), 'O‘chirilmadi')
+}
+
+
+export async function attachVideo(lessonId, videoId, durationSeconds = 0) {
+  if (authorShot()) return { ok: true, videoId, encoding: 'finished', duration: durationSeconds || 1 }
+  try {
+    return okOrThrow(await rpc('course_author_attach_video', {
+      p_lesson_id: lessonId,
+      p_video_id: videoId,
+      p_duration: Number(durationSeconds) || 0,
+    }), 'Video biriktirilmadi')
+  } catch (error) {
+    if (!isMissing(error)) throw error
+    throw new Error('Video havolasi 0078 migratsiyasi qo‘llangach saqlanadi. Hozircha videoni Bunny orqali yuklang.')
+  }
 }
 
 export async function loadExtras(courseId) {

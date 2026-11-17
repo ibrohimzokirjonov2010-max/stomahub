@@ -23,6 +23,7 @@ begin;
 
 -- 1) courses ---------------------------------------------------------------
 alter table public.courses
+  add column if not exists seed_batch text,
   add column if not exists subtitle text not null default '',
   add column if not exists language text not null default 'uz',
   add column if not exists trailer_url text not null default '',
@@ -973,6 +974,55 @@ end;
 $$;
 revoke all on function public.course_moderate(uuid, text, text) from public, anon;
 grant execute on function public.course_moderate(uuid, text, text) to authenticated;
+
+
+-- Video havolasi: muallif mavjud Bunny ID yoki pleyer havolasini darsga biriktiradi.
+-- Fayl yuklash (Bunny API) bo‘lmasa ham video saqlanadi. Faqat o‘z darsi.
+create or replace function public.course_author_attach_video(p_lesson_id uuid, p_video_id text, p_duration integer default 0)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  les public.course_lessons;
+  v_id text;
+  v_dur integer;
+begin
+  if uid is null or not public.course_is_teacher(uid) then
+    return jsonb_build_object('ok', false, 'error', 'Ruxsat yo‘q');
+  end if;
+  if p_lesson_id is null then
+    return jsonb_build_object('ok', false, 'error', 'Dars topilmadi');
+  end if;
+  select l.* into les
+    from public.course_lessons l
+    join public.courses c on c.id = l.course_id
+   where l.id = p_lesson_id
+     and c.author_id = uid
+   for update;
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'Dars topilmadi');
+  end if;
+  v_id := left(trim(coalesce(p_video_id, '')), 80);
+  if v_id = '' or v_id !~ '^[A-Za-z0-9_-]{6,80}$' then
+    return jsonb_build_object('ok', false, 'error', 'Video identifikatori yoki havolasi noto‘g‘ri');
+  end if;
+  v_dur := least(86400, greatest(0, coalesce(p_duration, 0)));
+  if v_dur = 0 then
+    v_dur := greatest(coalesce(les.duration_seconds, 0), 1);
+  end if;
+  update public.course_lessons
+     set bunny_video_id = v_id,
+         encoding_status = 'finished',
+         duration_seconds = v_dur
+   where id = les.id;
+  return jsonb_build_object('ok', true, 'videoId', v_id, 'encoding', 'finished', 'duration', v_dur);
+end;
+$$;
+revoke all on function public.course_author_attach_video(uuid, text, integer) from public, anon;
+grant execute on function public.course_author_attach_video(uuid, text, integer) to authenticated;
 
 comment on table public.course_payment_events is
   '0078: muallif «To‘landi» belgilari. Pul tizim orqali o‘tmaydi (Click/Payme ulanmagan).';

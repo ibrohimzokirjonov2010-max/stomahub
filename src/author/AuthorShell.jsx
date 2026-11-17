@@ -33,8 +33,9 @@ export default function AuthorShell() {
   const name = profileName(session.profile, session.user?.email) || 'Muallif'
 
   return (
-    <div className="min-h-dvh bg-[#F3F7F8] text-[#0B1F3A]">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] flex-col border-r border-[#E4ECEE] bg-white md:flex">
+    <div className="flex min-h-dvh bg-[#F3F7F8] text-[#0B1F3A]">
+      <aside className="hidden w-[248px] shrink-0 self-stretch border-r border-[#E4ECEE] bg-white md:flex">
+        <div className="sticky top-0 flex h-dvh min-h-dvh w-full flex-col overflow-y-auto">
         <div className="px-5 pb-4 pt-5">
           <Link to={BASE} className="flex items-center gap-2.5" aria-label="Kurs muallifi kabineti">
             <span className="grid size-10 place-items-center rounded-xl bg-[linear-gradient(135deg,#14B8A6,#0F766E)] text-white shadow-[0_8px_18px_-8px_rgb(15_118_110/0.7)]"><GraduationCap className="size-5" /></span>
@@ -65,8 +66,10 @@ export default function AuthorShell() {
             <span className="block text-[11.5px] text-[#7A8C99]">Kurs muallifi</span>
           </span>
         </Link>
+        </div>
       </aside>
 
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
       <header className={cx('sticky top-0 z-30 border-b border-[#E4ECEE] bg-white/90 backdrop-blur md:hidden', wizard && 'hidden')}>
         <div className="flex h-14 items-center gap-3 px-4">
           <span className="grid size-9 place-items-center rounded-xl bg-[linear-gradient(135deg,#14B8A6,#0F766E)] text-white"><GraduationCap className="size-[18px]" /></span>
@@ -78,7 +81,7 @@ export default function AuthorShell() {
         </div>
       </header>
 
-      <main className={cx('md:pl-[248px]', wizard ? 'pb-0' : 'pb-[calc(88px+max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px)))] md:pb-10')}>
+      <main className={cx('min-w-0 flex-1', wizard ? 'pb-0' : 'pb-[calc(88px+max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px)))] md:pb-10')}>
         <div className={cx('mx-auto w-full max-w-[1180px]', wizard ? '' : 'px-4 pt-4 md:px-8 md:pt-8')}>
           <Outlet />
         </div>
@@ -98,6 +101,7 @@ export default function AuthorShell() {
           </ul>
         </nav>
       )}
+      </div>
     </div>
   )
 }

@@ -4,13 +4,13 @@ import { ArrowLeft, ArrowRight, Check, Loader2, Save, X } from 'lucide-react'
 import { courseError, loadEditor, pollQuizJob, saveCourse, startQuizFromVideo } from '../../courseApi'
 import { profileName, useSession } from '../../sessionStore'
 import { videoHost } from '../../lib/videoHost'
-import { authorShot, loadExtras, saveExtras, setCourseStatus } from '../api'
+import { attachVideo, authorShot, loadExtras, saveExtras, setCourseStatus } from '../api'
 import { BASE } from '../AuthorShell'
 import { MigrationNotice, StatusPill, btn, cx } from '../ui'
 import Curriculum from './Curriculum'
 import { PreviewOverlay, StepReview } from './Review'
 import { StepAudience, StepBasics, StepCertificate, StepPricing } from './steps'
-import { STEPS, blankCourse, blankModule, corePayload, extrasPayload, flatLessons, fromServer } from './model'
+import { STEPS, blankCourse, blankModule, corePayload, extrasPayload, flatLessons, fromServer, parseVideoRef } from './model'
 
 export default function Wizard() {
   const { id } = useParams()
@@ -147,6 +147,38 @@ export default function Wizard() {
     }
   }
 
+
+  const onAttachRef = async (key, raw, minutes) => {
+    const videoId = parseVideoRef(raw)
+    if (!videoId) { setError('Video identifikatori yoki havolasi noto‘g‘ri'); return }
+    const duration = Math.max(1, Math.round((Number(minutes) > 0 ? Number(minutes) : 20) * 60))
+    let lesson = flatLessons(modules).find((l) => l.key === key)
+    if (!lesson) return
+    if (shot) {
+      patchLessonByKey(key, { bunnyVideoId: videoId, encodingStatus: 'finished', durationSeconds: duration, uploadPct: 0 })
+      setDirty(true)
+      return
+    }
+    if (!lesson.id) {
+      const saved = await persist()
+      if (!saved) return
+      lesson = flatLessons(saved.modules).find((l) => l.key === key)
+      if (!lesson?.id) return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      const res = await attachVideo(lesson.id, videoId, duration)
+      patchLessonByKey(key, { bunnyVideoId: res.videoId || videoId, encodingStatus: 'finished', durationSeconds: res.duration || duration, uploadPct: 0 })
+      setDirty(false)
+      setSavedAt(new Date())
+    } catch (e) {
+      setError(e.message || 'Video biriktirilmadi')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const onGenerate = async (key) => {
     if (shot) return
     const lesson = flatLessons(modules).find((l) => l.key === key)
@@ -196,7 +228,7 @@ export default function Wizard() {
     switch (STEPS[step].key) {
       case 'asosiy': return <StepBasics course={course} patch={patch} onError={setError} shot={!!shot} />
       case 'auditoriya': return <StepAudience course={course} patch={patch} />
-      case 'dastur': return <Curriculum modules={modules} setModules={setMods} selected={selected} setSelected={setSelected} onVideo={onVideo} onGenerate={onGenerate} jobs={jobs} videoReady={videoReady} />
+      case 'dastur': return <Curriculum modules={modules} setModules={setMods} selected={selected} setSelected={setSelected} onVideo={onVideo} onAttachRef={onAttachRef} onGenerate={onGenerate} jobs={jobs} videoReady={videoReady} />
       case 'narx': return <StepPricing course={course} patch={patch} />
       case 'sertifikat': return <StepCertificate course={course} modules={modules} patch={patch} authorName={authorName} />
       default: return <StepReview course={course} modules={modules} onGo={goStep} onPreview={() => setPreview(true)} onSubmit={onSubmit} busy={busy} legacy={legacy} />

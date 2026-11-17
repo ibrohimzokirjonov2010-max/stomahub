@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-import { blankCourse, blankLesson, blankModule, checklist, corePayload, extrasPayload, flatLessons, fromServer } from '../src/author/wizard/model.js'
+import { blankCourse, blankLesson, blankModule, checklist, corePayload, extrasPayload, flatLessons, fromServer, parseVideoRef } from '../src/author/wizard/model.js'
 
 const root = path.resolve(import.meta.dirname, '..')
 const sql = fs.readFileSync(path.join(root, 'supabase/migrations/0078_course_author_cabinet.sql'), 'utf8')
@@ -102,4 +102,20 @@ test('0078 tranzaksiyada va yangi api/ fayl qo‘shilmagan', () => {
   assert.match(sql.trim(), /commit;$/i)
   const apiFiles = fs.readdirSync(path.join(root, 'api')).filter((f) => /\.(js|mjs|ts)$/.test(f))
   assert.ok(apiFiles.length <= 12, `api funksiyalar: ${apiFiles.length}`)
+})
+
+test('parseVideoRef: ID va Bunny havolasini ajratadi, yomon matnni rad etadi', () => {
+  assert.equal(parseVideoRef('abc_123-XYZ'), 'abc_123-XYZ')
+  assert.equal(parseVideoRef('https://iframe.mediadelivery.net/embed/805789/v-lesson-1?autoplay=false'), 'v-lesson-1')
+  assert.equal(parseVideoRef('  '), '')
+  assert.equal(parseVideoRef('javascript:alert(1)'), '')
+  assert.equal(parseVideoRef('http://evil.example/x'), '')
+})
+
+test('0078: video havolasi faqat o‘z darsiga, format tekshiriladi', () => {
+  const fn = sql.slice(sql.indexOf('function public.course_author_attach_video'), sql.indexOf('$$;', sql.indexOf('function public.course_author_attach_video')))
+  assert.ok(/author_id = uid/.test(fn))
+  assert.ok(/bunny_video_id = v_id/.test(fn))
+  assert.ok(/encoding_status = 'finished'/.test(fn))
+  assert.ok(/\[A-Za-z0-9_\-\]/.test(fn) || /A-Za-z0-9_-/.test(fn))
 })

@@ -16,7 +16,7 @@ function moveItem(list, from, to) {
   return next
 }
 
-export default function Curriculum({ modules, setModules, selected, setSelected, onVideo, onGenerate, jobs, videoReady }) {
+export default function Curriculum({ modules, setModules, selected, setSelected, onVideo, onAttachRef, onGenerate, jobs, videoReady }) {
   const drag = useRef(null)
   const all = modules.flatMap((m) => m.lessons)
   const current = all.find((l) => l.key === selected) || null
@@ -161,6 +161,7 @@ export default function Curriculum({ modules, setModules, selected, setSelected,
                 onMove={(dir) => moveLesson(current.key, dir)}
                 onRemove={() => removeLesson(current.key)}
                 onVideo={(file) => onVideo(current.key, file)}
+                onAttachRef={(raw, mins) => onAttachRef(current.key, raw, mins)}
                 onGenerate={() => onGenerate(current.key)}
                 job={current.id ? jobs[current.id] : null}
                 videoReady={videoReady}
@@ -173,9 +174,11 @@ export default function Curriculum({ modules, setModules, selected, setSelected,
   )
 }
 
-function LessonEditor({ lesson, index, count, patch, onMove, onRemove, onVideo, onGenerate, job, videoReady }) {
+function LessonEditor({ lesson, index, count, patch, onMove, onRemove, onVideo, onAttachRef, onGenerate, job, videoReady }) {
   const fileRef = useRef(null)
   const [fileErr, setFileErr] = useState('')
+  const [videoRef, setVideoRef] = useState(lesson.bunnyVideoId || '')
+  const [videoMins, setVideoMins] = useState(lesson.durationSeconds ? String(Math.max(1, Math.round(lesson.durationSeconds / 60))) : '20')
   const questions = lesson.questions || []
   const patchQ = (i, p) => patch({ questions: questions.map((q, j) => (j === i ? { ...q, ...p } : q)) })
   const filled = questions.filter((q) => q.prompt?.trim()).length
@@ -200,7 +203,7 @@ function LessonEditor({ lesson, index, count, patch, onMove, onRemove, onVideo, 
         )}
       >
         <Field label="Dars nomi" counter={`${lesson.title.length}/160`}>
-          <Text value={lesson.title} onChange={(v) => patch({ title: v })} max={160} placeholder="Masalan: Ishchi uzunlik va kengaytirish" />
+          <Text aria-label="Dars nomi" value={lesson.title} onChange={(v) => patch({ title: v })} max={160} placeholder="Masalan: Ishchi uzunlik va kengaytirish" />
         </Field>
       </Card>
 
@@ -233,6 +236,15 @@ function LessonEditor({ lesson, index, count, patch, onMove, onRemove, onVideo, 
         )}
         {fileErr && <p className="mt-2 text-[12.5px] text-[#B42318]">{fileErr}</p>}
         <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { pick(e.target.files?.[0]); e.target.value = '' }} />
+        <div className="mt-4 border-t border-[#EEF3F5] pt-3">
+          <p className="text-[12.5px] font-semibold text-[#2C4152]">Video ID yoki pleyer havolasi</p>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-[#7A8C99]">Mavjud Bunny videoni identifikator yoki havola bilan biriktiring. Yuklash ishlamasa ham shu usul saqlanadi.</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input value={videoRef} onChange={(e) => setVideoRef(e.target.value)} placeholder="Masalan: abc123 yoki https://iframe.mediadelivery.net/embed/…" className={cx(input, 'min-h-11 flex-1')} aria-label="Video ID yoki havola" />
+            <input value={videoMins} onChange={(e) => setVideoMins(e.target.value)} inputMode="decimal" placeholder="20" className={cx(input, 'min-h-11 sm:w-24')} aria-label="Davomiyligi (daqiqa)" title="Davomiyligi (daqiqa)" />
+            <button type="button" onClick={() => onAttachRef?.(videoRef, videoMins)} className={cx(btn.soft, 'min-h-11 shrink-0 px-4')}>Biriktirish</button>
+          </div>
+        </div>
       </Card>
 
       <Card title="Nimalar o‘rgatiladi" sub="Kurs sahifasida dars ostida ochiladi. 2–6 ta qisqa band.">

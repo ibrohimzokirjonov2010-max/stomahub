@@ -1,16 +1,25 @@
+import { Children, cloneElement, isValidElement, useId } from 'react'
 import { GripVertical, Plus, X } from 'lucide-react'
 import { cx, input } from '../ui'
 
 export function Field({ label, hint, counter, error, children, className }) {
+  const id = useId()
+  const kids = Children.map(children, (child, i) => {
+    if (!isValidElement(child) || i !== 0) return child
+    const extra = {}
+    if (!child.props.id) extra.id = id
+    if (label && !child.props['aria-label'] && !child.props['aria-labelledby']) extra['aria-label'] = label
+    return cloneElement(child, extra)
+  })
   return (
     <div className={cx('block min-w-0', className)}>
       {(label || counter) && (
         <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          {label && <span className="text-[13px] font-semibold text-[#22384A]">{label}</span>}
+          {label && <label htmlFor={id} className="text-[13px] font-semibold text-[#22384A]">{label}</label>}
           {counter && <span className="text-[11.5px] tabular-nums text-[#98A8B3]">{counter}</span>}
         </div>
       )}
-      {children}
+      {kids}
       {error ? <p className="mt-1.5 text-[12px] text-[#B42318]">{error}</p> : hint ? <p className="mt-1.5 text-[12px] leading-snug text-[#7A8C99]">{hint}</p> : null}
     </div>
   )

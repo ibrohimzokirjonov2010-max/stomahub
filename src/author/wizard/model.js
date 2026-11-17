@@ -176,6 +176,18 @@ export function extrasPayload(course, modules, lessonIds) {
   }
 }
 
+
+/** Bunny video ID yoki pleyer havolasidan toza identifikator. */
+export function parseVideoRef(raw) {
+  const text = String(raw || '').trim()
+  if (!text) return ''
+  const fromUrl = text.match(/mediadelivery\.net\/(?:embed|play)\/\d+\/([A-Za-z0-9_-]+)/i)
+    || text.match(/[?&](?:videoId|video_id)=([A-Za-z0-9_-]+)/i)
+  if (fromUrl) return fromUrl[1]
+  if (/^[A-Za-z0-9_-]{6,80}$/.test(text)) return text
+  return ''
+}
+
 /** Yuborishdan oldingi tekshiruv ro‘yxati. */
 export function checklist(course, modules) {
   const flat = flatLessons(modules)
