@@ -51,6 +51,16 @@ export function monthLabel(ym) {
   return MONTHS[m] || ym
 }
 
+/** Kurs nomi: 2 qatorgacha, to‘liq nom title/tooltipda. */
+export function CourseTitle({ children, className }) {
+  const text = children == null ? '' : String(children)
+  return (
+    <span title={text} className={cx('line-clamp-2 min-w-0 leading-snug', className)}>
+      {text}
+    </span>
+  )
+}
+
 export function StatusPill({ status, className }) {
   const s = STATUS[status] || STATUS.draft
   return (

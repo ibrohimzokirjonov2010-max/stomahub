@@ -7,7 +7,7 @@ import { directions } from '../../educationData'
 import { formatDuration } from '../../courseRules'
 import { duplicateCourse, listMyCourses, removeCourse, setCourseStatus, useLoad } from '../api'
 import { BASE } from '../AuthorShell'
-import { Cover, Empty, MigrationNotice, PageHead, Panel, Segmented, Sheet, StatusPill, btn, cx, dmy, input, som } from '../ui'
+import { Cover, CourseTitle, Empty, MigrationNotice, PageHead, Panel, Segmented, Sheet, StatusPill, btn, cx, dmy, input, som } from '../ui'
 
 const DIR = Object.fromEntries(directions)
 
@@ -113,7 +113,7 @@ export default function Courses() {
                 <Link to={`${BASE}/kurslar/${row.id}/tahrir`} className="flex min-w-0 items-center gap-3.5">
                   <Cover src={row.cover} className="h-[56px] w-[84px] shrink-0 rounded-xl" />
                   <span className="min-w-0">
-                    <span className="line-clamp-2 text-[14px] font-bold leading-snug text-[#0B1F3A]">{row.title}</span>
+                    <CourseTitle className="text-[14px] font-bold text-[#0B1F3A]">{row.title}</CourseTitle>
                     <span className="mt-1 block truncate text-[12.5px] text-[#6B7F8D]">{meta(row)}</span>
                   </span>
                 </Link>
@@ -134,7 +134,7 @@ export default function Courses() {
                   <Cover src={row.cover} className="h-[72px] w-[104px] shrink-0 rounded-xl" />
                   <span className="min-w-0 flex-1">
                     <StatusPill status={row.status} />
-                    <span className="mt-1.5 line-clamp-2 block text-[14.5px] font-bold leading-snug text-[#0B1F3A]">{row.title}</span>
+                    <CourseTitle className="mt-1.5 block text-[14.5px] font-bold text-[#0B1F3A]">{row.title}</CourseTitle>
                     <span className="mt-1 block truncate text-[12px] text-[#6B7F8D]">{meta(row)}</span>
                   </span>
                 </Link>

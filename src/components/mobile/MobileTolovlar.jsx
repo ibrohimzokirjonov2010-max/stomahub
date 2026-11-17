@@ -216,7 +216,7 @@ export default function MobileTolovlar() {
           </>
         ) : (
           <>
-            {late.map((d) => <LateRow key={d.plan.id} d={d} onRemind={() => setToast(`${d.plan.patient.name}ga eslatma yuborildi`)} onPay={() => navigate('/tolovlar/yangi', { state: { planId: d.plan.id } })} />)}
+            {late.map((d) => <LateRow key={d.plan.id} d={d} onRemind={() => setToast(`${d.plan.patient.name}ga eslatma yuborildi`)} onPay={() => navigate(`/tolovlar/yangi?patientId=${encodeURIComponent(d.plan.patient.id || '')}&planId=${encodeURIComponent(d.plan.id)}`)} />)}
             {!late.length && <p className="px-4 py-8 text-center text-[12.5px] text-muted">Muddati o‘tgan to‘lovlar yo‘q</p>}
           </>
         )}

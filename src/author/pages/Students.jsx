@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Award, Download, Search, Users } from 'lucide-react'
 import { downloadCsv, listMyCourses, listStudents, useLoad } from '../api'
 import {
-  Avatar, Empty, MigrationNotice, PageHead, Panel, PayPill, Progress, Segmented, btn, cx, dmy, input, PAY,
+  Avatar, CourseTitle, Empty, MigrationNotice, PageHead, Panel, PayPill, Progress, Segmented, btn, cx, dmy, input, PAY,
 } from '../ui'
 
 async function loadAll() {
@@ -103,7 +103,7 @@ export default function Students() {
                         <Avatar src={r.avatar} name={r.name} size={38} />
                         <div className="min-w-0">
                           <p className="truncate text-[14px] font-semibold text-[#0B1F3A]">{r.name}</p>
-                          <p className="truncate text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</p>
+                          <CourseTitle className="text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</CourseTitle>
                         </div>
                       </div>
                     </td>
@@ -130,7 +130,7 @@ export default function Students() {
                   <Avatar src={r.avatar} name={r.name} size={42} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14.5px] font-semibold text-[#0B1F3A]">{r.name}</p>
-                    <p className="truncate text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</p>
+                    <CourseTitle className="text-[12.5px] text-[#6B7F8D]">{r.courseTitle}</CourseTitle>
                   </div>
                   <PayPill status={r.paymentStatus} />
                 </div>

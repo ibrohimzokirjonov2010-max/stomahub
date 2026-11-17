@@ -32,8 +32,9 @@ export default function AuthorShell() {
   const wizard = /\/kurslar\/(yangi|[^/]+\/tahrir)/.test(location.pathname)
   const name = profileName(session.profile, session.user?.email) || 'Muallif'
 
+  // Tab 64px + FAB chiqishi 18px. Mobilida nav oqimda, main pastida faqat FAB uchun bo‘shliq.
   return (
-    <div className="flex min-h-dvh bg-[#F3F7F8] text-[#0B1F3A]">
+    <div className="flex min-h-dvh bg-[#F3F7F8] text-[#0B1F3A]" style={{ '--author-tab-h': '64px', '--author-fab-out': '18px' }}>
       <aside className="hidden w-[248px] shrink-0 self-stretch border-r border-[#E4ECEE] bg-white md:flex">
         <div className="sticky top-0 flex h-dvh min-h-dvh w-full flex-col overflow-y-auto">
         <div className="px-5 pb-4 pt-5">
@@ -69,8 +70,8 @@ export default function AuthorShell() {
         </div>
       </aside>
 
-      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
-      <header className={cx('sticky top-0 z-30 border-b border-[#E4ECEE] bg-white/90 backdrop-blur md:hidden', wizard && 'hidden')}>
+      <div className={cx('flex min-w-0 flex-1 flex-col', wizard ? 'min-h-dvh' : 'h-[calc(100dvh-var(--safe-top,0px))] overflow-hidden md:h-auto md:min-h-dvh md:overflow-visible')}>
+      <header className={cx('z-30 shrink-0 border-b border-[#E4ECEE] bg-white/90 backdrop-blur md:hidden', wizard && 'hidden')}>
         <div className="flex h-14 items-center gap-3 px-4">
           <span className="grid size-9 place-items-center rounded-xl bg-[linear-gradient(135deg,#14B8A6,#0F766E)] text-white"><GraduationCap className="size-[18px]" /></span>
           <span className="min-w-0 flex-1">
@@ -81,18 +82,18 @@ export default function AuthorShell() {
         </div>
       </header>
 
-      <main className={cx('min-w-0 flex-1', wizard ? 'pb-0' : 'pb-[calc(88px+max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px)))] md:pb-10')}>
+      <main className={cx('min-w-0 flex-1', wizard ? 'pb-0' : 'min-h-0 overflow-y-auto mb-[calc(var(--author-fab-out)+16px)] md:mb-0 md:overflow-visible md:pb-10')}>
         <div className={cx('mx-auto w-full max-w-[1180px]', wizard ? '' : 'px-4 pt-4 md:px-8 md:pt-8')}>
           <Outlet />
         </div>
       </main>
 
       {!wizard && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E4ECEE] bg-white/95 pb-[max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px))] backdrop-blur md:hidden" aria-label="Muallif menyusi">
-          <ul className="grid h-16 grid-cols-5">
+        <nav className="relative z-40 shrink-0 border-t border-[#E4ECEE] bg-white/95 pb-[max(env(safe-area-inset-bottom),var(--safe-bottom-sim,0px))] backdrop-blur md:hidden" aria-label="Muallif menyusi">
+          <ul className="grid h-[var(--author-tab-h)] grid-cols-5">
             {NAV.slice(0, 2).map((it) => <Tab key={it.to} {...it} />)}
             <li className="relative">
-              <Link to={`${BASE}/kurslar/yangi`} aria-label="Yangi kurs" className="absolute left-1/2 top-0 grid size-[56px] -translate-x-1/2 -translate-y-[18px] place-items-center rounded-full bg-[linear-gradient(135deg,#14B8A6,#0F766E)] text-white shadow-[0_10px_22px_-6px_rgb(15_118_110/0.6)] ring-4 ring-white">
+              <Link to={`${BASE}/kurslar/yangi`} aria-label="Yangi kurs" className="absolute left-1/2 top-0 grid size-[56px] -translate-x-1/2 -translate-y-[var(--author-fab-out)] place-items-center rounded-full bg-[linear-gradient(135deg,#14B8A6,#0F766E)] text-white shadow-[0_10px_22px_-6px_rgb(15_118_110/0.6)] ring-4 ring-white">
                 <Plus className="size-6" strokeWidth={2.2} />
               </Link>
               <span className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-[10.5px] leading-none text-[#8A9AA8]">Yangi</span>

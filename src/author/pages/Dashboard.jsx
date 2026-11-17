@@ -3,7 +3,7 @@ import { Award, BookOpenCheck, ChartColumnBig, Clock3, Plus, TrendingUp, Users, 
 import { loadDashboard, useLoad } from '../api'
 import { BASE } from '../AuthorShell'
 import {
-  Avatar, Cover, Empty, Kpi, MigrationNotice, PageHead, Panel, PayPill, Progress, TextLink, btn, cx, dmy, monthLabel, shortSom, som,
+  Avatar, Cover, CourseTitle, Empty, Kpi, MigrationNotice, PageHead, Panel, PayPill, Progress, TextLink, btn, cx, dmy, monthLabel, shortSom, som,
 } from '../ui'
 
 export default function Dashboard() {
@@ -154,7 +154,7 @@ function Recent({ rows, legacy }) {
             <Avatar src={row.avatar} name={row.name} size={38} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-semibold text-[#0B1F3A]">{row.name}</p>
-              <p className="truncate text-[12.5px] text-[#6B7F8D]">{row.courseTitle}</p>
+              <CourseTitle className="text-[12.5px] text-[#6B7F8D]">{row.courseTitle}</CourseTitle>
             </div>
             <div className="hidden w-[120px] sm:block">
               <p className="mb-1 text-right text-[11.5px] text-[#6B7F8D]">{row.lessonsDone}/{row.lessonsTotal} dars</p>
@@ -184,7 +184,7 @@ function Top({ rows }) {
               <span className="mt-2.5 w-4 text-center text-[13px] font-bold text-[#98A8B3]">{i + 1}</span>
               <Cover src={row.cover} className="h-11 w-14 shrink-0 rounded-lg" />
               <span className="min-w-0 flex-1">
-                <span className="line-clamp-2 text-[13.5px] font-semibold leading-snug text-[#0B1F3A]">{row.title}</span>
+                <CourseTitle className="text-[13.5px] font-semibold text-[#0B1F3A]">{row.title}</CourseTitle>
                 <span className="mt-1 flex flex-wrap items-center gap-x-2 text-[12px] text-[#6B7F8D]">
                   <span>{enrolled} o‘quvchi</span>
                   {row.paidSum != null && Number(row.paidSum) > 0 && <span className="font-semibold text-[#0F766E]">{shortSom(row.paidSum)} so‘m</span>}
