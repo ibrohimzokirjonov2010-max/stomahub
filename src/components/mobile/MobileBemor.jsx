@@ -1,4 +1,3 @@
-import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -9,13 +8,13 @@ import { CITIES, getBemor, patchBemor, removeBemor, som, useBemorlar } from '../
 import { MobileToast } from './parts'
 import { BottomSheet } from './MobileSeminars'
 import { Lightbox } from './MobileCommunity'
-import { DOCTORS, Face, MSTATUS, STATUS_TABS, TOOTH_STATES, TeethChart, Tooth, fmtDate, isoToDots, todayDots, toothName } from './bemorParts'
+import { DOCTORS, Face, MSTATUS, STATUS_TABS, TOOTH_STATES, TeethChart, Tooth, fmtDate, todayDots, toothName } from './bemorParts'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
+import AppointmentForm from '../crm/AppointmentForm'
+import PaymentForm from '../crm/PaymentForm'
+import { dotsFromIso, recordClinicPayment, recordPatientPayment, recordPatientVisit } from '../crm/syncPatientRecords'
 
 const TABS = [['umumiy', 'Umumiy'], ['tish', 'Tish kartasi'], ['reja', 'Rejalar'], ['tashrif', 'Tashriflar'], ['tolov', 'To‘lovlar'], ['rentgen', 'Rentgen']]
-const KINDS = ['Konsultatsiya', 'Davolash', 'Professional gigiyena', 'Implant', 'Ortodontiya', 'Protezlash', 'Tish olish']
-const TIMES = ['09:00', '10:30', '12:00', '14:00', '15:30', '17:00']
-const METHODS = ['Naqd', 'Karta', 'Click / Payme']
 const PLAN_OF = { caries: ['Karies davolash (plomba)', 'Davolash'], missing: ['Implant yoki protez', 'Implant'], endo: ['Endo nazorat rentgeni', 'Konsultatsiya'] }
 
 export default function MobileBemor() {
@@ -24,7 +23,7 @@ export default function MobileBemor() {
 }
 
 function BemorView({ id }) {
-  useBemorlar()
+  const patients = useBemorlar()
   const p = getBemor(id)
   const navigate = useNavigate()
   const location = useLocation()
@@ -233,9 +232,27 @@ function BemorView({ id }) {
         </button>
       </div>
 
-      {sheet?.visit && <VisitSheet p={p} preset={sheet.visit} onClose={() => setSheet(null)} onDone={(msg) => { setSheet(null); setToast(msg) }} />}
+      {sheet?.visit && (
+        <AppointmentForm
+          initial={{
+            patient: p,
+            note: [sheet.visit.tooth && `${sheet.visit.tooth}-tish`, sheet.visit.kind].filter(Boolean).join(' · '),
+          }}
+          lockPatient
+          onClose={() => setSheet(null)}
+          onSaved={(row) => { recordPatientVisit(p, row); setSheet(null); setToast(`Qabul belgilandi: ${fmtDate(dotsFromIso(row.date))}, ${row.start}`) }}
+        />
+      )}
       {sheet?.visitInfo !== undefined && <VisitInfo p={p} i={sheet.visitInfo} onClose={() => setSheet(null)} onToast={setToast} />}
-      {sheet === 'pay' && <PaySheet p={p} payments={payments} onClose={() => setSheet(null)} onDone={(msg) => { setSheet(null); setToast(msg) }} />}
+      {sheet === 'pay' && (
+        <PaymentForm
+          patients={patients}
+          patient={p}
+          lockPatient
+          onClose={() => setSheet(null)}
+          onSave={(row) => { recordClinicPayment(row); recordPatientPayment(p, row); setSheet(null); setToast(`${som(row.amount)} qabul qilindi`) }}
+        />
+      )}
       {sheet === 'edit' && <EditSheet p={p} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setToast('Ma’lumotlar saqlandi') }} />}
       {sheet === 'medical' && <MedicalSheet p={p} onClose={() => setSheet(null)} onDone={() => { setSheet(null); setToast('Tibbiy ma’lumot saqlandi') }} />}
       {sheet?.tooth && <ToothSheet p={p} n={sheet.tooth} onClose={() => setSheet(null)} onPlan={(kind) => setSheet({ visit: { kind, tooth: String(sheet.tooth) } })} />}
@@ -297,55 +314,6 @@ function Timeline({ list, onOpen, offset = (_, i) => i }) {
 const chip = (on) => `flex h-9 items-center gap-1 rounded-xl border px-3 text-[12.5px] font-medium ${on ? 'border-sea bg-sea-50 text-sea' : 'border-line text-ink'}`
 const input = (bad) => `h-11 w-full rounded-xl border px-3 text-[14px] outline-none focus:border-sea ${bad ? 'border-sale' : 'border-line'}`
 
-function VisitSheet({ p, preset, onClose, onDone }) {
-  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10)
-  const [date, setDate] = useState(tomorrow)
-  const [time, setTime] = useState('')
-  const [kind, setKind] = useState(preset.kind || '')
-  const [tooth, setTooth] = useState(preset.tooth || '')
-  const [doctor, setDoctor] = useState('')
-  const [note, setNote] = useState('')
-  const [tried, setTried] = useState(false)
-  const today = tashkentToday()
-  const toothBad = tooth && !/^[1-8][1-8]$/.test(tooth)
-  const ok = date >= today && time && kind && !toothBad
-  const save = () => {
-    setTried(true)
-    if (!ok) return
-    const dots = isoToDots(date)
-    patchBemor(p.id, {
-      visits: [{ date: dots, time, kind, tooth: tooth || undefined, doctor, note: note.trim(), done: false }, ...(p.visits || [])],
-      next: dots,
-      status: p.status === 'Yangi' || p.status === 'Nofaol' ? 'Davolanishda' : p.status,
-    })
-    onDone(`Qabul belgilandi: ${fmtDate(dots)}, ${time}`)
-  }
-  return (
-    <BottomSheet title="Yangi qabul" onClose={onClose} footer={<button type="button" onClick={save} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Qabulni saqlash</button>}>
-      <p className="mt-1 text-[12px] text-muted">{p.name} · #{p.code}</p>
-      <p className="mt-3 text-[13px] font-semibold text-ink">Qabul turi</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">{KINDS.map((k) => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={chip(kind === k)}>{kind === k && <Check className="size-3.5" />}{k}</button>)}</div>
-      {tried && !kind && <p className="mt-1 text-[11.5px] text-sale">Qabul turini tanlang</p>}
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <label className="text-[12px] text-muted">Sana<input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} onClick={(e) => e.currentTarget.showPicker?.()} className={`mt-1 ${input(tried && date < today)}`} /></label>
-        <label className="text-[12px] text-muted">Tish (FDI, ixtiyoriy)<input value={tooth} onChange={(e) => setTooth(e.target.value.replace(/\D/g, '').slice(0, 2))} inputMode="numeric" placeholder="masalan, 36" className={`mt-1 ${input(tried && toothBad)}`} /></label>
-      </div>
-      <p className="mt-3 text-[13px] font-semibold text-ink">Vaqt</p>
-      <div className="mt-2 grid grid-cols-6 gap-1">{TIMES.map((t) => <button key={t} type="button" aria-pressed={time === t} onClick={() => setTime(t)} className={`h-10 rounded-xl border text-[12px] font-semibold ${time === t ? 'border-[#0b8a95] bg-[#0b8a95] text-white' : 'border-line text-ink'}`}>{t}</button>)}</div>
-      {tried && !time && <p className="mt-1 text-[11.5px] text-sale">Vaqtni tanlang</p>}
-      <p className="mt-3 text-[13px] font-semibold text-ink">Shifokor</p>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {Object.entries(DOCTORS).map(([d, src]) => (
-          <button key={d} type="button" aria-pressed={doctor === d} onClick={() => setDoctor(d)} className={`flex shrink-0 items-center gap-1.5 rounded-xl border py-1 pl-1 pr-2.5 text-[12px] font-medium ${doctor === d ? 'border-sea bg-sea-50 text-sea' : 'border-line text-ink'}`}>
-            <img src={src} alt="" className="size-7 rounded-full object-cover object-top" /> {d}
-          </button>
-        ))}
-      </div>
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Izoh (ixtiyoriy)" className="mb-2 mt-3 w-full resize-none rounded-xl border border-line px-3 py-2.5 text-[13.5px] outline-none focus:border-sea" />
-    </BottomSheet>
-  )
-}
-
 function VisitInfo({ p, i, onClose, onToast }) {
   const v = p.visits[i]
   if (!v) return null
@@ -370,37 +338,6 @@ function VisitInfo({ p, i, onClose, onToast }) {
         <button type="button" onClick={toggle} className="h-11 rounded-xl bg-[#0b8a95] text-[13.5px] font-semibold text-white">{v.done === false ? 'Bajarildi deb belgilash' : 'Rejaga qaytarish'}</button>
         <button type="button" onClick={remove} aria-label="Tashrifni o‘chirish" className="grid size-11 place-items-center rounded-xl border border-line text-sale"><Trash2 className="size-5" /></button>
       </div>
-    </BottomSheet>
-  )
-}
-
-function PaySheet({ p, payments, onClose, onDone }) {
-  const [sum, setSum] = useState(p.debt ? String(p.debt) : '')
-  const [method, setMethod] = useState('Naqd')
-  const [service, setService] = useState('')
-  const [tried, setTried] = useState(false)
-  const n = Number(sum.replace(/\D/g, ''))
-  const extra = Number(service.replace(/\D/g, ''))
-  const ok = n > 0 && n <= p.debt + extra
-  const save = () => {
-    setTried(true)
-    if (!ok) return
-    patchBemor(p.id, { total: p.total + extra, paid: p.paid + n, payments: [{ date: fmtDate(todayDots()), sum: n, method }, ...payments] })
-    onDone(`${som(n)} qabul qilindi`)
-  }
-  return (
-    <BottomSheet title="To‘lov qabul qilish" onClose={onClose} footer={<button type="button" onClick={save} className="h-12 flex-1 rounded-xl bg-[#0b8a95] text-[14px] font-semibold text-white">Qabul qilish{n ? ` · ${som(n)}` : ''}</button>}>
-      <div className="mt-2 grid grid-cols-3 gap-2 rounded-2xl bg-[#f3f7fa] p-3 text-center">
-        {[['Umumiy', p.total, 'text-ink'], ['To‘langan', p.paid, 'text-[#1c9a52]'], ['Qarz', p.debt, 'text-[#e0454f]']].map(([l, v, c]) => <p key={l}><span className="block text-[11px] text-muted">{l}</span><b className={`text-[12.5px] ${c}`}>{som(v)}</b></p>)}
-      </div>
-      <label className="mt-3 block text-[12px] text-muted">Yangi xizmat summasi (ixtiyoriy)<input value={service} onChange={(e) => setService(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="Masalan, 500000" className={`mt-1 ${input(false)}`} /></label>
-      <label className="mt-2 block text-[12px] text-muted">To‘lov summasi<input value={sum} onChange={(e) => setSum(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="Summa" className={`mt-1 ${input(tried && !ok)}`} /></label>
-      {tried && !ok && <p className="mt-1 text-[11.5px] text-sale">{n ? 'Summa qarzdan oshmasligi kerak' : 'Summani kiriting'}</p>}
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {[p.debt + extra, 500000, 1000000].filter((x, i, a) => x > 0 && a.indexOf(x) === i).map((x) => <button key={x} type="button" onClick={() => setSum(String(x))} className="h-8 rounded-lg bg-page px-2.5 text-[12px] text-ink-2">{som(x)}</button>)}
-      </div>
-      <p className="mt-3 text-[13px] font-semibold text-ink">To‘lov usuli</p>
-      <div className="mb-2 mt-2 flex flex-wrap gap-1.5">{METHODS.map((m) => <button key={m} type="button" aria-pressed={method === m} onClick={() => setMethod(m)} className={chip(method === m)}>{method === m && <Check className="size-3.5" />}{m}</button>)}</div>
     </BottomSheet>
   )
 }

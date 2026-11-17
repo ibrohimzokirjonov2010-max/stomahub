@@ -23,9 +23,9 @@ export function serviceOptions(list) {
 
 /**
  * Yagona "Qabulga yozish" formasi. Natija uchrashuvData 'visits' ga yoziladi.
- * initial: { date, start, patient, room }. onSaved(visit)
+ * initial: { date, start, patient, room, note }. lockPatient: bemorni o‘zgartirib bo‘lmaydi. onSaved(visit)
  */
-export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
+export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPatient = false }) {
   const patients = useBemorlar()
   const services = serviceOptions(useXizmatlar())
   const settings = useClinicSettings()
@@ -43,7 +43,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
   const [room, setRoom] = useState(chairs.includes(initial.room) ? initial.room : chairs[0] || '')
   const [doctor, setDoctor] = useState(staff[0]?.name || 'me')
   const [time, setTime] = useState(initial.start || '')
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState(initial.note || '')
   const [err, setErr] = useState('')
   const roomNow = chairs.includes(room) ? room : chairs[0] || ''
   const busy = visits.filter((v) => v.date === date && v.room === roomNow && v.status !== 'bekor')
@@ -79,7 +79,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved }) {
               <span className="flex items-center gap-2 rounded-xl border border-line px-3 py-2">
                 <span className="grid size-8 place-items-center rounded-full bg-sea-50 text-[11px] font-bold text-sea">{patient.name.split(' ').slice(0, 2).map((w) => w[0]).join('')}</span>
                 <span className="min-w-0 flex-1"><b className="block truncate text-[13px] text-ink">{patient.name}</b><span className="text-[11px] text-muted">{[patient.phone, patient.age].filter(Boolean).join(' · ')}</span></span>
-                <button type="button" onClick={() => setPatient(null)} aria-label="Bemorni o‘zgartirish"><X className="size-4 text-muted" /></button>
+                {!lockPatient && <button type="button" onClick={() => setPatient(null)} aria-label="Bemorni o‘zgartirish"><X className="size-4 text-muted" /></button>}
               </span>
             ) : (
               <div className="rounded-xl border border-line">

@@ -1,9 +1,12 @@
 import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  AlertTriangle, Calendar, Camera, ChevronRight, Mail, MapPin, Phone, Plus, Send, X,
+  AlertTriangle, Calendar, Camera, ChevronRight, MapPin, Phone, Send,
 } from 'lucide-react'
 import { getBemor, patchBemor, som, statusClass, useBemorlar } from '../bemorData'
+import AppointmentForm from '../components/crm/AppointmentForm'
+import PaymentForm from '../components/crm/PaymentForm'
+import { recordClinicPayment, recordPatientPayment, recordPatientVisit } from '../components/crm/syncPatientRecords'
 
 const UPPER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
 const LOWER = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
@@ -23,7 +26,7 @@ const LEGEND = [
 
 export default function Bemor() {
   const { id } = useParams()
-  useBemorlar()
+  const patients = useBemorlar()
   const p = getBemor(id)
   const [tab, setTab] = useState('umumiy')
   const [dent, setDent] = useState('doimiy')
@@ -39,21 +42,6 @@ export default function Bemor() {
     const cur = p.teeth?.[n] || 'healthy'
     const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length]
     patchBemor(p.id, { teeth: { ...p.teeth, [n]: next } })
-  }
-
-  const addVisit = (e) => {
-    e.preventDefault()
-    const data = new FormData(e.target)
-    const row = { date: String(data.get('date')).split('-').reverse().join('.'), kind: data.get('kind'), doctor: data.get('doctor'), done: false }
-    patchBemor(p.id, { visits: [row, ...(p.visits || [])], next: row.date })
-    setVisit(false)
-  }
-
-  const addPay = (e) => {
-    e.preventDefault()
-    const sum = Number(new FormData(e.target).get('sum')) || 0
-    patchBemor(p.id, { paid: p.paid + sum })
-    setPay(false)
   }
 
   const saveInfo = () => {
@@ -273,23 +261,21 @@ export default function Bemor() {
       )}
 
       {visit && (
-        <Modal title="Qabul qo‘shish" onClose={() => setVisit(false)}>
-          <form onSubmit={addVisit} className="space-y-2">
-            <input name="date" type="date" required className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <input name="kind" required placeholder="Qabul turi" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <input name="doctor" defaultValue="" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <button className="h-9 rounded-lg bg-sea px-4 text-[13px] font-semibold text-white">Saqlash</button>
-          </form>
-        </Modal>
+        <AppointmentForm
+          initial={{ patient: p }}
+          lockPatient
+          onClose={() => setVisit(false)}
+          onSaved={(row) => { recordPatientVisit(p, row); setVisit(false) }}
+        />
       )}
       {pay && (
-        <Modal title="To‘lov" onClose={() => setPay(false)}>
-          <form onSubmit={addPay} className="space-y-2">
-            <input name="sum" type="number" min="1" required placeholder="Summa" className="h-9 w-full rounded-lg border border-line px-2 text-[13px]" />
-            <p className="text-[12px] text-muted">Hozirgi qarz: {som(p.debt)}</p>
-            <button className="h-9 rounded-lg bg-sea px-4 text-[13px] font-semibold text-white">Qabul qilish</button>
-          </form>
-        </Modal>
+        <PaymentForm
+          patients={patients}
+          patient={p}
+          lockPatient
+          onClose={() => setPay(false)}
+          onSave={(row) => { recordClinicPayment(row); recordPatientPayment(p, row); setPay(false) }}
+        />
       )}
     </div>
   )
@@ -349,13 +335,3 @@ function Row({ k, v, green, red }) {
   return <div className="mt-1 flex justify-between gap-2 text-[12px]"><span className="text-muted">{k}</span><span className={`font-semibold ${green ? 'text-[#1c9a52]' : ''} ${red ? 'text-[#e15b4c]' : ''}`}>{v}</span></div>
 }
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between"><h3 className="text-[16px] font-bold">{title}</h3><button onClick={onClose} aria-label="Yopish"><X className="size-4 text-muted" /></button></div>
-        {children}
-      </div>
-    </div>
-  )
-}
