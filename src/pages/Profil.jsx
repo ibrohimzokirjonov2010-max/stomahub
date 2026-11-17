@@ -19,7 +19,7 @@ import {
 } from '../profileStore'
 import { linkWalletInput, tokenizeCardInput, WALLET_PROVIDERS } from '../payments/paymentService'
 import { supabase } from '../supabaseClient'
-import { canEnterSeller, canEnterOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
+import { canEnterSeller, canEnterOrganizer, canUseOrganizer, pickDisplayName, signOut, useSession } from '../sessionStore'
 import { dateLabel, useMySeminars } from '../components/mobile/MobileSeminarlarim'
 import { useCourseCatalog, useMyCourses } from '../courseApi'
 import { sumCoursePoints, toCatalogCard } from '../courseRules'
@@ -42,6 +42,7 @@ const NAV = [
   ['security', 'Xavfsizlik'],
   ['seller', 'Sotuvchi bo‘lish'],
   ['organizer', 'Tashkilotchi bo‘lish'],
+  ['author', 'Kurs muallifi kabineti'],
   ['logout', 'Chiqish'],
 ]
 const NOTIF_TOGGLES = [
@@ -272,6 +273,10 @@ function Board({ initial }) {
       navigate(canEnterOrganizer(session.profile) ? '/tashkilotchi' : '/tashkilotchi-bolish')
       return
     }
+    if (id === 'author') {
+      navigate('/kurs-muallifi')
+      return
+    }
     if (id === 'seller') {
       navigate(canEnterSeller(session.profile) ? '/sotuvchi' : '/sotuvchi-bolish')
       return
@@ -363,7 +368,7 @@ function Board({ initial }) {
       <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className={`${card} h-fit p-2`}>
           <nav className="grid gap-0.5">
-            {NAV.filter(([id]) => id !== 'courses' || myCourses.length > 0).map(([id, label]) => (
+            {NAV.filter(([id]) => (id !== 'courses' || myCourses.length > 0) && (id !== 'author' || canUseOrganizer(session.profile))).map(([id, label]) => (
               <button
                 key={id}
                 type="button"

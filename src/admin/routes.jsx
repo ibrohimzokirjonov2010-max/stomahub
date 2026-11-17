@@ -17,6 +17,7 @@ import Sozlamalar from './pages/Sozlamalar'
 import Mahsulotlar from './pages/Mahsulotlar'
 import Moderatsiya from './pages/Moderatsiya'
 import Qiziqishlar from './pages/Qiziqishlar'
+import KursModeratsiya from './pages/KursModeratsiya'
 
 export const adminRoutes = (
   <Route path="/admin" element={<AdminGate><AdminLayout /></AdminGate>}>
@@ -36,6 +37,7 @@ export const adminRoutes = (
     <Route path="sozlamalar" element={<Sozlamalar />} />
     <Route path="mahsulotlar" element={<Mahsulotlar />} />
     <Route path="moderatsiya" element={<Moderatsiya />} />
+    <Route path="kurslar" element={<KursModeratsiya />} />
     <Route path="qiziqishlar" element={<Qiziqishlar />} />
   </Route>
 )

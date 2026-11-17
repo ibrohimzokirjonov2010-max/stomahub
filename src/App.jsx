@@ -41,8 +41,7 @@ import OrgCertificates from './organizer/pages/Certificates'
 import Promos from './organizer/pages/Promos'
 import Wizard from './organizer/pages/Wizard'
 import WalletPage from './organizer/pages/Wallet'
-import OrgCourses from './organizer/pages/OrgCourses'
-import CourseEditor from './organizer/pages/CourseEditor'
+import { LegacyCourseRedirect } from './author/redirects'
 import ConfirmHeld from './organizer/pages/Confirm'
 import SeminarDetail from './organizer/pages/Detail'
 import { Marketing, Speakers, Reports, Ratings, SettingsPage, HelpPage } from './organizer/pages/Extra'
@@ -147,6 +146,15 @@ const IconSheet = import.meta.env.DEV ? lazy(() => import('./dev/IconSheet')) : 
 const CourseShot = import.meta.env.DEV ? lazy(() => import('./dev/CourseShot')) : null
 const CourseDetailShot = import.meta.env.DEV ? lazy(() => import('./dev/CourseDetailShot')) : null
 const QuizEditorShot = import.meta.env.DEV ? lazy(() => import('./dev/QuizEditorShot')) : null
+const AuthorShot = import.meta.env.DEV ? lazy(() => import('./dev/AuthorShot')) : null
+const AuthorShell = lazy(() => import('./author/AuthorShell'))
+const AuthorDashboard = lazy(() => import('./author/pages/Dashboard'))
+const AuthorCourses = lazy(() => import('./author/pages/Courses'))
+const AuthorStudents = lazy(() => import('./author/pages/Students'))
+const AuthorPayments = lazy(() => import('./author/pages/Payments'))
+const AuthorWizard = lazy(() => import('./author/wizard/Wizard'))
+const authorLoading = <div className="grid min-h-[50vh] place-items-center text-[13px] text-[#5B6F7E]" role="status">Yuklanmoqda…</div>
+const authorPage = (node) => <Suspense fallback={authorLoading}>{node}</Suspense>
 import MobileSurplusItem from './components/mobile/MobileSurplusItem'
 import MobileProfil from './components/mobile/MobileProfil'
 import Profil from './pages/Profil'
@@ -230,13 +238,22 @@ export default function App() {
           {CourseShot && <Route path="/dev/kurs/:screen" element={<Suspense fallback={null}><CourseShot /></Suspense>} />}
           {CourseDetailShot && <Route path="/dev/kurs-sahifa/:state" element={<Suspense fallback={null}><CourseDetailShot /></Suspense>} />}
           {QuizEditorShot && <Route path="/dev/kurs-tahrir/:screen" element={<Suspense fallback={null}><QuizEditorShot /></Suspense>} />}
+          {AuthorShot && <Route path="/dev/muallif/:screen" element={<Suspense fallback={null}><AuthorShot /></Suspense>} />}
+          <Route path="/kurs-muallifi" element={authorPage(<AuthorShell />)}>
+            <Route index element={authorPage(<AuthorDashboard />)} />
+            <Route path="kurslar" element={authorPage(<AuthorCourses />)} />
+            <Route path="kurslar/yangi" element={authorPage(<AuthorWizard />)} />
+            <Route path="kurslar/:id/tahrir" element={authorPage(<AuthorWizard />)} />
+            <Route path="oquvchilar" element={authorPage(<AuthorStudents />)} />
+            <Route path="tolovlar" element={authorPage(<AuthorPayments />)} />
+          </Route>
           {ReviewPhotosShot && <Route path="/review-photos-shot/:sec" element={<Suspense fallback={null}><ReviewPhotosShot /></Suspense>} />}
           <Route path="/tashkilotchi" element={<OrganizerGate><Shell /></OrganizerGate>}>
             <Route index element={<OrgVerifyGate section="Boshqaruv paneli"><Dashboard /></OrgVerifyGate>} />
             <Route path="seminarlar" element={<OrgVerifyGate section="Mening seminarlarim"><Seminars /></OrgVerifyGate>} />
-            <Route path="kurslar" element={<OrgVerifyGate section="Kurslar"><OrgCourses /></OrgVerifyGate>} />
-            <Route path="kurslar/yangi" element={<OrgVerifyGate section="Yangi kurs"><CourseEditor /></OrgVerifyGate>} />
-            <Route path="kurslar/:id" element={<OrgVerifyGate section="Kurs"><CourseEditor /></OrgVerifyGate>} />
+            <Route path="kurslar" element={<Navigate to="/kurs-muallifi/kurslar" replace />} />
+            <Route path="kurslar/yangi" element={<Navigate to="/kurs-muallifi/kurslar/yangi" replace />} />
+            <Route path="kurslar/:id" element={<LegacyCourseRedirect />} />
             <Route path="seminarlar/yangi" element={<OrgVerifyGate section="Seminar qo‘shish"><Wizard /></OrgVerifyGate>} />
             <Route path="seminarlar/:id" element={<OrgVerifyGate section="Seminar"><SeminarDetail /></OrgVerifyGate>} />
             <Route path="seminarlar/:id/tasdiqlash" element={<OrgVerifyGate section="Seminar"><ConfirmHeld /></OrgVerifyGate>} />

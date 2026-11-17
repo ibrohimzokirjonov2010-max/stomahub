@@ -11,7 +11,7 @@ export const ROUTE_TITLES = [
   ['/yangiliklar', 'Yangiliklar'], ['/kanallar', 'Kanallar'], ['/community', 'Hamjamiyat'], ['/hamjamiyat', 'Hamjamiyat'],
   ['/sertifikatlar', 'Sertifikatlar'], ['/kirish', 'Kirish'], ['/royxat', 'Ro‘yxatdan o‘tish'],
   ['/sotuvchi-bolish', 'Sotuvchi bo‘lish'], ['/tashkilotchi-bolish', 'Tashkilotchi bo‘lish'],
-  ['/sotuvchi', 'Sotuvchi kabineti'], ['/tashkilotchi', 'Tashkilotchi kabineti'], ['/admin', 'Admin paneli'],
+  ['/sotuvchi', 'Sotuvchi kabineti'], ['/tashkilotchi', 'Tashkilotchi kabineti'], ['/kurs-muallifi', 'Kurs muallifi kabineti'], ['/admin', 'Admin paneli'],
   ['/klinika', 'Klinika kabineti'], ['/profil', 'Profil'], ['/maxfiylik', 'Maxfiylik siyosati'],
   ['/foydalanish-shartlari', 'Foydalanish shartlari'],
 ]

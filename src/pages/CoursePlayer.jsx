@@ -93,10 +93,16 @@ function PlayerBody({ mobile }) {
     const onMessage = (event) => {
       if (event.origin !== BUNNY_PLAYER_ORIGIN) return
       const parsed = parseBunnyMessage(event.data)
+      if (!parsed) return
+      if (parsed.event === 'ready') subscribeBunnyPlayer(event.source)
+      // Bunny can emit before iframe onLoad wires the ref — bind the source on first trusted message.
+      if (event.source && (!playerWindow.current || playerLesson.current !== lessonId)) {
+        playerWindow.current = event.source
+        playerLesson.current = lessonId
+      }
       const frame = playerWindow.current
-      if (parsed?.event === 'ready' && (!frame || event.source === frame)) subscribeBunnyPlayer(event.source)
       if (!frame || event.source !== frame || playerLesson.current !== lessonId) return
-      if (!parsed || parsed.current == null) return
+      if (parsed.current == null) return
       if (parsed.event && !/timeupdate|progress|ended|pause|seeked/.test(parsed.event)) return
       const now = Date.now()
       if (!shouldReportProgress({ lastSent: lastSent.current, now, event: parsed.event })) return
