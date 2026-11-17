@@ -5,6 +5,7 @@ import ShopLayout from '../components/market/ShopLayout'
 import EmptyCatalog from '../components/EmptyCatalog'
 import { useCatalogVersion } from '../recordSync'
 import { articles, authorOf, cats, catName, events, popularOf, viewsOf } from '../yangiliklarData'
+import { SOCIAL_LINKS } from '../config/contact'
 
 export default function Yangiliklar() {
   const [q, setQ] = useState('')
@@ -101,12 +102,14 @@ function Feed({ query }) {
             </div>
           </div>
 
+          {SOCIAL_LINKS.Telegram && (
           <div className="rounded-xl bg-gradient-to-br from-sea to-[#0a6f78] p-3 text-white">
             <Send className="size-6" />
             <p className="mt-2 text-[14px] font-bold leading-tight">Telegram kanalimizga obuna bo‘ling</p>
             <p className="mt-1 text-[11px] leading-snug text-white/85">Stomatologiya yangiliklari, tadbirlar va foydali materiallar birinchi bo‘lib sizda!</p>
             <button onClick={() => setTg(true)} className="mt-3 h-8 w-full rounded-lg bg-white text-[12px] font-semibold text-sea">Obuna bo‘lish</button>
           </div>
+          )}
         </aside>
       </div>
 
@@ -123,10 +126,10 @@ function Feed({ query }) {
           <Link to={`/yangiliklar/${event.article}`} className="mt-2 inline-block text-[12px] font-semibold text-sea">Maqolani o‘qish</Link>
         </Modal>
       )}
-      {tg && (
+      {tg && SOCIAL_LINKS.Telegram && (
         <Modal title="Telegram kanalimiz" onClose={() => setTg(false)}>
-          <p className="text-[13px] leading-relaxed text-ink-2">@stomahub kanalida yangiliklar, tadbirlar va qisqa maslahatlar chiqadi.</p>
-          <a href="https://t.me/stomahub" target="_blank" rel="noreferrer" className="mt-3 flex h-9 items-center justify-center rounded-lg bg-sea text-[12px] font-semibold text-white">Kanalni ochish</a>
+          <p className="text-[13px] leading-relaxed text-ink-2">Telegram kanalida yangiliklar, tadbirlar va qisqa maslahatlar chiqadi.</p>
+          <a href={SOCIAL_LINKS.Telegram} target="_blank" rel="noreferrer" className="mt-3 flex h-9 items-center justify-center rounded-lg bg-sea text-[12px] font-semibold text-white">Kanalni ochish</a>
         </Modal>
       )}
     </div>

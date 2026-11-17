@@ -17,6 +17,7 @@ import { useMyCourses } from '../../courseApi'
 import { sumCoursePoints } from '../../courseRules'
 import { MyCourseCards } from '../course/MyCourseCards'
 import { canEnterSeller, canEnterOrganizer, canUseOrganizer, signOut, useSession } from '../../sessionStore'
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, CONTACT_EMAIL, SOCIAL_LINKS } from '../../config/contact'
 import { BrandLogo, MobileToast, CountBadge, CartCountBadge } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet } from './MobileSeminars'
@@ -606,7 +607,11 @@ function HelpSheet({ onClose }) {
   return (
     <BottomSheet title="Yordam" onClose={onClose}>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        {[[Phone, 'Qo‘ng‘iroq', 'tel:+998712000000'], [Send, 'Telegram', 'https://t.me/stomahub'], [Mail, 'Email', 'mailto:support@stomahub.uz']].map(([Icon, label, href]) => (
+        {[
+          CONTACT_PHONE && [Phone, 'Qo‘ng‘iroq', CONTACT_PHONE_TEL],
+          SOCIAL_LINKS.Telegram && [Send, 'Telegram', SOCIAL_LINKS.Telegram],
+          CONTACT_EMAIL && [Mail, 'Email', `mailto:${CONTACT_EMAIL}`],
+        ].filter(Boolean).map(([Icon, label, href]) => (
           <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-[#eef8f6] py-3 text-[12px] font-semibold text-sea">
             <Icon className="size-5" /> {label}
           </a>

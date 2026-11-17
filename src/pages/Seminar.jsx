@@ -446,7 +446,9 @@ export function SeminarView({ d, similar = null, preview = false }) {
               {v.contact?.phone
                 ? <a href={`tel:${formatPhone(v.contact.phone).replace(/[^\d+]/g, '')}`} className="block text-[12px] text-ink-2">{formatPhone(v.contact.phone)}</a>
                 : CONTACT_PHONE && <a href={CONTACT_PHONE_TEL} className="block text-[12px] text-ink-2">{CONTACT_PHONE}</a>}
-              <a href={telegramHandle(v.contact?.telegram).url || 'https://t.me/stomahub'} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-sea"><Send className="size-3.5" /> Telegram orqali yozish{telegramHandle(v.contact?.telegram).handle ? ` (${telegramHandle(v.contact?.telegram).handle})` : ''}</a>
+              {telegramHandle(v.contact?.telegram).url && (
+                <a href={telegramHandle(v.contact?.telegram).url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-sea"><Send className="size-3.5" /> Telegram orqali yozish{telegramHandle(v.contact?.telegram).handle ? ` (${telegramHandle(v.contact?.telegram).handle})` : ''}</a>
+              )}
             </span>
           </div>
         </section>

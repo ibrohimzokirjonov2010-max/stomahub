@@ -175,7 +175,7 @@ export const REVIEWS = []
 
 export const FAQ = [
   { q: 'Pulni qachon yechib olish mumkin?', a: 'Pul faqat seminar o‘tkazilgandan va StomaHub tekshiruvidan o‘tgandan keyin yechib olinadi. So‘rov 1–3 ish kuni ichida ko‘rib chiqiladi.' },
-  { q: 'Platforma komissiyasi qancha?', a: 'Har bir to‘lov summasidan 12% platforma komissiyasi ushlab qolinadi.' },
+  { q: 'Platforma komissiyasi qancha?', a: 'Platforma komissiyasi shartnoma asosida belgilanadi.' },
   { q: 'Seminarni bekor qilsam nima bo‘ladi?', a: 'Ishtirokchilarga 100% pul qaytariladi, SMS va email yuboriladi. Bekor qilingan seminar sahifasi “Bekor qilingan” holatiga o‘tadi.' },
   { q: 'QR check-in ishlamasa?', a: '“Qo‘lda check-in” orqali ishtirokchi telefoni yoki chipta raqami bilan tasdiqlashingiz mumkin.' },
 ]

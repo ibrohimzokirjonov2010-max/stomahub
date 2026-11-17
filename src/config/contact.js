@@ -5,8 +5,8 @@ export const CONTACT_PHONE_IS_PLACEHOLDER = !CONTACT_PHONE
 export const CONTACT_PHONE_TEL = CONTACT_PHONE ? `tel:${CONTACT_PHONE.replace(/[^\d+]/g, '')}` : ''
 export const CONTACT_EMAIL = 'info@stomahub.uz'
 export const SOCIAL_LINKS = {
-  Telegram: '', // masalan: 'https://t.me/stomahub'
-  Instagram: '',
+  Telegram: '', // haqiqiy kanal ochilguncha bo‘sh — saytda ko‘rinmaydi
+  Instagram: 'https://www.instagram.com/stomahub',
   YouTube: '',
   LinkedIn: '',
 }
