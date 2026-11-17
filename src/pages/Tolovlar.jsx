@@ -10,6 +10,8 @@ import {
   METHODS, STATUSES, detailOf, methodOf, replaceClinicPayments, som, useClinicPayments,
 } from '../tolovData'
 import PaymentForm from '../components/crm/PaymentForm'
+import { savePatientPayment } from '../components/crm/syncPatientRecords'
+import { addPayment as addPlanPayment, getPlan } from '../rejaData'
 
 const KPI_META = [
   { label: 'Jami tushum', icon: Wallet, tint: '#e7f7f4', color: '#0f9b8e' },
@@ -64,23 +66,20 @@ export default function Tolovlar() {
     setOpen(true)
   }
 
-  const save = (payment) => {
-    setRows((list) => {
-      const i = list.findIndex((r) => r.id === payment.id)
-      if (i >= 0) {
-        const next = list.slice()
-        next[i] = { ...list[i], ...payment }
-        return next
-      }
-      return [payment, ...list]
-    })
+  const save = (payment, opts = {}) => {
+    // Yagona yo‘l: clinic_payments + bemor kartasi nusxasi + (reja tanlansa) reja hisobi — ikki marta sanalmaydi
+    savePatientPayment(payment, { ...opts, patient: patients.find((p) => p.id === payment.patientId) })
     setPage(1)
     setOpen(false)
     setEdit(null)
   }
 
   const refund = (id) => {
+    const row = rows.find((r) => r.id === id)
+    if (!row || row.status === 'Qaytarilgan') { setMenu(null); return }
     setRows((list) => list.map((r) => (r.id === id ? { ...r, status: 'Qaytarilgan' } : r)))
+    // Rejaga bog‘langan to‘lov qaytarilsa — reja hisobidan ham ayiriladi
+    if (row.planId && getPlan(row.planId)) addPlanPayment(row.planId, -(Number(row.amount) || 0), row.method)
     setMenu(null)
   }
 

@@ -9,6 +9,7 @@ import { useVisits } from '../../uchrashuvData'
 import { useClinicPayments } from '../../tolovData'
 import { PLAN_STATUS, STAGE_STATUS, money, dmy, totalOf, progressOf, savePlan, saveTemplate, usePlans } from '../../rejaData'
 import { useBlobSaveError } from '../../recordSync'
+import { VISIT_STATUS_ORDER } from '../../visitStatus'
 import { friendlySupabaseError } from '../../supabaseClient'
 import RejaDialog from '../RejaDialog'
 import { ANAMNEZ, anamnezLabels } from './PatientForm'
@@ -48,8 +49,15 @@ export function Empty({ icon: Icon, title, text, action }) {
 
 /* ================= Davolash rejalari ================= */
 
-export function PlansPanel({ p, plans, onToast }) {
+export function PlansPanel({ p, plans, onToast, highlightId = '', visitId = '' }) {
   const [dialog, setDialog] = useState(null)
+  // Kalendardagi "Qabulda" havolasi (?tab=reja&plan=…&visit=…): shu reja birinchi va ajratilgan, shu qabul bosqichlari belgilangan.
+  const focusId = highlightId || (visitId && plans.find((x) => x.visitId === visitId || (x.stages || []).some((s) => s.visitId === visitId))?.id) || ''
+  const ordered = focusId ? [...plans].sort((a, b) => (b.id === focusId) - (a.id === focusId)) : plans
+  const focusRef = useRef(null)
+  useEffect(() => {
+    if (focusId && focusRef.current) focusRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [focusId])
   const save = (plan, asTemplate) => {
     const isNew = !plans.some((x) => x.id === plan.id)
     savePlan(plan)
@@ -65,7 +73,7 @@ export function PlansPanel({ p, plans, onToast }) {
       </div>
       {plans.length ? (
         <div className="grid gap-3 xl:grid-cols-2">
-          {plans.map((plan) => <PlanCard key={plan.id} plan={plan} onEdit={() => setDialog(plan)} />)}
+          {ordered.map((plan) => <PlanCard key={plan.id} plan={plan} onEdit={() => setDialog(plan)} focus={plan.id === focusId} visitId={visitId} cardRef={plan.id === focusId ? focusRef : undefined} />)}
         </div>
       ) : (
         <section className="rounded-2xl bg-white shadow-card">
@@ -82,13 +90,14 @@ export function PlansPanel({ p, plans, onToast }) {
   )
 }
 
-function PlanCard({ plan, onEdit }) {
+function PlanCard({ plan, onEdit, focus = false, visitId = '', cardRef }) {
   const st = PLAN_STATUS[plan.status] || PLAN_STATUS.reja
   const total = totalOf(plan)
   const paid = Number(plan.paid) || 0
   const pr = progressOf(plan)
   return (
-    <section className="min-w-0 rounded-2xl bg-white p-4 shadow-card" data-testid="plan-card">
+    <section ref={cardRef} className={`min-w-0 scroll-mt-24 rounded-2xl bg-white p-4 shadow-card ${focus ? 'ring-2 ring-sea' : ''}`} data-testid="plan-card" data-focus={focus ? 'true' : undefined}>
+      {focus && <p className="mb-2 inline-flex items-center gap-1 rounded-full bg-sea-50 px-2 py-0.5 text-[11px] font-semibold text-sea">Hozirgi qabul rejasi</p>}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[11.5px] text-muted">{plan.code} · {dmy(plan.start)}</p>
@@ -100,7 +109,7 @@ function PlanCard({ plan, onEdit }) {
         {plan.stages.map((s, i) => {
           const ss = STAGE_STATUS[s.status] || STAGE_STATUS.rejada
           return (
-            <li key={s.id} className={`flex items-center gap-2.5 px-3 py-2 text-[12.5px] ${s.status === 'bekor' ? 'opacity-60' : ''}`}>
+            <li key={s.id} data-visit-stage={visitId && s.visitId === visitId ? 'true' : undefined} className={`flex items-center gap-2.5 px-3 py-2 text-[12.5px] ${s.status === 'bekor' ? 'opacity-60' : ''} ${visitId && s.visitId === visitId ? 'bg-sea-50/70' : ''}`}>
               <span className="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white" style={{ background: ss.tint }}>{i + 1}</span>
               <span className="min-w-0 flex-1">
                 <b className={`block truncate font-semibold text-ink ${s.status === 'bekor' ? 'line-through' : ''}`}>{s.title}</b>
@@ -152,7 +161,7 @@ export function VisitsPanel({ visits, p, onAdd, onToast }) {
                   <b className="block truncate font-semibold text-ink">{v.kind}{v.tooth ? <span className="font-normal text-muted"> · {v.tooth}-tish</span> : null}</b>
                   <span className="block truncate text-[11px] text-muted">{[v.doctor, v.room, v.note].filter(Boolean).join(' · ') || '—'}</span>
                 </span>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${st.cls}`}>{v.readOnly ? `${v.done ? 'Bajarilgan' : 'Rejada'} · eski` : st.label}</span>
+                <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>{v.readOnly ? `${v.done ? 'Bajarilgan' : 'Rejada'} · eski` : st.label}</span>
                 {!v.readOnly && (
                   <span className="flex shrink-0 items-center gap-1">
                     <IconBtn label={v.done ? 'Rejaga qaytarish' : 'Bajarildi deb belgilash'} onClick={() => { markVisitDone(p, v, !v.done); onToast?.(v.done ? 'Qabul rejaga qaytarildi' : 'Qabul bajarildi') }}>{v.done ? <RotateCcw className="size-4" /> : <Check className="size-4" />}</IconBtn>
@@ -172,7 +181,7 @@ export function VisitsPanel({ visits, p, onAdd, onToast }) {
       ) : (
         <Empty icon={CalendarPlus} title="Hali tashrif yo‘q" text="Qabul qo‘shilsa, u Uchrashuvlar kalendarida ham ko‘rinadi." action={<button type="button" onClick={onAdd} className={`${btn} mt-1 bg-sea text-white`}><CalendarPlus className="size-4" /> Qabul qo‘shish</button>} />
       )}
-      {edit && <VisitEditDialog v={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); onToast?.('Tashrif saqlandi') }} />}
+      {edit && <VisitEditDialog p={p} v={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); onToast?.('Tashrif saqlandi') }} />}
     </section>
   )
 }
@@ -200,7 +209,7 @@ export function Dialog({ title, onClose, children, foot, wide }) {
 
 const L = ({ t, children }) => <label className="block text-[12px] font-medium text-ink-2"><span className="mb-1 block">{t}</span>{children}</label>
 
-function VisitEditDialog({ v, onClose, onSaved }) {
+function VisitEditDialog({ p, v, onClose, onSaved }) {
   const [f, setF] = useState({ date: v.iso, start: v.time, service: v.kind, doctor: v.doctor, note: v.note, status: v.status })
   const [err, setErr] = useState('')
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
@@ -208,7 +217,12 @@ function VisitEditDialog({ v, onClose, onSaved }) {
     if (!f.date || !f.start || !f.service.trim()) return setErr('Sana, vaqt va xizmat majburiy.')
     const raw = v.raw || {}
     const renamed = f.service.trim() !== raw.service
-    updateCalendarVisit(v.id, { date: f.date, start: f.start, service: f.service.trim(), doctor: f.doctor || raw.doctor || 'me', note: f.note.trim(), status: f.status, ...(renamed && !raw.services ? { serviceId: '' } : {}) })
+    const finishing = f.status === 'yakun' && v.status !== 'yakun'
+    const reopening = f.status !== 'yakun' && v.status === 'yakun'
+    updateCalendarVisit(v.id, { date: f.date, start: f.start, service: f.service.trim(), doctor: f.doctor || raw.doctor || 'me', note: f.note.trim(), ...(finishing || reopening ? {} : { status: f.status }), ...(renamed && !raw.services ? { serviceId: '' } : {}) })
+    // Yakunlash / qaytarish — "Tugatish" bilan bir xil yo‘l (bosqichlar patchPlan orqali, tish kartasi shu yerda)
+    if (finishing) markVisitDone(p, { ...v, iso: f.date }, true)
+    if (reopening) { markVisitDone(p, v, false); if (f.status !== 'tasdiq') updateCalendarVisit(v.id, { status: f.status }) }
     onSaved()
   }
   return (
@@ -220,7 +234,7 @@ function VisitEditDialog({ v, onClose, onSaved }) {
       <L t="Xizmat *"><input value={f.service} onChange={set('service')} className={field} /></L>
       <div className="grid grid-cols-2 gap-2">
         <L t="Shifokor"><input value={f.doctor} onChange={set('doctor')} placeholder="Men" className={field} /></L>
-        <L t="Holat"><select value={f.status} onChange={set('status')} className={field}>{['tasdiq', 'kutil', 'davol', 'yakun', 'bekor'].map((k) => <option key={k} value={k}>{VISIT_STATUS[k].label}</option>)}</select></L>
+        <L t="Holat"><select value={f.status} onChange={set('status')} className={field}>{VISIT_STATUS_ORDER.map((k) => <option key={k} value={k}>{VISIT_STATUS[k].label}</option>)}</select></L>
       </div>
       <L t="Izoh"><textarea value={f.note} onChange={set('note')} className="h-16 w-full resize-none rounded-xl border border-line px-3 py-2 text-[13px] outline-none focus:border-sea" /></L>
       {err && <p className="text-[12px] text-[#e11d48]">{err}</p>}

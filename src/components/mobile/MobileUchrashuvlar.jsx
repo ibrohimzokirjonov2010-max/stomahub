@@ -2,7 +2,12 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays, CalendarClock, ChevronLeft, ChevronRight, FileText, MessageCircle, MoreVertical, Phone, Plus, Send, Trash2, UserRound } from 'lucide-react'
 import { useBemorlar } from '../../bemorData'
+import { VISIT_STATUS_ORDER, VISIT_TONES, normStatus } from '../../visitStatus'
 import { MONTHS, doctors, isoOf, minutes, parts, setVisits, shift, todayIso, useVisits } from '../../uchrashuvData'
+import AppointmentForm from '../crm/AppointmentForm'
+import VisitDetails, { bookDraftFromVisit, patientOfVisit } from '../crm/VisitDetails'
+import PaymentForm from '../crm/PaymentForm'
+import { savePatientPayment } from '../crm/syncPatientRecords'
 import { MobileToast } from './parts'
 import MobileTabBar from './MobileTabBar'
 import { BottomSheet, ToothIcon } from './MobileSeminars'
@@ -12,18 +17,13 @@ import { Face } from './bemorParts'
 export const DAY_SHORT = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
 const DAY_LONG = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba']
 export const MON_SHORT = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek']
-export const MST = {
-  tasdiq: ['Kelmoqda', 'bg-[#e6f8ec] text-[#1c9a52]'],
-  kutil: ['Kutilmoqda', 'bg-[#e6f4f3] text-[#0b6d73]'],
-  davol: ['Davolanmoqda', 'bg-[#fff1e6] text-[#e07a2e]'],
-  yakun: ['Bajarildi', 'bg-[#eef1f5] text-[#6b7a90]'],
-  bekor: ['Bekor qilindi', 'bg-[#ffecee] text-[#e0475b]'],
-}
+// Yagona holat lug‘ati (src/visitStatus.js): [label, tone]
+export const MST = Object.fromEntries(VISIT_STATUS_ORDER.map((k) => [k, [VISIT_TONES[k].label, VISIT_TONES[k]]]))
 const TABS = [
   ['all', 'Barchasi', () => true],
-  ['come', 'Keladigan', (v) => v.status === 'tasdiq' || v.status === 'davol'],
+  ['come', 'Keladigan', (v) => ['tasdiq', 'keldi', 'qabulda'].includes(normStatus(v.status))],
   ['wait', 'Kutilayotgan', (v) => v.status === 'kutil'],
-  ['done', 'Bajarildi', (v) => v.status === 'yakun'],
+  ['done', 'Yakunlangan', (v) => normStatus(v.status) === 'yakun'],
 ]
 
 export const dow = (iso) => {
@@ -65,12 +65,21 @@ export default function MobileUchrashuvlar() {
   const [sheet, setSheet] = useState(null)
   const [toast, setToast] = useState(() => location.state?.toast || '')
   const [undo, setUndo] = useState(null)
+  const [picked, setPicked] = useState(null)
+  const [payFor, setPayFor] = useState(null)
+  const [draft, setDraft] = useState(null)
   const closeToast = useCallback(() => { setToast(''); setUndo(null) }, [])
+  const livePicked = picked ? visits.find((x) => x.id === picked.id) || picked : null
+  const openBook = (visit, patient, { reschedule, plan } = {}) => {
+    const who = patient || patientOfVisit(visit, patients)
+    setPicked(null)
+    setDraft(bookDraftFromVisit(visit, who, { reschedule, plan }))
+  }
 
   const day = useMemo(() => visits.filter((v) => v.date === date).sort((a, b) => minutes(a.start) - minutes(b.start)), [visits, date])
   const rows = day.filter(TABS.find((t) => t[0] === tab)[2])
   const live = date === TODAY ? nowMinutes() : date < TODAY ? Infinity : -1
-  const current = day.find((v) => v.status !== 'yakun' && v.status !== 'bekor' && minutes(v.start) + v.dur > live)?.id
+  const current = day.find((v) => !['yakun', 'bekor', 'kelmadi'].includes(normStatus(v.status)) && minutes(v.start) + v.dur > live)?.id
   const timeline = rows
 
   const setStatus = (v, s) => {
@@ -132,7 +141,7 @@ export default function MobileUchrashuvlar() {
                 <b className={`text-[13.5px] font-bold ${v.status === 'bekor' ? 'text-muted line-through' : 'text-[#0b6d73]'}`}>{v.start}</b>
                 <span className={`absolute right-[-5px] top-[15px] size-3 rounded-full border-2 border-[#0b6d73] ${v.id === current ? 'bg-[#0b6d73] ring-[3px] ring-[#cfe6e4]' : v.status === 'yakun' ? 'bg-[#0b6d73]/25' : 'bg-white'}`} />
               </div>
-              <VisitCard v={v} p={patientOf(v, patients)} onMenu={() => setSheet({ menu: v })} onChat={() => { const ph = v.phone || patientOf(v, patients)?.phone; if (ph) setSheet({ sms: v }); else setToast('Bemorning telefon raqami kiritilmagan') }} onCall={call} />
+              <VisitCard v={v} p={patientOf(v, patients)} onOpen={() => setPicked(v)} onMenu={() => setSheet({ menu: v })} onChat={() => { const ph = v.phone || patientOf(v, patients)?.phone; if (ph) setSheet({ sms: v }); else setToast('Bemorning telefon raqami kiritilmagan') }} onCall={call} />
             </div>
           ))}
         </div>
@@ -162,30 +171,49 @@ export default function MobileUchrashuvlar() {
       )}
       {sheet?.sms && <SmsSheet v={sheet.sms} onClose={() => setSheet(null)} phone={sheet.sms.phone || patientOf(sheet.sms, patients)?.phone || ''} onSent={(text) => { const ph = (sheet.sms.phone || patientOf(sheet.sms, patients)?.phone || '').replace(/[^\d+]/g, ''); setSheet(null); if (!ph) { setToast('Bemorning telefon raqami kiritilmagan'); return } window.location.href = `sms:${ph}?body=${encodeURIComponent(text)}` }} />}
 
+      {livePicked && !draft && !payFor && (
+        <VisitDetails
+          visit={livePicked}
+          onClose={() => setPicked(null)}
+          onPay={(_v, patient, plan) => setPayFor({ patient, planId: plan?.id || '' })}
+          onBook={openBook}
+        />
+      )}
+      {payFor && (
+        <PaymentForm
+          patients={patients}
+          patient={payFor.patient}
+          planId={payFor.planId}
+          lockPatient
+          onClose={() => setPayFor(null)}
+          onSave={(row, opts) => { savePatientPayment(row, { ...opts, patient: payFor.patient }); setPayFor(null); setToast('To‘lov saqlandi') }}
+        />
+      )}
+      {draft && <AppointmentForm initial={draft} lockPatient={Boolean(draft.lockPatient)} onClose={() => setDraft(null)} onSaved={() => { setDraft(null); setToast('Uchrashuv yozildi') }} />}
       <MobileToast text={toast} onClose={closeToast} action={undo && <button type="button" onClick={() => { undo(); closeToast() }} className="shrink-0 text-[13px] font-semibold text-[#5fe0c8]">Qaytarish</button>} />
       <MobileTabBar />
     </div>
   )
 }
 
-function VisitCard({ v, p, onMenu, onChat, onCall }) {
-  const [label, cls] = MST[v.status] || MST.tasdiq
+function VisitCard({ v, p, onOpen, onMenu, onChat, onCall }) {
+  const [label, tone] = MST[normStatus(v.status)]
   const face = { name: v.name, photo: v.photo || p?.photo }
   const head = <Face p={face} className="size-[48px]" text="text-[14px]" />
   const line = 'flex min-w-0 items-center gap-1.5 text-[11px] text-ink-2'
   const btn = 'grid size-9 place-items-center rounded-full bg-[#e6f4f3] text-[#0b6d73]'
   return (
     <article className={`relative min-w-0 flex-1 rounded-2xl bg-white py-2.5 pl-2.5 pr-2 shadow-[0_1px_4px_rgb(11_31_58/0.06)] ${v.status === 'bekor' ? 'opacity-70' : ''}`}>
-      <div className="flex gap-2.5">
-        {p ? <Link to={`/bemorlar/${p.id}`} className="h-fit shrink-0">{head}</Link> : <span className="h-fit shrink-0">{head}</span>}
+      <div className="flex gap-2.5" onClick={onOpen} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.() } }} role="button" tabIndex={0} data-testid={`uch-visit-${v.id}`}>
+        {p ? <Link to={`/bemorlar/${p.id}`} onClick={(e) => e.stopPropagation()} className="h-fit shrink-0">{head}</Link> : <span className="h-fit shrink-0">{head}</span>}
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-1.5 pr-5">
             {p ? (
-              <Link to={`/bemorlar/${p.id}`} className="min-w-0 flex-1 truncate text-[13.5px] font-bold leading-tight text-[#0d2a4a]">{v.name}</Link>
+              <Link to={`/bemorlar/${p.id}`} onClick={(e) => e.stopPropagation()} className="min-w-0 flex-1 truncate text-[13.5px] font-bold leading-tight text-[#0d2a4a]">{v.name}</Link>
             ) : (
               <h3 className="min-w-0 flex-1 truncate text-[13.5px] font-bold leading-tight text-[#0d2a4a]">{v.name}</h3>
             )}
-            <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold ${cls}`}>{label}</span>
+            <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: tone.bg, color: tone.text }}>{label}</span>
           </div>
           <p className="mt-0.5 truncate text-[11.5px] text-[#5e88a0]">{v.detail || v.service}</p>
           <div className="mt-1.5 flex items-center gap-1.5">
@@ -196,13 +224,13 @@ function VisitCard({ v, p, onMenu, onChat, onCall }) {
               </span>
               <span className={line}><ToothIcon className="size-3.5 shrink-0 text-muted" strokeWidth={1.7} /><span className="truncate">{v.info || `${docName(v.doctor)} · ${v.room}`}</span></span>
             </div>
-            <button type="button" onClick={onChat} aria-label={`${v.name}ga xabar`} className={btn}><MessageCircle className="size-[17px]" /></button>
-            <button type="button" onClick={() => onCall(v, p)} aria-label={`${v.name}ga qo‘ng‘iroq`} className={btn}><Phone className="size-[17px]" /></button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onChat() }} aria-label={`${v.name}ga xabar`} className={btn}><MessageCircle className="size-[17px]" /></button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onCall(v, p) }} aria-label={`${v.name}ga qo‘ng‘iroq`} className={btn}><Phone className="size-[17px]" /></button>
           </div>
           {v.note && <span className={`${line} mt-1`}><FileText className="size-3.5 shrink-0 text-muted" strokeWidth={1.7} /><span className="truncate">Izoh: {v.note}</span></span>}
         </div>
       </div>
-      <button type="button" onClick={onMenu} aria-label="Amallar" className="absolute right-1 top-2 grid size-7 place-items-center text-ink-2"><MoreVertical className="size-4" /></button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onMenu() }} aria-label="Amallar" className="absolute right-1 top-2 grid size-10 place-items-center text-ink-2"><MoreVertical className="size-4" /></button>
     </article>
   )
 }
@@ -304,7 +332,7 @@ function MenuSheet({ v, p, onClose, onStatus, onSms, onRemove }) {
         <button type="button" onClick={onSms} className={row}><MessageCircle className="size-5 text-sea" /> SMS eslatma yuborish</button>
         <p className="mt-2 px-2 text-[12.5px] font-semibold text-muted">Holat</p>
         <div className="mt-2 flex flex-wrap gap-2 px-2">
-          {Object.entries(MST).map(([k, [l, c]]) => <button key={k} type="button" aria-pressed={v.status === k} onClick={() => onStatus(k)} className={`h-9 rounded-xl px-3 text-[12.5px] font-semibold ${v.status === k ? 'ring-2 ring-sea' : ''} ${c}`}>{l}</button>)}
+          {Object.entries(MST).filter(([k]) => k !== 'yakun').map(([k, [l, t]]) => <button key={k} type="button" aria-pressed={normStatus(v.status) === k} onClick={() => onStatus(k)} className={`h-9 rounded-xl px-3 text-[12.5px] font-semibold ${normStatus(v.status) === k ? 'ring-2 ring-sea' : ''}`} style={{ background: t.bg, color: t.text }}>{l}</button>)}
         </div>
         {confirm ? (
           <div className="mt-3 flex gap-2 px-2">

@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { tabFromUrl } from '../components/crm/patientRecords'
 import {
   AlertTriangle, Calendar, Camera, ChevronRight, MapPin, Phone, Send,
 } from 'lucide-react'
@@ -15,6 +16,8 @@ import {
   DocThumb, DocsPanel, MedicalCard, PaymentsPanel, PlansPanel, SaveErrorToast, VisitsPanel, useDocUpload, usePatientRecords,
 } from '../components/crm/PatientTabs'
 import { VISIT_STATUS, addPatientDoc, afterVisitSaved, docDate, niceDate, openPatientFile, isPdf, setPatientPhoto, usePatientPhoto } from '../components/crm/patientRecords'
+
+const DESK_TABS = { reja: 'davolash', plan: 'davolash', davolash: 'davolash', tish: 'tish', tashrif: 'tashrif', tolov: 'tolov', hujjat: 'hujjat', rentgen: 'hujjat', tibbiy: 'tibbiy', umumiy: 'umumiy' }
 
 const UPPER = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
 const LOWER = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
@@ -40,7 +43,14 @@ function BemorView({ id }) {
   const p = getBemor(id)
   const rec = usePatientRecords(p)
   const photo = usePatientPhoto(p)
-  const [tab, setTab] = useState('umumiy')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState(() => tabFromUrl(params.get('tab'), DESK_TABS) || 'umumiy')
+  useEffect(() => {
+    const next = tabFromUrl(params.get('tab'), DESK_TABS)
+    if (next) setTab(next)
+  }, [params])
+  const focusPlan = params.get('plan') || ''
+  const focusVisit = params.get('visit') || ''
   const [dent, setDent] = useState('doimiy')
   const [picked, setPicked] = useState(null)
   const [edit, setEdit] = useState(false)
@@ -220,7 +230,7 @@ function BemorView({ id }) {
                     {v.tooth && <span className="ml-1 text-muted">{v.tooth}</span>}
                     {v.doctor && <span className="block text-[11px] text-muted">{v.doctor}</span>}
                   </span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${(VISIT_STATUS[v.status] || VISIT_STATUS.tasdiq).cls}`}>{v.done ? 'Bajarildi' : v.status === 'bekor' ? 'Bekor' : 'Rejada'}</span>
+                  <span className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold" style={{ background: (VISIT_STATUS[v.status] || VISIT_STATUS.tasdiq).bg, color: (VISIT_STATUS[v.status] || VISIT_STATUS.tasdiq).color }}>{(VISIT_STATUS[v.status] || VISIT_STATUS.tasdiq).label}</span>
                 </li>
               ))}
             </ul>
@@ -229,7 +239,7 @@ function BemorView({ id }) {
         </div>
       )}
 
-      {tab === 'davolash' && <div className="mt-3"><PlansPanel p={p} plans={rec.plans} onToast={flash} /></div>}
+      {tab === 'davolash' && <div className="mt-3"><PlansPanel p={p} plans={rec.plans} onToast={flash} highlightId={focusPlan} visitId={focusVisit} /></div>}
       {tab === 'tashrif' && <div className="mt-3"><VisitsPanel p={p} visits={visits} onAdd={() => setVisit(true)} onToast={flash} /></div>}
       {tab === 'tolov' && <div className="mt-3"><PaymentsPanel m={m} onAdd={() => setPay(true)} /></div>}
       {tab === 'hujjat' && <div className="mt-3"><DocsPanel p={p} onUpload={docs.pick} busy={docs.busy} error={docs.error} onToast={flash} /></div>}
@@ -298,8 +308,6 @@ function BemorView({ id }) {
           patients={patients}
           patient={p}
           lockPatient
-          plans={rec.plans}
-          money={m}
           onClose={() => setPay(false)}
           onSave={(row, opts) => { savePatientPayment(row, { ...opts, patient: p }); setPay(false); flash('To‘lov saqlandi') }}
         />

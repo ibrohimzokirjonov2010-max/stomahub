@@ -1,6 +1,6 @@
 import { tashkentToday } from '../../tashkentDate'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ChevronLeft, MoreVertical, Camera, Phone, CalendarDays, CreditCard, PencilLine, AlertCircle, ChevronRight, CheckCircle2, Wallet,
   PieChart, PlusCircle, Check, Trash2, Copy, FileText, Clock, Stethoscope,
@@ -10,13 +10,14 @@ import { MobileToast } from './parts'
 import { BottomSheet } from './MobileSeminars'
 import { Face, MSTATUS, STATUS_TABS, TOOTH_STATES, TeethChart, Tooth, toothName } from './bemorParts'
 import { DocsPanel, MedicalFields, MedicalView, PlansPanel, SaveErrorToast, medicalForm, saveMedical, useDocUpload, usePatientRecords } from '../crm/PatientTabs'
-import { VISIT_STATUS, addPatientDoc, afterVisitSaved, isUpcoming, markVisitDone, methodLabel, niceDate, removeCalendarVisit, setPatientPhoto, usePatientPhoto } from '../crm/patientRecords'
+import { VISIT_STATUS, addPatientDoc, afterVisitSaved, tabFromUrl, isUpcoming, markVisitDone, methodLabel, niceDate, removeCalendarVisit, setPatientPhoto, usePatientPhoto } from '../crm/patientRecords'
 import AppointmentForm from '../crm/AppointmentForm'
 import PaymentForm from '../crm/PaymentForm'
 import { savePatientPayment } from '../crm/syncPatientRecords'
 import PhoneInput, { extractUzLocalDigits, isCompleteUzPhone, PHONE_INCOMPLETE_MSG, toE164 } from '../PhoneInput'
 
 const TABS = [['umumiy', 'Umumiy'], ['tish', 'Tish kartasi'], ['reja', 'Rejalar'], ['tashrif', 'Tashriflar'], ['tolov', 'To‘lovlar'], ['rentgen', 'Rentgen'], ['tibbiy', 'Tibbiy']]
+const MOB_TABS = { reja: 'reja', plan: 'reja', davolash: 'reja', tish: 'tish', tashrif: 'tashrif', tolov: 'tolov', hujjat: 'rentgen', rentgen: 'rentgen', tibbiy: 'tibbiy', umumiy: 'umumiy' }
 const PLAN_OF = { caries: ['Karies davolash (plomba)', 'Davolash'], missing: ['Implant yoki protez', 'Implant'], endo: ['Endo nazorat rentgeni', 'Konsultatsiya'] }
 
 export default function MobileBemor() {
@@ -31,7 +32,14 @@ function BemorView({ id }) {
   const photo = usePatientPhoto(p)
   const navigate = useNavigate()
   const location = useLocation()
-  const [tab, setTab] = useState('umumiy')
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState(() => tabFromUrl(params.get('tab'), MOB_TABS) || 'umumiy')
+  useEffect(() => {
+    const next = tabFromUrl(params.get('tab'), MOB_TABS)
+    if (next) setTab(next)
+  }, [params])
+  const focusPlan = params.get('plan') || ''
+  const focusVisit = params.get('visit') || ''
   const [sheet, setSheet] = useState(() => (location.state?.visit ? { visit: {} } : null))
   // Oxirgi bosilgan tish kartada ajralib turadi (oyna yopilgandan keyin ham).
   const [pickedTooth, setPickedTooth] = useState(null)
@@ -191,7 +199,7 @@ function BemorView({ id }) {
 
         {tab === 'reja' && (
           <>
-            <PlansPanel p={p} plans={rec.plans} onToast={setToast} />
+            <PlansPanel p={p} plans={rec.plans} onToast={setToast} highlightId={focusPlan} visitId={focusVisit} />
             <Card title="Rejalashtirilgan qabullar">
               {planned.length ? <Timeline list={planned} onOpen={(v) => setSheet({ visitInfo: v })} /> : <p className="text-[12px] text-muted">Rejalashtirilgan qabul yo‘q</p>}
             </Card>
@@ -241,8 +249,6 @@ function BemorView({ id }) {
           patients={patients}
           patient={p}
           lockPatient
-          plans={rec.plans}
-          money={m}
           onClose={() => setSheet(null)}
           onSave={(row, opts) => { savePatientPayment(row, { ...opts, patient: p }); setSheet(null); setToast(`${som(row.amount)} qabul qilindi`) }}
         />
@@ -288,7 +294,7 @@ function Timeline({ list, onOpen }) {
             <button type="button" onClick={() => onOpen(v)} className="flex w-full items-center gap-3 py-2 text-left">
               <span className={`relative z-10 size-[13px] shrink-0 self-start rounded-full border-[3px] ${dot}`} style={{ marginTop: 3 }} />
               <span className="min-w-0 flex-1">
-                <span className="block text-[11.5px] text-ink-2">{v.iso ? niceDate(v.iso) : v.dateText}{v.time ? `, ${v.time}` : ''}{!v.done && st && <span className={`ml-1.5 rounded px-1 text-[10px] font-semibold ${st.cls}`}>{v.status === 'bekor' ? 'Bekor' : 'Rejada'}</span>}{v.readOnly && <span className="ml-1.5 text-[10px] text-muted">eski</span>}</span>
+                <span className="block text-[11.5px] text-ink-2">{v.iso ? niceDate(v.iso) : v.dateText}{v.time ? `, ${v.time}` : ''}{!v.done && st && <span className="ml-1.5 rounded px-1 text-[10px] font-semibold" style={{ background: st.bg, color: st.color }}>{st.label}</span>}{v.readOnly && <span className="ml-1.5 text-[10px] text-muted">eski</span>}</span>
                 <b className="block truncate text-[13px] font-bold text-ink">{v.kind}</b>
                 <span className="block truncate text-[11px] text-muted">{v.note || (v.tooth ? `${v.tooth}-tish` : '—')}</span>
               </span>

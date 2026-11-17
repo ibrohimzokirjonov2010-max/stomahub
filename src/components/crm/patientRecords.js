@@ -9,8 +9,9 @@ import { currentUid } from '../../recordSync'
 import { patchBemor } from '../../bemorData'
 import { setVisits } from '../../uchrashuvData'
 import { nextClinicReceipt, replaceClinicPayments } from '../../tolovData'
-import { addPayment as addPlanPayment, totalOf } from '../../rejaData'
+import { addPayment as addPlanPayment, completeVisitStages, getPlans, reopenVisitStages, totalOf } from '../../rejaData'
 import { tashkentToday } from '../../tashkentDate'
+import { VISIT_TONES, isFinal, normStatus } from '../../visitStatus'
 
 export const PATIENT_BUCKET = 'patient-files'
 
@@ -45,15 +46,8 @@ export const todayIso = () => tashkentToday()
 /* ---------------- Tashriflar ---------------- */
 
 export const VISIT_STATUS = {
-  tasdiq: { label: 'Tasdiqlangan', cls: 'bg-[#e7f8ee] text-[#1c9a52]' },
-  kutil: { label: 'Kutilmoqda', cls: 'bg-[#fff6dc] text-[#a07400]' },
-  davol: { label: 'Davolanmoqda', cls: 'bg-[#e7f1ff] text-[#3a6fd6]' },
-  yakun: { label: 'Bajarildi', cls: 'bg-[#eef1f5] text-[#5b6b80]' },
-  bekor: { label: 'Bekor qilingan', cls: 'bg-[#ffecee] text-[#d23b45]' },
-  keldi: { label: 'Keldi', cls: 'bg-[#e7f8ee] text-[#1c9a52]' },
-  qabulda: { label: 'Qabulda', cls: 'bg-[#e3f4f5] text-[#0b6d73]' },
-  kelmadi: { label: 'Kelmadi', cls: 'bg-[#ffecee] text-[#d23b45]' },
-  eski: { label: 'Eski yozuv', cls: 'bg-[#f3f6fb] text-[#6b7a90]' },
+  ...Object.fromEntries(Object.entries(VISIT_TONES).map(([k, t]) => [k, { label: t.label, cls: '', bg: t.bg, color: t.text }])),
+  eski: { label: 'Eski yozuv', cls: 'bg-[#f3f6fb] text-[#6b7a90]', bg: '#f3f6fb', color: '#6b7a90' },
 }
 
 const ownsRow = (p, row) => (row.patientId ? row.patientId === p.id : row.name === p.name)
@@ -75,8 +69,8 @@ export function patientVisits(p, calendar = []) {
     room: v.room || '',
     note: v.note || '',
     tooth: v.tooth || '',
-    status: v.status || 'tasdiq',
-    done: v.status === 'yakun',
+    status: normStatus(v.status),
+    done: isFinal(v.status),
     raw: v,
   }))
   const ids = new Set(cal.map((v) => v.id))
@@ -103,7 +97,7 @@ export function patientVisits(p, calendar = []) {
   return [...cal, ...legacy].sort((a, b) => `${b.iso} ${b.time}`.localeCompare(`${a.iso} ${a.time}`))
 }
 
-export const isUpcoming = (v) => !['yakun', 'bekor', 'kelmadi'].includes(v.status) && (!v.iso || v.iso >= todayIso())
+export const isUpcoming = (v) => !['yakun', 'bekor', 'kelmadi'].includes(normStatus(v.status)) && (!v.iso || v.iso >= todayIso())
 
 /** Profil yoki boshqa joydan yangi qabul -> kalendar. */
 export function addCalendarVisit(p, { date, start, dur = 30, service, doctor = 'me', room = 'Kreslo 1', note = '', tooth = '', price = 0, serviceId = '' }) {
@@ -132,8 +126,24 @@ export function removeCalendarVisit(id) {
   setVisits((list) => list.filter((v) => v.id !== id))
 }
 
+/**
+ * Profil Tashriflar → "Bajarildi": kalendardagi "Tugatish" bilan bir xil yo‘l — bog‘langan reja bosqichlari
+ * patchPlan (completeVisitStages) orqali yakunlanadi, tish kartasi shu yerda o‘zgaradi.
+ * Qaytarilsa — qabul "Tasdiqlangan", bosqichlar rejaga qaytadi (tish avvalgi holatiga).
+ */
 export function markVisitDone(p, v, done) {
-  updateCalendarVisit(v.id, { status: done ? 'yakun' : 'tasdiq' })
+  const id = v.id
+  if (done) {
+    const ids = []
+    for (const plan of getPlans()) {
+      const mine = (plan.stages || []).filter((s) => s.visitId === id && s.status !== 'bajarildi' && s.status !== 'bekor').map((s) => s.id)
+      if (mine.length) { completeVisitStages(plan.id, mine, { date: v.iso || todayIso(), visitId: id }); ids.push(...mine) }
+    }
+    updateCalendarVisit(id, { status: 'yakun', completedStages: ids })
+  } else {
+    reopenVisitStages(id)
+    updateCalendarVisit(id, { status: 'tasdiq', completedStages: undefined })
+  }
   if (done) patchBemor(p.id, { last: isoToDots(v.iso) })
 }
 
@@ -334,4 +344,10 @@ export function usePatientPhoto(p) {
     return () => { off = true }
   }, [path])
   return (path && url) || p?.photo || ''
+}
+
+/** ?tab=… (kalendar "Qabulda" havolasi va h.k.) -> profil bo‘limi kaliti ('' agar noma’lum). */
+export function tabFromUrl(raw, map) {
+  if (!raw) return ''
+  return map[String(raw).toLowerCase()] || ''
 }

@@ -7,6 +7,7 @@ import { setVisits, useVisits } from '../../uchrashuvData'
 import { chairNames, dayOffReason, freeSlots, useClinicSettings } from '../../clinicSettings'
 import { tashkentToday } from '../../tashkentDate'
 import PatientForm from './PatientForm'
+import PersonAvatar from '../PersonAvatar'
 
 const input = 'h-10 w-full rounded-xl border border-line bg-white px-3 text-[13px] outline-none focus:border-sea'
 
@@ -23,7 +24,10 @@ export function serviceOptions(list) {
 
 /**
  * Yagona "Qabulga yozish" formasi. Natija uchrashuvData 'visits' ga yoziladi.
- * initial: { date, start, patient, room, note }. lockPatient: bemorni o‘zgartirib bo‘lmaydi. onSaved(visit)
+ * initial: { date, start, patient, room, note, dur, tooth, services: [{ id, name, price, duration }],
+ *            serviceId, service (bitta eski xizmat), rescheduledFrom }.
+ * Avvalgi qabuldan (Keyingi uchrashuv / Kelmadi → boshqa kun) kelgan xizmatlar katalogda bo‘lmasa ham saqlanadi.
+ * lockPatient: bemorni o‘zgartirib bo‘lmaydi. onSaved(visit)
  */
 export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPatient = false }) {
   const patients = useBemorlar()
@@ -37,11 +41,13 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
   const [find, setFind] = useState('')
   const [creating, setCreating] = useState(false)
   // Bir nechta xizmat: tanlanganlari bemorning davolash rejasiga bosqich bo‘lib tushadi (visitPlanSync)
-  const [serviceIds, setServiceIds] = useState([])
-  const picked = serviceIds.map((id) => services.find((s) => s.id === id)).filter(Boolean)
+  const carried = useMemo(() => carriedServices(initial, services), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const serviceList = useMemo(() => [...carried.filter((c) => !services.some((s) => s.id === c.id)), ...services], [carried, services])
+  const [serviceIds, setServiceIds] = useState(() => carried.map((s) => s.id))
+  const picked = serviceIds.map((id) => serviceList.find((s) => s.id === id)).filter(Boolean)
   const svc = picked[0]
-  const [teeth, setTeeth] = useState('')
-  const [dur, setDur] = useState(30)
+  const [teeth, setTeeth] = useState(String(initial.tooth || ''))
+  const [dur, setDur] = useState(Number(initial.dur) || 30)
   const [date, setDate] = useState(initial.date && initial.date >= today ? initial.date : today)
   const [room, setRoom] = useState(chairs.includes(initial.room) ? initial.room : chairs[0] || '')
   const [doctor, setDoctor] = useState(staff[0]?.name || 'me')
@@ -49,7 +55,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
   const [note, setNote] = useState(initial.note || '')
   const [err, setErr] = useState('')
   const roomNow = chairs.includes(room) ? room : chairs[0] || ''
-  const busy = visits.filter((v) => v.date === date && v.room === roomNow && v.status !== 'bekor')
+  const busy = visits.filter((v) => v.date === date && v.room === roomNow && v.status !== 'bekor' && v.status !== 'kelmadi')
   const slots = useMemo(() => freeSlots(settings, date, { dur, busy }), [settings, date, dur, busy])
   const timeNow = slots.includes(time) ? time : ''
   const found = patients.filter((p) => `${p.name} ${p.phone}`.toLowerCase().includes(find.trim().toLowerCase())).slice(0, 8)
@@ -62,8 +68,10 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
     const visit = {
       id: `n${Date.now()}`, date, start: timeNow, dur, name: patient.name, photo: patient.photo || '', phone: patient.phone || '', patientId: patient.id || '',
       service: picked.map((s) => s.name).join(', '), serviceId: svc.id, price: picked.reduce((sum, s) => sum + (Number(s.price) || 0), 0),
-      services: picked.map((s) => ({ id: s.id, name: s.name, price: Number(s.price) || 0 })), tooth: teeth.trim(),
+      services: picked.map((s) => ({ id: s.id, name: s.name, price: Number(s.price) || 0, ...(s.stageId ? { stageId: s.stageId, tooth: s.tooth || '' } : {}) })),
+      tooth: teeth.trim(),
       status: 'tasdiq', doctor, room: roomNow, note: note.trim(), isNew: patient.status === 'Yangi',
+      ...(initial.rescheduledFrom ? { rescheduledFrom: initial.rescheduledFrom } : {}),
     }
     setVisits((list) => [...list, visit])
     onSaved?.(visit)
@@ -82,7 +90,7 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
           <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Bemor *</span>
             {patient ? (
               <span className="flex items-center gap-2 rounded-xl border border-line px-3 py-2">
-                <span className="grid size-8 place-items-center rounded-full bg-sea-50 text-[11px] font-bold text-sea">{patient.name.split(' ').slice(0, 2).map((w) => w[0]).join('')}</span>
+                <PersonAvatar src={patient.photo} name={patient.name} size={32} />
                 <span className="min-w-0 flex-1"><b className="block truncate text-[13px] text-ink">{patient.name}</b><span className="text-[11px] text-muted">{[patient.phone, patient.age].filter(Boolean).join(' · ')}</span></span>
                 {!lockPatient && <button type="button" onClick={() => setPatient(null)} aria-label="Bemorni o‘zgartirish"><X className="size-4 text-muted" /></button>}
               </span>
@@ -99,23 +107,23 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="text-[12px] font-medium text-ink-2"><span className="mb-1 block">Xizmatlar *</span>
-              {services.length ? (
+              {serviceList.length ? (
                 <select
                   aria-label="Xizmat qo‘shish"
                   value=""
                   onChange={(e) => {
-                    const s = services.find((x) => x.id === e.target.value)
+                    const s = serviceList.find((x) => x.id === e.target.value)
                     if (!s) return
                     const next = [...serviceIds, s.id]
                     setServiceIds(next)
-                    const total = next.reduce((m, id) => m + (Number(services.find((x) => x.id === id)?.duration) || 0), 0)
+                    const total = next.reduce((m, id) => m + (Number(serviceList.find((x) => x.id === id)?.duration) || 0), 0)
                     if (total) setDur(Math.min(240, total))
                     setErr('')
                   }}
                   className={input}
                 >
                   <option value="">{picked.length ? '+ Yana xizmat qo‘shish' : 'Xizmatni tanlang'}</option>
-                  {services.filter((s) => !serviceIds.includes(s.id)).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {serviceList.filter((s) => !serviceIds.includes(s.id)).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               ) : <p className="rounded-xl bg-[#fff8e6] px-3 py-2 text-[12px]">Xizmatlar ro‘yxati bo‘sh. <Link to="/xizmatlar" className="font-semibold text-sea underline">Xizmat qo‘shing</Link></p>}
             </div>
@@ -142,6 +150,8 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
                 {picked.map((s) => (
                   <li key={s.id} className="flex items-center gap-1.5 rounded-lg bg-white px-2 py-1 text-[12px] shadow-[0_0_0_1px_rgb(225_230_238)]">
                     <span className="font-semibold text-ink">{s.name}</span>
+                    {s.tooth && <span className="text-muted">{s.tooth}-tish</span>}
+                    {s.stageId && <span className="rounded bg-sea-50 px-1 text-[10.5px] font-semibold text-sea">rejadan</span>}
                     {Number(s.price) > 0 && <span className="text-muted">{Number(s.price).toLocaleString('ru-RU').replace(/\u00a0/g, ' ')} so‘m</span>}
                     <button type="button" onClick={() => setServiceIds((ids) => ids.filter((x) => x !== s.id))} aria-label={`${s.name} xizmatini olib tashlash`} className="text-muted hover:text-[#e11d48]"><X className="size-3.5" /></button>
                   </li>
@@ -174,4 +184,26 @@ export default function AppointmentForm({ initial = {}, onClose, onSaved, lockPa
       </div>
     </div>
   )
+}
+
+/** Oldingi qabuldan ko‘chirilgan xizmatlar (katalogdagi mos yozuv bo‘lsa — o‘sha, bo‘lmasa o‘zi). */
+export function carriedServices(initial = {}, catalog = []) {
+  const raw = Array.isArray(initial.services) && initial.services.length
+    ? initial.services
+    : initial.service || initial.serviceId
+      ? [{ id: initial.serviceId || '', name: initial.service || '', price: initial.price }]
+      : []
+  const seen = new Set()
+  const out = []
+  raw.forEach((x, i) => {
+    if (!x || (!x.name && !x.id)) return
+    const hit = !x.stageId && catalog.find((s) => (x.id && s.id === x.id) || (x.name && s.name === x.name))
+    const item = x.stageId
+      ? { id: x.id || `stage-${x.stageId}`, stageId: x.stageId, name: x.name, price: Number(x.price) || 0, tooth: x.tooth || '' }
+      : hit || { id: x.id || `carried-${i + 1}`, name: x.name, price: Number(x.price) || 0, duration: x.duration }
+    if (seen.has(item.id)) return
+    seen.add(item.id)
+    out.push(item)
+  })
+  return out
 }

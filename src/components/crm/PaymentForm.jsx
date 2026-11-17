@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Banknote, Building2, Calendar, Check, ChevronDown, CreditCard, Info, X } from 'lucide-react'
-import { METHODS, planFor, som } from '../../tolovData'
+import { METHODS, som, useClinicPayments } from '../../tolovData'
+import { debtOf, plansForPatient, totalOf, usePlans } from '../../rejaData'
 import { tashkentToday } from '../../tashkentDate'
+import { patientPayments } from './patientRecords'
 
 function todayDots() {
   return tashkentToday().split('-').reverse().join('.')
@@ -9,17 +11,25 @@ function todayDots() {
 
 /**
  * Yagona "Yangi to‘lov qo‘shish" formasi. Natija onSave(payment) orqali clinic_payments ga yoziladi.
- * lockPatient + patient: bemor oldindan tanlangan va o‘zgartirib bo‘lmaydi (profil oynasi).
+ * lockPatient + patient: bemor oldindan tanlangan va o‘zgartirib bo‘lmaydi (profil oynasi, kalendar).
+ * planId: oldindan tanlangan davolash rejasi (kalendardagi qabul rejasi). Reja tanlansa — rejaning qarzi ko‘rsatiladi
+ * va saqlashda onSave(payment, { planId, isNew }) — savePatientPayment rejaning to‘langan summasini bir marta oshiradi.
  */
-export default function PaymentForm({ patients, preset, edit, onClose, onSave, lockPatient = false, patient: lockedPatient = null }) {
+export default function PaymentForm({ patients, preset, edit, onClose, onSave, lockPatient = false, patient: lockedPatient = null, planId: presetPlanId = '' }) {
   const picks = patients.filter((p) => p.photo).slice(0, 12)
   const [pid, setPid] = useState(edit?.patientId || lockedPatient?.id || '')
   const [whoOpen, setWhoOpen] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
   const patient = patients.find((p) => p.id === pid) || lockedPatient || picks[0]
-  const plan = planFor(patient)
-  const debt = Math.max(0, plan.plan - plan.paid)
+  const allPlans = usePlans()
+  const clinicRows = useClinicPayments()
+  const plans = useMemo(() => plansForPatient(allPlans, patient), [allPlans, patient])
+  const [planId, setPlanId] = useState(() => edit?.planId || presetPlanId || '')
+  const linked = plans.find((x) => x.id === planId) || null
+  const sums = summaryOf(patient, linked, plans, clinicRows)
+  const debt = sums.debt
   const [amount, setAmount] = useState(edit ? String(edit.amount) : String(debt || ''))
+  const plan = { name: linked ? linked.title : 'Umumiy hisob', date: linked ? linked.code : sums.note }
   const [date, setDate] = useState(edit?.date || todayDots())
   const [method, setMethod] = useState(edit?.method || preset || 'Naqd')
   const [chek, setChek] = useState(edit?.chek ?? true)
@@ -32,8 +42,8 @@ export default function PaymentForm({ patients, preset, edit, onClose, onSave, l
     setPid(id)
     setWhoOpen(false)
     if (!edit && next) {
-      const p = planFor(next)
-      setAmount(String(Math.max(0, p.plan - p.paid)))
+      setPlanId('')
+      setAmount(String(summaryOf(next, null, plansForPatient(allPlans, next), clinicRows).debt || ''))
     }
   }
 
@@ -44,6 +54,7 @@ export default function PaymentForm({ patients, preset, edit, onClose, onSave, l
       return
     }
     onSave({
+      ...(linked ? { planId: linked.id } : {}),
       id: edit?.id || `tl-${Date.now()}`,
       receipt: edit?.receipt || `TL-${String(330 + (Date.now() % 500)).padStart(5, '0')}`,
       date,
@@ -59,7 +70,7 @@ export default function PaymentForm({ patients, preset, edit, onClose, onSave, l
       chek,
       note,
       detail: edit?.detail,
-    })
+    }, { planId: linked && !edit ? linked.id : '', isNew: !edit })
   }
 
   return (
@@ -95,22 +106,31 @@ export default function PaymentForm({ patients, preset, edit, onClose, onSave, l
               )}
             </Field>
             <Field label="Davolash rejasi">
-              <button type="button" onClick={() => { setPlanOpen((v) => !v); setWhoOpen(false) }} className="flex h-14 w-full items-center gap-2 rounded-xl border border-line px-3 text-left">
+              <button type="button" data-testid="pay-plan" disabled={!plans.length} onClick={() => { setPlanOpen((v) => !v); setWhoOpen(false) }} className="flex h-14 w-full items-center gap-2 rounded-xl border border-line px-3 text-left disabled:cursor-default">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-sea-50 text-sea"><Tooth /></span>
                 <span className="min-w-0 flex-1">
-                  <b className="block truncate text-[13px]">{plan.name}</b>
-                  <span className="block truncate text-[11px] text-muted">{plan.date} · {som(plan.plan)}</span>
+                  <b className="block truncate text-[13px]">{plans.length ? plan.name : 'Reja yo‘q'}</b>
+                  <span className="block truncate text-[11px] text-muted">{linked ? `${linked.code} · ${som(totalOf(linked))}` : plans.length ? 'Rejaga bog‘lanmagan' : 'Umumiy hisobga yoziladi'}</span>
                 </span>
-                <ChevronDown className="size-4 text-muted" />
+                {plans.length > 0 && <ChevronDown className="size-4 text-muted" />}
               </button>
-              {planOpen && <p className="absolute z-10 mt-1 w-full rounded-xl border border-line bg-white px-3 py-2 text-[12px] shadow-card">{plan.name} tanlangan</p>}
+              {planOpen && plans.length > 0 && (
+                <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-line bg-white p-1 shadow-card">
+                  {[null, ...plans].map((x) => (
+                    <button key={x?.id || 'none'} type="button" onClick={() => { setPlanId(x?.id || ''); setPlanOpen(false); if (!edit) setAmount(String(summaryOf(patient, x, plans, clinicRows).debt || '')) }} className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-[#f4f7fb] ${(x?.id || '') === planId ? 'bg-sea-50' : ''}`}>
+                      <span className="min-w-0"><b className="block truncate text-[12.5px]">{x ? x.title : 'Rejaga bog‘lamaslik'}</b><span className="text-[11px] text-muted">{x ? `${x.code} · qarz ${som(debtOf(x))}` : 'Umumiy hisob'}</span></span>
+                      {(x?.id || '') === planId && <Check className="size-4 shrink-0 text-sea" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </Field>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <Sum label="Reja summasi" value={som(plan.plan)} />
-            <Sum label="To‘langan" value={som(plan.paid)} tone="#17803d" />
-            <Sum label="Qarz" value={som(debt)} tone="#e11d48" />
+            <Sum label={linked ? 'Reja summasi' : 'Umumiy summa'} value={som(sums.total)} />
+            <Sum label="To‘langan" value={som(sums.paid)} tone="#17803d" />
+            <Sum label={linked ? 'Reja qarzi' : 'Qarz'} value={som(debt)} tone="#e11d48" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -146,7 +166,7 @@ export default function PaymentForm({ patients, preset, edit, onClose, onSave, l
 
           <div className="flex gap-2 rounded-xl bg-[#eef6ff] px-3 py-2.5 text-[12px] text-[#1d4e89]">
             <Info className="mt-0.5 size-4 shrink-0" />
-            <p>Qarz summa to‘liq yopilsa, davolash rejasi avtomatik ravishda “Yakunlangan” holatiga o‘tadi.</p>
+            <p>{linked ? 'To‘lov shu davolash rejasining hisobiga ham yoziladi va “To‘lovlar” bo‘limida ko‘rinadi.' : 'To‘lov bemorning umumiy hisobiga yoziladi va “To‘lovlar” bo‘limida ko‘rinadi.'}</p>
           </div>
 
           <button type="button" onClick={() => setChek((v) => !v)} className="flex items-center gap-3 text-left">
@@ -172,6 +192,18 @@ export default function PaymentForm({ patients, preset, edit, onClose, onSave, l
       </div>
     </div>
   )
+}
+
+/** Reja tanlangan bo‘lsa — rejaning o‘z hisobi; aks holda bemorning umumiy hisobi (clinic_payments + eski to‘lovlar, ikki marta sanalmaydi). */
+function summaryOf(patient, plan, plans, rows) {
+  if (plan) {
+    const total = totalOf(plan)
+    const paid = Math.min(Number(plan.paid) || 0, total)
+    return { total, paid, debt: debtOf(plan), note: plan.code }
+  }
+  if (!patient) return { total: 0, paid: 0, debt: 0, note: '' }
+  const m = patientPayments(patient, rows, plans)
+  return { total: m.total, paid: Math.min(m.paid, m.total || m.paid), debt: m.debt, note: patient.last || '' }
 }
 
 function Field({ label, required, children }) {

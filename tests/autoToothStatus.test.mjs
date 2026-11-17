@@ -50,7 +50,12 @@ test('o‘tish bo‘lmasa yoki xizmat noma’lum bo‘lsa hech narsa o‘zgarmay
   const unknown = reconcile(stage('rejada', { title: 'Konsultatsiya' }), stage('bajarildi', { title: 'Konsultatsiya' }), teeth, STAGE_OPTS)
   assert.equal(unknown.changed, false)
   assert.equal(unknown.teeth, teeth)
-  assert.equal(reconcile(undefined, stage('bajarildi'), teeth, STAGE_OPTS).changed, false)
+  // Yangi yaratilgan va darhol bajarilgan bosqich (Tugatish → reja yo‘q) — tish o‘zgaradi
+  const fresh = reconcile(undefined, stage('bajarildi'), teeth, STAGE_OPTS)
+  assert.equal(fresh.changed, true)
+  assert.ok(fresh.item.autoTooth)
+  // autoTooth allaqachon bor yangi yozuv (qayta yuklash) — ikkinchi marta qo‘llanmaydi
+  assert.equal(reconcile(undefined, fresh.item, fresh.teeth, STAGE_OPTS).changed, false)
 })
 
 test('qayta yig‘ilgan bosqich autoTooth ni yo‘qotmaydi', () => {
@@ -67,10 +72,11 @@ test('profil tashrifi: done false → true', () => {
   assert.ok(r.list[0].autoTooth)
 })
 
-test('kalendar: yakun/keldi, tishsiz uchrashuv tegilmaydi', () => {
+test('kalendar: faqat yakuniy holat; keldi/qabulda tishga tegmaydi', () => {
   const v = { id: 'n1', service: 'Implant', tooth: '36', status: 'tasdiq', patientId: 'p1' }
   assert.deepEqual(reconcile(v, { ...v, status: 'yakun' }, {}, CALENDAR_OPTS).teeth, { 36: 'implant' })
-  assert.deepEqual(reconcile(v, { ...v, status: 'keldi' }, {}, CALENDAR_OPTS).teeth, { 36: 'implant' })
+  assert.equal(reconcile(v, { ...v, status: 'keldi' }, {}, CALENDAR_OPTS).changed, false)
+  assert.equal(reconcile(v, { ...v, status: 'qabulda' }, {}, CALENDAR_OPTS).changed, false)
   const noTooth = { ...v, tooth: undefined }
   assert.equal(reconcile(noTooth, { ...noTooth, status: 'yakun' }, {}, CALENDAR_OPTS).changed, false)
 })
